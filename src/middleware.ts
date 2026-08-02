@@ -182,6 +182,12 @@ const isPublicPreviewRoute = (pathname: string) =>
 // validated + best-effort emailed server-side. Bypass auth in dev and prod.
 const isDemoRequestRoute = (pathname: string) => pathname === "/api/demo-request";
 
+// Public ARC sample dashboard - a static, self-contained interactive demo
+// (clearly-labelled demo data, no PII, no data fetch) shared as a branded link
+// with prospects. Bypass auth in dev and prod like the other public surfaces.
+const isSampleRoute = (pathname: string) =>
+  pathname === "/samples" || pathname.startsWith("/samples/");
+
 // Client proposal view - a no-account client opens an ISSUED proposal (and its
 // PDF) via an unguessable proposals.access_token. Identity/eligibility is gated
 // server-side (token match + issued status). NOTE: the admin surfaces live under
@@ -212,6 +218,7 @@ export async function middleware(request: NextRequest) {
     isHipoEngageRoute(request.nextUrl.pathname) ||
     isPublicPreviewRoute(request.nextUrl.pathname) ||
     isDemoRequestRoute(request.nextUrl.pathname) ||
+    isSampleRoute(request.nextUrl.pathname) ||
     isProposalClientRoute(request.nextUrl.pathname)
   ) {
     return NextResponse.next();

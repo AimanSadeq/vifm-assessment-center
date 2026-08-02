@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ARC - Organizational AI Readiness Dashboard</title>
+<style>
+  :root{
+    --navy:#010131; --navy2:#121232; --accent:#5391D5; --accent-deep:#2f6fb8;
+    --bg:#eef1f6; --card:#ffffff; --ink:#121232; --muted:#5b6472; --line:#e2e7ef;
+    --green:#059669; --greenbg:#dcfce7; --amber:#D97706; --amberbg:#fef3c7; --rose:#E11D48; --rosebg:#ffe4e6;
+    --font:"Open Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+    --ar:"Segoe UI","Tahoma",sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  [dir="rtl"]{font-family:var(--ar)}
+  .app{max-width:1180px;margin:0 auto;padding:20px 22px 60px}
+
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{width:44px;height:44px;border-radius:10px;background:linear-gradient(150deg,var(--accent),var(--accent-deep));
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;flex:0 0 auto;
+    box-shadow:0 6px 16px rgba(1,1,49,.18)}
+  .brand h1{font-size:18px;font-weight:800;letter-spacing:-.01em;color:var(--navy)}
+  .brand .sub{font-size:12px;color:var(--muted);font-weight:600}
+  .hgroup{display:flex;align-items:center;gap:10px}
+  .sample-badge{font-size:11px;font-weight:700;color:#92400e;background:var(--amberbg);border:1px solid #fcd34d;
+    padding:5px 10px;border-radius:100px;white-space:nowrap}
+  .langtoggle{display:flex;border:1px solid var(--line);border-radius:100px;overflow:hidden;background:var(--card)}
+  .langtoggle button{border:0;background:transparent;padding:7px 14px;font-family:var(--font);font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+  .langtoggle button.on{background:var(--navy);color:#fff}
+
+  .orgline{font-size:13px;color:var(--muted);margin-bottom:14px}
+  .orgline b{color:var(--ink)}
+
+  .crumbs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;font-size:13px}
+  .crumbs button{border:0;background:transparent;color:var(--accent-deep);font-weight:700;cursor:pointer;font-family:inherit;font-size:13px;padding:0}
+  .crumbs button:hover{text-decoration:underline}
+  .crumbs .sep{color:var(--muted)}
+  .crumbs .here{color:var(--ink);font-weight:800}
+
+  .kpis{display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+  @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(1,1,49,.04)}
+  .kpi.overall{background:linear-gradient(155deg,var(--navy),var(--navy2));color:#fff;border-color:transparent}
+  .kpi .lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+  .kpi.overall .lbl{color:rgba(255,255,255,.7)}
+  .kpi .val{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums}
+  .kpi .of{font-size:13px;font-weight:600;color:var(--muted)}
+  .kpi.overall .of{color:rgba(255,255,255,.6)}
+  .pill{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px;margin-top:6px;letter-spacing:.02em}
+  .pill.embedded{background:var(--greenbg);color:#166534}
+  .pill.practising{background:var(--amberbg);color:#92400e}
+  .pill.emerging{background:var(--rosebg);color:#9f1239}
+  .kpi.overall .pill{background:rgba(255,255,255,.16);color:#fff}
+  .track{height:7px;border-radius:6px;background:#eaeef4;margin-top:10px;overflow:hidden}
+  .kpi.overall .track{background:rgba(255,255,255,.18)}
+  .track > span{display:block;height:100%;border-radius:6px}
+  .fill-accent{background:var(--accent)} .fill-green{background:var(--green)} .fill-amber{background:var(--amber)} .fill-rose{background:var(--rose)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(1,1,49,.04)}
+  .panel h2{font-size:14px;font-weight:800;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+  .panel h2 .hint{font-size:11px;font-weight:600;color:var(--muted)}
+
+  .stack{display:flex;height:26px;border-radius:7px;overflow:hidden;border:1px solid var(--line)}
+  .stack > div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:800;min-width:0}
+  .seg-green{background:var(--green)} .seg-amber{background:var(--amber)} .seg-rose{background:var(--rose)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}
+  .legend .dot{width:9px;height:9px;border-radius:3px;display:inline-block;margin-inline-end:5px;vertical-align:middle}
+
+  .crow{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .crow:last-child{margin-bottom:0}
+  .crow .cname{width:160px;flex:0 0 auto;font-weight:700;font-size:13px}
+  .crow .cbar{flex:1;height:16px;border-radius:5px;background:#eef2f7;overflow:hidden}
+  .crow .cbar > span{display:block;height:100%;border-radius:5px}
+  .crow .cscore{width:64px;flex:0 0 auto;text-align:end;font-weight:800;font-variant-numeric:tabular-nums}
+  .crow .cscore small{color:var(--muted);font-weight:600}
+
+  .funnel{display:flex;gap:10px}
+  .fbox{flex:1;text-align:center;border:1px solid var(--line);border-radius:10px;padding:12px 6px;background:#fbfcfe}
+  .fbox .n{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}
+  .fbox .t{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+
+  .section-title{font-size:13px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.05em;margin:6px 0 10px}
+  .cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+  @media(max-width:820px){.cards{grid-template-columns:1fr}}
+  .node{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;cursor:pointer;transition:transform .12s,box-shadow .12s,border-color .12s;text-align:start;width:100%;font-family:inherit}
+  .node:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(1,1,49,.10);border-color:#c9d6ea}
+  .node .ntop{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .node .nname{font-size:14px;font-weight:800;color:var(--navy)}
+  .node .nmeta{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+  .node .nscore{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .node .nof{font-size:11px;color:var(--muted);font-weight:600}
+  .minirow{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px}
+  .minirow .ml{width:74px;flex:0 0 auto;color:var(--muted);font-weight:600}
+  .minirow .mbar{flex:1;height:8px;border-radius:4px;background:#eef2f7;overflow:hidden}
+  .minirow .mbar > span{display:block;height:100%}
+  .minirow .mv{width:30px;text-align:end;font-weight:700;font-variant-numeric:tabular-nums}
+  .node .drill{font-size:11px;color:var(--accent-deep);font-weight:700;margin-top:10px}
+
+  .tablewrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:9px 10px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;background:var(--card)}
+  tbody tr{cursor:pointer}
+  tbody tr:hover{background:#f6f9fd}
+  td.num{text-align:end;font-variant-numeric:tabular-nums;font-weight:700}
+  .tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:100px}
+  .tag.embedded{background:var(--greenbg);color:#166534}.tag.practising{background:var(--amberbg);color:#92400e}
+  .tag.emerging{background:var(--rosebg);color:#9f1239}.tag.pending{background:#eef2f7;color:#64748b}
+
+  .overlay{position:fixed;inset:0;background:rgba(4,6,20,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.on{display:flex}
+  .drawer{background:var(--card);border-radius:16px;max-width:560px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+  .dhead{background:linear-gradient(150deg,var(--navy),var(--navy2));color:#fff;padding:20px 22px;border-radius:16px 16px 0 0;position:relative}
+  .dhead .close{position:absolute;top:14px;inset-inline-end:16px;background:rgba(255,255,255,.16);border:0;color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px;font-weight:700}
+  .dhead .dname{font-size:20px;font-weight:800}
+  .dhead .dmeta{font-size:12.5px;opacity:.85;margin-top:2px}
+  .dhead .drow{display:flex;align-items:flex-end;gap:10px;margin-top:12px}
+  .dhead .dnum{font-size:34px;font-weight:800;line-height:1}
+  .dbody{padding:20px 22px}
+  .dbody .lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:14px 0 8px}
+  .note{font-size:12px;color:var(--muted);line-height:1.55;background:#f6f9fd;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:14px}
+  .note b{color:var(--ink)}
+
+  .ins{display:flex;flex-direction:column;gap:9px}
+  .insitem{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+  .insitem .ic{width:22px;height:22px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff}
+  .ic.good{background:var(--green)} .ic.warn{background:var(--amber)} .ic.bad{background:var(--rose)} .ic.info{background:var(--accent-deep)}
+  .insitem b{color:var(--navy)}
+
+  footer.foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--line);font-size:11.5px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <div class="logo">C</div>
+      <div>
+        <h1 id="brandTitle">AI Readiness Compass</h1>
+        <div class="sub" id="brandSub">Organizational Dashboard</div>
+      </div>
+    </div>
+    <div class="hgroup">
+      <span class="sample-badge" id="sampleBadge">Sample data</span>
+      <div class="langtoggle">
+        <button id="enBtn" class="on" onclick="setLang('en')">EN</button>
+        <button id="arBtn" onclick="setLang('ar')">ع</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="orgline" id="orgLine"></div>
+  <nav class="crumbs" id="crumbs"></nav>
+
+  <section class="kpis" id="kpis"></section>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2 id="pDist"><span></span><span class="hint" id="pDistN"></span></h2>
+      <div class="stack" id="stack"></div>
+      <div class="legend" id="distLegend"></div>
+      <div class="funnel" id="funnel" style="margin-top:16px"></div>
+    </div>
+    <div class="panel">
+      <h2 id="pConstruct"><span></span></h2>
+      <div id="constructRows"></div>
+    </div>
+  </div>
+
+  <div class="section-title" id="childTitle"></div>
+  <div id="childArea"></div>
+
+  <div class="panel" style="margin-top:14px">
+    <h2 id="pInsights"><span></span></h2>
+    <div class="ins" id="insights"></div>
+  </div>
+
+  <footer class="foot">
+    <span id="footL"></span>
+    <span id="footR"></span>
+  </footer>
+</div>
+
+<div class="overlay" id="overlay" onclick="if(event.target===this)closeDrawer()">
+  <div class="drawer" id="drawer"></div>
+</div>
+
+<script id="data" type="application/json">{"org": {"name_en": "Ufuq Digital Authority", "name_ar": "هيئة أفق الرقمية", "note_en": "Sample data - illustrative only", "note_ar": "بيانات تجريبية - لأغراض التوضيح فقط"}, "constructs": [{"key": "awareness", "en": "AI Awareness", "ar": "الوعي بالذكاء الاصطناعي", "desc_en": "Understands what AI can and cannot do, and where it applies to their work.", "desc_ar": "يدرك ما يمكن وما لا يمكن للذكاء الاصطناعي فعله، وأين ينطبق على عمله."}, {"key": "adoption", "en": "AI Adoption", "ar": "تبنّي الذكاء الاصطناعي", "desc_en": "Actually uses AI tools in day-to-day tasks and workflows.", "desc_ar": "يستخدم أدوات الذكاء الاصطناعي فعلياً في مهامه اليومية."}, {"key": "readiness", "en": "AI Readiness", "ar": "الجاهزية للذكاء الاصطناعي", "desc_en": "Overall preparedness to apply AI effectively and responsibly at work.", "desc_ar": "الجاهزية العامة لتطبيق الذكاء الاصطناعي بفعالية ومسؤولية في العمل."}], "overall": {"awareness": 3.63, "adoption": 3.06, "readiness": 3.38, "overall": 3.36, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 137, "n_completed": 118, "n_in_progress": 14, "n_not_started": 5, "completion_pct": 86, "dist": {"Emerging": 31, "Practising": 72, "Embedded": 15}}, "divisions": [{"name_en": "Technology & Data", "name_ar": "التقنية والبيانات", "summary": {"awareness": 3.91, "adoption": 3.51, "readiness": 3.74, "overall": 3.72, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 55, "n_completed": 47, "n_in_progress": 6, "n_not_started": 2, "completion_pct": 85, "dist": {"Emerging": 3, "Practising": 31, "Embedded": 13}}, "departments": [{"name_en": "Data Science", "name_ar": "علم البيانات", "summary": {"awareness": 4.28, "adoption": 3.73, "readiness": 4.06, "overall": 4.02, "band_en": "Embedded", "band_ar": "متمكّن", "n_total": 20, "n_completed": 17, "n_in_progress": 3, "n_not_started": 0, "completion_pct": 85, "dist": {"Emerging": 0, "Practising": 9, "Embedded": 8}}, "employees": [{"id": "E001", "name_en": "Nada Alqahtani", "name_ar": "ندى القحطاني", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 3.78, "adoption": 4.88, "readiness": 4.42, "overall": 4.36, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E002", "name_en": "Turki Almutairi", "name_ar": "تركي المطيري", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 5.0, "adoption": 3.42, "readiness": 4.12, "overall": 4.18, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E003", "name_en": "Nasser Albogami", "name_ar": "ناصر البقمي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.86, "adoption": 3.91, "readiness": 4.57, "overall": 4.45, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E004", "name_en": "Aisha Alshehri", "name_ar": "عائشة الشهري", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E005", "name_en": "Jawaher Alshehri", "name_ar": "جواهر الشهري", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 5.0, "adoption": 2.85, "readiness": 3.64, "overall": 3.83, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E006", "name_en": "Noura Alharbi", "name_ar": "نورة الحربي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E007", "name_en": "Salman Albogami", "name_ar": "سلمان البقمي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 3.65, "adoption": 3.92, "readiness": 3.83, "overall": 3.8, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E008", "name_en": "Saud Albogami", "name_ar": "سعود البقمي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E009", "name_en": "Ziad Almutairi", "name_ar": "زياد المطيري", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.42, "adoption": 4.15, "readiness": 4.56, "overall": 4.38, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E010", "name_en": "Jawaher Aldosari", "name_ar": "جواهر الدوسري", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.2, "adoption": 3.4, "readiness": 3.93, "overall": 3.84, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E011", "name_en": "Sara Alshehri", "name_ar": "سارة الشهري", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 3.89, "adoption": 3.75, "readiness": 3.71, "overall": 3.78, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E012", "name_en": "Majed Alsubaie", "name_ar": "ماجد السبيعي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.09, "adoption": 3.36, "readiness": 4.36, "overall": 3.93, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E013", "name_en": "Latifa Alshehri", "name_ar": "لطيفة الشهري", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.93, "adoption": 4.72, "readiness": 4.43, "overall": 4.69, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E014", "name_en": "Jawaher Albogami", "name_ar": "جواهر البقمي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.49, "adoption": 2.93, "readiness": 3.95, "overall": 3.79, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E015", "name_en": "Latifa Alqahtani", "name_ar": "لطيفة القحطاني", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 3.32, "adoption": 4.61, "readiness": 4.41, "overall": 4.11, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E016", "name_en": "Dana Alzahrani", "name_ar": "دانة الزهراني", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.41, "adoption": 2.23, "readiness": 3.75, "overall": 3.46, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E017", "name_en": "Turki Alsubaie", "name_ar": "تركي السبيعي", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.48, "adoption": 4.3, "readiness": 3.97, "overall": 4.25, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E018", "name_en": "Bandar Albogami", "name_ar": "بندر البقمي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.12, "adoption": 4.52, "readiness": 3.69, "overall": 4.11, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E019", "name_en": "Layla Alshehri", "name_ar": "ليلى الشهري", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.16, "adoption": 3.31, "readiness": 3.81, "overall": 3.76, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E020", "name_en": "Saud Alghamdi", "name_ar": "سعود الغامدي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Data Science", "department_ar": "علم البيانات", "awareness": 4.04, "adoption": 3.09, "readiness": 3.88, "overall": 3.67, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}]}, {"name_en": "Software Engineering", "name_ar": "هندسة البرمجيات", "summary": {"awareness": 3.92, "adoption": 3.87, "readiness": 3.84, "overall": 3.88, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 17, "n_completed": 14, "n_in_progress": 2, "n_not_started": 1, "completion_pct": 82, "dist": {"Emerging": 0, "Practising": 9, "Embedded": 5}}, "employees": [{"id": "E021", "name_en": "Faisal Alshehri", "name_ar": "فيصل الشهري", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 4.35, "adoption": 3.78, "readiness": 3.91, "overall": 4.01, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E022", "name_en": "Dana Alghamdi", "name_ar": "دانة الغامدي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.84, "adoption": 4.83, "readiness": 4.16, "overall": 4.28, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E023", "name_en": "Sara Alanazi", "name_ar": "سارة العنزي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.48, "adoption": 3.49, "readiness": 3.23, "overall": 3.4, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E024", "name_en": "Yousef Albogami", "name_ar": "يوسف البقمي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.54, "adoption": 3.46, "readiness": 3.83, "overall": 3.61, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E025", "name_en": "Jawaher Almutairi", "name_ar": "جواهر المطيري", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 2.96, "adoption": 3.41, "readiness": 3.16, "overall": 3.18, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E026", "name_en": "Salman Alrashidi", "name_ar": "سلمان الرشيدي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 4.3, "adoption": 3.72, "readiness": 3.62, "overall": 3.88, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E027", "name_en": "Latifa Alsubaie", "name_ar": "لطيفة السبيعي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.94, "adoption": 4.53, "readiness": 3.76, "overall": 4.08, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E028", "name_en": "Salman Alzahrani", "name_ar": "سلمان الزهراني", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 4.21, "adoption": 3.64, "readiness": 3.8, "overall": 3.88, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E029", "name_en": "Reem Alzahrani", "name_ar": "ريم الزهراني", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E030", "name_en": "Majed Albogami", "name_ar": "ماجد البقمي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 4.36, "adoption": 3.88, "readiness": 3.86, "overall": 4.03, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E031", "name_en": "Bandar Alshehri", "name_ar": "بندر الشهري", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 5.0, "adoption": 4.58, "readiness": 4.66, "overall": 4.74, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E032", "name_en": "Salman Alsubaie", "name_ar": "سلمان السبيعي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.13, "adoption": 3.94, "readiness": 4.18, "overall": 3.75, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E033", "name_en": "Aisha Alsubaie", "name_ar": "عائشة السبيعي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 4.55, "adoption": 3.62, "readiness": 3.72, "overall": 3.96, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E034", "name_en": "Omar Albogami", "name_ar": "عمر البقمي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E035", "name_en": "Jawaher Alqahtani", "name_ar": "جواهر القحطاني", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "not_started"}, {"id": "E036", "name_en": "Hamad Alrashidi", "name_ar": "حمد الرشيدي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.74, "adoption": 3.86, "readiness": 4.02, "overall": 3.87, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E037", "name_en": "Omar Alsubaie", "name_ar": "عمر السبيعي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "Software Engineering", "department_ar": "هندسة البرمجيات", "awareness": 3.47, "adoption": 3.49, "readiness": 3.81, "overall": 3.59, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}]}, {"name_en": "IT Infrastructure", "name_ar": "البنية التقنية", "summary": {"awareness": 3.49, "adoption": 2.96, "readiness": 3.31, "overall": 3.26, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 18, "n_completed": 16, "n_in_progress": 1, "n_not_started": 1, "completion_pct": 89, "dist": {"Emerging": 3, "Practising": 13, "Embedded": 0}}, "employees": [{"id": "E038", "name_en": "Ziad Alharbi", "name_ar": "زياد الحربي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.31, "adoption": 3.32, "readiness": 3.25, "overall": 3.29, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E039", "name_en": "Tariq Alghamdi", "name_ar": "طارق الغامدي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 4.13, "adoption": 3.33, "readiness": 3.45, "overall": 3.64, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E040", "name_en": "Majed Alrashidi", "name_ar": "ماجد الرشيدي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.37, "adoption": 2.86, "readiness": 3.51, "overall": 3.25, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E041", "name_en": "Khalid Alqahtani", "name_ar": "خالد القحطاني", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 2.61, "adoption": 2.79, "readiness": 3.09, "overall": 2.83, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E042", "name_en": "Hamad Alshehri", "name_ar": "حمد الشهري", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.22, "adoption": 3.42, "readiness": 3.04, "overall": 3.22, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E043", "name_en": "Amal Albogami", "name_ar": "أمل البقمي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "not_started"}, {"id": "E044", "name_en": "Hamad Alzahrani", "name_ar": "حمد الزهراني", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.76, "adoption": 3.18, "readiness": 3.52, "overall": 3.49, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E045", "name_en": "Reem Alanazi", "name_ar": "ريم العنزي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.16, "adoption": 2.37, "readiness": 2.82, "overall": 2.78, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E046", "name_en": "Omar Alrashidi", "name_ar": "عمر الرشيدي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.79, "adoption": 2.47, "readiness": 3.13, "overall": 3.13, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E047", "name_en": "Ghada Alharbi", "name_ar": "غادة الحربي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.9, "adoption": 3.97, "readiness": 3.91, "overall": 3.93, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E048", "name_en": "Faisal Alotaibi", "name_ar": "فيصل العتيبي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E049", "name_en": "Salman Alshehri", "name_ar": "سلمان الشهري", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.62, "adoption": 2.66, "readiness": 3.49, "overall": 3.26, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E050", "name_en": "Noura Alanazi", "name_ar": "نورة العنزي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.02, "adoption": 3.38, "readiness": 3.44, "overall": 3.28, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E051", "name_en": "Turki Alghamdi", "name_ar": "تركي الغامدي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.88, "adoption": 3.09, "readiness": 3.57, "overall": 3.51, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E052", "name_en": "Tariq Aldosari", "name_ar": "طارق الدوسري", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.56, "adoption": 2.33, "readiness": 3.16, "overall": 3.01, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E053", "name_en": "Amal Alghamdi", "name_ar": "أمل الغامدي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.34, "adoption": 4.1, "readiness": 3.42, "overall": 3.62, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E054", "name_en": "Faisal Alanazi", "name_ar": "فيصل العنزي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 3.24, "adoption": 2.12, "readiness": 3.09, "overall": 2.82, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E055", "name_en": "Dana Alrashidi", "name_ar": "دانة الرشيدي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Technology & Data", "division_ar": "التقنية والبيانات", "department_en": "IT Infrastructure", "department_ar": "البنية التقنية", "awareness": 4.0, "adoption": 1.99, "readiness": 3.12, "overall": 3.04, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}]}]}, {"name_en": "Corporate Services", "name_ar": "الخدمات المؤسسية", "summary": {"awareness": 3.34, "adoption": 2.47, "readiness": 2.95, "overall": 2.92, "band_en": "Emerging", "band_ar": "ناشئ", "n_total": 47, "n_completed": 42, "n_in_progress": 4, "n_not_started": 1, "completion_pct": 89, "dist": {"Emerging": 24, "Practising": 18, "Embedded": 0}}, "departments": [{"name_en": "Human Resources", "name_ar": "الموارد البشرية", "summary": {"awareness": 3.64, "adoption": 2.74, "readiness": 3.19, "overall": 3.19, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 13, "n_completed": 11, "n_in_progress": 2, "n_not_started": 0, "completion_pct": 85, "dist": {"Emerging": 3, "Practising": 8, "Embedded": 0}}, "employees": [{"id": "E056", "name_en": "Abdullah Alghamdi", "name_ar": "عبدالله الغامدي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.52, "adoption": 2.98, "readiness": 3.3, "overall": 3.27, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E057", "name_en": "Jawaher Alrashidi", "name_ar": "جواهر الرشيدي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E058", "name_en": "Huda Alqahtani", "name_ar": "هدى القحطاني", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 4.15, "adoption": 2.81, "readiness": 3.34, "overall": 3.43, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E059", "name_en": "Abdullah Aldosari", "name_ar": "عبدالله الدوسري", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.25, "adoption": 3.08, "readiness": 3.22, "overall": 3.18, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E060", "name_en": "Nada Alsubaie", "name_ar": "ندى السبيعي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E061", "name_en": "Rana Alharbi", "name_ar": "رنا الحربي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.47, "adoption": 2.32, "readiness": 2.91, "overall": 2.9, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E062", "name_en": "Tariq Alqahtani", "name_ar": "طارق القحطاني", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.48, "adoption": 1.89, "readiness": 3.0, "overall": 2.79, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E063", "name_en": "Abdullah Alanazi", "name_ar": "عبدالله العنزي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 4.13, "adoption": 1.57, "readiness": 3.31, "overall": 3.0, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E064", "name_en": "Wafa Alrashidi", "name_ar": "وفاء الرشيدي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 4.31, "adoption": 3.31, "readiness": 3.59, "overall": 3.74, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E065", "name_en": "Bandar Alqahtani", "name_ar": "بندر القحطاني", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.02, "adoption": 2.38, "readiness": 3.0, "overall": 2.8, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E066", "name_en": "Ghada Alsubaie", "name_ar": "غادة السبيعي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.17, "adoption": 3.07, "readiness": 3.21, "overall": 3.15, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E067", "name_en": "Majed Alzahrani", "name_ar": "ماجد الزهراني", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.96, "adoption": 3.05, "readiness": 3.2, "overall": 3.4, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E068", "name_en": "Turki Albogami", "name_ar": "تركي البقمي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Human Resources", "department_ar": "الموارد البشرية", "awareness": 3.59, "adoption": 3.64, "readiness": 3.0, "overall": 3.41, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}]}, {"name_en": "Finance", "name_ar": "المالية", "summary": {"awareness": 3.39, "adoption": 2.64, "readiness": 3.05, "overall": 3.03, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 19, "n_completed": 17, "n_in_progress": 1, "n_not_started": 1, "completion_pct": 89, "dist": {"Emerging": 9, "Practising": 8, "Embedded": 0}}, "employees": [{"id": "E069", "name_en": "Bandar Alanazi", "name_ar": "بندر العنزي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 2.98, "adoption": 2.89, "readiness": 2.75, "overall": 2.87, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E070", "name_en": "Maha Alzahrani", "name_ar": "مها الزهراني", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.2, "adoption": 2.28, "readiness": 3.13, "overall": 2.87, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E071", "name_en": "Maha Alghamdi", "name_ar": "مها الغامدي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 4.34, "adoption": 2.23, "readiness": 2.99, "overall": 3.19, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E072", "name_en": "Turki Alqahtani", "name_ar": "تركي القحطاني", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 2.69, "adoption": 3.16, "readiness": 3.09, "overall": 2.98, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E073", "name_en": "Omar Alotaibi", "name_ar": "عمر العتيبي", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 4.35, "adoption": 2.75, "readiness": 3.41, "overall": 3.5, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E074", "name_en": "Ahmed Almutairi", "name_ar": "أحمد المطيري", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 4.19, "adoption": 2.15, "readiness": 2.87, "overall": 3.07, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E075", "name_en": "Maha Aldosari", "name_ar": "مها الدوسري", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E076", "name_en": "Wafa Alshehri", "name_ar": "وفاء الشهري", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.21, "adoption": 2.48, "readiness": 3.15, "overall": 2.95, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E077", "name_en": "Dana Almutairi", "name_ar": "دانة المطيري", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.29, "adoption": 2.8, "readiness": 2.95, "overall": 3.01, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E078", "name_en": "Bandar Alsubaie", "name_ar": "بندر السبيعي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 2.49, "adoption": 2.35, "readiness": 3.65, "overall": 2.83, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E079", "name_en": "Nada Almutairi", "name_ar": "ندى المطيري", "title_en": "Officer", "title_ar": "موظف", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.11, "adoption": 3.22, "readiness": 3.12, "overall": 3.15, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E080", "name_en": "Nada Alrashidi", "name_ar": "ندى الرشيدي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 4.03, "adoption": 1.75, "readiness": 2.86, "overall": 2.88, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E081", "name_en": "Sara Almutairi", "name_ar": "سارة المطيري", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.2, "adoption": 3.06, "readiness": 2.95, "overall": 3.07, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E082", "name_en": "Dana Alanazi", "name_ar": "دانة العنزي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "not_started"}, {"id": "E083", "name_en": "Aisha Almutairi", "name_ar": "عائشة المطيري", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 4.15, "adoption": 3.18, "readiness": 3.23, "overall": 3.52, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E084", "name_en": "Nada Alzahrani", "name_ar": "ندى الزهراني", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 2.8, "adoption": 1.9, "readiness": 2.89, "overall": 2.53, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E085", "name_en": "Bandar Almutairi", "name_ar": "بندر المطيري", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.36, "adoption": 3.5, "readiness": 3.16, "overall": 3.34, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E086", "name_en": "Latifa Albogami", "name_ar": "لطيفة البقمي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 2.81, "adoption": 2.93, "readiness": 3.01, "overall": 2.92, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E087", "name_en": "Layla Almutairi", "name_ar": "ليلى المطيري", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Finance", "department_ar": "المالية", "awareness": 3.44, "adoption": 2.26, "readiness": 2.67, "overall": 2.79, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}]}, {"name_en": "Procurement", "name_ar": "المشتريات", "summary": {"awareness": 3.06, "adoption": 2.05, "readiness": 2.64, "overall": 2.58, "band_en": "Emerging", "band_ar": "ناشئ", "n_total": 15, "n_completed": 14, "n_in_progress": 1, "n_not_started": 0, "completion_pct": 93, "dist": {"Emerging": 12, "Practising": 2, "Embedded": 0}}, "employees": [{"id": "E088", "name_en": "Saud Alshehri", "name_ar": "سعود الشهري", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E089", "name_en": "Sara Alzahrani", "name_ar": "سارة الزهراني", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 2.7, "adoption": 2.32, "readiness": 2.55, "overall": 2.53, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E090", "name_en": "Latifa Alzahrani", "name_ar": "لطيفة الزهراني", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 2.27, "adoption": 1.69, "readiness": 2.23, "overall": 2.06, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E091", "name_en": "Noura Alqahtani", "name_ar": "نورة القحطاني", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.28, "adoption": 2.42, "readiness": 2.64, "overall": 2.78, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E092", "name_en": "Huda Alotaibi", "name_ar": "هدى العتيبي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.86, "adoption": 1.05, "readiness": 2.55, "overall": 2.49, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E093", "name_en": "Ziad Albogami", "name_ar": "زياد البقمي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.09, "adoption": 2.93, "readiness": 3.23, "overall": 3.08, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E094", "name_en": "Salman Alqahtani", "name_ar": "سلمان القحطاني", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.27, "adoption": 1.42, "readiness": 2.33, "overall": 2.34, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E095", "name_en": "Rana Alrashidi", "name_ar": "رنا الرشيدي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.73, "adoption": 2.67, "readiness": 2.86, "overall": 3.09, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E096", "name_en": "Huda Almutairi", "name_ar": "هدى المطيري", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 2.84, "adoption": 2.74, "readiness": 2.63, "overall": 2.74, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E097", "name_en": "Omar Alharbi", "name_ar": "عمر الحربي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 1.85, "adoption": 1.88, "readiness": 2.18, "overall": 1.97, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E098", "name_en": "Khalid Almutairi", "name_ar": "خالد المطيري", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 2.92, "adoption": 2.36, "readiness": 2.63, "overall": 2.64, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E099", "name_en": "Omar Alqahtani", "name_ar": "عمر القحطاني", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.18, "adoption": 1.56, "readiness": 2.39, "overall": 2.38, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E100", "name_en": "Nasser Alshehri", "name_ar": "ناصر الشهري", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.18, "adoption": 2.19, "readiness": 3.03, "overall": 2.8, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E101", "name_en": "Rana Alghamdi", "name_ar": "رنا الغامدي", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 3.77, "adoption": 1.87, "readiness": 2.84, "overall": 2.82, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E102", "name_en": "Khalid Alshehri", "name_ar": "خالد الشهري", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Corporate Services", "division_ar": "الخدمات المؤسسية", "department_en": "Procurement", "department_ar": "المشتريات", "awareness": 2.85, "adoption": 1.62, "readiness": 2.86, "overall": 2.44, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}]}]}, {"name_en": "Strategy & Policy", "name_ar": "الاستراتيجية والسياسات", "summary": {"awareness": 3.61, "adoption": 3.17, "readiness": 3.42, "overall": 3.4, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 35, "n_completed": 29, "n_in_progress": 4, "n_not_started": 2, "completion_pct": 83, "dist": {"Emerging": 4, "Practising": 23, "Embedded": 2}}, "departments": [{"name_en": "Strategic Planning", "name_ar": "التخطيط الاستراتيجي", "summary": {"awareness": 3.7, "adoption": 3.11, "readiness": 3.56, "overall": 3.46, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 20, "n_completed": 15, "n_in_progress": 3, "n_not_started": 2, "completion_pct": 75, "dist": {"Emerging": 0, "Practising": 13, "Embedded": 2}}, "employees": [{"id": "E103", "name_en": "Yousef Alrashidi", "name_ar": "يوسف الرشيدي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "not_started"}, {"id": "E104", "name_en": "Latifa Alharbi", "name_ar": "لطيفة الحربي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.84, "adoption": 2.78, "readiness": 3.3, "overall": 3.31, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E105", "name_en": "Noura Albogami", "name_ar": "نورة البقمي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.75, "adoption": 2.73, "readiness": 3.29, "overall": 3.26, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E106", "name_en": "Layla Alqahtani", "name_ar": "ليلى القحطاني", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E107", "name_en": "Dana Alsubaie", "name_ar": "دانة السبيعي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 4.45, "adoption": 3.56, "readiness": 4.06, "overall": 4.02, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E108", "name_en": "Huda Alsubaie", "name_ar": "هدى السبيعي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 2.99, "adoption": 3.47, "readiness": 3.54, "overall": 3.33, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E109", "name_en": "Ghada Aldosari", "name_ar": "غادة الدوسري", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.49, "adoption": 3.11, "readiness": 3.08, "overall": 3.23, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E110", "name_en": "Bandar Alrashidi", "name_ar": "بندر الرشيدي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.9, "adoption": 2.42, "readiness": 3.66, "overall": 3.33, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E111", "name_en": "Jawaher Alanazi", "name_ar": "جواهر العنزي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.28, "adoption": 3.81, "readiness": 3.4, "overall": 3.5, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E112", "name_en": "Maha Alanazi", "name_ar": "مها العنزي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 5.0, "adoption": 2.98, "readiness": 4.11, "overall": 4.03, "band_en": "Embedded", "band_ar": "متمكّن", "status": "completed"}, {"id": "E113", "name_en": "Sara Alharbi", "name_ar": "سارة الحربي", "title_en": "Analyst", "title_ar": "محلل", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "not_started"}, {"id": "E114", "name_en": "Nada Albogami", "name_ar": "ندى البقمي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E115", "name_en": "Huda Alzahrani", "name_ar": "هدى الزهراني", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.85, "adoption": 2.85, "readiness": 3.94, "overall": 3.55, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E116", "name_en": "Jawaher Alzahrani", "name_ar": "جواهر الزهراني", "title_en": "Officer", "title_ar": "موظف", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.49, "adoption": 2.98, "readiness": 3.42, "overall": 3.3, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E117", "name_en": "Abdullah Alrashidi", "name_ar": "عبدالله الرشيدي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.37, "adoption": 3.37, "readiness": 3.66, "overall": 3.47, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E118", "name_en": "Ziad Alanazi", "name_ar": "زياد العنزي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 4.37, "adoption": 2.98, "readiness": 3.28, "overall": 3.54, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E119", "name_en": "Noura Alshehri", "name_ar": "نورة الشهري", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 2.91, "adoption": 2.93, "readiness": 3.42, "overall": 3.09, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E120", "name_en": "Reem Alharbi", "name_ar": "ريم الحربي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E121", "name_en": "Layla Alotaibi", "name_ar": "ليلى العتيبي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.29, "adoption": 3.68, "readiness": 3.58, "overall": 3.52, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E122", "name_en": "Layla Alrashidi", "name_ar": "ليلى الرشيدي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Strategic Planning", "department_ar": "التخطيط الاستراتيجي", "awareness": 3.45, "adoption": 3.05, "readiness": 3.6, "overall": 3.37, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}]}, {"name_en": "Policy & Governance", "name_ar": "السياسات والحوكمة", "summary": {"awareness": 3.53, "adoption": 3.23, "readiness": 3.28, "overall": 3.34, "band_en": "Practising", "band_ar": "ممارِس", "n_total": 15, "n_completed": 14, "n_in_progress": 1, "n_not_started": 0, "completion_pct": 93, "dist": {"Emerging": 4, "Practising": 10, "Embedded": 0}}, "employees": [{"id": "E123", "name_en": "Abdullah Alqahtani", "name_ar": "عبدالله القحطاني", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.67, "adoption": 4.08, "readiness": 3.55, "overall": 3.77, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E124", "name_en": "Saud Alsubaie", "name_ar": "سعود السبيعي", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 4.42, "adoption": 2.77, "readiness": 3.61, "overall": 3.6, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E125", "name_en": "Sara Aldosari", "name_ar": "سارة الدوسري", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 2.97, "adoption": 3.07, "readiness": 2.55, "overall": 2.86, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E126", "name_en": "Turki Alzahrani", "name_ar": "تركي الزهراني", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 4.42, "adoption": 3.46, "readiness": 3.67, "overall": 3.85, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E127", "name_en": "Khalid Alzahrani", "name_ar": "خالد الزهراني", "title_en": "Manager", "title_ar": "مدير", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.81, "adoption": 2.19, "readiness": 3.14, "overall": 3.04, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E128", "name_en": "Turki Alanazi", "name_ar": "تركي العنزي", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.85, "adoption": 2.92, "readiness": 3.46, "overall": 3.41, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E129", "name_en": "Hamad Alharbi", "name_ar": "حمد الحربي", "title_en": "Specialist", "title_ar": "أخصائي", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.17, "adoption": 2.61, "readiness": 2.92, "overall": 2.9, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E130", "name_en": "Ahmed Alqahtani", "name_ar": "أحمد القحطاني", "title_en": "Officer", "title_ar": "موظف", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 2.8, "adoption": 2.94, "readiness": 2.9, "overall": 2.88, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E131", "name_en": "Abdullah Alshehri", "name_ar": "عبدالله الشهري", "title_en": "Consultant", "title_ar": "مستشار", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.64, "adoption": 4.0, "readiness": 3.3, "overall": 3.65, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E132", "name_en": "Ahmed Alanazi", "name_ar": "أحمد العنزي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.09, "adoption": 4.4, "readiness": 3.49, "overall": 3.66, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E133", "name_en": "Huda Alrashidi", "name_ar": "هدى الرشيدي", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 2.6, "adoption": 3.11, "readiness": 2.95, "overall": 2.88, "band_en": "Emerging", "band_ar": "ناشئ", "status": "completed"}, {"id": "E134", "name_en": "Sara Alrashidi", "name_ar": "سارة الرشيدي", "title_en": "Officer", "title_ar": "موظف", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.03, "adoption": 2.99, "readiness": 3.33, "overall": 3.12, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E135", "name_en": "Turki Alrashidi", "name_ar": "تركي الرشيدي", "title_en": "Team Lead", "title_ar": "قائد فريق", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 4.37, "adoption": 3.36, "readiness": 3.59, "overall": 3.77, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}, {"id": "E136", "name_en": "Yousef Alotaibi", "name_ar": "يوسف العتيبي", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": null, "adoption": null, "readiness": null, "overall": null, "band_en": null, "band_ar": null, "status": "in_progress"}, {"id": "E137", "name_en": "Noura Alzahrani", "name_ar": "نورة الزهراني", "title_en": "Senior Specialist", "title_ar": "أخصائي أول", "division_en": "Strategy & Policy", "division_ar": "الاستراتيجية والسياسات", "department_en": "Policy & Governance", "department_ar": "السياسات والحوكمة", "awareness": 3.54, "adoption": 3.25, "readiness": 3.5, "overall": 3.43, "band_en": "Practising", "band_ar": "ممارِس", "status": "completed"}]}]}], "focus_employee_id": "E063", "generated_at": "August 2026"}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+let LANG = 'en';
+let state = { division:null, department:null };
+
+// Safe HTML sink: clear then parse-and-insert. All dynamic data is passed
+// through esc() before interpolation, so no markup can be injected even though
+// the demo data is fully trusted (generated, no user input).
+function setHTML(el, markup){ el.textContent=''; el.insertAdjacentHTML('beforeend', markup); }
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const T = {
+  en:{
+    brand:"AI Readiness Compass", sub:"Organizational Dashboard", sample:"Sample data",
+    org:"Organization", overall:"Overall readiness", of:"/ 5",
+    awareness:"AI Awareness", adoption:"AI Adoption", readiness:"AI Readiness",
+    completion:"Completion", assessed:"assessed",
+    bandDist:"Readiness band distribution", constructTitle:"Scores by construct",
+    completed:"Completed", inProgress:"In progress", notStarted:"Not started",
+    divisions:"Divisions", departments:"Departments", people:"People",
+    clickDivision:"View departments", clickDept:"View people", employees:"employees",
+    emerging:"Emerging", practising:"Practising", embedded:"Embedded",
+    name:"Name", title:"Title", band:"Band", status:"Status", pending:"Pending",
+    insights:"Insights & recommended focus", of5:"of 5",
+    strongest:"Strongest area", weakest:"Biggest opportunity",
+    topArea:"Top-performing area", lowArea:"Needs most support",
+    detailNote:"This is where the full <b>detailed individual report</b> opens - readiness level, strengths, development areas, benchmark vs department & organization, and a targeted training plan.",
+    footL:"VIFM AI Readiness Compass · Organizational Dashboard · Sample",
+    footR:"Generated "+DATA.generated_at, gap:"gap",
+  },
+  ar:{
+    brand:"بوصلة الجاهزية للذكاء الاصطناعي", sub:"لوحة المؤشرات المؤسسية", sample:"بيانات تجريبية",
+    org:"المؤسسة", overall:"الجاهزية العامة", of:"/ ٥",
+    awareness:"الوعي بالذكاء الاصطناعي", adoption:"تبنّي الذكاء الاصطناعي", readiness:"الجاهزية للذكاء الاصطناعي",
+    completion:"نسبة الإكمال", assessed:"تم تقييمهم",
+    bandDist:"توزيع مستويات الجاهزية", constructTitle:"النتائج حسب المحور",
+    completed:"مكتمل", inProgress:"قيد الإنجاز", notStarted:"لم يبدأ",
+    divisions:"القطاعات", departments:"الإدارات", people:"الأفراد",
+    clickDivision:"عرض الإدارات", clickDept:"عرض الأفراد", employees:"موظف",
+    emerging:"ناشئ", practising:"ممارِس", embedded:"متمكّن",
+    name:"الاسم", title:"المسمى", band:"المستوى", status:"الحالة", pending:"قيد الانتظار",
+    insights:"الرؤى ومجالات التركيز الموصى بها", of5:"من ٥",
+    strongest:"أقوى محور", weakest:"أكبر فرصة للتطوير",
+    topArea:"الأعلى أداءً", lowArea:"الأكثر حاجة للدعم",
+    detailNote:"من هنا يُفتح <b>التقرير الفردي التفصيلي</b> الكامل - مستوى الجاهزية، ونقاط القوة، ومجالات التطوير، والمقارنة مع الإدارة والمؤسسة، وخطة تدريب موجهة.",
+    footL:"بوصلة الجاهزية للذكاء الاصطناعي · لوحة المؤشرات المؤسسية · نموذج",
+    footR:"تاريخ الإصدار "+DATA.generated_at, gap:"الفجوة",
+  }
+};
+const t = k => T[LANG][k];
+const nl = (o,f) => o[f+"_"+LANG] ?? o[f+"_en"];       // raw
+const nlx = (o,f) => esc(nl(o,f));                       // escaped for markup
+const num = n => LANG==='ar' ? n.toLocaleString('ar-EG',{minimumFractionDigits:1,maximumFractionDigits:1}) : n.toFixed(1);
+const int = n => LANG==='ar' ? n.toLocaleString('ar-EG') : String(n);
+const bandKey = w => ({Emerging:'emerging',Practising:'practising',Embedded:'embedded'})[w];
+const scoreFill = s => s>=4?'fill-green':s>=3?'fill-amber':'fill-rose';
+const scoreColor = s => s>=4?'var(--green)':s>=3?'var(--amber)':'var(--rose)';
+
+function setLang(l){
+  LANG=l;
+  document.documentElement.lang=l;
+  document.documentElement.dir = l==='ar'?'rtl':'ltr';
+  document.getElementById('enBtn').classList.toggle('on',l==='en');
+  document.getElementById('arBtn').classList.toggle('on',l==='ar');
+  render();
+}
+
+function currentNode(){
+  if(state.division==null) return {level:'overall', summary:DATA.overall, node:null};
+  const div = DATA.divisions.find(d=>d.name_en===state.division);
+  if(state.department==null) return {level:'division', summary:div.summary, node:div};
+  const dep = div.departments.find(d=>d.name_en===state.department);
+  return {level:'department', summary:dep.summary, node:dep, division:div};
+}
+
+function render(){
+  const {summary} = currentNode();
+  document.getElementById('brandTitle').textContent=t('brand');
+  document.getElementById('brandSub').textContent=t('sub');
+  document.getElementById('sampleBadge').textContent=t('sample');
+  setHTML(document.getElementById('orgLine'), `<b>${nlx(DATA.org,'name')}</b> · ${nlx(DATA.org,'note')}`);
+  document.getElementById('footL').textContent=t('footL');
+  document.getElementById('footR').textContent=t('footR');
+  renderCrumbs();
+  renderKpis(summary);
+  renderDist(summary);
+  renderConstructs(summary);
+  renderChildren();
+  renderInsights();
+}
+
+function renderCrumbs(){
+  let h=`<button onclick="goOverall()">${esc(t('org'))}</button>`;
+  if(state.division){
+    const div=DATA.divisions.find(d=>d.name_en===state.division);
+    h+=`<span class="sep">›</span>`;
+    if(state.department) h+=`<button onclick="goDivision('${esc(state.division).replace(/'/g,"\\'")}')">${nlx(div,'name')}</button>`;
+    else h+=`<span class="here">${nlx(div,'name')}</span>`;
+  }
+  if(state.department){
+    const div=DATA.divisions.find(d=>d.name_en===state.division);
+    const dep=div.departments.find(d=>d.name_en===state.department);
+    h+=`<span class="sep">›</span><span class="here">${nlx(dep,'name')}</span>`;
+  }
+  setHTML(document.getElementById('crumbs'), h);
+}
+
+function kpiCard(lbl,score){
+  return `<div class="kpi">
+    <div class="lbl">${esc(lbl)}</div>
+    <div><span class="val">${num(score)}</span> <span class="of">${t('of')}</span></div>
+    <div class="track"><span class="${scoreFill(score)}" style="width:${score/5*100}%"></span></div>
+  </div>`;
+}
+function renderKpis(s){
+  const b=s.band_en;
+  const html=`
+    <div class="kpi overall">
+      <div class="lbl">${esc(t('overall'))}</div>
+      <div><span class="val">${num(s.overall)}</span> <span class="of">${t('of')}</span></div>
+      <span class="pill ${bandKey(b)}">${esc(t(bandKey(b)))}</span>
+      <div class="track"><span style="width:${s.overall/5*100}%;background:#fff"></span></div>
+    </div>
+    ${kpiCard(t('awareness'),s.awareness)}
+    ${kpiCard(t('adoption'),s.adoption)}
+    ${kpiCard(t('readiness'),s.readiness)}`;
+  setHTML(document.getElementById('kpis'), html);
+}
+
+function renderDist(s){
+  document.querySelector('#pDist span').textContent=t('bandDist');
+  document.getElementById('pDistN').textContent=`${int(s.n_completed)} ${t('assessed')}`;
+  const d=s.dist, total=s.n_completed||1;
+  const seg=(cls,n)=>{const pct=n/total*100;return pct>0?`<div class="${cls}" style="width:${pct}%">${pct>=9?int(n):''}</div>`:''};
+  setHTML(document.getElementById('stack'), seg('seg-green',d.Embedded)+seg('seg-amber',d.Practising)+seg('seg-rose',d.Emerging));
+  setHTML(document.getElementById('distLegend'),
+    `<span><span class="dot" style="background:var(--green)"></span>${esc(t('embedded'))} · ${int(d.Embedded)}</span>
+     <span><span class="dot" style="background:var(--amber)"></span>${esc(t('practising'))} · ${int(d.Practising)}</span>
+     <span><span class="dot" style="background:var(--rose)"></span>${esc(t('emerging'))} · ${int(d.Emerging)}</span>`);
+  setHTML(document.getElementById('funnel'),
+    `<div class="fbox"><div class="n">${int(s.n_completed)}</div><div class="t">${esc(t('completed'))}</div></div>
+     <div class="fbox"><div class="n">${int(s.n_in_progress)}</div><div class="t">${esc(t('inProgress'))}</div></div>
+     <div class="fbox"><div class="n">${int(s.n_not_started)}</div><div class="t">${esc(t('notStarted'))}</div></div>
+     <div class="fbox"><div class="n">${int(s.completion_pct)}%</div><div class="t">${esc(t('completion'))}</div></div>`);
+}
+
+function constructRow(name,score){
+  return `<div class="crow">
+    <div class="cname">${esc(name)}</div>
+    <div class="cbar"><span style="width:${score/5*100}%;background:${scoreColor(score)}"></span></div>
+    <div class="cscore">${num(score)}<small> ${t('of')}</small></div>
+  </div>`;
+}
+function renderConstructs(s){
+  document.querySelector('#pConstruct span').textContent=t('constructTitle');
+  setHTML(document.getElementById('constructRows'),
+    constructRow(t('awareness'),s.awareness)+constructRow(t('adoption'),s.adoption)+constructRow(t('readiness'),s.readiness));
+}
+
+function miniRow(label,score){
+  return `<div class="minirow"><span class="ml">${esc(label)}</span>
+    <span class="mbar"><span style="width:${score/5*100}%;background:${scoreColor(score)}"></span></span>
+    <span class="mv">${num(score)}</span></div>`;
+}
+function nodeCard(node,onclick,drillLabel){
+  const s=node.summary;
+  return `<button class="node" onclick="${onclick}">
+    <div class="ntop">
+      <div>
+        <div class="nname">${nlx(node,'name')}</div>
+        <div class="nmeta">${int(s.n_completed)} ${t('assessed')} · ${int(s.completion_pct)}% ${t('completion')}</div>
+      </div>
+      <div style="text-align:end">
+        <div class="nscore" style="color:${scoreColor(s.overall)}">${num(s.overall)}</div>
+        <div class="nof">${t('of')}</div>
+      </div>
+    </div>
+    ${miniRow(t('awareness'),s.awareness)}
+    ${miniRow(t('adoption'),s.adoption)}
+    ${miniRow(t('readiness'),s.readiness)}
+    <div class="drill">${esc(drillLabel)} →</div>
+  </button>`;
+}
+
+function renderChildren(){
+  const {level,node}=currentNode();
+  const title=document.getElementById('childTitle');
+  const area=document.getElementById('childArea');
+  if(level==='overall'){
+    title.textContent=t('divisions');
+    setHTML(area, `<div class="cards">`+DATA.divisions.map(d=>
+      nodeCard(d,`goDivision('${esc(d.name_en).replace(/'/g,"\\'")}')`,t('clickDivision'))).join('')+`</div>`);
+  } else if(level==='division'){
+    title.textContent=t('departments');
+    setHTML(area, `<div class="cards">`+node.departments.map(d=>
+      nodeCard(d,`goDepartment('${esc(d.name_en).replace(/'/g,"\\'")}')`,t('clickDept'))).join('')+`</div>`);
+  } else {
+    title.textContent=t('people');
+    const emps=node.employees.slice().sort((a,b)=>(b.overall??-1)-(a.overall??-1));
+    const rows=emps.map(e=>{
+      const done=e.status==='completed';
+      const tagCls=done?bandKey(e.band_en):'pending';
+      const tagTxt=done?t(bandKey(e.band_en)):(e.status==='in_progress'?t('inProgress'):t('notStarted'));
+      return `<tr onclick="openEmployee('${esc(e.id)}')">
+        <td><b>${nlx(e,'name')}</b></td>
+        <td style="color:var(--muted)">${nlx(e,'title')}</td>
+        <td class="num">${done?num(e.awareness):'—'}</td>
+        <td class="num">${done?num(e.adoption):'—'}</td>
+        <td class="num">${done?num(e.readiness):'—'}</td>
+        <td class="num" style="color:${done?scoreColor(e.overall):'inherit'}">${done?num(e.overall):'—'}</td>
+        <td><span class="tag ${tagCls}">${esc(tagTxt)}</span></td>
+      </tr>`;
+    }).join('');
+    setHTML(area, `<div class="panel"><div class="tablewrap"><table>
+      <thead><tr>
+        <th>${esc(t('name'))}</th><th>${esc(t('title'))}</th>
+        <th style="text-align:end">${esc(t('awareness'))}</th>
+        <th style="text-align:end">${esc(t('adoption'))}</th>
+        <th style="text-align:end">${esc(t('readiness'))}</th>
+        <th style="text-align:end">${esc(t('overall'))}</th>
+        <th>${esc(t('band'))}</th>
+      </tr></thead><tbody>${rows}</tbody></table></div></div>`);
+  }
+}
+
+function renderInsights(){
+  const {level,summary,node}=currentNode();
+  const ins=[];
+  const cs=[['awareness',summary.awareness],['adoption',summary.adoption],['readiness',summary.readiness]];
+  cs.sort((a,b)=>b[1]-a[1]);
+  ins.push({ic:'good',html:`<b>${esc(t('strongest'))}:</b> ${esc(t(cs[0][0]))} — ${num(cs[0][1])} ${t('of5')}`});
+  ins.push({ic:'warn',html:`<b>${esc(t('weakest'))}:</b> ${esc(t(cs[2][0]))} — ${num(cs[2][1])} ${t('of5')} (${t('gap')} ${num(cs[0][1]-cs[2][1])})`});
+  if(level==='overall'){
+    const divs=DATA.divisions.slice().sort((a,b)=>b.summary.overall-a.summary.overall);
+    ins.push({ic:'info',html:`<b>${esc(t('topArea'))}:</b> ${nlx(divs[0],'name')} — ${num(divs[0].summary.overall)}`});
+    ins.push({ic:'bad',html:`<b>${esc(t('lowArea'))}:</b> ${nlx(divs[divs.length-1],'name')} — ${num(divs[divs.length-1].summary.overall)}`});
+  } else if(level==='division'){
+    const deps=node.departments.slice().sort((a,b)=>b.summary.overall-a.summary.overall);
+    ins.push({ic:'info',html:`<b>${esc(t('topArea'))}:</b> ${nlx(deps[0],'name')} — ${num(deps[0].summary.overall)}`});
+    ins.push({ic:'bad',html:`<b>${esc(t('lowArea'))}:</b> ${nlx(deps[deps.length-1],'name')} — ${num(deps[deps.length-1].summary.overall)}`});
+  }
+  document.querySelector('#pInsights span').textContent=t('insights');
+  setHTML(document.getElementById('insights'), ins.map(i=>
+    `<div class="insitem"><span class="ic ${i.ic}">${i.ic==='good'?'✓':i.ic==='warn'?'!':i.ic==='bad'?'▼':'i'}</span><span>${i.html}</span></div>`).join(''));
+}
+
+function goOverall(){state={division:null,department:null};render();scrollTop();}
+function goDivision(d){state={division:d,department:null};render();scrollTop();}
+function goDepartment(d){state.department=d;render();scrollTop();}
+function scrollTop(){window.scrollTo({top:0,behavior:'smooth'});}
+
+function findEmployee(id){
+  for(const div of DATA.divisions) for(const dep of div.departments)
+    for(const e of dep.employees) if(e.id===id) return e;
+  return null;
+}
+function openEmployee(id){
+  const e=findEmployee(id);
+  const dr=document.getElementById('drawer');
+  if(e.status!=='completed'){
+    setHTML(dr, `<div class="dhead"><button class="close" onclick="closeDrawer()">×</button>
+      <div class="dname">${nlx(e,'name')}</div><div class="dmeta">${nlx(e,'title')} · ${nlx(e,'department')}</div></div>
+      <div class="dbody"><div class="note">${esc(e.status==='in_progress'?t('inProgress'):t('notStarted'))}.</div></div>`);
+    document.getElementById('overlay').classList.add('on');return;
+  }
+  const cs=[['awareness',e.awareness],['adoption',e.adoption],['readiness',e.readiness]].sort((a,b)=>b[1]-a[1]);
+  setHTML(dr, `<div class="dhead"><button class="close" onclick="closeDrawer()">×</button>
+    <div class="dname">${nlx(e,'name')}</div>
+    <div class="dmeta">${nlx(e,'title')} · ${nlx(e,'department')} · ${nlx(e,'division')}</div>
+    <div class="drow"><span class="dnum">${num(e.overall)}</span><span style="opacity:.7;margin-bottom:5px">${t('of')}</span>
+      <span class="pill ${bandKey(e.band_en)}" style="margin:0 0 4px 0">${esc(t(bandKey(e.band_en)))}</span></div>
+   </div>
+   <div class="dbody">
+     <div class="lbl">${esc(t('constructTitle'))}</div>
+     ${constructRow(t('awareness'),e.awareness)}
+     ${constructRow(t('adoption'),e.adoption)}
+     ${constructRow(t('readiness'),e.readiness)}
+     <div class="lbl">${esc(t('strongest'))} / ${esc(t('weakest'))}</div>
+     <div class="insitem"><span class="ic good">✓</span><span><b>${esc(t(cs[0][0]))}</b> — ${num(cs[0][1])} ${t('of5')}</span></div>
+     <div class="insitem" style="margin-top:6px"><span class="ic warn">!</span><span><b>${esc(t(cs[2][0]))}</b> — ${num(cs[2][1])} ${t('of5')} (${t('gap')} ${num(cs[0][1]-cs[2][1])})</span></div>
+     <div class="note">${t('detailNote')}</div>
+   </div>`);
+  document.getElementById('overlay').classList.add('on');
+}
+function closeDrawer(){document.getElementById('overlay').classList.remove('on');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
+
+setLang('en');
+</script>
+</body>
+</html>

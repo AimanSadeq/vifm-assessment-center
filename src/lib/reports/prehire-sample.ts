@@ -81,6 +81,25 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         },
       ],
     },
+    fluent: {
+      overallCefr: "B2",
+      skills: [
+        { key: "reading", cefr: "B2", correct: 8, total: 10 },
+        { key: "listening", cefr: "B1", correct: 6, total: 10 },
+        {
+          key: "writing", cefr: "B2",
+          feedback: ar
+            ? "كتابة واضحة ومنظّمة تعرض وجهة النظر بسببين مدعومين، مع بعض الأخطاء النحوية البسيطة التي لا تعيق الفهم. الأسلوب مناسب للسياق المهني."
+            : "Clear, well-organised writing that states a position with two supported reasons; a few minor grammar slips that do not impede understanding. Register is appropriate for a professional context.",
+        },
+        {
+          key: "speaking", cefr: "B2",
+          feedback: ar
+            ? "تحدّث بطلاقة جيدة ونطق مفهوم، مع مفردات كافية للتعبير عن الأفكار. مجال للتحسين في ربط الجمل المعقّدة."
+            : "Good fluency and clear pronunciation, with vocabulary sufficient to express ideas; room to improve linking of more complex sentences.",
+        },
+      ],
+    },
     certification: null,
     generatedAt,
     provisional: false,

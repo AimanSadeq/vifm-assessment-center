@@ -26,6 +26,22 @@ export type PrehireReportStage = {
   definition?: string | null;
 };
 
+/** English (Fluent) language profile - overall CEFR + per-skill detail, so the
+ *  report carries a proper English section like a standalone language report. */
+export type PrehireFluentSkill = {
+  key: "reading" | "listening" | "writing" | "speaking";
+  cefr: string | null;
+  /** Receptive skills (reading/listening) carry a correct/total; productive ones don't. */
+  correct?: number | null;
+  total?: number | null;
+  /** Productive skills (writing/speaking) carry an AI narrative. */
+  feedback?: string | null;
+};
+export type PrehireFluentBlock = {
+  overallCefr: string | null;
+  skills: PrehireFluentSkill[];
+};
+
 /** AI interview (CBI) transcript + the AI's assessment, for client review. */
 export type PrehireCbiBlock = {
   bars: number | null;
@@ -48,6 +64,8 @@ export type PrehireReportData = {
   recommendation: PrehireRecommendation;
   stages: PrehireReportStage[];
   cbi?: PrehireCbiBlock | null;
+  /** English (Fluent) language profile, when the requisition ran a Fluent stage. */
+  fluent?: PrehireFluentBlock | null;
   certification?: PrehireCertification | null;
   generatedAt: Date;
   /** Option 2 gate: true while the quiz bank still mints live-AI (pending SME review). */
@@ -112,17 +130,44 @@ function compBand(
   correct: number | null | undefined,
   total: number | null | undefined,
   ar: boolean
-): { label: string; fill: string; bg: string; fg: string; border: string; pct: number | null } {
+): { key: "strong" | "moderate" | "developing" | "none"; label: string; fill: string; bg: string; fg: string; border: string; pct: number | null } {
   if (!total || total <= 0) {
     return {
+      key: "none",
       label: ar ? "لم تُقيَّم في الاختبار" : "Not assessed in quiz",
       fill: "#cbd5e1", bg: "#f1f5f9", fg: "#64748b", border: "#e2e8f0", pct: null,
     };
   }
   const pct = Math.round((100 * (correct ?? 0)) / total);
-  if (pct >= 80) return { label: ar ? "قوي" : "Strong", fill: "#12805c", bg: "#e8f5ee", fg: "#067647", border: "#b6e2c8", pct };
-  if (pct >= 50) return { label: ar ? "متوسط" : "Moderate", fill: "#d08214", bg: "#fef6e7", fg: "#b25e09", border: "#f5d9a8", pct };
-  return { label: ar ? "قيد التطوير" : "Developing", fill: "#d1493c", bg: "#fdeef0", fg: "#b42318", border: "#f5c6cb", pct };
+  if (pct >= 80) return { key: "strong", label: ar ? "قوي" : "Strong", fill: "#12805c", bg: "#e8f5ee", fg: "#067647", border: "#b6e2c8", pct };
+  if (pct >= 50) return { key: "moderate", label: ar ? "متوسط" : "Moderate", fill: "#d08214", bg: "#fef6e7", fg: "#b25e09", border: "#f5d9a8", pct };
+  return { key: "developing", label: ar ? "قيد التطوير" : "Developing", fill: "#d1493c", bg: "#fdeef0", fg: "#b42318", border: "#f5c6cb", pct };
+}
+
+// Candidate-specific, band-aware narrative for a competency ("what this result
+// means for THIS candidate") - changes with the performance band, folding in the
+// competency name + score. Bilingual. Empty for a not-assessed competency.
+function compNarrative(
+  key: "strong" | "moderate" | "developing" | "none",
+  name: string,
+  correct: number | null | undefined,
+  total: number | null | undefined,
+  ar: boolean
+): string {
+  if (key === "none") return "";
+  const s = `${correct ?? 0}/${total}`;
+  if (ar) {
+    if (key === "strong")
+      return `أظهر المرشح قوة واضحة في «${name}» بإجابة ${s} بشكل صحيح - نقطة قوة جاهزة للتطبيق في هذا الدور.`;
+    if (key === "moderate")
+      return `أظهر المرشح مستوى عملياً في «${name}» (${s}) - كفؤ في جوانب منه مع مجال للتعميق.`;
+    return `جاءت إجابات المرشح في «${name}» دون المستوى المستهدف (${s}) - أولوية تطوير لهذا الدور.`;
+  }
+  if (key === "strong")
+    return `The candidate showed a clear strength in ${name}, answering ${s} correctly - a strength that is ready to apply in this role.`;
+  if (key === "moderate")
+    return `The candidate showed a working level in ${name} (${s}) - competent in parts, with room to deepen.`;
+  return `The candidate's responses in ${name} fell below the target level (${s}) - a development priority for this role.`;
 }
 
 /** "Competencies assessed" block - the role's selected competencies (from the
@@ -144,6 +189,7 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
   };
   const subLabel = ar ? "السلوكيات المُقيَّمة (المؤشرات)" : "Behaviours assessed (sub-competencies)";
   const defLabel = ar ? "التعريف" : "Definition";
+  const meansLabel = ar ? "ماذا يعني هذا" : "What this means";
 
   // Rank: assessed competencies first (highest pct wins), then priority, then the
   // builder's incoming order. Only assessed competencies carry a numeric rank.
@@ -185,6 +231,13 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
       const bar = assessed
         ? `<div style="height:5px;border-radius:999px;background:#eef2f7;margin:6px 0 2px;overflow:hidden"><div style="height:100%;width:${band.pct}%;background:${band.fill};border-radius:999px"></div></div>`
         : "";
+      // Candidate-specific, band-aware narrative - the dynamic "what this result
+      // means for this candidate" line (changes with Strong / Moderate /
+      // Developing), tinted to the band. Only for assessed competencies.
+      const narr = assessed ? compNarrative(band.key, nm, c.examCorrect, c.examTotal, ar) : "";
+      const narrative = narr
+        ? `<div style="margin-top:6px;background:${band.bg};border:1px solid ${band.border};border-radius:6px;padding:6px 9px;font-size:10.5px;line-height:1.5;color:${band.fg}"><span style="font-weight:700">${meansLabel}: </span>${esc(narr)}</div>`
+        : "";
       const def = c.definition
         ? `<div style="font-size:10px;color:#475569;line-height:1.5;margin-top:3px"><span style="font-weight:700;color:#64748b">${defLabel}: </span>${esc(c.definition)}</div>`
         : "";
@@ -199,7 +252,7 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
           <div style="font-size:12px;font-weight:700;color:#010131">${esc(nm)}${badge}${rankTag}</div>
           <div>${chip}</div>
-        </div>${bar}${def}${bullets}</div>`;
+        </div>${bar}${narrative}${def}${bullets}</div>`;
     })
     .join("");
 
@@ -214,6 +267,134 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
     : "";
 
   return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>${items}${note}`;
+}
+
+// CEFR band tone: A = developing (rose), B = intermediate (amber), C = advanced (green).
+function cefrTone(cefr: string | null): { bg: string; fg: string; border: string } {
+  const b = (cefr ?? "").toUpperCase();
+  if (b.startsWith("C")) return { bg: "#e8f5ee", fg: "#067647", border: "#b6e2c8" };
+  if (b.startsWith("B")) return { bg: "#fef6e7", fg: "#b25e09", border: "#f5d9a8" };
+  if (b.startsWith("A")) return { bg: "#fdeef0", fg: "#b42318", border: "#f5c6cb" };
+  return { bg: "#f1f5f9", fg: "#64748b", border: "#e2e8f0" };
+}
+function cefrBadge(cefr: string | null): string {
+  if (!cefr) return `<span style="color:#94a3b8">-</span>`;
+  const c = cefrTone(cefr);
+  return `<span style="font-size:9.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:${c.bg};color:${c.fg};border:1px solid ${c.border}">${esc(cefr.toUpperCase())}</span>`;
+}
+
+/** English (Fluent) language profile - overall CEFR + a per-skill table + the AI
+ *  narrative for the productive skills. Renders only when a Fluent stage produced
+ *  a result. Mirrors what a standalone English report shows. */
+// One-line descriptor of what an overall CEFR level means, in plain terms.
+function cefrDescriptor(cefr: string | null, ar: boolean): string {
+  const b = (cefr ?? "").toUpperCase();
+  const en: Record<string, string> = {
+    A1: "Beginner - understands and uses basic everyday words and phrases.",
+    A2: "Elementary - copes with simple, routine tasks and familiar exchanges.",
+    B1: "Intermediate - handles most familiar work and everyday situations independently.",
+    B2: "Upper-intermediate - interacts with fluency on professional topics; the working threshold for most business roles.",
+    C1: "Advanced - uses English fluently and flexibly for demanding professional and academic purposes.",
+    C2: "Proficient - near-native command across virtually all contexts.",
+  };
+  const arr: Record<string, string> = {
+    A1: "مبتدئ - يفهم ويستخدم كلمات وعبارات يومية أساسية.",
+    A2: "أساسي - يتعامل مع مهام روتينية بسيطة ومواقف مألوفة.",
+    B1: "متوسط - يدير معظم مواقف العمل والحياة اليومية المألوفة باستقلالية.",
+    B2: "فوق المتوسط - يتفاعل بطلاقة في المواضيع المهنية؛ وهو الحد العملي لمعظم الأدوار المؤسسية.",
+    C1: "متقدم - يستخدم الإنجليزية بطلاقة ومرونة لأغراض مهنية وأكاديمية متطلّبة.",
+    C2: "بارع - إتقان يقارب مستوى الناطق الأصلي في مختلف السياقات.",
+  };
+  return (ar ? arr[b] : en[b]) ?? "";
+}
+
+// Per-skill insight. Receptive skills (reading/listening) get a CEFR-band read;
+// productive skills (writing/speaking) prefer the AI feedback, falling back to a
+// CEFR-band line when no feedback was captured.
+function skillInsight(
+  key: "reading" | "listening" | "writing" | "speaking",
+  cefr: string | null,
+  feedback: string | null | undefined,
+  ar: boolean
+): string {
+  if ((key === "writing" || key === "speaking") && feedback) return feedback;
+  const band = (cefr ?? "").toUpperCase().charAt(0); // A / B / C
+  const T: Record<string, Record<string, { en: string; ar: string }>> = {
+    reading: {
+      C: { en: "Reads and interprets complex professional documents with ease.", ar: "يقرأ ويفسّر الوثائق المهنية المعقّدة بسهولة." },
+      B: { en: "Understands the main ideas and most detail of workplace texts.", ar: "يفهم الأفكار الرئيسية ومعظم تفاصيل النصوص المهنية." },
+      A: { en: "Handles short, simple texts; longer or complex material is still a stretch.", ar: "يتعامل مع نصوص قصيرة بسيطة؛ والمواد الأطول أو المعقّدة لا تزال صعبة." },
+    },
+    listening: {
+      C: { en: "Follows extended, complex speech and discussion comfortably.", ar: "يتابع الحديث والنقاش الممتد والمعقّد بارتياح." },
+      B: { en: "Follows the main points of clear workplace conversations and presentations.", ar: "يتابع النقاط الرئيسية للمحادثات والعروض المهنية الواضحة." },
+      A: { en: "Understands short, simple spoken exchanges; fast or complex speech is difficult.", ar: "يفهم التبادلات المنطوقة القصيرة البسيطة؛ والكلام السريع أو المعقّد صعب." },
+    },
+    writing: {
+      C: { en: "Writes clear, well-structured professional text with precise language.", ar: "يكتب نصاً مهنياً واضحاً ومنظّماً بلغة دقيقة." },
+      B: { en: "Writes coherent workplace text; occasional errors that do not impede meaning.", ar: "يكتب نصاً مهنياً متماسكاً؛ مع أخطاء عرضية لا تعيق المعنى." },
+      A: { en: "Writes short, simple messages; structure and accuracy are still developing.", ar: "يكتب رسائل قصيرة بسيطة؛ والبنية والدقة قيد التطوير." },
+    },
+    speaking: {
+      C: { en: "Speaks fluently and precisely, adapting to context with ease.", ar: "يتحدّث بطلاقة ودقّة، ويتكيّف مع السياق بسهولة." },
+      B: { en: "Speaks with good fluency and clear pronunciation; sustains professional discussion.", ar: "يتحدّث بطلاقة جيدة ونطق واضح؛ ويحافظ على النقاش المهني." },
+      A: { en: "Manages short, simple spoken exchanges; fluency and range are still developing.", ar: "يدير تبادلات منطوقة قصيرة بسيطة؛ والطلاقة والتنوّع قيد التطوير." },
+    },
+  };
+  const row = T[key]?.[band];
+  return row ? (ar ? row.ar : row.en) : "";
+}
+
+function englishSection(data: PrehireReportData, lang: Lang): string {
+  const f = data.fluent;
+  if (!f || (!f.overallCefr && (!f.skills || f.skills.length === 0))) return "";
+  const ar = lang === "ar";
+  const title = ar ? "ملف اللغة الإنجليزية (Fluent®)" : "English language profile (Fluent®)";
+  const intro = ar
+    ? "تحديد مستوى الإنجليزية وفق الإطار الأوروبي المرجعي (CEFR) عبر المهارات الأربع. القراءة والاستماع مُصحَّحة آلياً؛ الكتابة والتحدث مُقيَّمة بالذكاء الاصطناعي وفق معايير CEFR."
+    : "CEFR-aligned English placement across the four skills. Reading and listening are auto-scored; writing and speaking are AI-assessed against the CEFR rubric.";
+  const overallLabel = ar ? "المستوى الإجمالي" : "Overall level";
+  const correctWord = ar ? "إجابة صحيحة" : "correct";
+  const skillMap: Record<string, { en: string; ar: string }> = {
+    reading: { en: "Reading", ar: "القراءة" },
+    listening: { en: "Listening", ar: "الاستماع" },
+    writing: { en: "Writing", ar: "الكتابة" },
+    speaking: { en: "Speaking", ar: "التحدث" },
+  };
+
+  // Overall level: badge + a plain-language descriptor of what the band means.
+  const overallDesc = cefrDescriptor(f.overallCefr, ar);
+  const overallRow = f.overallCefr
+    ? `<div style="margin:0 0 10px;background:#f8fafc;border:1px solid #e3e6ee;border-radius:8px;padding:9px 12px">
+         <div style="font-size:12px"><span style="font-weight:700;color:#010131">${overallLabel}:</span> ${cefrBadge(f.overallCefr)}</div>
+         ${overallDesc ? `<div style="font-size:10.5px;color:#475569;line-height:1.5;margin-top:4px">${esc(overallDesc)}</div>` : ""}
+       </div>`
+    : "";
+
+  // One card per skill, with the insight directly under it (not lumped at the end).
+  const cards = (f.skills ?? [])
+    .map((s) => {
+      const nm = ar ? skillMap[s.key]?.ar : skillMap[s.key]?.en;
+      const detail =
+        s.correct != null && s.total != null
+          ? `<span style="font-size:10px;color:#475569;margin-inline-start:8px">${s.correct}/${s.total} ${correctWord}</span>`
+          : "";
+      const insight = skillInsight(s.key, s.cefr, s.feedback, ar);
+      const insightHtml = insight
+        ? `<div style="font-size:10.5px;color:#334155;line-height:1.5;margin-top:4px">${esc(insight)}</div>`
+        : "";
+      return `<div style="border:1px solid #e3e6ee;border-radius:8px;padding:8px 12px;margin-bottom:7px;background:#fbfcfe;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div style="font-size:11.5px;font-weight:700;color:#010131">${esc(nm ?? s.key)}${detail}</div>
+          <div>${cefrBadge(s.cefr)}</div>
+        </div>${insightHtml}</div>`;
+    })
+    .join("");
+
+  return `<h2>${title}</h2>
+    <p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>
+    ${overallRow}
+    ${cards}`;
 }
 
 /** Bilingual provisional strip for the two Pre-Hire report bodies. */
@@ -456,12 +637,13 @@ export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): s
     <div class="box"><div class="v">${data.composite == null ? "-" : data.composite}</div><div class="l">${t.composite}</div></div>
     <div class="box"><div class="l" style="margin-bottom:8px">${t.advisory}</div><span class="reco" style="background:${tone.bg};color:${tone.fg}">${recoLabel}</span></div>
   </div>
-  ${competenciesSection(data, lang)}
   <h2>${t.perStage}</h2>
   <table>
     <thead><tr><th>${t.thStage}</th><th class="num">${t.thWeight}</th><th class="num">${t.thScore}</th><th class="num">${t.thCut}</th><th>${t.thOutcome}</th></tr></thead>
     <tbody>${rows}</tbody>
   </table>
+  ${competenciesSection(data, lang)}
+  ${englishSection(data, lang)}
   <div class="disclaimer">${t.disclaimer}</div>
   <div class="foot"><span>${t.confidential}</span><span>${esc(data.candidateName)}</span></div>
 </body>
@@ -616,8 +798,6 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
 
   ${resultSummary(data, lang, recoLabel)}
 
-  ${competenciesSection(data, lang)}
-
   <h2>${t.perStage}</h2>
   <table>
     <thead><tr>
@@ -626,6 +806,10 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
     </tr></thead>
     <tbody>${stageRows}</tbody>
   </table>
+
+  ${competenciesSection(data, lang)}
+
+  ${englishSection(data, lang)}
 
   ${cbiSection}
 

@@ -178,6 +178,40 @@ export async function buildPrehireCandidatePdf(params: {
         }
       : null;
 
+  // English (Fluent) language profile - overall CEFR + per-skill detail from the
+  // stored result, so the report carries a proper English section. Reading /
+  // listening are auto-scored (correct/total); writing / speaking carry an AI
+  // narrative. Renders only when a Fluent result exists.
+  type FluentResultShape = {
+    overall_cefr?: string | null;
+    reading_cefr?: string | null; reading_correct?: number | null; reading_total?: number | null;
+    listening_cefr?: string | null; listening_correct?: number | null; listening_total?: number | null;
+    writing?: { cefr?: string | null; feedback_en?: string | null; feedback_ar?: string | null } | null;
+    speaking?: { cefr?: string | null; feedback_en?: string | null; feedback_ar?: string | null } | null;
+  };
+  const fluentResult = (fluentDetail as { result?: FluentResultShape } | null)?.result ?? null;
+  let fluent: import("@/lib/reports/prehire-candidate-html").PrehireFluentBlock | null = null;
+  if (fluentResult) {
+    const fb = (o: { feedback_en?: string | null; feedback_ar?: string | null } | null | undefined) =>
+      (lang === "ar" ? o?.feedback_ar || o?.feedback_en : o?.feedback_en) ?? null;
+    const skills: import("@/lib/reports/prehire-candidate-html").PrehireFluentSkill[] = [];
+    if (fluentResult.reading_cefr || fluentResult.reading_total != null) {
+      skills.push({ key: "reading", cefr: fluentResult.reading_cefr ?? null, correct: fluentResult.reading_correct ?? null, total: fluentResult.reading_total ?? null });
+    }
+    if (fluentResult.listening_cefr || fluentResult.listening_total != null) {
+      skills.push({ key: "listening", cefr: fluentResult.listening_cefr ?? null, correct: fluentResult.listening_correct ?? null, total: fluentResult.listening_total ?? null });
+    }
+    if (fluentResult.writing?.cefr || fluentResult.writing?.feedback_en) {
+      skills.push({ key: "writing", cefr: fluentResult.writing?.cefr ?? null, feedback: fb(fluentResult.writing) });
+    }
+    if (fluentResult.speaking?.cefr || fluentResult.speaking?.feedback_en) {
+      skills.push({ key: "speaking", cefr: fluentResult.speaking?.cefr ?? null, feedback: fb(fluentResult.speaking) });
+    }
+    if (fluentResult.overall_cefr || skills.length > 0) {
+      fluent = { overallCefr: fluentResult.overall_cefr ?? null, skills };
+    }
+  }
+
   const stages = composite.perStage.map((s) => ({
     label: STAGE_LABELS[s.kind]?.[lang] ?? s.kind,
     definition: STAGE_DEFINITIONS[s.kind]?.[lang] ?? null,
@@ -331,6 +365,7 @@ export async function buildPrehireCandidatePdf(params: {
     recommendation: composite.recommendation,
     stages,
     cbi,
+    fluent,
     certification,
     generatedAt: new Date(),
     // Option 2 gate: flag provisional while the quiz bank still mints live-AI.

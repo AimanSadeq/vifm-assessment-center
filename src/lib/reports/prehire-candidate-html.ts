@@ -52,7 +52,67 @@ export type PrehireReportData = {
   generatedAt: Date;
   /** Option 2 gate: true while the quiz bank still mints live-AI (pending SME review). */
   provisional?: boolean;
+  /** Competencies selected for the requisition's role (via its role profile). */
+  competencies?: { name: string; nameAr: string | null; priority: string | null }[];
 };
+
+/** Data-grounded result summary: composite band, stages passed, strongest /
+ *  lowest stage, any required stage below cut-score, plus the guardrail. Built
+ *  only from real per-stage results (no fabricated narrative). */
+function resultSummary(data: PrehireReportData, lang: Lang, recoLabel: string): string {
+  const ar = lang === "ar";
+  const stages = data.stages.filter((s) => s.normalized != null);
+  if (stages.length === 0) return "";
+  const passed = stages.filter((s) => s.passed).length;
+  const failedReq = stages.filter((s) => s.required && !s.passed).map((s) => s.label);
+  const sorted = [...stages].sort((a, b) => (b.normalized ?? 0) - (a.normalized ?? 0));
+  const top = sorted[0];
+  const low = sorted[sorted.length - 1];
+  const parts: string[] = [];
+  if (ar) {
+    parts.push(`النتيجة الإجمالية <b>${data.composite ?? "-"}</b> من ١٠٠ - الإشارة الاستشارية: <b>${recoLabel}</b>.`);
+    parts.push(`اجتاز <b>${passed}</b> من <b>${stages.length}</b> من المراحل المُقيَّمة.`);
+    parts.push(`أعلى مرحلة: <b>${esc(top.label)}</b> (${Math.round(top.normalized as number)})؛ وأدنى مرحلة: <b>${esc(low.label)}</b> (${Math.round(low.normalized as number)}).`);
+    if (failedReq.length) parts.push(`دون درجة القطع في مرحلة إلزامية: ${failedReq.map(esc).join("، ")}.`);
+  } else {
+    parts.push(`Composite <b>${data.composite ?? "-"}</b>/100 - advisory signal: <b>${recoLabel}</b>.`);
+    parts.push(`Passed <b>${passed}</b> of <b>${stages.length}</b> assessed stages.`);
+    parts.push(`Strongest: <b>${esc(top.label)}</b> (${Math.round(top.normalized as number)}); lowest: <b>${esc(low.label)}</b> (${Math.round(low.normalized as number)}).`);
+    if (failedReq.length) parts.push(`Below cut-score on a required stage: ${failedReq.map(esc).join(", ")}.`);
+  }
+  const guard = ar
+    ? "هذه إشارة فرز استشارية وليست قراراً توظيفياً - القرار النهائي لمسؤول التوظيف."
+    : "This is an advisory screening signal, not a hiring decision - a human makes the final call.";
+  const title = ar ? "ملخص النتيجة" : "Result summary";
+  return `<h2>${title}</h2><div style="background:#f8fafc;border:1px solid #e3e6ee;border-radius:8px;padding:11px 13px;font-size:11.5px;line-height:1.6">${parts
+    .map((p) => `<div>${p}</div>`)
+    .join("")}<div style="margin-top:6px;color:#475569;font-size:10.5px">${guard}</div></div>`;
+}
+
+/** "Competencies assessed" block - the role's selected competencies (from the
+ *  requisition's role profile). Empty string when none are attached. */
+function competenciesSection(data: PrehireReportData, lang: Lang): string {
+  const list = data.competencies ?? [];
+  if (list.length === 0) return "";
+  const ar = lang === "ar";
+  const title = ar ? "الكفاءات المُقيَّمة" : "Competencies assessed";
+  const intro = ar
+    ? "الكفاءات المختارة لهذه الوظيفة عند إنشاء طلب التوظيف - وهي التي يستند إليها اختبار الكفاءات."
+    : "Competencies selected for this role when the requisition was created - these anchor the competency quiz.";
+  const pmap: Record<string, { en: string; ar: string }> = {
+    critical: { en: "Critical", ar: "حرجة" }, high: { en: "High", ar: "عالية" },
+    medium: { en: "Medium", ar: "متوسطة" }, low: { en: "Low", ar: "منخفضة" },
+  };
+  const chips = list
+    .map((c) => {
+      const nm = ar ? c.nameAr || c.name : c.name;
+      const p = c.priority ? pmap[c.priority.toLowerCase()] : null;
+      const suffix = p ? ` <span style="opacity:.7">· ${ar ? p.ar : p.en}</span>` : "";
+      return `<span style="display:inline-block;background:#eef3fb;color:#1e40af;border:1px solid #c7dbf5;border-radius:999px;padding:3px 11px;font-size:10.5px;font-weight:600;margin:0 6px 4px 0">${esc(nm)}${suffix}</span>`;
+    })
+    .join("");
+  return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p><div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>`;
+}
 
 /** Bilingual provisional strip for the two Pre-Hire report bodies. */
 function provisionalStrip(data: PrehireReportData, lang: Lang): string {
@@ -450,6 +510,10 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
       <span class="reco" style="background:${tone.bg};color:${tone.fg}">${recoLabel}</span>
     </div>
   </div>
+
+  ${resultSummary(data, lang, recoLabel)}
+
+  ${competenciesSection(data, lang)}
 
   <h2>${t.perStage}</h2>
   <table>

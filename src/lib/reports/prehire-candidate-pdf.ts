@@ -108,7 +108,7 @@ export async function buildPrehireCandidatePdf(params: {
   const [reqRes, candRes] = await Promise.all([
     sb
       .from("prehire_requisitions")
-      .select("title, level, stage_config, organizations(name)")
+      .select("title, level, stage_config, role_profile_id, organizations(name)")
       .eq("id", requisitionId)
       .maybeSingle(),
     sb
@@ -197,6 +197,37 @@ export async function buildPrehireCandidatePdf(params: {
 
   const certification = await getPrehireCertification(candidateId);
 
+  // Competencies selected for the role (via the requisition's role profile).
+  // Best-effort: a requisition with no role profile, or a pre-migration DB, just
+  // yields an empty list (the report section is then omitted).
+  let competencies: { name: string; nameAr: string | null; priority: string | null }[] = [];
+  const roleProfileId = (reqRes.data as { role_profile_id?: string | null }).role_profile_id ?? null;
+  if (roleProfileId) {
+    try {
+      const { data: rpc } = await sb
+        .from("role_profile_competencies")
+        .select("weight, priority, competencies(name, name_ar)")
+        .eq("role_profile_id", roleProfileId);
+      const rank = (p: string | null) =>
+        p === "critical" ? 0 : p === "high" ? 1 : p === "medium" ? 2 : p === "low" ? 3 : 4;
+      competencies = (rpc ?? [])
+        .map((r) => {
+          const comp = (r as { competencies?: { name?: string; name_ar?: string | null } | null }).competencies ?? null;
+          return {
+            name: comp?.name ?? "",
+            nameAr: comp?.name_ar ?? null,
+            priority: (r as { priority?: string | null }).priority ?? null,
+            weight: (r as { weight?: number | null }).weight ?? null,
+          };
+        })
+        .filter((c) => c.name)
+        .sort((a, b) => rank(a.priority) - rank(b.priority) || (b.weight ?? 0) - (a.weight ?? 0))
+        .map(({ name, nameAr, priority }) => ({ name, nameAr, priority }));
+    } catch {
+      competencies = [];
+    }
+  }
+
   const data: PrehireReportData = {
     candidateName: (candRes.data.full_name as string) ?? "Candidate",
     candidateEmail: (candRes.data.email as string) ?? "",
@@ -212,6 +243,7 @@ export async function buildPrehireCandidatePdf(params: {
     generatedAt: new Date(),
     // Option 2 gate: flag provisional while the quiz bank still mints live-AI.
     provisional: await prehireServesLive(),
+    competencies,
   };
 
   const html = mode === "summary" ? renderPrehireSummaryHtml(data, lang) : renderPrehireCandidateHtml(data, lang);

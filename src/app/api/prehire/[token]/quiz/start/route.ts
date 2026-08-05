@@ -179,6 +179,10 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   let questions: QuizQuestion[] | null = null;
   // Grounding for the deterministic fallback (used only if the AI is down).
   const fallbackComps: { name: string; positives: string[]; negatives: string[] }[] = [];
+  // The resolved competencies (id + name), in priority order, used to attribute
+  // every stored question to a competency so the report can show a per-competency
+  // result even when a deck comes from a fallback path.
+  const topMeta: { id: string; name: string }[] = [];
 
   if (ranked.length > 0) {
     // Take the top-N highest-weighted competencies and split TARGET_DECK_SIZE
@@ -221,6 +225,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
     for (const c of top) {
       const comp = compById.get(c.id);
       if (!comp) continue;
+      topMeta.push({ id: comp.id, name: comp.name });
       const all = (indicatorsByComp.get(c.id) ?? []).filter(
         (r) => !r.description.startsWith("[DEV TIP]")
       );
@@ -256,7 +261,11 @@ export async function POST(_req: Request, { params }: { params: { token: string 
         // yields a full deck. Until items are approved the bank is empty and this
         // is exactly the previous live-AI behaviour.
         const banked = await drawCompetencyQuizItems(comp.id, wanted);
-        if (banked.length >= wanted) return banked.slice(0, wanted);
+        if (banked.length >= wanted) {
+          return banked
+            .slice(0, wanted)
+            .map((q) => ({ ...q, competency_id: comp.id, competency_name: comp.name }));
+        }
         const shortfall = wanted - banked.length;
 
         // The generator returns ~7 items per competency; keep only `shortfall` of
@@ -327,6 +336,21 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       { error: "Couldn't generate the assessment right now. Please try again shortly." },
       { status: 503 }
     );
+  }
+
+  // Attribute every stored question to a competency so the report can always show
+  // a per-competency result. The per-competency generation above tags precisely;
+  // this backfills any item that came from a fallback path (generic synthetic /
+  // deterministic deck), round-robin across the resolved competencies. The report
+  // labels the per-competency read as indicative. Only runs when we resolved a
+  // competency set (legacy requisitions with none stay untagged, as before).
+  if (topMeta.length > 0) {
+    questions = questions.map((q, i) => {
+      const tagged = q as QuizQuestion & { competency_id?: string };
+      if (tagged.competency_id) return q;
+      const m = topMeta[i % topMeta.length];
+      return { ...q, competency_id: m.id, competency_name: m.name };
+    });
   }
 
   await svc.from("prehire_stage_results").upsert(

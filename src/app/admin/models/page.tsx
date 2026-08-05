@@ -11,7 +11,7 @@ export const metadata = { title: "Scientific Models · VIFM" };
 // The report-model slugs from the shared methodology registry - the scientific
 // frameworks BEHIND the generated reports (as distinct from the per-service
 // methodology briefs, which live on /evidence).
-const MODEL_SLUGS = ["persona-leadership", "persona-dare", "persona-eq", "persona-hipo"] as const;
+const MODEL_SLUGS = ["persona-leadership", "persona-dare", "persona-eq", "persona-hipo", "prehire"] as const;
 
 // Which models have a downloadable sample report, and its route. HiPo has a
 // bespoke route (it renders its own demo data + engagement); the other three
@@ -21,6 +21,7 @@ const SAMPLE_REPORT_HREF: Record<string, string> = {
   "persona-leadership": "/api/admin/models/persona-leadership/sample/pdf",
   "persona-dare": "/api/admin/models/persona-dare/sample/pdf",
   "persona-eq": "/api/admin/models/persona-eq/sample/pdf",
+  prehire: "/api/admin/models/prehire-sample/pdf",
 };
 
 const MODEL_DETAIL: Record<string, { measures: string }> = {
@@ -35,6 +36,9 @@ const MODEL_DETAIL: Record<string, { measures: string }> = {
   },
   "persona-hipo": {
     measures: "Aspiration (8 drive markers) x Ability (60% behavioural + 40% Logica reasoning) on a nine-grid, plus a manager-rated Engagement survey.",
+  },
+  prehire: {
+    measures: "A weighted composite (0-100) across the configured screening stages - Competency Quiz, English (Fluent), and AI Interview (CBI) - checked against per-stage cut-scores, with the role's selected competencies. An advisory signal, never an auto-decision.",
   },
 };
 

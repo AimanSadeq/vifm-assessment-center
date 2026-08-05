@@ -252,6 +252,7 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-center">{t("prehire.thCandidate")}</TableHead>
+                  <TableHead className="text-center">{locale === "ar" ? "تاريخ الإكمال" : "Completed"}</TableHead>
                   {plan.map((s) => (
                     <TableHead key={s.kind} className="text-center">
                       {t(`prehire.stageLabels.${s.kind}`)}
@@ -281,23 +282,24 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">{c.email}</div>
-                      {completedById.get(c.id) ? (
-                        <div className="text-xs font-medium text-emerald-700">
-                          {locale === "ar" ? "اكتمل" : "Completed"}:{" "}
-                          {new Date(completedById.get(c.id) as string).toLocaleDateString(
-                            locale === "ar" ? "ar" : "en-GB",
-                            { day: "2-digit", month: "short", year: "numeric" },
-                          )}
-                        </div>
-                      ) : activityById.get(c.id) ? (
-                        <div className="text-xs text-muted-foreground">
-                          {locale === "ar" ? "غير مكتمل" : "Not completed"}
-                        </div>
-                      ) : null}
                       {customById.get(c.id)?.employee_id && (
                         <div className="text-xs text-muted-foreground">
                           {t("prehire.employeeIdLabel")}: {customById.get(c.id)?.employee_id}
                         </div>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-center whitespace-nowrap">
+                      {completedById.get(c.id) ? (
+                        <span className="text-xs font-medium text-emerald-700">
+                          {new Date(completedById.get(c.id) as string).toLocaleDateString(
+                            locale === "ar" ? "ar" : "en-GB",
+                            { day: "2-digit", month: "short", year: "numeric" },
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {locale === "ar" ? "غير مكتمل" : "Not completed"}
+                        </span>
                       )}
                     </TableCell>
                     {plan.map((s) => {
@@ -335,33 +337,41 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                       />
                     </TableCell>
                     <TableCell className="text-end">
-                      <div className="inline-flex items-center gap-1">
-                        <a
-                          href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}&view=summary`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
-                          title={locale === "ar" ? "ورقة ملخّص من صفحة واحدة" : "One-page summary sheet"}
-                        >
-                          <FileText className="h-3.5 w-3.5" /> {locale === "ar" ? "ملخّص" : "Summary"}
-                        </a>
-                        <a
-                          href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
-                          title={t("prehire.ttReport")}
-                        >
-                          <FileText className="h-3.5 w-3.5" /> {t("prehire.report")}
-                        </a>
-                        <a
-                          href={`/admin/prehire/${req.id}/candidate/${c.id}/review`}
-                          className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
-                          title="SME review & certify"
-                        >
-                          <BadgeCheck className="h-3.5 w-3.5" /> Review
-                        </a>
-                        <InviteLink token={c.access_token} candidateId={c.id} />
+                      <div className="flex items-start justify-end gap-2">
+                        {/* Summary + Report stacked */}
+                        <div className="flex flex-col gap-1">
+                          <a
+                            href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}&view=summary`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                            title={locale === "ar" ? "ورقة ملخّص من صفحة واحدة" : "One-page summary sheet"}
+                          >
+                            <FileText className="h-3.5 w-3.5" /> {locale === "ar" ? "ملخّص" : "Summary"}
+                          </a>
+                          <a
+                            href={`/api/admin/prehire/${req.id}/candidate/${c.id}/report?lang=${locale}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                            title={t("prehire.ttReport")}
+                          >
+                            <FileText className="h-3.5 w-3.5" /> {t("prehire.report")}
+                          </a>
+                        </div>
+                        {/* Review + Invite link stacked */}
+                        <div className="flex flex-col gap-1">
+                          <a
+                            href={`/admin/prehire/${req.id}/candidate/${c.id}/review`}
+                            className="inline-flex items-center justify-center gap-1 rounded-md border border-input bg-background px-2 py-1 text-xs font-medium hover:bg-accent"
+                            title="SME review & certify"
+                          >
+                            <BadgeCheck className="h-3.5 w-3.5" /> Review
+                          </a>
+                          <InviteLink token={c.access_token} candidateId={c.id} only="link" />
+                        </div>
+                        {/* Email on its own */}
+                        <InviteLink token={c.access_token} candidateId={c.id} only="email" />
                       </div>
                     </TableCell>
                   </TableRow>

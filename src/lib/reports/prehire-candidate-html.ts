@@ -354,6 +354,7 @@ export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): s
     <div class="box"><div class="v">${data.composite == null ? "-" : data.composite}</div><div class="l">${t.composite}</div></div>
     <div class="box"><div class="l" style="margin-bottom:8px">${t.advisory}</div><span class="reco" style="background:${tone.bg};color:${tone.fg}">${recoLabel}</span></div>
   </div>
+  ${competenciesSection(data, lang)}
   <h2>${t.perStage}</h2>
   <table>
     <thead><tr><th>${t.thStage}</th><th class="num">${t.thWeight}</th><th class="num">${t.thScore}</th><th class="num">${t.thCut}</th><th>${t.thOutcome}</th></tr></thead>

@@ -8,7 +8,16 @@ import { Link2, Check, Mail, Loader2 } from "lucide-react";
 import { resendPrehireInviteAction } from "../../actions";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 
-export function InviteLink({ token, candidateId }: { token: string; candidateId: string }) {
+export function InviteLink({
+  token,
+  candidateId,
+  only,
+}: {
+  token: string;
+  candidateId: string;
+  /** Render only one control so callers can place them separately. */
+  only?: "link" | "email";
+}) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
@@ -45,16 +54,22 @@ export function InviteLink({ token, candidateId }: { token: string; candidateId:
     );
   };
 
+  const showLink = only !== "email";
+  const showEmail = only !== "link";
   return (
     <div className="inline-flex items-center gap-1">
-      <Button variant="ghost" size="sm" onClick={copy} title={url} className="gap-1.5">
-        {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Link2 className="h-3.5 w-3.5" />}
-        {copied ? t("prehire.copied") : t("prehire.inviteLink")}
-      </Button>
-      <Button variant="ghost" size="sm" onClick={resend} disabled={sending} className="gap-1.5" title={t("prehire.ttEmailAgain")}>
-        {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
-        {sending ? t("prehire.sending") : t("prehire.emailBtn")}
-      </Button>
+      {showLink && (
+        <Button variant="ghost" size="sm" onClick={copy} title={url} className="gap-1.5">
+          {copied ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Link2 className="h-3.5 w-3.5" />}
+          {copied ? t("prehire.copied") : t("prehire.inviteLink")}
+        </Button>
+      )}
+      {showEmail && (
+        <Button variant="ghost" size="sm" onClick={resend} disabled={sending} className="gap-1.5" title={t("prehire.ttEmailAgain")}>
+          {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Mail className="h-3.5 w-3.5" />}
+          {sending ? t("prehire.sending") : t("prehire.emailBtn")}
+        </Button>
+      )}
     </div>
   );
 }

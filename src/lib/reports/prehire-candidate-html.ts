@@ -256,6 +256,29 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
     })
     .join("");
 
+  // Overview bar chart: every assessed competency at a glance, ranked, band-tinted
+  // bars - a visual summary above the detailed cards.
+  const chartRows = withIdx
+    .filter(({ c }) => (c.examTotal ?? 0) > 0)
+    .map(({ c }) => {
+      const nm = ar ? c.nameAr || c.name : c.name;
+      const band = compBand(c.examCorrect, c.examTotal, ar);
+      const pct = band.pct ?? 0;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="width:40%;font-size:9.5px;color:#334155;text-align:${ar ? "left" : "right"};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(nm)}</div>
+        <div style="flex:1;height:9px;background:#eef2f7;border-radius:999px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${band.fill};border-radius:999px"></div></div>
+        <div style="width:30px;font-size:9px;font-weight:700;color:${band.fg};text-align:${ar ? "right" : "left"}">${pct}%</div>
+      </div>`;
+    })
+    .join("");
+  const chartLabel = ar ? "أداء الكفاءات في لمحة" : "Competency performance at a glance";
+  const chart = chartRows
+    ? `<div style="border:1px solid #e3e6ee;border-radius:8px;padding:10px 12px;margin:0 0 10px;background:#fbfcfe;page-break-inside:avoid">
+         <div style="font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin-bottom:7px">${chartLabel}</div>
+         ${chartRows}
+       </div>`
+    : "";
+
   // Honesty note: the quiz is a short screen, so a per-competency result rests on
   // a handful of items - indicative, not a definitive competency rating.
   const note = anyAssessed
@@ -266,7 +289,7 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
       }</p>`
     : "";
 
-  return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>${items}${note}`;
+  return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>${chart}${items}${note}`;
 }
 
 // CEFR band tone: A = developing (rose), B = intermediate (amber), C = advanced (green).
@@ -281,6 +304,75 @@ function cefrBadge(cefr: string | null): string {
   if (!cefr) return `<span style="color:#94a3b8">-</span>`;
   const c = cefrTone(cefr);
   return `<span style="font-size:9.5px;font-weight:700;padding:1px 8px;border-radius:999px;background:${c.bg};color:${c.fg};border:1px solid ${c.border}">${esc(cefr.toUpperCase())}</span>`;
+}
+
+// ── Inline-SVG diagrams (self-contained; render in the Puppeteer PDF) ──
+
+/** Radial donut gauge for the 0-100 composite, coloured to the advisory band. */
+function compositeDonut(value: number | null, ringColor: string): string {
+  const r = 34, cx = 42, cy = 42, circ = 2 * Math.PI * r;
+  const pct = value == null ? 0 : Math.max(0, Math.min(100, value));
+  const dash = (pct / 100) * circ;
+  return `<svg viewBox="0 0 84 84" width="84" height="84" style="flex-shrink:0" aria-hidden="true">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#eef2f7" stroke-width="10"/>
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${ringColor}" stroke-width="10" stroke-linecap="round"
+      stroke-dasharray="${dash.toFixed(1)} ${circ.toFixed(1)}" transform="rotate(-90 ${cx} ${cy})"/>
+    <text x="${cx}" y="${cy + 2}" text-anchor="middle" font-family="'Open Sans',sans-serif" font-size="22" font-weight="700" fill="#010131">${value == null ? "-" : value}</text>
+    <text x="${cx}" y="${cy + 15}" text-anchor="middle" font-family="'Open Sans',sans-serif" font-size="8" fill="#777">/ 100</text>
+  </svg>`;
+}
+
+/** Four-axis CEFR radar for the English skills (A1=1 … C2=6). */
+function cefrRadar(skills: PrehireFluentSkill[], ar: boolean): string {
+  const CEFR_VAL: Record<string, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
+  const order: PrehireFluentSkill["key"][] = ["reading", "listening", "writing", "speaking"];
+  const angle: Record<string, number> = { reading: -90, listening: 0, writing: 90, speaking: 180 };
+  const labelEn: Record<string, string> = { reading: "Reading", listening: "Listening", writing: "Writing", speaking: "Speaking" };
+  const labelAr: Record<string, string> = { reading: "القراءة", listening: "الاستماع", writing: "الكتابة", speaking: "التحدث" };
+  const byKey = new Map(skills.map((s) => [s.key, s]));
+  if (order.filter((k) => byKey.has(k)).length < 3) return "";
+  const cx = 120, cy = 96, maxR = 58;
+  const val = (c: string | null | undefined) => CEFR_VAL[(c ?? "").toUpperCase()] ?? 0;
+  const pt = (deg: number, rad: number): [number, number] => {
+    const a = (deg * Math.PI) / 180;
+    return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)];
+  };
+  let grid = "";
+  for (const lvl of [2, 4, 6]) {
+    grid += `<circle cx="${cx}" cy="${cy}" r="${((lvl / 6) * maxR).toFixed(1)}" fill="none" stroke="#e6eaf1" stroke-width="1"/>`;
+  }
+  let axes = "", labels = "";
+  for (const k of order) {
+    const [ex, ey] = pt(angle[k], maxR);
+    axes += `<line x1="${cx}" y1="${cy}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="#e6eaf1" stroke-width="1"/>`;
+    const s = byKey.get(k);
+    const nm = ar ? labelAr[k] : labelEn[k];
+    const cefr = s?.cefr ? s.cefr.toUpperCase() : "-";
+    let lx = ex, ly = ey, anchor = "middle";
+    if (k === "reading") { ly = cy - maxR - 14; }
+    else if (k === "writing") { ly = cy + maxR + 20; }
+    else if (k === "listening") { lx = cx + maxR + 8; ly = cy + 2; anchor = "start"; }
+    else if (k === "speaking") { lx = cx - maxR - 8; ly = cy + 2; anchor = "end"; }
+    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-family="'Open Sans',sans-serif" font-size="10" font-weight="700" fill="#010131">${esc(nm)}</text>`;
+    labels += `<text x="${lx.toFixed(1)}" y="${(ly + 11).toFixed(1)}" text-anchor="${anchor}" font-family="'Open Sans',sans-serif" font-size="9" font-weight="700" fill="#5391D5">${esc(cefr)}</text>`;
+  }
+  const poly = order
+    .map((k) => {
+      const [x, y] = pt(angle[k], (val(byKey.get(k)?.cefr) / 6) * maxR);
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+  const dots = order
+    .map((k) => {
+      const [x, y] = pt(angle[k], (val(byKey.get(k)?.cefr) / 6) * maxR);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="#5391D5"/>`;
+    })
+    .join("");
+  return `<svg viewBox="0 0 240 200" width="230" height="192" style="flex-shrink:0" aria-hidden="true">
+    ${grid}${axes}
+    <polygon points="${poly}" fill="#5391D5" fill-opacity="0.18" stroke="#5391D5" stroke-width="1.5"/>
+    ${dots}${labels}
+  </svg>`;
 }
 
 /** English (Fluent) language profile - overall CEFR + a per-skill table + the AI
@@ -391,9 +483,18 @@ function englishSection(data: PrehireReportData, lang: Lang): string {
     })
     .join("");
 
+  // CEFR radar chart - the four skills at a glance, beside the overall level.
+  const radar = cefrRadar(f.skills ?? [], ar);
+  const topBlock = radar
+    ? `<div style="display:flex;gap:14px;align-items:center;margin:0 0 10px;page-break-inside:avoid">
+         <div style="flex:1">${overallRow.replace(/margin:0 0 10px;/, "margin:0;")}</div>
+         <div>${radar}</div>
+       </div>`
+    : overallRow;
+
   return `<h2>${title}</h2>
     <p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>
-    ${overallRow}
+    ${topBlock}
     ${cards}`;
 }
 
@@ -785,10 +886,12 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
   ${certBannerHtml(data, t, lang)}
 
   <div class="stats">
-    <div class="stat">
-      <div class="v">${data.composite == null ? "-" : data.composite}</div>
-      <div class="l">${t.composite}</div>
-      <div class="stat-def">${t.compositeDef}</div>
+    <div class="stat" style="display:flex;gap:12px;align-items:center">
+      ${compositeDonut(data.composite, tone.fg)}
+      <div>
+        <div class="l">${t.composite}</div>
+        <div class="stat-def">${t.compositeDef}</div>
+      </div>
     </div>
     <div class="stat">
       <div class="l" style="margin-bottom:6px">${t.advisory}</div>

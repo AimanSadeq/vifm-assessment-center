@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { computeComposite, rankByComposite } from "@/lib/prehire/scoring";
+import { computeComposite } from "@/lib/prehire/scoring";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { getServerT, getServerLocale } from "@/lib/i18n/server";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
@@ -120,6 +120,17 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   for (const r of await pageCandidates<{ id: string; certified_at: string | null }>("id, certified_at")) {
     if (r.certified_at) certifiedById.add(r.id);
   }
+  // Activity date per candidate (updated_at = last activity / when they finished;
+  // created_at = when added). Separate best-effort reads so a pre-migration DB
+  // missing a column can't empty the shortlist. Used to order newest-first so a
+  // just-completed report sits at the top without hunting by name/email.
+  const activityById = new Map<string, string>();
+  for (const r of await pageCandidates<{ id: string; created_at: string | null }>("id, created_at")) {
+    if (r.created_at) activityById.set(r.id, r.created_at);
+  }
+  for (const r of await pageCandidates<{ id: string; updated_at: string | null }>("id, updated_at")) {
+    if (r.updated_at) activityById.set(r.id, r.updated_at);
+  }
   let clientEmail: string | null = null;
   const { data: reqEmail } = await supabase
     .from("prehire_requisitions")
@@ -132,7 +143,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
     const result = computeComposite(plan, c.prehire_stage_results ?? []);
     return { ...c, composite: result.composite, recommendation: result.recommendation, perStage: result.perStage };
   });
-  const ranked = rankByComposite(scored);
+  // Order newest-first by activity date (ISO strings sort lexically =
+  // chronologically) so the most recently completed reports are at the top.
+  const ranked = [...scored].sort((a, b) =>
+    (activityById.get(b.id) ?? "").localeCompare(activityById.get(a.id) ?? ""),
+  );
 
   // UA-8: how many scored candidates would actually receive a report on a "Send
   // all" (have a completed stage and have not been sent yet) - drives the confirm.
@@ -255,6 +270,14 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">{c.email}</div>
+                      {activityById.get(c.id) && (
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(activityById.get(c.id) as string).toLocaleDateString(
+                            locale === "ar" ? "ar" : "en-GB",
+                            { day: "2-digit", month: "short", year: "numeric" },
+                          )}
+                        </div>
+                      )}
                       {customById.get(c.id)?.employee_id && (
                         <div className="text-xs text-muted-foreground">
                           {t("prehire.employeeIdLabel")}: {customById.get(c.id)?.employee_id}

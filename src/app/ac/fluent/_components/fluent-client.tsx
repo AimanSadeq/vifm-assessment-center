@@ -430,6 +430,9 @@ export function FluentClient({
     finalizedRef.current = true;
     endTimer();
     setRecording(false);
+    // Clear the "transcribing" spinner set on Stop; the blob path below re-sets it
+    // just around the server call so every exit here leaves it off.
+    setTranscribing(false);
 
     const sttText = (sttFinalRef.current ?? "").trim();
     const blob = audioBlobRef.current;
@@ -538,6 +541,15 @@ export function FluentClient({
   }
 
   function stopRecording() {
+    // Instant feedback: leave record mode the moment Stop is clicked. Previously
+    // the UI only left "recording" once finalizeSpeaking ran (which waits for BOTH
+    // the recorder AND the browser speech recogniser to settle) - and some
+    // browsers never fire the recogniser's stop event, so the button stayed stuck
+    // on "Stop" and looked unclickable. Show the transcribing spinner meanwhile.
+    endTimer();
+    setRecording(false);
+    setTranscribing(true);
+
     // Stop the live transcriber (fires onDone → settles STT) and the recorder
     // (fires onstop → settles recorder + builds the blob). finalizeSpeaking runs
     // once both have settled.
@@ -552,6 +564,17 @@ export function FluentClient({
     } else {
       recorderSettledRef.current = true;
     }
+    // Fallback: if the live transcriber never fires onDone/onError (it can hang
+    // on some browsers), force-settle it after a short grace period so
+    // finalizeSpeaking always runs and the candidate is never stranded. The
+    // recorder's onstop is reliable and covers the actual transcription.
+    window.setTimeout(() => {
+      if (!sttSettledRef.current) {
+        sttFinalRef.current = sttFinalRef.current ?? "";
+        sttSettledRef.current = true;
+        void finalizeSpeaking();
+      }
+    }, 2500);
     void finalizeSpeaking();
   }
 

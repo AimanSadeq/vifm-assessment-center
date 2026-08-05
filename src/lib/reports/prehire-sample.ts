@@ -85,11 +85,56 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
     generatedAt,
     provisional: false,
     competencies: [
-      { name: "Analytical Reasoning", nameAr: "التفكير التحليلي", priority: "critical" },
-      { name: "Financial Acumen", nameAr: "الفطنة المالية", priority: "high" },
-      { name: "Communicates Effectively", nameAr: "التواصل الفعّال", priority: "high" },
-      { name: "Action Orientation", nameAr: "التوجه نحو الإنجاز", priority: "medium" },
-      { name: "Manages Complexity", nameAr: "إدارة التعقيد", priority: "medium" },
+      {
+        name: "Analytical Reasoning", nameAr: "التفكير التحليلي", priority: "critical",
+        definition: ar
+          ? "يحلّل المعلومات بدقّة، ويفكّك المشكلات المعقّدة إلى عناصرها، ويصل إلى استنتاجات مبنيّة على الأدلة."
+          : "Analyses information rigorously, breaks complex problems into parts, and reaches evidence-based conclusions.",
+        indicators: ar
+          ? ["يفكّك المشكلات المعقّدة إلى عناصرها", "يميّز الأنماط والعلاقات في البيانات", "يستند في استنتاجاته إلى الأدلة"]
+          : ["Breaks complex problems into their parts", "Spots patterns and relationships in data", "Grounds conclusions in evidence"],
+        examCorrect: 2, examTotal: 2,
+      },
+      {
+        name: "Communicates Effectively", nameAr: "التواصل الفعّال", priority: "high",
+        definition: ar
+          ? "ينقل الأفكار بوضوح ويكيّف رسالته حسب الجمهور، وينصت باهتمام ليتأكّد من الفهم المشترك."
+          : "Conveys ideas clearly, adapts the message to the audience, and listens actively to confirm shared understanding.",
+        indicators: ar
+          ? ["يوصل الأفكار بوضوح", "يكيّف الرسالة حسب الجمهور", "ينصت باهتمام ويستوضح"]
+          : ["Conveys ideas clearly", "Tailors the message to the audience", "Listens actively and checks understanding"],
+        examCorrect: 2, examTotal: 2,
+      },
+      {
+        name: "Financial Acumen", nameAr: "الفطنة المالية", priority: "high",
+        definition: ar
+          ? "يفهم البيانات والتقارير المالية، ويربط القرارات بأثرها المالي، ويوازن بين المخاطر والعوائد."
+          : "Understands financial data and reports, links decisions to their financial impact, and weighs risk against return.",
+        indicators: ar
+          ? ["يفسّر البيانات والتقارير المالية", "يربط القرارات بأثرها المالي", "يقيّم المخاطر والعوائد"]
+          : ["Interprets financial data and reports", "Links decisions to their financial impact", "Weighs risk against return"],
+        examCorrect: 1, examTotal: 2,
+      },
+      {
+        name: "Action Orientation", nameAr: "التوجه نحو الإنجاز", priority: "medium",
+        definition: ar
+          ? "يبادر دون انتظار التوجيه، ويحافظ على وتيرة إنجاز عالية، ويتابع العمل حتى إتمامه."
+          : "Takes initiative without waiting to be told, keeps a strong pace of delivery, and follows through to completion.",
+        indicators: ar
+          ? ["يبادر دون انتظار التوجيه", "يحافظ على وتيرة إنجاز عالية", "يتابع حتى إتمام العمل"]
+          : ["Takes initiative without waiting to be told", "Maintains a strong pace of delivery", "Follows through to completion"],
+        examCorrect: 0, examTotal: 1,
+      },
+      {
+        name: "Manages Complexity", nameAr: "إدارة التعقيد", priority: "medium",
+        definition: ar
+          ? "يوازن بين عدّة أولويات متنافسة، ويتعامل مع الغموض بثبات، ويبسّط ما هو معقّد للآخرين."
+          : "Balances several competing priorities, stays steady amid ambiguity, and simplifies the complex for others.",
+        indicators: ar
+          ? ["يوازن بين عدة أولويات متنافسة", "يتعامل مع الغموض بثبات", "يبسّط ما هو معقّد للآخرين"]
+          : ["Balances several competing priorities", "Stays steady amid ambiguity", "Simplifies the complex for others"],
+        examCorrect: null, examTotal: null,
+      },
     ],
   };
 }

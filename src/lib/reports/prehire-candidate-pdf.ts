@@ -197,32 +197,92 @@ export async function buildPrehireCandidatePdf(params: {
 
   const certification = await getPrehireCertification(candidateId);
 
+  // Per-competency exam result (CAL: "ranking from the actual results"). The quiz
+  // tags every stored question with its competency_id (quiz/start); detail.review
+  // records which were correct. Join them into { correct, total } per competency.
+  const examByComp = new Map<string, { correct: number; total: number }>();
+  {
+    const quizDetail = (rawResults.find((r) => r.kind === "quiz")?.detail ?? null) as {
+      questions?: { id?: string; competency_id?: string }[];
+      review?: { id?: string; isCorrect?: boolean }[];
+    } | null;
+    const qs = Array.isArray(quizDetail?.questions) ? quizDetail!.questions! : [];
+    const review = Array.isArray(quizDetail?.review) ? quizDetail!.review! : [];
+    const compByQid = new Map<string, string>();
+    for (const q of qs) if (q.id && q.competency_id) compByQid.set(q.id, q.competency_id);
+    for (const rv of review) {
+      const cid = rv.id ? compByQid.get(rv.id) : undefined;
+      if (!cid) continue;
+      const agg = examByComp.get(cid) ?? { correct: 0, total: 0 };
+      agg.total += 1;
+      if (rv.isCorrect) agg.correct += 1;
+      examByComp.set(cid, agg);
+    }
+  }
+
   // Competencies selected for the role (via the requisition's role profile).
   // Best-effort: a requisition with no role profile, or a pre-migration DB, just
   // yields an empty list (the report section is then omitted).
-  let competencies: { name: string; nameAr: string | null; priority: string | null }[] = [];
+  let competencies: PrehireReportData["competencies"] = [];
   const roleProfileId = (reqRes.data as { role_profile_id?: string | null }).role_profile_id ?? null;
   if (roleProfileId) {
     try {
       const { data: rpc } = await sb
         .from("role_profile_competencies")
-        .select("weight, priority, competencies(name, name_ar)")
+        .select("competency_id, weight, priority, competencies(name, name_ar, description, description_ar)")
         .eq("role_profile_id", roleProfileId);
-      const rank = (p: string | null) =>
-        p === "critical" ? 0 : p === "high" ? 1 : p === "medium" ? 2 : p === "low" ? 3 : 4;
-      competencies = (rpc ?? [])
+      const rows = (rpc ?? [])
         .map((r) => {
-          const comp = (r as { competencies?: { name?: string; name_ar?: string | null } | null }).competencies ?? null;
+          const comp = (r as {
+            competencies?: {
+              name?: string; name_ar?: string | null;
+              description?: string | null; description_ar?: string | null;
+            } | null;
+          }).competencies ?? null;
           return {
+            competencyId: (r as { competency_id?: string | null }).competency_id ?? "",
             name: comp?.name ?? "",
             nameAr: comp?.name_ar ?? null,
+            definition: (lang === "ar" ? comp?.description_ar || comp?.description : comp?.description) ?? null,
             priority: (r as { priority?: string | null }).priority ?? null,
             weight: (r as { weight?: number | null }).weight ?? null,
           };
         })
-        .filter((c) => c.name)
+        .filter((c) => c.name);
+      // Behavioural indicators ("sub-competencies") per competency: positive,
+      // excluding the [DEV TIP] rows, capped at 4 for a compact report.
+      const indByComp = new Map<string, string[]>();
+      const compIds = rows.map((r) => r.competencyId).filter(Boolean);
+      if (compIds.length > 0) {
+        const { data: bis } = await sb
+          .from("behavioral_indicators")
+          .select("competency_id, description, sort_order")
+          .in("competency_id", compIds)
+          .eq("indicator_type", "positive")
+          .order("sort_order");
+        for (const b of (bis ?? []) as { competency_id: string; description: string }[]) {
+          if (/^\s*\[DEV TIP\]/i.test(b.description)) continue;
+          const arr = indByComp.get(b.competency_id) ?? [];
+          if (arr.length < 4) arr.push(b.description);
+          indByComp.set(b.competency_id, arr);
+        }
+      }
+      const rank = (p: string | null) =>
+        p === "critical" ? 0 : p === "high" ? 1 : p === "medium" ? 2 : p === "low" ? 3 : 4;
+      competencies = rows
         .sort((a, b) => rank(a.priority) - rank(b.priority) || (b.weight ?? 0) - (a.weight ?? 0))
-        .map(({ name, nameAr, priority }) => ({ name, nameAr, priority }));
+        .map(({ competencyId, name, nameAr, definition, priority }) => {
+          const exam = examByComp.get(competencyId) ?? null;
+          return {
+            name,
+            nameAr,
+            definition,
+            priority,
+            indicators: indByComp.get(competencyId) ?? [],
+            examCorrect: exam ? exam.correct : null,
+            examTotal: exam ? exam.total : null,
+          };
+        });
     } catch {
       competencies = [];
     }

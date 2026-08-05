@@ -272,10 +272,17 @@ export async function POST(_req: Request, { params }: { params: { token: string 
           GEN_TIMEOUT_MS
         );
         const aiPart = deck && deck.length > 0 ? deck.slice(0, shortfall) : [];
-        return [...banked, ...aiPart];
+        // Tag every item with its source competency so the per-competency exam
+        // result can be reconstructed for the report (the ids get rewritten
+        // below, which would otherwise drop the competency association).
+        return [...banked, ...aiPart].map((q) => ({
+          ...q,
+          competency_id: comp.id,
+          competency_name: comp.name,
+        }));
       })
     );
-    const collected: QuizQuestion[] = decks.flat();
+    const collected = decks.flat();
 
     if (collected.length > 0) {
       // Re-id sequentially so ids are unique across competencies, and hard-cap to

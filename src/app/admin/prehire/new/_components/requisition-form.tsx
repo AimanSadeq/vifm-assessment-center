@@ -44,6 +44,8 @@ type Props = {
   organizations: { id: string; name: string }[];
   defaultOrgId?: string;
   competencies: CompetencyOption[];
+  /** Behavioural indicators ("sub-competencies") per competency id. */
+  indicatorsByCompetency?: Record<string, string[]>;
 };
 
 type StageKind = "quiz" | "fluent" | "cbi";
@@ -75,6 +77,7 @@ export function RequisitionForm({
   organizations: initialOrgs,
   defaultOrgId,
   competencies,
+  indicatorsByCompetency = {},
 }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -580,19 +583,32 @@ export function RequisitionForm({
                     {group.domainName}
                   </p>
                   <div className="grid grid-cols-1 gap-x-5 gap-y-2 sm:grid-cols-2">
-                    {group.items.map((comp) => (
-                      <label
-                        key={comp.id}
-                        className="flex cursor-pointer items-start gap-2 text-sm"
-                      >
-                        <Checkbox
-                          checked={selectedCompetencies.has(comp.id)}
-                          onCheckedChange={(c) => toggleCompetency(comp.id, c === true)}
-                          className="mt-0.5"
-                        />
-                        <span>{comp.name}</span>
-                      </label>
-                    ))}
+                    {group.items.map((comp) => {
+                      const on = selectedCompetencies.has(comp.id);
+                      const inds = indicatorsByCompetency[comp.id] ?? [];
+                      return (
+                        <label
+                          key={comp.id}
+                          className="flex cursor-pointer items-start gap-2 text-sm"
+                        >
+                          <Checkbox
+                            checked={on}
+                            onCheckedChange={(c) => toggleCompetency(comp.id, c === true)}
+                            className="mt-0.5"
+                          />
+                          <span className="flex-1">
+                            {comp.name}
+                            {on && inds.length > 0 && (
+                              <ul className="mt-1 list-disc space-y-0.5 ps-4 text-xs text-muted-foreground">
+                                {inds.slice(0, 4).map((ind, i) => (
+                                  <li key={i}>{ind}</li>
+                                ))}
+                              </ul>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
               ))}

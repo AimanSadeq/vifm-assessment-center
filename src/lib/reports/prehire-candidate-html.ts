@@ -52,8 +52,25 @@ export type PrehireReportData = {
   generatedAt: Date;
   /** Option 2 gate: true while the quiz bank still mints live-AI (pending SME review). */
   provisional?: boolean;
-  /** Competencies selected for the requisition's role (via its role profile). */
-  competencies?: { name: string; nameAr: string | null; priority: string | null }[];
+  /** Competencies selected for the requisition's role (via its role profile),
+   *  each with its behavioural indicators ("sub-competencies"), a plain-language
+   *  definition, and - where the quiz mapped items to this competency - the
+   *  candidate's actual per-competency result from the exam. */
+  competencies?: PrehireReportCompetency[];
+};
+
+export type PrehireReportCompetency = {
+  name: string;
+  nameAr: string | null;
+  priority: string | null;
+  /** Plain-language definition of the competency (EN/AR resolved by the builder). */
+  definition?: string | null;
+  /** Behavioural indicators - the observable "sub-competencies". */
+  indicators?: string[];
+  /** Actual quiz result for the items mapped to this competency, when the exam
+   *  produced a per-competency signal. examTotal === 0 => not assessed in the quiz. */
+  examCorrect?: number | null;
+  examTotal?: number | null;
 };
 
 /** Data-grounded result summary: composite band, stages passed, strongest /
@@ -89,29 +106,114 @@ function resultSummary(data: PrehireReportData, lang: Lang, recoLabel: string): 
     .join("")}<div style="margin-top:6px;color:#475569;font-size:10.5px">${guard}</div></div>`;
 }
 
+// Performance band for a per-competency exam result. Grey when the quiz produced
+// no items for that competency (examTotal 0/null).
+function compBand(
+  correct: number | null | undefined,
+  total: number | null | undefined,
+  ar: boolean
+): { label: string; fill: string; bg: string; fg: string; border: string; pct: number | null } {
+  if (!total || total <= 0) {
+    return {
+      label: ar ? "لم تُقيَّم في الاختبار" : "Not assessed in quiz",
+      fill: "#cbd5e1", bg: "#f1f5f9", fg: "#64748b", border: "#e2e8f0", pct: null,
+    };
+  }
+  const pct = Math.round((100 * (correct ?? 0)) / total);
+  if (pct >= 80) return { label: ar ? "قوي" : "Strong", fill: "#12805c", bg: "#e8f5ee", fg: "#067647", border: "#b6e2c8", pct };
+  if (pct >= 50) return { label: ar ? "متوسط" : "Moderate", fill: "#d08214", bg: "#fef6e7", fg: "#b25e09", border: "#f5d9a8", pct };
+  return { label: ar ? "قيد التطوير" : "Developing", fill: "#d1493c", bg: "#fdeef0", fg: "#b42318", border: "#f5c6cb", pct };
+}
+
 /** "Competencies assessed" block - the role's selected competencies (from the
- *  requisition's role profile). Empty string when none are attached. */
+ *  requisition's role profile), each with a plain-language definition, its
+ *  behavioural indicators ("sub-competencies"), and - where the quiz mapped
+ *  items to the competency - the candidate's actual per-competency result plus a
+ *  quiz-driven ranking. Empty string when no competencies are attached. */
 function competenciesSection(data: PrehireReportData, lang: Lang): string {
   const list = data.competencies ?? [];
   if (list.length === 0) return "";
   const ar = lang === "ar";
-  const title = ar ? "الكفاءات المُقيَّمة" : "Competencies assessed";
+  const title = ar ? "تحليل الكفاءات" : "Competency analysis";
   const intro = ar
-    ? "الكفاءات المختارة لهذه الوظيفة عند إنشاء طلب التوظيف - وهي التي يستند إليها اختبار الكفاءات."
-    : "Competencies selected for this role when the requisition was created - these anchor the competency quiz.";
+    ? "الكفاءات المختارة لهذه الوظيفة عند إنشاء طلب التوظيف - وهي التي يستند إليها اختبار الكفاءات. حيثما وسمت أسئلة الاختبار كفاءةً، تُعرض نتيجة المرشح الفعلية لتلك الكفاءة وترتيبها."
+    : "Competencies selected for this role when the requisition was created - these anchor the competency quiz. Where quiz items mapped to a competency, the candidate's actual per-competency result and rank are shown.";
   const pmap: Record<string, { en: string; ar: string }> = {
     critical: { en: "Critical", ar: "حرجة" }, high: { en: "High", ar: "عالية" },
     medium: { en: "Medium", ar: "متوسطة" }, low: { en: "Low", ar: "منخفضة" },
   };
-  const chips = list
-    .map((c) => {
+  const subLabel = ar ? "السلوكيات المُقيَّمة (المؤشرات)" : "Behaviours assessed (sub-competencies)";
+  const defLabel = ar ? "التعريف" : "Definition";
+
+  // Rank: assessed competencies first (highest pct wins), then priority, then the
+  // builder's incoming order. Only assessed competencies carry a numeric rank.
+  const prank = (p: string | null | undefined) =>
+    p === "critical" ? 0 : p === "high" ? 1 : p === "medium" ? 2 : p === "low" ? 3 : 4;
+  const withIdx = list.map((c, i) => ({ c, i }));
+  withIdx.sort((a, b) => {
+    const at = a.c.examTotal ?? 0, bt = b.c.examTotal ?? 0;
+    const aAss = at > 0 ? 1 : 0, bAss = bt > 0 ? 1 : 0;
+    if (aAss !== bAss) return bAss - aAss;
+    if (aAss === 1) {
+      const ap = (a.c.examCorrect ?? 0) / at, bp = (b.c.examCorrect ?? 0) / bt;
+      if (ap !== bp) return bp - ap;
+    }
+    return prank(a.c.priority) - prank(b.c.priority) || a.i - b.i;
+  });
+
+  let assessedRank = 0;
+  const anyAssessed = withIdx.some(({ c }) => (c.examTotal ?? 0) > 0);
+  const rankChipLabel = ar ? "الترتيب" : "Rank";
+  const items = withIdx
+    .map(({ c }) => {
       const nm = ar ? c.nameAr || c.name : c.name;
       const p = c.priority ? pmap[c.priority.toLowerCase()] : null;
-      const suffix = p ? ` <span style="opacity:.7">· ${ar ? p.ar : p.en}</span>` : "";
-      return `<span style="display:inline-block;background:#eef3fb;color:#1e40af;border:1px solid #c7dbf5;border-radius:999px;padding:3px 11px;font-size:10.5px;font-weight:600;margin:0 6px 4px 0">${esc(nm)}${suffix}</span>`;
+      const badge = p
+        ? `<span style="font-size:9px;font-weight:700;padding:1px 7px;border-radius:999px;background:#eef3fb;color:#1e40af;border:1px solid #c7dbf5;margin-inline-start:6px">${esc(ar ? p.ar : p.en)}</span>`
+        : "";
+      const band = compBand(c.examCorrect, c.examTotal, ar);
+      const assessed = (c.examTotal ?? 0) > 0;
+      const rankTag =
+        assessed && anyAssessed
+          ? `<span style="font-size:8.5px;font-weight:700;color:#64748b;margin-inline-start:6px">${rankChipLabel} #${++assessedRank}</span>`
+          : "";
+      // Performance chip (band + score) + thin bar.
+      const scoreText = assessed
+        ? `${c.examCorrect ?? 0} / ${c.examTotal} · ${band.pct}%`
+        : band.label;
+      const chip = `<span style="font-size:9.5px;font-weight:700;padding:2px 9px;border-radius:999px;background:${band.bg};color:${band.fg};border:1px solid ${band.border};white-space:nowrap">${assessed ? `${esc(band.label)} · ${scoreText}` : esc(band.label)}</span>`;
+      const bar = assessed
+        ? `<div style="height:5px;border-radius:999px;background:#eef2f7;margin:6px 0 2px;overflow:hidden"><div style="height:100%;width:${band.pct}%;background:${band.fill};border-radius:999px"></div></div>`
+        : "";
+      const def = c.definition
+        ? `<div style="font-size:10px;color:#475569;line-height:1.5;margin-top:3px"><span style="font-weight:700;color:#64748b">${defLabel}: </span>${esc(c.definition)}</div>`
+        : "";
+      const inds = (c.indicators ?? []).slice(0, 4);
+      const bullets = inds.length
+        ? `<div style="font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin:7px 0 2px">${subLabel}</div>
+           <ul style="margin:0;padding-inline-start:16px">${inds
+             .map((i) => `<li style="font-size:10px;color:#334155;line-height:1.45;margin-bottom:1px">${esc(i)}</li>`)
+             .join("")}</ul>`
+        : "";
+      return `<div style="border:1px solid #e3e6ee;border-radius:8px;padding:9px 12px;margin-bottom:8px;background:#fbfcfe;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+          <div style="font-size:12px;font-weight:700;color:#010131">${esc(nm)}${badge}${rankTag}</div>
+          <div>${chip}</div>
+        </div>${bar}${def}${bullets}</div>`;
     })
     .join("");
-  return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p><div style="display:flex;flex-wrap:wrap;gap:4px">${chips}</div>`;
+
+  // Honesty note: the quiz is a short screen, so a per-competency result rests on
+  // a handful of items - indicative, not a definitive competency rating.
+  const note = anyAssessed
+    ? `<p style="margin:8px 0 0;color:#94a3b8;font-size:9.5px;line-height:1.5">${
+        ar
+          ? "نتائج الكفاءات مأخوذة من أسئلة الاختبار القصير (عدد محدود من البنود لكل كفاءة)؛ فهي مؤشِّرة وليست تقييماً نهائياً للكفاءة."
+          : "Per-competency results come from a short quiz (a limited number of items per competency); they are indicative, not a definitive competency rating."
+      }</p>`
+    : "";
+
+  return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>${items}${note}`;
 }
 
 /** Bilingual provisional strip for the two Pre-Hire report bodies. */

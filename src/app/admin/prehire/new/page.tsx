@@ -13,7 +13,7 @@ export default async function NewRequisitionPage({
 }) {
   const supabase = await createClient();
   const t = await getServerT();
-  const [profilesRes, orgsRes, compsRes] = await Promise.all([
+  const [profilesRes, orgsRes, compsRes, indicatorsRes] = await Promise.all([
     // CAL-PRE-502: also pull each profile's competencies so the form can pre-fill
     // the quiz competency picker when the role profile changes.
     supabase
@@ -27,6 +27,14 @@ export default async function NewRequisitionPage({
       .select(
         "id, name, sort_order, competency_clusters(domain_id, competency_domains(id, name, sort_order))"
       )
+      .order("sort_order"),
+    // Positive behavioural indicators (the "sub-competencies") so the picker can
+    // show what each selected competency actually assesses. Best-effort - a query
+    // failure just leaves the map empty and the picker renders names only.
+    supabase
+      .from("behavioral_indicators")
+      .select("competency_id, description, indicator_type, sort_order")
+      .eq("indicator_type", "positive")
       .order("sort_order"),
   ]);
   const organizations = (orgsRes.data ?? []) as { id: string; name: string }[];
@@ -70,6 +78,17 @@ export default async function NewRequisitionPage({
     })),
   }));
 
+  // Group up to 4 positive indicators per competency (dropping [DEV TIP] rows,
+  // which are development advice, not observable behaviours).
+  type IndicatorRow = { competency_id: string; description: string | null };
+  const indicatorsByCompetency: Record<string, string[]> = {};
+  for (const row of (indicatorsRes.data ?? []) as unknown as IndicatorRow[]) {
+    const desc = (row.description ?? "").trim();
+    if (!desc || /^\s*\[DEV TIP\]/i.test(desc)) continue;
+    const list = (indicatorsByCompetency[row.competency_id] ??= []);
+    if (list.length < 4) list.push(desc);
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-6 py-8">
       <BackLink href="/admin/prehire" label={t("prehire.backToReqs")} />
@@ -84,6 +103,7 @@ export default async function NewRequisitionPage({
         organizations={organizations}
         defaultOrgId={defaultOrgId}
         competencies={competencies}
+        indicatorsByCompetency={indicatorsByCompetency}
       />
     </div>
   );

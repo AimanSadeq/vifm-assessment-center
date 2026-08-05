@@ -7,15 +7,17 @@ import type { BehavioralIndicator, QuizQuestion } from "@/types/database";
 
 type StoredDetail = { questions?: QuizQuestion[] } | null;
 
-// Target deck size. The quiz stays one short screen regardless of how many
-// competencies feed it - we sample the top few competencies by weight and take a
-// few items from each. At 12 items across up to 4 competencies that is ~3 each,
-// which also firms up the per-competency result shown on the report (client
-// feedback: 7 felt too short).
-const TARGET_DECK_SIZE = 12;
-// How many of the highest-weighted competencies we draw from. Capping the
-// breadth keeps the deck coherent and the generation cost bounded.
-const MAX_COMPETENCIES = 4;
+// Coverage model: measure EVERY selected competency with a fixed number of items
+// each (client decision), so none read "not assessed" on the report. The deck
+// size is therefore dynamic = (competencies in scope) x ITEMS_PER_COMPETENCY.
+const ITEMS_PER_COMPETENCY = 3;
+// Upper bound on how many competencies we draw from, to keep even a very broad
+// requisition to a sane length (10 x 3 = 30 items max). Selections beyond this
+// are rare; the highest-weighted ones win.
+const MAX_COMPETENCIES = 10;
+// Fallback deck size for a legacy requisition with NO competency set and no role
+// profile (nothing to measure per-competency) - keeps it a short generic screen.
+const DEFAULT_DECK_SIZE = 12;
 // An added-but-not-in-the-role-profile competency has no weight; give it a
 // neutral mid weight so it ranks below explicitly high-priority picks but above
 // low-priority ones.
@@ -109,18 +111,6 @@ async function resolveRankedCompetencies(
   return [];
 }
 
-/**
- * Split the per-competency target across the top-N competencies so the COMBINED
- * deck lands on TARGET_DECK_SIZE. Earlier (higher-weight) competencies get the
- * extra item when the split is uneven. e.g. 4 comps -> [2,2,2,1]; 2 -> [4,3].
- */
-function allocate(count: number, total: number): number[] {
-  if (count <= 0) return [];
-  const base = Math.floor(total / count);
-  const remainder = total - base * count;
-  return Array.from({ length: count }, (_, i) => base + (i < remainder ? 1 : 0));
-}
-
 export async function POST(_req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
@@ -177,6 +167,9 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   }
 
   let questions: QuizQuestion[] | null = null;
+  // Dynamic deck size: every in-scope competency gets ITEMS_PER_COMPETENCY items.
+  // Set in the ranked branch below; stays DEFAULT_DECK_SIZE for legacy no-scope.
+  let deckSize = DEFAULT_DECK_SIZE;
   // Grounding for the deterministic fallback (used only if the AI is down).
   const fallbackComps: { name: string; positives: string[]; negatives: string[] }[] = [];
   // The resolved competencies (id + name), in priority order, used to attribute
@@ -185,10 +178,12 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   const topMeta: { id: string; name: string }[] = [];
 
   if (ranked.length > 0) {
-    // Take the top-N highest-weighted competencies and split TARGET_DECK_SIZE
-    // items across them (NOT 7-per-competency) so the deck stays ~7 total.
+    // Cover EVERY selected competency (up to MAX_COMPETENCIES) with a fixed number
+    // of items each, so the report shows a score for each rather than "not
+    // assessed". Deck size scales with the number of competencies in scope.
     const top = ranked.slice(0, MAX_COMPETENCIES);
-    const allocation = allocate(top.length, TARGET_DECK_SIZE);
+    deckSize = top.length * ITEMS_PER_COMPETENCY;
+    const allocation = top.map(() => ITEMS_PER_COMPETENCY);
 
     const compIds = top.map((c) => c.id);
     const [{ data: comps }, { data: indicatorRows }] = await Promise.all([
@@ -297,9 +292,9 @@ export async function POST(_req: Request, { params }: { params: { token: string 
 
     if (collected.length > 0) {
       // Re-id sequentially so ids are unique across competencies, and hard-cap to
-      // TARGET_DECK_SIZE as a safety net (allocation already sums to it).
+      // deckSize as a safety net (allocation already sums to it).
       questions = collected
-        .slice(0, TARGET_DECK_SIZE)
+        .slice(0, deckSize)
         .map((q, i) => ({ ...q, id: `q-${i + 1}` }));
     }
   }
@@ -318,7 +313,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
         currentScore: null,
         targetScore,
         bilingual: true,
-        count: TARGET_DECK_SIZE,
+        count: deckSize,
       }),
       GEN_TIMEOUT_MS
     );
@@ -328,7 +323,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
   // timeout), never dead-end the candidate - serve a usable deck grounded in the
   // role's behavioural indicators when we have them, else role-agnostic items.
   if (!questions || questions.length === 0) {
-    questions = buildFallbackQuizDeck({ competencies: fallbackComps, count: TARGET_DECK_SIZE });
+    questions = buildFallbackQuizDeck({ competencies: fallbackComps, count: deckSize });
   }
 
   if (!questions || questions.length === 0) {

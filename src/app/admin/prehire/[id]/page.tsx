@@ -131,6 +131,11 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
   for (const r of await pageCandidates<{ id: string; updated_at: string | null }>("id, updated_at")) {
     if (r.updated_at) activityById.set(r.id, r.updated_at);
   }
+  // The true "assessment completed" timestamp (set when the candidate finishes).
+  const completedById = new Map<string, string>();
+  for (const r of await pageCandidates<{ id: string; completed_at: string | null }>("id, completed_at")) {
+    if (r.completed_at) completedById.set(r.id, r.completed_at);
+  }
   let clientEmail: string | null = null;
   const { data: reqEmail } = await supabase
     .from("prehire_requisitions")
@@ -143,11 +148,17 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
     const result = computeComposite(plan, c.prehire_stage_results ?? []);
     return { ...c, composite: result.composite, recommendation: result.recommendation, perStage: result.perStage };
   });
-  // Order newest-first by activity date (ISO strings sort lexically =
-  // chronologically) so the most recently completed reports are at the top.
-  const ranked = [...scored].sort((a, b) =>
-    (activityById.get(b.id) ?? "").localeCompare(activityById.get(a.id) ?? ""),
-  );
+  // Order by assessment completion, newest first (ISO strings sort lexically =
+  // chronologically): most recently completed reports at the top, candidates who
+  // have not finished yet fall below (ordered by their latest activity).
+  const ranked = [...scored].sort((a, b) => {
+    const ca = completedById.get(a.id);
+    const cb = completedById.get(b.id);
+    if (ca && cb) return cb.localeCompare(ca);
+    if (ca) return -1;
+    if (cb) return 1;
+    return (activityById.get(b.id) ?? "").localeCompare(activityById.get(a.id) ?? "");
+  });
 
   // UA-8: how many scored candidates would actually receive a report on a "Send
   // all" (have a completed stage and have not been sent yet) - drives the confirm.
@@ -270,14 +281,19 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">{c.email}</div>
-                      {activityById.get(c.id) && (
-                        <div className="text-xs text-muted-foreground">
-                          {new Date(activityById.get(c.id) as string).toLocaleDateString(
+                      {completedById.get(c.id) ? (
+                        <div className="text-xs font-medium text-emerald-700">
+                          {locale === "ar" ? "اكتمل" : "Completed"}:{" "}
+                          {new Date(completedById.get(c.id) as string).toLocaleDateString(
                             locale === "ar" ? "ar" : "en-GB",
                             { day: "2-digit", month: "short", year: "numeric" },
                           )}
                         </div>
-                      )}
+                      ) : activityById.get(c.id) ? (
+                        <div className="text-xs text-muted-foreground">
+                          {locale === "ar" ? "غير مكتمل" : "Not completed"}
+                        </div>
+                      ) : null}
                       {customById.get(c.id)?.employee_id && (
                         <div className="text-xs text-muted-foreground">
                           {t("prehire.employeeIdLabel")}: {customById.get(c.id)?.employee_id}

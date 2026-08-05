@@ -7,10 +7,12 @@ import type { BehavioralIndicator, QuizQuestion } from "@/types/database";
 
 type StoredDetail = { questions?: QuizQuestion[] } | null;
 
-// Target deck size. The quiz is a ~5-minute screen, so it stays about 7 items
-// TOTAL regardless of how many competencies feed it - we sample the top few
-// competencies by weight and take a couple of items from each (NOT 7-per-comp).
-const TARGET_DECK_SIZE = 7;
+// Target deck size. The quiz stays one short screen regardless of how many
+// competencies feed it - we sample the top few competencies by weight and take a
+// few items from each. At 12 items across up to 4 competencies that is ~3 each,
+// which also firms up the per-competency result shown on the report (client
+// feedback: 7 felt too short).
+const TARGET_DECK_SIZE = 12;
 // How many of the highest-weighted competencies we draw from. Capping the
 // breadth keeps the deck coherent and the generation cost bounded.
 const MAX_COMPETENCIES = 4;

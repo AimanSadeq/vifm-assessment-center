@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { type IntegrityEvent } from "@/lib/scoring/integrity";
 
 type Lang = "en" | "ar";
 
@@ -33,12 +34,73 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
   const [confirming, setConfirming] = useState(false);
   const saveKey = `ph-quiz-${token}`;
 
+  // Advisory, PDPL-safe integrity monitoring (mirrors the Fluent stage): counts +
+  // away-DURATION + copied/pasted LENGTH only, never the text itself. On an MCQ
+  // quiz the meaningful signals are leaving the tab (to search) and copying a
+  // question out. Surfaced to recruiters on the SME review page; never auto-fails.
+  const [blurCount, setBlurCount] = useState(0);
+  const [pasteCount, setPasteCount] = useState(0);
+  const [copyCount, setCopyCount] = useState(0);
+  const [awayMs, setAwayMs] = useState(0);
+  const [pasteChars, setPasteChars] = useState(0);
+  const [copyChars, setCopyChars] = useState(0);
+  const [events, setEvents] = useState<IntegrityEvent[]>([]);
+  const testStartRef = useRef(0);
+
   // In-progress answers survive an accidental back/refresh - the server
   // re-serves the same stored deck, so restored ids still match.
   useEffect(() => {
     if (phase !== "quiz") return;
     try { sessionStorage.setItem(saveKey, JSON.stringify(answers)); } catch { /* best-effort */ }
   }, [phase, answers, saveKey]);
+
+  // Proctoring: capture tab-hide / window-blur AWAY DURATION (tab switch or
+  // minimise to search elsewhere), debounced 1.5s so a brief flicker is ignored.
+  useEffect(() => {
+    if (phase !== "quiz") return;
+    testStartRef.current = Date.now();
+    const AWAY_DEBOUNCE_MS = 1500;
+    let awayStart: number | null = null;
+    const goneAway = () => { if (awayStart == null) awayStart = Date.now(); };
+    const cameBack = () => {
+      if (awayStart == null) return;
+      const dur = Date.now() - awayStart;
+      awayStart = null;
+      if (dur < AWAY_DEBOUNCE_MS) return;
+      const at = Date.now() - testStartRef.current;
+      setBlurCount((c) => c + 1);
+      setAwayMs((m) => m + dur);
+      setEvents((ev) => [...ev, { kind: "blur", at, awayMs: dur }]);
+    };
+    const onVis = () => { if (document.hidden) goneAway(); else cameBack(); };
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("blur", goneAway);
+    window.addEventListener("focus", cameBack);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("blur", goneAway);
+      window.removeEventListener("focus", cameBack);
+    };
+  }, [phase]);
+
+  // PDPL-safe copy capture: copying a question out (to look up the answer) is the
+  // main MCQ-cheat signal. Record the event + the LENGTH of the copied text only.
+  const onCopyCapture = useCallback(() => {
+    const len = (typeof window !== "undefined" ? window.getSelection()?.toString().length : 0) ?? 0;
+    const at = Date.now() - (testStartRef.current || Date.now());
+    setCopyCount((c) => c + 1);
+    if (len > 0) setCopyChars((n) => n + len);
+    setEvents((ev) => [...ev, { kind: "copy", at, copyChars: len }]);
+  }, []);
+
+  // PDPL-safe paste capture (belt-and-suspenders): record the paste + LENGTH only.
+  const onPasteCapture = useCallback((e: React.ClipboardEvent) => {
+    const len = e.clipboardData?.getData("text")?.length ?? 0;
+    const at = Date.now() - (testStartRef.current || Date.now());
+    setPasteCount((c) => c + 1);
+    if (len > 0) setPasteChars((n) => n + len);
+    setEvents((ev) => [...ev, { kind: "paste", at, pasteChars: len }]);
+  }, []);
 
   const ar = lang === "ar";
   const tr = (en: string, arText: string) => (ar ? arText : en);
@@ -70,7 +132,10 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
     const r = await fetch(`/api/prehire/${token}/quiz/submit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers }),
+      body: JSON.stringify({
+        answers,
+        integrity: { blurCount, pasteCount, copyCount, awayMs, pasteChars, copyChars, events },
+      }),
     });
     setBusy(false);
     // Idempotent completion: a lost response may already have completed the
@@ -114,7 +179,13 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
       )}
 
       {phase === "quiz" && (
-        <>
+        <div className="space-y-4" onCopyCapture={onCopyCapture} onPasteCapture={onPasteCapture}>
+          <p className="text-xs text-muted-foreground">
+            {tr(
+              "Integrity monitoring is on - tab switches and copying are recorded.",
+              "المراقبة النزاهية مفعّلة - يُسجَّل تبديل التبويبات والنسخ."
+            )}
+          </p>
           {questions.map((q, qi) => {
             const opts = qOptions(q);
             const labelId = `q-${q.id}-label`;
@@ -177,7 +248,7 @@ export function QuizStage({ token, onDone, lang = "en" }: { token: string; onDon
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );

@@ -2,9 +2,42 @@ import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findCandidateByToken, rescoreCandidate } from "@/lib/prehire/candidate-access";
 import { logPrehireEvent } from "@/lib/prehire/audit";
+import type { IntegrityFlags, IntegrityEvent } from "@/lib/scoring/integrity";
 import type { QuizQuestion } from "@/types/database";
 
 type StoredDetail = { questions?: QuizQuestion[] } | null;
+
+// PDPL-safe: keep only non-negative counts/durations/lengths and the event log's
+// kind + numeric metadata - never any pasted/copied text. Mirrors the Fluent
+// stage's advisory capture; used to prompt a human glance, never to auto-fail.
+function sanitizeIntegrity(raw: unknown): IntegrityFlags | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? Math.round(v) : 0);
+  const events: IntegrityEvent[] = Array.isArray(r.events)
+    ? (r.events as unknown[])
+        .map((e): IntegrityEvent | null => {
+          if (!e || typeof e !== "object") return null;
+          const o = e as Record<string, unknown>;
+          const at = num(o.at);
+          if (o.kind === "blur") return { kind: "blur", at, awayMs: num(o.awayMs) };
+          if (o.kind === "paste") return { kind: "paste", at, pasteChars: num(o.pasteChars) };
+          if (o.kind === "copy") return { kind: "copy", at, copyChars: num(o.copyChars) };
+          return null;
+        })
+        .filter((e): e is IntegrityEvent => e !== null)
+        .slice(0, 200)
+    : [];
+  return {
+    blurCount: num(r.blurCount),
+    pasteCount: num(r.pasteCount),
+    copyCount: num(r.copyCount),
+    awayMs: num(r.awayMs),
+    pasteChars: num(r.pasteChars),
+    copyChars: num(r.copyChars),
+    events,
+  };
+}
 
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   const ctx = await findCandidateByToken(params.token);
@@ -18,8 +51,12 @@ export async function POST(req: Request, { params }: { params: { token: string }
     return NextResponse.json({ error: "Consent is required before submitting an assessment." }, { status: 403 });
   }
 
-  const body = (await req.json().catch(() => null)) as { answers?: Record<string, number> } | null;
+  const body = (await req.json().catch(() => null)) as {
+    answers?: Record<string, number>;
+    integrity?: unknown;
+  } | null;
   const answers = body?.answers ?? {};
+  const integrity = sanitizeIntegrity(body?.integrity);
 
   const svc = createServiceClient();
   const { data: stage } = await svc
@@ -67,6 +104,10 @@ export async function POST(req: Request, { params }: { params: { token: string }
       normalized_score: normalized,
       passed,
       detail: { questions: strippedQuestions, answers, review },
+      // Advisory integrity telemetry (tab-away / copy / paste). Surfaced to
+      // recruiters on the SME review page; never auto-fails. Only written when
+      // the client captured something.
+      ...(integrity ? { flags: integrity } : {}),
       completed_at: new Date().toISOString(),
     })
     .eq("id", stage.id);

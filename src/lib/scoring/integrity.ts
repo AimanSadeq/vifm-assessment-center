@@ -21,7 +21,8 @@
 /** A single captured proctoring event, time-stamped from the test start. */
 export type IntegrityEvent =
   | { kind: "blur"; at: number; awayMs?: number }
-  | { kind: "paste"; at: number; pasteChars?: number };
+  | { kind: "paste"; at: number; pasteChars?: number }
+  | { kind: "copy"; at: number; copyChars?: number };
 
 /**
  * The advisory integrity telemetry persisted on a Fluent result
@@ -40,10 +41,14 @@ export type IntegrityFlags = {
   blurCount?: number;
   /** Number of paste events into a monitored field. */
   pasteCount?: number;
+  /** Number of copy events (e.g. copying a question out to look it up). */
+  copyCount?: number;
   /** Total time (ms) the test was hidden or unfocused, debounced. */
   awayMs?: number;
   /** Total length (chars) of all pasted text - never the text itself. */
   pasteChars?: number;
+  /** Total length (chars) of all copied text - never the text itself. */
+  copyChars?: number;
   /** Ordered, time-stamped event log (kind + meta). */
   events?: IntegrityEvent[];
   /**
@@ -100,6 +105,12 @@ const AWAY_MS_FOR_MAX = 120_000; // 2 minutes away reads as the full away weight
 const MAX_PASTE_POINTS = 40;
 const PASTE_CHARS_FOR_MAX = 600; // ~a long paragraph pasted in reads as the full paste weight
 
+/** Copied-characters contribution: ramps to MAX_COPY_POINTS at COPY_CHARS_FOR_MAX.
+ *  The MCQ-cheat signal - copying a question out to look up the answer. Weighted
+ *  a touch below paste (copying is more ambiguous than pasting an answer in). */
+const MAX_COPY_POINTS = 30;
+const COPY_CHARS_FOR_MAX = 600;
+
 /** A mid-test IP change (server-detected) is a meaningful integrity signal -
  *  enough to clear the "minor" bar on its own and to read as elevated alongside
  *  other activity. Advisory only (a legitimate network switch also changes IP). */
@@ -136,6 +147,7 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
 
   const blurCount = clampNonNeg(f.blurCount) || events.filter((e) => e.kind === "blur").length;
   const pasteCount = clampNonNeg(f.pasteCount) || events.filter((e) => e.kind === "paste").length;
+  const copyCount = clampNonNeg(f.copyCount) || events.filter((e) => e.kind === "copy").length;
 
   // Prefer the explicit totals; fall back to summing the event log for old/new
   // rows that carry events but not the aggregate (and vice-versa).
@@ -145,6 +157,9 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
   const pasteChars =
     clampNonNeg(f.pasteChars) ||
     events.reduce((sum, e) => sum + (e.kind === "paste" ? clampNonNeg(e.pasteChars) : 0), 0);
+  const copyChars =
+    clampNonNeg(f.copyChars) ||
+    events.reduce((sum, e) => sum + (e.kind === "copy" ? clampNonNeg(e.copyChars) : 0), 0);
 
   const blurPoints = Math.min(MAX_BLUR_POINTS, blurCount * BLUR_POINTS_PER_EVENT);
   const awayPoints = awayMs > 0 ? Math.min(MAX_AWAY_POINTS, (awayMs / AWAY_MS_FOR_MAX) * MAX_AWAY_POINTS) : 0;
@@ -155,6 +170,13 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
         ? // Legacy rows have no char length; a bare paste event still earns a
           // small, capped nudge so it is not invisible.
           Math.min(MAX_PASTE_POINTS, pasteCount * 6)
+        : 0;
+
+  const copyPoints =
+    copyChars > 0
+      ? Math.min(MAX_COPY_POINTS, (copyChars / COPY_CHARS_FOR_MAX) * MAX_COPY_POINTS)
+      : copyCount > 0
+        ? Math.min(MAX_COPY_POINTS, copyCount * 6)
         : 0;
 
   const ipPoints = f.ipChanged ? IP_CHANGE_POINTS : 0;
@@ -169,7 +191,7 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
   const proctorPoints = f.proctorMissing ? PROCTOR_MISSING_POINTS : 0;
   const score = Math.min(
     100,
-    Math.round(blurPoints + awayPoints + pastePoints + ipPoints + aiPoints + proctorPoints)
+    Math.round(blurPoints + awayPoints + pastePoints + copyPoints + ipPoints + aiPoints + proctorPoints)
   );
 
   const reasons: string[] = [];
@@ -194,6 +216,11 @@ export function computeIntegritySignal(flags: IntegrityFlags | null | undefined)
     reasons.push(`Pasted about ${pasteChars} characters`);
   } else if (pasteCount > 0) {
     reasons.push(pasteCount === 1 ? "Pasted text once" : `Pasted text ${pasteCount} times`);
+  }
+  if (copyChars > 0) {
+    reasons.push(`Copied about ${copyChars} characters out of the test`);
+  } else if (copyCount > 0) {
+    reasons.push(copyCount === 1 ? "Copied text once" : `Copied text ${copyCount} times`);
   }
   if (reasons.length === 0) reasons.push("No unusual activity recorded");
 

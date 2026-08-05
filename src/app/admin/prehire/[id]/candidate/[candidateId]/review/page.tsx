@@ -103,6 +103,8 @@ export default async function PrehireReviewPage({
       if (blur > 0) facts.push(`left the page ${blur}x${f.awayMs ? ` (${fmtAway(f.awayMs)} away)` : ""}`);
       const pastes = f.pasteCount ?? 0;
       if (pastes > 0) facts.push(`pasted ${pastes}x${f.pasteChars ? ` (~${f.pasteChars} chars)` : ""}`);
+      const copies = f.copyCount ?? 0;
+      if (copies > 0) facts.push(`copied ${copies}x${f.copyChars ? ` (~${f.copyChars} chars)` : ""}`);
       if (Array.isArray(f.turnSeconds) && f.turnSeconds.length > 0) {
         const med = median(f.turnSeconds);
         facts.push(`answer time ${f.turnSeconds.join("s / ")}s (median ${med}s)`);

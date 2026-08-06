@@ -112,7 +112,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         indicators: ar
           ? ["يفكّك المشكلات المعقّدة إلى عناصرها", "يميّز الأنماط والعلاقات في البيانات", "يستند في استنتاجاته إلى الأدلة"]
           : ["Breaks complex problems into their parts", "Spots patterns and relationships in data", "Grounds conclusions in evidence"],
-        examCorrect: 2, examTotal: 2,
+        examCorrect: 3, examTotal: 3,
       },
       {
         name: "Communicates Effectively", nameAr: "التواصل الفعّال", priority: "high",
@@ -122,7 +122,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         indicators: ar
           ? ["يوصل الأفكار بوضوح", "يكيّف الرسالة حسب الجمهور", "ينصت باهتمام ويستوضح"]
           : ["Conveys ideas clearly", "Tailors the message to the audience", "Listens actively and checks understanding"],
-        examCorrect: 2, examTotal: 2,
+        examCorrect: 3, examTotal: 3,
       },
       {
         name: "Financial Acumen", nameAr: "الفطنة المالية", priority: "high",
@@ -132,7 +132,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         indicators: ar
           ? ["يفسّر البيانات والتقارير المالية", "يربط القرارات بأثرها المالي", "يقيّم المخاطر والعوائد"]
           : ["Interprets financial data and reports", "Links decisions to their financial impact", "Weighs risk against return"],
-        examCorrect: 1, examTotal: 2,
+        examCorrect: 2, examTotal: 3,
       },
       {
         name: "Action Orientation", nameAr: "التوجه نحو الإنجاز", priority: "medium",
@@ -142,7 +142,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         indicators: ar
           ? ["يبادر دون انتظار التوجيه", "يحافظ على وتيرة إنجاز عالية", "يتابع حتى إتمام العمل"]
           : ["Takes initiative without waiting to be told", "Maintains a strong pace of delivery", "Follows through to completion"],
-        examCorrect: 0, examTotal: 1,
+        examCorrect: 1, examTotal: 3,
       },
       {
         name: "Manages Complexity", nameAr: "إدارة التعقيد", priority: "medium",
@@ -152,7 +152,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         indicators: ar
           ? ["يوازن بين عدة أولويات متنافسة", "يتعامل مع الغموض بثبات", "يبسّط ما هو معقّد للآخرين"]
           : ["Balances several competing priorities", "Stays steady amid ambiguity", "Simplifies the complex for others"],
-        examCorrect: null, examTotal: null,
+        examCorrect: 2, examTotal: 3,
       },
     ],
   };

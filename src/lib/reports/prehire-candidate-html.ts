@@ -170,6 +170,50 @@ function compNarrative(
   return `The candidate's responses in ${name} fell below the target level (${s}) - a development priority for this role.`;
 }
 
+/** "By stage" as headed cards (not a flat table): each stage a card with its
+ *  name header + Required badge, definition, note, and a right-hand stat block
+ *  (score, weight/cut, outcome pill). */
+function stageCardsHtml(stages: PrehireReportStage[], t: Record<string, string>, rtl: boolean): string {
+  const endAlign = rtl ? "left" : "right";
+  return stages
+    .map((s) => {
+      const outcome =
+        s.normalized == null
+          ? `<span class="muted" style="font-size:10px">${t.notTaken}</span>`
+          : s.passed === false
+            ? `<span class="badge warn">${t.below}</span>`
+            : `<span class="badge ok">${t.pass}</span>`;
+      const def = s.definition ? `<div class="stage-def">${esc(s.definition)}</div>` : "";
+      const note = s.note ? `<div class="substage">${esc(s.note)}</div>` : "";
+      const score = s.normalized == null ? "-" : Math.round(s.normalized);
+      return `<div style="border:1px solid #e3e6ee;border-radius:8px;padding:10px 13px;margin-bottom:8px;background:#fbfcfe;page-break-inside:avoid">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:700;color:#010131">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}</div>
+            ${def}${note}
+          </div>
+          <div style="text-align:${endAlign};flex-shrink:0;min-width:96px">
+            <div style="font-size:22px;font-weight:700;color:#010131;line-height:1">${score}</div>
+            <div style="font-size:8.5px;color:#94a3b8;margin-top:3px">${t.thWeight} ${Math.round(s.weightPct)}% · ${t.thCut} ${s.cutScore == null ? "-" : s.cutScore}</div>
+            <div style="margin-top:5px">${outcome}</div>
+          </div>
+        </div>
+      </div>`;
+    })
+    .join("");
+}
+
+/** Prominent stage banner heading the DETAIL section for a stage: a full-width
+ *  navy band with the stage name in very large type + a small subtitle. Marks
+ *  unmistakably where each stage's detailed results begin. */
+function stageBanner(eyebrow: string, title: string, subtitle: string | null): string {
+  return `<div style="background:#010131;border-radius:9px;padding:14px 18px;margin:22px 0 12px;page-break-inside:avoid;page-break-after:avoid">
+    <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#5391D5;margin-bottom:3px">${esc(eyebrow)}</div>
+    <div style="font-size:22px;font-weight:700;color:#ffffff;line-height:1.2">${esc(title)}</div>
+    ${subtitle ? `<div style="font-size:10.5px;color:rgba(255,255,255,0.72);margin-top:3px">${esc(subtitle)}</div>` : ""}
+  </div>`;
+}
+
 /** "Competencies assessed" block - the role's selected competencies (from the
  *  requisition's role profile), each with a plain-language definition, its
  *  behavioural indicators ("sub-competencies"), and - where the quiz mapped
@@ -284,12 +328,17 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
   const note = anyAssessed
     ? `<p style="margin:8px 0 0;color:#94a3b8;font-size:9.5px;line-height:1.5">${
         ar
-          ? "نتائج الكفاءات مأخوذة من أسئلة الاختبار القصير (عدد محدود من البنود لكل كفاءة)؛ فهي مؤشِّرة وليست تقييماً نهائياً للكفاءة."
-          : "Per-competency results come from a short quiz (a limited number of items per competency); they are indicative, not a definitive competency rating."
+          ? "الدرجة (مثل ٢/٣) هي عدد الأسئلة التي أجاب عنها المرشح بشكل صحيح من إجمالي الأسئلة المطروحة لتلك الكفاءة، و«الترتيب» يرتّب الكفاءات من الأقوى إلى الأضعف. النتائج مأخوذة من اختبار قصير؛ فهي مؤشِّرة وليست تقييماً نهائياً للكفاءة."
+          : "The score (e.g. 2/3) is the number of questions the candidate answered correctly out of those asked for that competency, and Rank orders the competencies from strongest to weakest. Results come from a short quiz, so they are indicative, not a definitive competency rating."
       }</p>`
     : "";
 
-  return `<h2>${title}</h2><p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>${chart}${items}${note}`;
+  const banner = stageBanner(
+    ar ? "تفاصيل المرحلة" : "Stage detail",
+    ar ? "اختبار الكفاءات" : "Competency Quiz",
+    title
+  );
+  return `${banner}<p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>${chart}${items}${note}`;
 }
 
 // CEFR band tone: A = developing (rose), B = intermediate (amber), C = advanced (green).
@@ -322,40 +371,59 @@ function compositeDonut(value: number | null, ringColor: string): string {
   </svg>`;
 }
 
-/** Four-axis CEFR radar for the English skills (A1=1 … C2=6). */
+/** Four-axis CEFR radar for the English skills (A1=1 … C2=6). Rendered LARGE as
+ *  the centrepiece of the English section: gradient-filled polygon, all six CEFR
+ *  rings with level labels, a highlighted B2 "working threshold" ring, and
+ *  band-coloured dots + CEFR pills on each axis. */
 function cefrRadar(skills: PrehireFluentSkill[], ar: boolean): string {
   const CEFR_VAL: Record<string, number> = { A1: 1, A2: 2, B1: 3, B2: 4, C1: 5, C2: 6 };
+  const LEVELS = ["A1", "A2", "B1", "B2", "C1", "C2"];
   const order: PrehireFluentSkill["key"][] = ["reading", "listening", "writing", "speaking"];
   const angle: Record<string, number> = { reading: -90, listening: 0, writing: 90, speaking: 180 };
   const labelEn: Record<string, string> = { reading: "Reading", listening: "Listening", writing: "Writing", speaking: "Speaking" };
   const labelAr: Record<string, string> = { reading: "القراءة", listening: "الاستماع", writing: "الكتابة", speaking: "التحدث" };
   const byKey = new Map(skills.map((s) => [s.key, s]));
   if (order.filter((k) => byKey.has(k)).length < 3) return "";
-  const cx = 120, cy = 96, maxR = 58;
+  const cx = 240, cy = 205, maxR = 132;
+  const font = "'Cairo','Open Sans',sans-serif";
   const val = (c: string | null | undefined) => CEFR_VAL[(c ?? "").toUpperCase()] ?? 0;
   const pt = (deg: number, rad: number): [number, number] => {
     const a = (deg * Math.PI) / 180;
     return [cx + rad * Math.cos(a), cy + rad * Math.sin(a)];
   };
+
+  // Six CEFR rings; B2 (the professional working threshold) highlighted dashed.
   let grid = "";
-  for (const lvl of [2, 4, 6]) {
-    grid += `<circle cx="${cx}" cy="${cy}" r="${((lvl / 6) * maxR).toFixed(1)}" fill="none" stroke="#e6eaf1" stroke-width="1"/>`;
+  let ringLabels = "";
+  for (let lvl = 1; lvl <= 6; lvl++) {
+    const r = (lvl / 6) * maxR;
+    const isB2 = lvl === 4;
+    grid += `<circle cx="${cx}" cy="${cy}" r="${r.toFixed(1)}" fill="none" stroke="${isB2 ? "#5391D5" : "#e6eaf1"}" stroke-width="${isB2 ? 1.4 : 1}"${isB2 ? ` stroke-dasharray="5 4" stroke-opacity="0.55"` : ""}/>`;
+    ringLabels += `<text x="${cx + 7}" y="${(cy - r + 3.5).toFixed(1)}" font-family="${font}" font-size="8.5" fill="#b3bcc9">${LEVELS[lvl - 1]}</text>`;
   }
+
   let axes = "", labels = "";
   for (const k of order) {
     const [ex, ey] = pt(angle[k], maxR);
-    axes += `<line x1="${cx}" y1="${cy}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="#e6eaf1" stroke-width="1"/>`;
+    axes += `<line x1="${cx}" y1="${cy}" x2="${ex.toFixed(1)}" y2="${ey.toFixed(1)}" stroke="#dfe4ec" stroke-width="1"/>`;
     const s = byKey.get(k);
     const nm = ar ? labelAr[k] : labelEn[k];
     const cefr = s?.cefr ? s.cefr.toUpperCase() : "-";
+    const tone2 = cefrTone(s?.cefr ?? null);
     let lx = ex, ly = ey, anchor = "middle";
-    if (k === "reading") { ly = cy - maxR - 14; }
-    else if (k === "writing") { ly = cy + maxR + 20; }
-    else if (k === "listening") { lx = cx + maxR + 8; ly = cy + 2; anchor = "start"; }
-    else if (k === "speaking") { lx = cx - maxR - 8; ly = cy + 2; anchor = "end"; }
-    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-family="'Open Sans',sans-serif" font-size="10" font-weight="700" fill="#010131">${esc(nm)}</text>`;
-    labels += `<text x="${lx.toFixed(1)}" y="${(ly + 11).toFixed(1)}" text-anchor="${anchor}" font-family="'Open Sans',sans-serif" font-size="9" font-weight="700" fill="#5391D5">${esc(cefr)}</text>`;
+    if (k === "reading") { ly = cy - maxR - 30; }
+    else if (k === "writing") { ly = cy + maxR + 26; }
+    else if (k === "listening") { lx = cx + maxR + 16; ly = cy - 6; anchor = "start"; }
+    else if (k === "speaking") { lx = cx - maxR - 16; ly = cy - 6; anchor = "end"; }
+    labels += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" font-family="${font}" font-size="15" font-weight="700" fill="#010131">${esc(nm)}</text>`;
+    // CEFR pill under the skill name, tinted to the band.
+    const pillW = 40, pillH = 19;
+    const px = anchor === "middle" ? lx - pillW / 2 : anchor === "start" ? lx : lx - pillW;
+    const py = ly + 7;
+    labels += `<rect x="${px.toFixed(1)}" y="${py.toFixed(1)}" width="${pillW}" height="${pillH}" rx="9.5" fill="${tone2.bg}" stroke="${tone2.border}" stroke-width="1"/>`;
+    labels += `<text x="${(px + pillW / 2).toFixed(1)}" y="${(py + 13.5).toFixed(1)}" text-anchor="middle" font-family="${font}" font-size="12" font-weight="700" fill="${tone2.fg}">${esc(cefr)}</text>`;
   }
+
   const poly = order
     .map((k) => {
       const [x, y] = pt(angle[k], (val(byKey.get(k)?.cefr) / 6) * maxR);
@@ -364,13 +432,22 @@ function cefrRadar(skills: PrehireFluentSkill[], ar: boolean): string {
     .join(" ");
   const dots = order
     .map((k) => {
-      const [x, y] = pt(angle[k], (val(byKey.get(k)?.cefr) / 6) * maxR);
-      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.6" fill="#5391D5"/>`;
+      const s = byKey.get(k);
+      const tone2 = cefrTone(s?.cefr ?? null);
+      const [x, y] = pt(angle[k], (val(s?.cefr) / 6) * maxR);
+      return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="5.5" fill="${tone2.fg}" stroke="#ffffff" stroke-width="2"/>`;
     })
     .join("");
-  return `<svg viewBox="0 0 240 200" width="230" height="192" style="flex-shrink:0" aria-hidden="true">
-    ${grid}${axes}
-    <polygon points="${poly}" fill="#5391D5" fill-opacity="0.18" stroke="#5391D5" stroke-width="1.5"/>
+
+  return `<svg viewBox="0 0 480 410" width="470" height="401" style="max-width:100%" aria-hidden="true">
+    <defs>
+      <radialGradient id="cefrGrad" cx="50%" cy="50%" r="65%">
+        <stop offset="0%" stop-color="#5391D5" stop-opacity="0.34"/>
+        <stop offset="100%" stop-color="#5391D5" stop-opacity="0.10"/>
+      </radialGradient>
+    </defs>
+    ${grid}${axes}${ringLabels}
+    <polygon points="${poly}" fill="url(#cefrGrad)" stroke="#5391D5" stroke-width="2.4" stroke-linejoin="round"/>
     ${dots}${labels}
   </svg>`;
 }
@@ -483,16 +560,27 @@ function englishSection(data: PrehireReportData, lang: Lang): string {
     })
     .join("");
 
-  // CEFR radar chart - the four skills at a glance, beside the overall level.
+  // CEFR radar chart - the centrepiece of the English section: overall level
+  // first, then the radar large and centred in its own card. The caption notes
+  // the dashed B2 ring (the professional working threshold).
   const radar = cefrRadar(f.skills ?? [], ar);
+  const radarCaption = ar
+    ? "الحلقة المتقطعة تمثّل المستوى B2 - الحد العملي المهني."
+    : "The dashed ring marks B2 - the professional working threshold.";
   const topBlock = radar
-    ? `<div style="display:flex;gap:14px;align-items:center;margin:0 0 10px;page-break-inside:avoid">
-         <div style="flex:1">${overallRow.replace(/margin:0 0 10px;/, "margin:0;")}</div>
-         <div>${radar}</div>
+    ? `${overallRow}
+       <div style="border:1px solid #e3e6ee;border-radius:9px;background:#fbfcfe;padding:16px 12px 8px;margin:0 0 10px;text-align:center;page-break-inside:avoid">
+         ${radar}
+         <div style="font-size:9.5px;color:#94a3b8;margin-top:2px;padding-bottom:4px">${radarCaption}</div>
        </div>`
     : overallRow;
 
-  return `<h2>${title}</h2>
+  const banner = stageBanner(
+    ar ? "تفاصيل المرحلة" : "Stage detail",
+    ar ? "الإنجليزية (Fluent®)" : "English (Fluent®)",
+    title
+  );
+  return `${banner}
     <p class="muted" style="margin:0 0 8px;color:#555;font-size:11px">${intro}</p>
     ${topBlock}
     ${cards}`;
@@ -677,18 +765,6 @@ export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): s
     month: "long",
     day: "numeric",
   });
-  const rows = data.stages
-    .map((s) => {
-      const outcome =
-        s.normalized == null
-          ? `<span class="muted">${t.notTaken}</span>`
-          : s.passed === false
-            ? `<span class="badge warn">${t.below}</span>`
-            : `<span class="badge ok">${t.pass}</span>`;
-      return `<tr><td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}</td><td class="num">${Math.round(s.weightPct)}%</td><td class="num">${s.normalized == null ? "-" : Math.round(s.normalized)}</td><td class="num">${s.cutScore == null ? "-" : s.cutScore}</td><td>${outcome}</td></tr>`;
-    })
-    .join("");
-
   return `<!doctype html>
 <html lang="${lang}" dir="${rtl ? "rtl" : "ltr"}">
 <head>
@@ -739,10 +815,7 @@ export function renderPrehireSummaryHtml(data: PrehireReportData, lang: Lang): s
     <div class="box"><div class="l" style="margin-bottom:8px">${t.advisory}</div><span class="reco" style="background:${tone.bg};color:${tone.fg}">${recoLabel}</span></div>
   </div>
   <h2>${t.perStage}</h2>
-  <table>
-    <thead><tr><th>${t.thStage}</th><th class="num">${t.thWeight}</th><th class="num">${t.thScore}</th><th class="num">${t.thCut}</th><th>${t.thOutcome}</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>
+  ${stageCardsHtml(data.stages, t, rtl)}
   ${competenciesSection(data, lang)}
   ${englishSection(data, lang)}
   <div class="disclaimer">${t.disclaimer}</div>
@@ -763,26 +836,6 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
     day: "numeric",
   });
 
-  const stageRows = data.stages
-    .map((s) => {
-      const outcome =
-        s.normalized == null
-          ? `<span class="muted">${t.notTaken}</span>`
-          : s.passed === false
-            ? `<span class="badge warn">${t.below}</span>`
-            : `<span class="badge ok">${t.pass}</span>`;
-      const note = s.note ? `<div class="substage">${esc(s.note)}</div>` : "";
-      const def = s.definition ? `<div class="stage-def">${esc(s.definition)}</div>` : "";
-      return `<tr>
-        <td class="strong">${esc(s.label)}${s.required ? ` <span class="req">${t.required}</span>` : ""}${def}${note}</td>
-        <td class="num">${Math.round(s.weightPct)}%</td>
-        <td class="num">${s.normalized == null ? "-" :Math.round(s.normalized)}</td>
-        <td class="num">${s.cutScore == null ? "-" :s.cutScore}</td>
-        <td>${outcome}</td>
-      </tr>`;
-    })
-    .join("");
-
   // "How this score is calculated" - the band methodology, so the client
   // understands the automatically-derived advisory signal.
   const bandOrder: PrehireRecommendation[] = ["advance", "review", "hold", "incomplete"];
@@ -797,31 +850,72 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
     })
     .join("");
 
-  // CBI (AI interview) transcript + AI assessment - only when the candidate
-  // completed the interview. Lets the client read the actual responses, since
-  // the rating is AI-generated (a signal), not a human verdict.
-  const sep = lang === "ar" ? "؛ " : "; ";
-  const cbiSection = data.cbi
-    ? `
-  <h2>${t.cbiTitle}</h2>
+  // CBI (AI interview) - elaborated to match the depth of the quiz / English
+  // sections: a BARS 1-5 scale visual, a band-aware "what this means" read, the
+  // strengths / development areas as lists, then the full transcript.
+  let cbiSection = "";
+  if (data.cbi) {
+    const c = data.cbi;
+    const b = typeof c.bars === "number" ? c.bars : null;
+    const key = b == null ? "none" : b >= 4 ? "strong" : b === 3 ? "competent" : "developing";
+    const tn =
+      key === "strong" ? { fg: "#067647", bg: "#e8f5ee", bd: "#b6e2c8", fill: "#12805c" }
+      : key === "competent" ? { fg: "#b25e09", bg: "#fef6e7", bd: "#f5d9a8", fill: "#d08214" }
+      : key === "developing" ? { fg: "#b42318", bg: "#fdeef0", bd: "#f5c6cb", fill: "#d1493c" }
+      : { fg: "#64748b", bg: "#f1f5f9", bd: "#e2e8f0", fill: "#cbd5e1" };
+    const scale =
+      b == null
+        ? ""
+        : `<div style="display:flex;gap:3px;max-width:190px;margin-top:7px">${[1, 2, 3, 4, 5]
+            .map((i) => `<div style="flex:1;height:9px;border-radius:2px;background:${i <= b ? tn.fill : "#eef2f7"}"></div>`)
+            .join("")}</div>`;
+    const meansMap: Record<string, string> = rtl
+      ? {
+          strong: "قدّم المرشح أدلّة سلوكية قوية على هذه الكفاءة في المقابلة - نقطة قوة واضحة.",
+          competent: "استوفى المرشح المعيار السلوكي المتوقّع - كفؤ مع مجال للتعميق.",
+          developing: "كانت الأدلّة السلوكية دون المعيار المتوقّع - يُنصح بالتعمّق فيها في المقابلة البشرية.",
+        }
+      : {
+          strong: "The candidate gave strong behavioural evidence on this competency in the interview - a clear strength.",
+          competent: "The candidate met the expected behavioural standard - competent, with room to deepen.",
+          developing: "The behavioural evidence was below the expected standard - probe this further at the human interview.",
+        };
+    const meansTxt = meansMap[key] ?? "";
+    const meansLbl2 = rtl ? "ماذا يعني هذا" : "What this means";
+    const meansHtml = meansTxt
+      ? `<div style="margin-top:9px;background:${tn.bg};border:1px solid ${tn.bd};border-radius:6px;padding:7px 10px;font-size:10.5px;color:${tn.fg}"><span style="font-weight:700">${meansLbl2}: </span>${esc(meansTxt)}</div>`
+      : "";
+    const listBlock = (label: string, items: string[]) =>
+      items.length
+        ? `<div style="margin-top:9px"><div style="font-size:8.5px;text-transform:uppercase;letter-spacing:.05em;color:#94a3b8;font-weight:700;margin-bottom:3px">${label}</div><ul style="margin:0;padding-inline-start:16px">${items
+            .map((x) => `<li style="font-size:10.5px;color:#334155;line-height:1.5;margin-bottom:1px">${esc(x)}</li>`)
+            .join("")}</ul></div>`
+        : "";
+    cbiSection = `
+  ${stageBanner(
+    rtl ? "تفاصيل المرحلة" : "Stage detail",
+    rtl ? "المقابلة بالذكاء الاصطناعي (CBI)" : "AI Interview (CBI)",
+    t.cbiTitle
+  )}
   <p class="muted" style="margin:0 0 10px;color:#555;font-size:11px">${t.cbiIntro}</p>
   <div class="cbi-assess">
-    ${data.cbi.ratingLabel ? `<div><span class="cbi-k">${t.cbiAiRating}:</span> <b>${esc(data.cbi.ratingLabel)}</b>${data.cbi.bars != null ? ` (${data.cbi.bars}/5)` : ""}</div>` : ""}
-    ${data.cbi.rationale ? `<div style="margin-top:6px"><span class="cbi-k">${t.cbiRationale}:</span> ${esc(data.cbi.rationale)}</div>` : ""}
-    ${data.cbi.strengths.length ? `<div style="margin-top:6px"><span class="cbi-k">${t.cbiStrengths}:</span> ${data.cbi.strengths.map(esc).join(sep)}</div>` : ""}
-    ${data.cbi.developmentAreas.length ? `<div style="margin-top:6px"><span class="cbi-k">${t.cbiDev}:</span> ${data.cbi.developmentAreas.map(esc).join(sep)}</div>` : ""}
+    ${c.ratingLabel ? `<div><span class="cbi-k">${t.cbiAiRating}:</span> <b style="color:${tn.fg}">${esc(c.ratingLabel)}</b>${b != null ? ` (${b}/5)` : ""}</div>${scale}` : scale}
+    ${c.rationale ? `<div style="margin-top:9px"><span class="cbi-k">${t.cbiRationale}:</span> ${esc(c.rationale)}</div>` : ""}
+    ${meansHtml}
+    ${listBlock(t.cbiStrengths, c.strengths)}
+    ${listBlock(t.cbiDev, c.developmentAreas)}
   </div>
   <div class="cbi-tx-title">${t.cbiTranscript}</div>
   <div class="cbi-tx">
-    ${data.cbi.exchanges
+    ${c.exchanges
       .map(
         (m) =>
           `<div class="cbi-turn ${m.who}"><div class="cbi-who">${m.who === "candidate" ? t.cbiCandidate : t.cbiInterviewer}</div><div class="cbi-text">${esc(m.text)}</div></div>`
       )
       .join("")}
   </div>
-  <p class="muted" style="margin-top:8px;font-size:9.5px;font-style:italic">${t.cbiAiNote}</p>`
-    : "";
+  <p class="muted" style="margin-top:8px;font-size:9.5px;font-style:italic">${t.cbiAiNote}</p>`;
+  }
 
   return `<!doctype html>
 <html lang="${lang}" dir="${rtl ? "rtl" : "ltr"}">
@@ -902,13 +996,7 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
   ${resultSummary(data, lang, recoLabel)}
 
   <h2>${t.perStage}</h2>
-  <table>
-    <thead><tr>
-      <th>${t.thStage}</th><th class="num">${t.thWeight}</th><th class="num">${t.thScore}</th>
-      <th class="num">${t.thCut}</th><th>${t.thOutcome}</th>
-    </tr></thead>
-    <tbody>${stageRows}</tbody>
-  </table>
+  ${stageCardsHtml(data.stages, t, rtl)}
 
   ${competenciesSection(data, lang)}
 

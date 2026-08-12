@@ -12,6 +12,7 @@ import { computeEngagement, normalizeEngagementModel, resolveDataResidency, with
 import { resolveIncludedSections } from "./constants";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { sanitizeRichHtml, isRichHtml } from "./rich-text";
+import { resolveTaxMode, taxRatePct, isVat, vatAmount, totalWithVat } from "./tax";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { Proposal } from "./service";
 import { proposalRef } from "./proposal-html";
@@ -261,6 +262,12 @@ function renderProposalDocAr(
     .join("");
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const discountRow = discount > 0 ? `<tr><td colspan="3" class="tot-label">خصم (${pc(p.discountPct)})</td><td class="num">- ${m(discount)}</td></tr>` : "";
+
+  // Tax treatment (mirrors the EN renderer; stored in licence_data.taxMode).
+  const taxMode = resolveTaxMode((p.licenceData as Record<string, unknown> | null)?.taxMode);
+  const taxRate = taxRatePct(taxMode);
+  const vat = vatAmount(p.total, taxMode);
+  const totalInclVat = totalWithVat(p.total, taxMode);
 
   // ── Per-service blocks (per-project, 2+ services): each service in its own block,
   // then total-of-all-services + data residency + discount + grand total (Arabic). ──
@@ -775,7 +782,29 @@ function renderProposalDocAr(
   <h2>${at("Commercial proposal")}</h2>
   ${secBody("Commercial proposal", commercialIntroHtml)}
   ${commercialTableHtml}
-  ${validUntil ? `<p class="scope-note">هذا العرض صالح حتى <strong>${validUntil}</strong>. والرسوم مذكورة بعملة ${esc(cur)} ولا تشمل أي ضرائب سارية تُضاف بالسعر المعمول به عند الاقتضاء.</p>` : `<p class="scope-note">الرسوم مذكورة بعملة ${esc(cur)} ولا تشمل أي ضرائب سارية تُضاف بالسعر المعمول به عند الاقتضاء.</p>`}
+  ${
+    isVat(taxMode) && p.total > 0
+      ? `<table><tbody>
+      <tr><td class="tot-label">ضريبة القيمة المضافة (${taxRate}%)</td><td class="num">${m(vat)}</td></tr>
+      <tr class="total-row"><td class="tot-label">الإجمالي شاملاً ضريبة القيمة المضافة (${esc(cur)})</td><td class="num">${m(totalInclVat)}</td></tr>
+    </tbody></table>`
+      : ""
+  }
+  ${
+    taxMode === "wht15" && p.total > 0
+      ? `<p class="scope-note"><strong>ضريبة الاستقطاع.</strong> حيثما يقتضي النظام، يجوز لـ ${esc(p.clientName)} استقطاع ضريبة بنسبة 15% عند المنبع وتوريدها للجهة الضريبية. والرسوم مذكورة قبل أي استقطاع من هذا القبيل.</p>`
+      : ""
+  }
+  ${(() => {
+    const feesSentence = isVat(taxMode)
+      ? `والرسوم مذكورة بعملة ${esc(cur)} شاملةً ضريبة القيمة المضافة بنسبة ${taxRate}% كما هو مبيّن أعلاه.`
+      : taxMode === "wht15"
+        ? `والرسوم مذكورة بعملة ${esc(cur)} غير شاملة ضريبة القيمة المضافة وقبل ضريبة الاستقطاع كما هو مبيّن أعلاه.`
+        : `والرسوم مذكورة بعملة ${esc(cur)} ولا تشمل أي ضرائب سارية تُضاف بالسعر المعمول به عند الاقتضاء.`;
+    return validUntil
+      ? `<p class="scope-note">هذا العرض صالح حتى <strong>${validUntil}</strong>. ${feesSentence}</p>`
+      : `<p class="scope-note">${feesSentence}</p>`;
+  })()}
   ${p.paymentTerms ? `<h3>شروط الدفع</h3><p>${esc(p.paymentTerms)}</p>` : ""}
 
   ${inc("Assumptions & exclusions") ? `<h2>${at("Assumptions & exclusions")}</h2>

@@ -16,6 +16,7 @@ import { computeLicensing, normalizeLicensingModel } from "./licensing";
 import { bundleContentsHtml, BUNDLE_CONTENTS_CSS } from "./bundle-contents";
 import { computeEngagement, normalizeEngagementModel, ENGAGEMENT_BASIS_LABEL, DATA_RESIDENCY_LABEL, dataResidencyStatement, resolveDataResidency, withEngagementResidency, type EngagementBasis } from "./engagement";
 import { sanitizeRichHtml, isRichHtml } from "./rich-text";
+import { resolveTaxMode, taxRatePct, isVat, vatAmount, totalWithVat } from "./tax";
 import type { ProposalEvidence } from "./evidence-summary";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import type { Proposal } from "./service";
@@ -104,6 +105,15 @@ function renderProposalDoc(
   const drRowLabel = `Data residency - ${DATA_RESIDENCY_LABEL[residency]}`;
   const discount = Math.round((p.subtotal - p.total) * 100) / 100;
   const ref = proposalRef(p);
+
+  // ── Tax treatment (client review 2026-08-12): VAT 5%/15% adds on top of the
+  // pre-tax total at render time; WHT 15% never adds - it is deducted at source
+  // by the client, so it renders as an explicit gross-of-WHT note. The DB total
+  // stays pre-tax (ARR metrics unaffected). ──
+  const taxMode = resolveTaxMode((p.licenceData as Record<string, unknown> | null)?.taxMode);
+  const taxRate = taxRatePct(taxMode);
+  const vat = vatAmount(p.total, taxMode);
+  const totalInclVat = totalWithVat(p.total, taxMode);
 
   // ── Per-section text overrides (Feature 1). Stored in licence_data.sectionOverrides
   // as { "<section title>": { en, ar } }. Blank = keep the standard wording. This
@@ -534,7 +544,9 @@ function renderProposalDoc(
     ? ""
     : isLicence && lic
       ? `<div class="fact"><b>${money(lic.year1Subtotal + drFee)}</b><span>Year-1 investment</span></div>`
-      : `<div class="fact"><b>${money(p.total)}</b><span>Total investment</span></div>`;
+      : isVat(taxMode)
+        ? `<div class="fact"><b>${money(totalInclVat)}</b><span>Total investment (incl. VAT ${taxRate}%)</span></div>`
+        : `<div class="fact"><b>${money(p.total)}</b><span>Total investment</span></div>`;
   const validityFact = validUntil ? `<div class="fact"><b>${validUntil}</b><span>Offer validity</span></div>` : "";
   const factsInner = `${solutionsFact}${peopleFact}${priceFact}${validityFact}`;
   // A one-line caption under the facts that NAMES every included solution.
@@ -970,7 +982,29 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   <h2><span class="no">${NO("Commercial proposal")}.</span>Commercial proposal</h2>
   ${secBody("Commercial proposal", commercialIntroForVariant)}
   ${commercialTableForVariant}
-  ${!showPrices ? "" : validUntil ? `<p class="scope-note">This proposal is valid until <strong>${validUntil}</strong>. Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>` : `<p class="scope-note">Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.</p>`}
+  ${
+    showPrices && isVat(taxMode) && p.total > 0
+      ? `<table class="svc-summary"><tbody>
+      <tr><td class="tot-label">VAT (${taxRate}%)</td><td class="num">${money(vat)}</td></tr>
+      <tr class="total-row"><td class="tot-label">Total including VAT (${esc(cur)})</td><td class="num">${money(totalInclVat)}</td></tr>
+    </tbody></table>`
+      : ""
+  }
+  ${
+    showPrices && taxMode === "wht15" && p.total > 0
+      ? `<p class="scope-note"><strong>Withholding tax.</strong> Where required by law, ${esc(p.clientName)} may deduct withholding tax (WHT) at 15% at source and remit it to the tax authority. Fees are quoted gross of any such withholding.</p>`
+      : ""
+  }
+  ${!showPrices ? "" : (() => {
+    const feesSentence = isVat(taxMode)
+      ? `Fees are quoted in ${esc(cur)} and are inclusive of value-added tax (VAT) at ${taxRate}%, itemised above.`
+      : taxMode === "wht15"
+        ? `Fees are quoted in ${esc(cur)}, exclusive of VAT and gross of withholding tax as noted above.`
+        : `Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.`;
+    return validUntil
+      ? `<p class="scope-note">This proposal is valid until <strong>${validUntil}</strong>. ${feesSentence}</p>`
+      : `<p class="scope-note">${feesSentence}</p>`;
+  })()}
   ${showPrices && p.paymentTerms ? `<h3>Payment terms</h3><p>${esc(p.paymentTerms)}</p>` : ""}
   ${showPrices ? `<h3>Included in the fees</h3>
   <ul>

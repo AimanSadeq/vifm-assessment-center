@@ -194,6 +194,12 @@ export function ProposalBuilder({
   const [dataResidency, setDataResidency] = useState<DataResidency>(
     resolveDataResidency((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidency),
   );
+  // Tax treatment (client review 2026-08-12): VAT is added at render time on top
+  // of the pre-tax total; WHT renders as a deducted-at-source note. licenceData bag.
+  const [taxMode, setTaxMode] = useState<string>(() => {
+    const v = (existing?.licenceData as Record<string, unknown> | undefined)?.taxMode;
+    return v === "vat5" || v === "vat15" || v === "wht15" ? (v as string) : "none";
+  });
   const [dataResidencyFee, setDataResidencyFee] = useState<number>(
     Math.max(0, Number((existing?.licenceData as Record<string, unknown> | undefined)?.dataResidencyFee) || 0),
   );
@@ -357,6 +363,7 @@ export function ProposalBuilder({
         roi: roiSalary > 0 && roiHires > 0 ? { avgSalary: roiSalary, hiresPerYear: roiHires, accuracyGainPct: roiGainPct } : null,
         dataResidency,
         dataResidencyFee,
+        taxMode,
         combinedServicesMode: pricingMode === "combined" ? combinedServicesMode : undefined,
       },
       bundleId: bundleId || null,
@@ -479,6 +486,23 @@ export function ProposalBuilder({
             <input type="number" min={0} value={dataResidencyFee}
               onChange={(e) => setDataResidencyFee(Math.max(0, Number(e.target.value) || 0))} placeholder="0"
               className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
+          </label>
+          <label className="block text-sm">
+            <span className="text-muted-foreground">Tax treatment</span>
+            <select value={taxMode} onChange={(e) => setTaxMode(e.target.value)}
+              className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm">
+              <option value="none">Exclusive of taxes (default)</option>
+              <option value="vat5">Add VAT 5% (UAE)</option>
+              <option value="vat15">Add VAT 15% (KSA)</option>
+              <option value="wht15">WHT 15% note (deducted at source)</option>
+            </select>
+            <span className="mt-1 block text-xs text-muted-foreground">
+              {taxMode === "vat5" || taxMode === "vat15"
+                ? "A VAT line + VAT-inclusive grand total render in the commercial section; the tax wording flips to inclusive."
+                : taxMode === "wht15"
+                  ? "Totals stay gross; the proposal notes the client may deduct 15% WHT at source."
+                  : "Proposal states fees are exclusive of applicable taxes."}
+            </span>
           </label>
         </div>
       </section>

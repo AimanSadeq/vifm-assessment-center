@@ -514,7 +514,7 @@ export function RecommendationCard({ rec, index }: {
   void effortColor; // effort is now a quiet text label, not a colored pill
   return (
     <article style={{
-      padding: "13pt 16pt", background: "white",
+      padding: "10pt 12pt", background: "white", height: "100%",
       border: `1pt solid ${TOKENS.line}`, borderRadius: "3pt",
       breakInside: "avoid", pageBreakInside: "avoid",
     }}>
@@ -547,12 +547,12 @@ export function RecommendationCard({ rec, index }: {
       </div>
       <p style={{
         fontSize: "10pt", color: TOKENS.ink2, lineHeight: 1.55,
-        margin: "9pt 0 10pt",
+        margin: "7pt 0 8pt",
       }}>
         {rec.body}
       </p>
       <div style={{
-        borderTop: `1pt solid ${TOKENS.line}`, paddingTop: "7pt",
+        borderTop: `1pt solid ${TOKENS.line}`, paddingTop: "5pt",
         fontSize: "9pt", color: TOKENS.mute,
       }}>
         <strong style={{ color: TOKENS.ink2 }}>Expected outcome · </strong>

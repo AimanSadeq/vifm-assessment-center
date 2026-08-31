@@ -1518,7 +1518,7 @@ function PillarPages({
       {/* Findings page */}
       <section className="report-page">
         <SectionHeader
-          eyebrow="Pillar deep dive · Findings"
+          eyebrow="Pillar deep dive"
           title={name}
           kicker={nameAr}
         />
@@ -1561,9 +1561,9 @@ function PillarPages({
         {/* Maturity band + respondent spread: the 1-5 scale banded into the
             maturity zones, a dot per respondent (cohort agreement is visible at
             a glance), the cohort mean marker, and the dashed benchmark. */}
-        <div style={{ marginTop: "14pt" }}>
+        <div style={{ marginTop: "9pt" }}>
           <p style={{ fontSize: "8.5pt", letterSpacing: "0.08em",
-            textTransform: "uppercase", color: TOKENS.mute, margin: "0 0 4pt",
+            textTransform: "uppercase", color: TOKENS.mute, margin: "0 0 3pt",
             fontWeight: 600 }}>
             {lang === "ar" ? "توزيع المشاركين مقابل معيار الجاهزية" : "Respondent spread vs the AI Ready benchmark"}
           </p>
@@ -1578,7 +1578,7 @@ function PillarPages({
         </div>
 
         {/* Key findings - each note is a typed card */}
-        <h3 className="report-h3" style={{ marginTop: "18pt" }}>Key findings</h3>
+        <h3 className="report-h3" style={{ marginTop: "9pt" }}>Key findings</h3>
         {notes.length === 0 ? (
           <EmptyCallout>
             Detailed findings will be added by the consultant during the Phase 2 workshop.
@@ -1596,28 +1596,22 @@ function PillarPages({
             ))}
           </div>
         )}
-      </section>
 
-      {/* Recommendations page */}
-      <section className="report-page">
-        <SectionHeader
-          eyebrow="Pillar deep dive · Recommendations"
-          title={name}
-          kicker="Targeted actions to elevate this pillar toward the AI Ready benchmark"
-        />
-
-        <div className="rec-stack">
+        {/* Recommendations - same page (client request 2026-08-31: one page
+            per pillar). Sequencing guidance moved to a single compact line. */}
+        <h3 className="report-h3" style={{ marginTop: "9pt" }}>Recommendations</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt" }}>
           {recs.map((r, i) => (
-            <RecommendationCard key={i} rec={r} index={i + 1} />
+            <div key={i} style={i === recs.length - 1 && recs.length % 2 === 1 ? { gridColumn: "1 / -1" } : undefined}>
+              <RecommendationCard rec={r} index={i + 1} />
+            </div>
           ))}
         </div>
-
-        <Callout tone="info" title="How to sequence">
-          Work top-to-bottom: the Quick Win actions unblock the Build actions,
-          which in turn unlock the Transform action. Each action has been sized
-          so a typical GCC organisation can complete it within a single quarter
-          without new headcount.
-        </Callout>
+        <p style={{ fontSize: "8.5pt", color: TOKENS.mute, margin: "6pt 0 0", lineHeight: 1.5 }}>
+          <strong style={{ color: TOKENS.ink2 }}>How to sequence · </strong>
+          Work top-to-bottom: Quick Win actions unblock the Build actions, which unlock
+          the Transform action - each sized to fit a single quarter without new headcount.
+        </p>
       </section>
     </>
   );

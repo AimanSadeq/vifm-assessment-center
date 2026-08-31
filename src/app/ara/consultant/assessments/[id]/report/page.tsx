@@ -20,6 +20,7 @@ import { InvestmentMatrix } from "./_components/investment-matrix";
 import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
 import { BilingualReport } from "./_components/bilingual-report";
+import { PillarProfileChart, PillarBandChart } from "./_components/report-charts";
 import { araAssessmentProvisional } from "@/lib/ara/provisional";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { ProvisionalReportStrip } from "@/components/shared/provisional-banner";
@@ -151,7 +152,7 @@ export default async function AraReportPage({
   const responseRows = await fetchAllPages<unknown>((from, to) =>
     sb
       .from("ara_responses")
-      .select("question_score, question:ara_questions(pillar_id, question_number, individual_factor_id, agentic_dimension_id)")
+      .select("question_score, respondent_id, question:ara_questions(pillar_id, question_number, individual_factor_id, agentic_dimension_id)")
       .eq("assessment_id", assessment.id)
       .order("id")
       .range(from, to)
@@ -159,6 +160,36 @@ export default async function AraReportPage({
     console.error(`[ara report] heatmap response load failed for ${assessment.id}:`, e);
     return [];
   });
+
+  // Per-respondent pillar means for the deep-dive spread strips: how each
+  // individual respondent averaged on each pillar (org Layer-1 items only -
+  // individual-factor and agentic items are separate constructs). Powers the
+  // PillarBandChart dot layer so the reader SEES cohort agreement/disagreement.
+  const pillarRespondentMeans = new Map<string, number[]>();
+  {
+    const acc = new Map<string, Map<string, { sum: number; n: number }>>();
+    for (const raw of responseRows as Array<{
+      question_score: number | null;
+      respondent_id?: string | null;
+      question: { pillar_id: string | null; individual_factor_id: string | null; agentic_dimension_id: string | null } | null;
+    }>) {
+      const q = raw.question;
+      if (!q || !q.pillar_id || q.individual_factor_id || q.agentic_dimension_id) continue;
+      if (raw.question_score == null || !raw.respondent_id) continue;
+      const byResp = acc.get(q.pillar_id) ?? new Map<string, { sum: number; n: number }>();
+      const cell = byResp.get(raw.respondent_id) ?? { sum: 0, n: 0 };
+      cell.sum += Number(raw.question_score);
+      cell.n += 1;
+      byResp.set(raw.respondent_id, cell);
+      acc.set(q.pillar_id, byResp);
+    }
+    for (const [pid, byResp] of acc) {
+      pillarRespondentMeans.set(
+        pid,
+        Array.from(byResp.values()).filter((c) => c.n > 0).map((c) => c.sum / c.n)
+      );
+    }
+  }
 
   // Verified validation-evidence for the appendix - surfaces every
   // distinct anchor-instrument citation used by any question in the
@@ -739,6 +770,19 @@ export default async function AraReportPage({
             benchmark and warrant focus.
           </p>
           <RadarChart pillarScores={scoreMap} size={440} pillars={scopedPillars} language={rtl ? "ar" : "en"} />
+
+          {/* Ranked readiness profile - the same scores as ordered bars vs the
+              benchmark, so relative standing reads instantly alongside the radar. */}
+          <div style={{ marginTop: "10pt" }}>
+            <h3 className="report-h3">{rtl ? "الملف المرتب حسب الجاهزية" : "Ranked readiness profile"}</h3>
+            <PillarProfileChart
+              lang={rtl ? "ar" : "en"}
+              items={scopedPillars.map((pl) => ({
+                label: rtl ? pl.name_ar : pl.name_en,
+                score: pillarMap.get(pl.id)?.raw_score != null ? Number(pillarMap.get(pl.id)!.raw_score) : null,
+              }))}
+            />
+          </div>
         </section>
 
         {/* ─── PAGES 6–21 - Pillar Deep Dives (2 pages each) ─── *
@@ -768,6 +812,7 @@ export default async function AraReportPage({
                 row={row}
                 notes={pillarNotes}
                 lang={rtl ? "ar" : "en"}
+                respondentMeans={pillarRespondentMeans.get(pillar.id) ?? []}
                 workforceNote={
                   (pillar.id === "talent" || pillar.id === "culture") &&
                   assessment.include_individual_layer &&
@@ -1439,6 +1484,7 @@ function PillarPages({
   notes,
   lang = "en",
   workforceNote = null,
+  respondentMeans = [],
 }: {
   pillarId: AraPillarId;
   name: string;
@@ -1448,6 +1494,8 @@ function PillarPages({
   lang?: "en" | "ar";
   /** Talent/Culture <-> workforce bridge note (Mode C); null hides it. */
   workforceNote?: string | null;
+  /** Per-respondent pillar means - powers the spread band chart. */
+  respondentMeans?: number[];
 }) {
   const score = row?.raw_score != null ? Number(row.raw_score) : null;
   const gap = row?.benchmark_gap != null ? Number(row.benchmark_gap) : null;
@@ -1510,33 +1558,23 @@ function PillarPages({
           />
         </div>
 
-        {/* Benchmark bar - slimmer, brand colors */}
+        {/* Maturity band + respondent spread: the 1-5 scale banded into the
+            maturity zones, a dot per respondent (cohort agreement is visible at
+            a glance), the cohort mean marker, and the dashed benchmark. */}
         <div style={{ marginTop: "14pt" }}>
           <p style={{ fontSize: "8.5pt", letterSpacing: "0.08em",
             textTransform: "uppercase", color: TOKENS.mute, margin: "0 0 4pt",
             fontWeight: 600 }}>
-            Score vs AI Ready benchmark
+            {lang === "ar" ? "توزيع المشاركين مقابل معيار الجاهزية" : "Respondent spread vs the AI Ready benchmark"}
           </p>
-          <div style={{ position: "relative", height: "14pt",
-            background: TOKENS.line, borderRadius: "3pt", overflow: "hidden" }}>
-            <div style={{
-              position: "absolute", top: 0, left: 0, height: "100%",
-              width: `${((score ?? 0) / 5) * 100}%`,
-              background:
-                score != null && score >= 4.0 ? TOKENS.emerald :
-                score != null && score >= 3.0 ? TOKENS.amber :
-                TOKENS.rose,
-              borderRadius: "3pt",
-            }} />
-            <div style={{
-              position: "absolute", top: "-2pt", left: "80%",
-              height: "calc(100% + 4pt)", borderLeft: `2pt dashed ${TOKENS.navy}`,
-            }} />
-          </div>
-          <div style={{ fontSize: "8pt", color: TOKENS.mute, marginTop: "3pt",
-            textAlign: "right", letterSpacing: "0.05em" }}>
-            4.0 · AI Ready benchmark
-          </div>
+          <PillarBandChart values={respondentMeans} mean={score} lang={lang} />
+          {respondentMeans.length > 1 && (
+            <p style={{ fontSize: "8pt", color: TOKENS.mute, margin: "2pt 0 0" }}>
+              {lang === "ar"
+                ? `كل نقطة تمثل متوسط أحد المشاركين (${respondentMeans.length} مشاركاً) - التباعد الواسع يشير إلى تفاوت في التجربة يستحق نقاش ورشة المرحلة الثانية.`
+                : `Each dot is one respondent's average on this pillar (${respondentMeans.length} respondents) - a wide spread signals uneven experience worth probing in the Phase 2 workshop.`}
+            </p>
+          )}
         </div>
 
         {/* Key findings - each note is a typed card */}

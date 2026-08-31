@@ -30,7 +30,7 @@ export function PillarProfileChart({ items, benchmark = 4, lang = "en" }: {
 }) {
   const rtl = lang === "ar";
   const sorted = [...items].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const W = 520, LABEL_W = 150, VALUE_W = 34, ROW_H = 22, GAP = 6, TOP = 16, BOTTOM = 14;
+  const W = 520, LABEL_W = 150, VALUE_W = 34, ROW_H = 19, GAP = 5, TOP = 16, BOTTOM = 14;
   const chartW = W - LABEL_W - VALUE_W;
   const H = TOP + sorted.length * (ROW_H + GAP) - GAP + BOTTOM;
   const x = (v: number) => LABEL_W + (Math.max(0, Math.min(5, v)) / 5) * chartW;

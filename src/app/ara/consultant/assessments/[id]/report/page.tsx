@@ -735,31 +735,25 @@ export default async function AraReportPage({
           </div>
 
           <h3 className="report-h3">Respondents ({(respondents ?? []).length})</h3>
-          <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f3f4f6" }}>
-                <th style={cellHead}>Name</th>
-                <th style={cellHead}>Role</th>
-                <th style={cellHead}>Pillars assigned</th>
-                <th style={cellHead}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(respondents ?? []).map((r: any, i: number) => (
-                <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
-                  <td style={cell}><strong>{r.name}</strong></td>
-                  <td style={cell}>{r.role_label_en ?? "-"}</td>
-                  <td style={cell}>
-                    {(r.assignments ?? []).length === 0
-                      ? "-"
-                      : r.assignments.map((a: any) => ARA_PILLARS.find((p) => p.id === a.pillar_id)?.name_en ?? a.pillar_id).join(", ")}
-                  </td>
-                  <td style={cell}>{r.completed_at ? "Completed" : "In progress"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <RespondentTable rows={(respondents ?? []).slice(0, 16)} />
         </section>
+
+        {/* Roster continuation pages - clean full pages, no bleed (client
+            feedback 2026-08-31). 16 rows share page 4 with the profile; the
+            remainder paginates at 30 rows per page. */}
+        {(() => {
+          const rest = Math.max(0, (respondents ?? []).length - 16);
+          if (rest === 0) return null;
+          const pages = Math.ceil(rest / 22);
+          const per = Math.ceil(rest / pages); // even distribution - no orphan page
+          return Array.from({ length: pages }, (_, pi) => (
+            <section key={pi} className="report-page">
+              <h2 className="report-h2">{t("org_profile")}{rtl ? " (تتمة)" : " (continued)"}</h2>
+              <h3 className="report-h3">Respondents (continued)</h3>
+              <RespondentTable rows={(respondents ?? []).slice(16 + pi * per, 16 + (pi + 1) * per)} />
+            </section>
+          ));
+        })()}
 
         {/* ─── PAGE 5 - Radar Overview ─── */}
         <section className="report-page">
@@ -769,11 +763,11 @@ export default async function AraReportPage({
             benchmark of 4.0 (dashed line). Pillars inside the dashed ring are below the
             benchmark and warrant focus.
           </p>
-          <RadarChart pillarScores={scoreMap} size={440} pillars={scopedPillars} language={rtl ? "ar" : "en"} />
+          <RadarChart pillarScores={scoreMap} size={416} pillars={scopedPillars} language={rtl ? "ar" : "en"} />
 
           {/* Ranked readiness profile - the same scores as ordered bars vs the
               benchmark, so relative standing reads instantly alongside the radar. */}
-          <div style={{ marginTop: "10pt" }}>
+          <div style={{ marginTop: "6pt" }}>
             <h3 className="report-h3">{rtl ? "الملف المرتب حسب الجاهزية" : "Ranked readiness profile"}</h3>
             <PillarProfileChart
               lang={rtl ? "ar" : "en"}
@@ -1055,25 +1049,44 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── PAGE 25 - Regulatory Compliance ─── */}
-        <section className="report-page">
-          <h2 className="report-h2">{t("compliance_summary")}</h2>
-          <p className="report-body">
-            Compliance status against frameworks applicable to {region}, {sectorLabel.toLowerCase()} sector.
-            Each framework is scored as a weighted percentage of met + partial requirements.
-          </p>
-
-          <ComplianceSummary frameworks={complianceSummaries} />
-
-          {shadowAi.triggered && (
-            <Callout tone="danger" title="Shadow AI Alert">
-              Assessment responses indicate employees may be using public AI
-              tools without formal organizational approval. This creates potential
-              violations of data protection and cybersecurity regulations in {region}.
-              Immediate action required.
-            </Callout>
-          )}
-        </section>
+        {/* ─── PAGE 25+ - Regulatory Compliance ─── *
+         * Paginated into clean full pages (client feedback 2026-08-31: no
+         * section may bleed a tail onto the next page). First page holds the
+         * intro + the first frameworks; continuations carry their own header. */}
+        {(() => {
+          const FIRST = 5, PER_PAGE = 7;
+          const chunks: (typeof complianceSummaries)[] = [];
+          if (complianceSummaries.length <= FIRST + 1) {
+            chunks.push(complianceSummaries);
+          } else {
+            chunks.push(complianceSummaries.slice(0, FIRST));
+            for (let i = FIRST; i < complianceSummaries.length; i += PER_PAGE) {
+              chunks.push(complianceSummaries.slice(i, i + PER_PAGE));
+            }
+          }
+          return chunks.map((chunk, ci) => (
+            <section key={ci} className="report-page">
+              <h2 className="report-h2">
+                {t("compliance_summary")}{ci > 0 ? (rtl ? " (تتمة)" : " (continued)") : ""}
+              </h2>
+              {ci === 0 && (
+                <p className="report-body">
+                  Compliance status against frameworks applicable to {region}, {sectorLabel.toLowerCase()} sector.
+                  Each framework is scored as a weighted percentage of met + partial requirements.
+                </p>
+              )}
+              <ComplianceSummary frameworks={chunk} />
+              {ci === chunks.length - 1 && shadowAi.triggered && (
+                <Callout tone="danger" title="Shadow AI Alert">
+                  Assessment responses indicate employees may be using public AI
+                  tools without formal organizational approval. This creates potential
+                  violations of data protection and cybersecurity regulations in {region}.
+                  Immediate action required.
+                </Callout>
+              )}
+            </section>
+          ));
+        })()}
 
         {/* ─── PAGE 26 - Supporting Materials ─── */}
         {(materials ?? []).length > 0 && (
@@ -1371,8 +1384,9 @@ export default async function AraReportPage({
           <h3 className="report-h3">Scoring methodology</h3>
           <p className="report-body">
             Each pillar raw score is the average of answered questions on a 1–5 scale.
-            Weighted pillar scores are raw × (pillar weight ÷ 100). The overall
-            organizational score is the sum of the in-scope weighted pillar scores.
+            The overall organizational score is the weighted average of the scored,
+            in-scope pillars - each pillar contributes its raw score × its pillar
+            weight, with weights renormalised over the pillars actually scored.
           </p>
 
           <h3 className="report-h3">Item development &amp; validation</h3>
@@ -1395,6 +1409,10 @@ export default async function AraReportPage({
             .
           </p>
 
+        </section>
+
+        <section className="report-page">
+          <h2 className="report-h2">{t("appendix")}{rtl ? " (تتمة)" : " (continued)"}</h2>
           {evidenceAnchors.length > 0 && (
             <>
               <h3 className="report-h3">Anchor instruments (item-by-item)</h3>
@@ -1408,7 +1426,7 @@ export default async function AraReportPage({
                 deliberately excluded.
               </p>
               <ul className="report-body" style={{ paddingInlineStart: 18 }}>
-                {evidenceAnchors.map((a) => (
+                {evidenceAnchors.slice(0, 14).map((a) => (
                   <li key={a.citation} style={{ marginBottom: 6 }}>
                     <strong>{a.name}.</strong> {a.citation}
                   </li>
@@ -1416,7 +1434,25 @@ export default async function AraReportPage({
               </ul>
             </>
           )}
+        </section>
 
+        {evidenceAnchors.length > 14 &&
+          Array.from({ length: Math.ceil((evidenceAnchors.length - 14) / 18) }, (_, ai) => (
+            <section key={ai} className="report-page">
+              <h2 className="report-h2">{t("appendix")}{rtl ? " (تتمة)" : " (continued)"}</h2>
+              <h3 className="report-h3">Anchor instruments (continued)</h3>
+              <ul className="report-body" style={{ paddingInlineStart: 18 }}>
+                {evidenceAnchors.slice(14 + ai * 18, 14 + (ai + 1) * 18).map((a) => (
+                  <li key={a.citation} style={{ marginBottom: 6 }}>
+                    <strong>{a.name}.</strong> {a.citation}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+
+        <section className="report-page">
+          <h2 className="report-h2">{t("appendix")}{rtl ? " (تتمة)" : " (continued)"}</h2>
           <h3 className="report-h3">Validity and reliability disclosures</h3>
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
             Construct validity (does the four-factor / eight-pillar model carve
@@ -1430,6 +1466,7 @@ export default async function AraReportPage({
             measurable from the Phase 2 audit trail and will be surfaced in
             the consultant analytics console at N ≥ 30 multi-rater workshops.
           </p>
+
 
           <h3 className="report-h3">Pillar weights used</h3>
           <table className="report-body" style={{ width: "60%", borderCollapse: "collapse" }}>
@@ -1476,6 +1513,37 @@ export default async function AraReportPage({
 // ─────────────────────────────────────────────────────────────
 // Pillar deep-dive pair (findings + recommendations)
 // ─────────────────────────────────────────────────────────────
+/** Respondent roster table - extracted so the roster can paginate across
+ *  clean report pages (16 rows on the profile page, 30 per continuation). */
+function RespondentTable({ rows }: { rows: any[] }) {
+  return (
+    <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+      <thead>
+        <tr style={{ background: "#f3f4f6" }}>
+          <th style={cellHead}>Name</th>
+          <th style={cellHead}>Role</th>
+          <th style={cellHead}>Pillars assigned</th>
+          <th style={cellHead}>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r: any, i: number) => (
+          <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
+            <td style={cell}><strong>{r.name}</strong></td>
+            <td style={cell}>{r.role_label_en ?? "-"}</td>
+            <td style={cell}>
+              {(r.assignments ?? []).length === 0
+                ? "-"
+                : r.assignments.map((a: any) => ARA_PILLARS.find((p) => p.id === a.pillar_id)?.name_en ?? a.pillar_id).join(", ")}
+            </td>
+            <td style={cell}>{r.completed_at ? "Completed" : "In progress"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 function PillarPages({
   pillarId,
   name,
@@ -1578,7 +1646,7 @@ function PillarPages({
         </div>
 
         {/* Key findings - each note is a typed card */}
-        <h3 className="report-h3" style={{ marginTop: "9pt" }}>Key findings</h3>
+        <h3 className="report-h3" style={{ marginTop: "8pt" }}>Key findings</h3>
         {notes.length === 0 ? (
           <EmptyCallout>
             Detailed findings will be added by the consultant during the Phase 2 workshop.
@@ -1599,7 +1667,7 @@ function PillarPages({
 
         {/* Recommendations - same page (client request 2026-08-31: one page
             per pillar). Sequencing guidance moved to a single compact line. */}
-        <h3 className="report-h3" style={{ marginTop: "9pt" }}>Recommendations</h3>
+        <h3 className="report-h3" style={{ marginTop: "8pt" }}>Recommendations</h3>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt" }}>
           {recs.map((r, i) => (
             <div key={i} style={i === recs.length - 1 && recs.length % 2 === 1 ? { gridColumn: "1 / -1" } : undefined}>
@@ -1607,7 +1675,7 @@ function PillarPages({
             </div>
           ))}
         </div>
-        <p style={{ fontSize: "8.5pt", color: TOKENS.mute, margin: "6pt 0 0", lineHeight: 1.5 }}>
+        <p style={{ fontSize: "8.5pt", color: TOKENS.mute, margin: "5pt 0 0", lineHeight: 1.45 }}>
           <strong style={{ color: TOKENS.ink2 }}>How to sequence · </strong>
           Work top-to-bottom: Quick Win actions unblock the Build actions, which unlock
           the Transform action - each sized to fit a single quarter without new headcount.

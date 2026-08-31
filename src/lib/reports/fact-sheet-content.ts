@@ -85,7 +85,18 @@ export function personalFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
 }
 
 /** Organisational (pillar) fact sheet. */
-export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
+/**
+ * @param hasPhase2 Whether THIS engagement includes the Phase 2 consultant
+ *   validation workshop. It is a Division/Enterprise deliverable
+ *   (ARA_STAGE_MAP marks it `department: false`), so a Department report must
+ *   not offer it as the mitigation for self-report bias - that promises the
+ *   client a validation step their tier does not buy. Defaults to true so the
+ *   existing Division/Enterprise callers are unchanged.
+ */
+export function orgFactSheetRows(
+  lang: "en" | "ar",
+  { hasPhase2 = true }: { hasPhase2?: boolean } = {}
+): FactSheetRow[] {
   if (lang === "ar") {
     return [
       { label: "الأداة", value: "بوصلة VIFM للجاهزية للذكاء الاصطناعي® - التقييم المؤسسي" },
@@ -108,7 +119,11 @@ export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
       {
         label: "حدود صريحة",
         value:
-          "تقرير ذاتي (تُخفِّف ورشة التحقق في المرحلة الثانية من أثره)؛ ويُقيَّم الامتثال مقابل الأطر التنظيمية السارية على العميل في الإمارات أو السعودية؛ تُقفل النتائج على نسخة بنك الأسئلة النشطة عند الإنشاء لضمان قابلية التكرار.",
+          `تقرير ذاتي${
+          hasPhase2
+            ? " (تُخفِّف ورشة التحقق في المرحلة الثانية المشمولة في هذا التكليف من أثره)"
+            : "؛ ولم تخضع الدرجات الواردة في هذا التقرير لتحقق مستقل. وتتوفر ورشة التحقق في المرحلة الثانية، التي تختبر هذه الدرجات مقابل الأدلة الموثّقة، كإضافة اختيارية (انظر الخطوات التالية)"
+        }؛ ويُقيَّم الامتثال مقابل الأطر التنظيمية السارية على العميل في الإمارات أو السعودية؛ تُقفل النتائج على نسخة بنك الأسئلة النشطة عند الإنشاء لضمان قابلية التكرار.`,
       },
       { label: "المنهجية", value: `موجز المنهجية الكامل: ${METHODOLOGY_URL}` },
     ];
@@ -134,7 +149,11 @@ export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
     {
       label: "Honest limits",
       value:
-        "Self-report (mitigated by the Phase 2 validation workshop); compliance is assessed against the UAE or Saudi regulatory frameworks applicable to the client; results lock to the question-bank version active at creation so the report is reproducible.",
+        `Self-report${
+        hasPhase2
+          ? ", mitigated by the Phase 2 consultant validation workshop included in this engagement"
+          : "; the scores in this report are not independently validated. The Phase 2 consultant validation workshop, which tests them against documentary evidence, is available as an optional addition (see Next Steps)"
+      }; compliance is assessed against the UAE or Saudi regulatory frameworks applicable to the client; results lock to the question-bank version active at creation so the report is reproducible.`,
     },
     { label: "Methodology", value: `Full methodology brief: ${METHODOLOGY_URL}` },
   ];

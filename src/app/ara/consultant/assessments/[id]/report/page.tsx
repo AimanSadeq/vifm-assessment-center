@@ -317,6 +317,14 @@ export default async function AraReportPage({
   // this report (a signed gap like "+1.69" read as being AHEAD of target).
   const pctOfTarget = (score: number) => Math.round((score / 4.0) * 100);
 
+  // Phase 2 (the consultant validation workshop) is a Division/Enterprise
+  // deliverable - ARA_STAGE_MAP marks it `department: false`, and this report
+  // already gates the other Stage 2+ outputs (investment matrix, roadmap) the
+  // same way. Anything that offers Phase 2 as the thing that will verify a
+  // finding must check this first, or a Department client is promised a
+  // workshop their tier does not include.
+  const hasPhase2 = assessment.engagement_stage !== "department";
+
   // Roster layout. Column presence is decided ONCE over the whole roster so the
   // profile page and its continuation pages never disagree about the columns;
   // a column nobody has data for is dropped rather than printed as "-".
@@ -1086,7 +1094,8 @@ export default async function AraReportPage({
                 <p className="report-body report-muted" style={{ fontSize: "9pt", marginTop: "-6pt" }}>
                   This is a readiness indication derived from the assessment
                   responses, not a legal or certification audit. Requirements are
-                  verified against evidence in the Phase 2 workshop.
+                  verified against documentary evidence in the Phase 2 validation
+                  workshop{hasPhase2 ? "" : ", an optional addition at this engagement scope (see Next Steps)"}.
                 </p>
                 </>
               )}
@@ -1106,8 +1115,8 @@ export default async function AraReportPage({
                     a public AI tool by name. Where such use is not covered by an
                     approved acceptable-use policy, it carries data-protection and
                     cybersecurity exposure under the {region} frameworks above.
-                    Confirm in the Phase 2 workshop which of these tools are
-                    sanctioned, and for what data.
+                    Confirm which of these tools are sanctioned, and for what data
+                    {hasPhase2 ? ", in the Phase 2 validation workshop" : "; the optional Phase 2 validation workshop is the step designed to do this"}.
                   </Callout>
                 ) : (
                   <Callout tone="warn" title="Unsanctioned AI use would go undetected">
@@ -1435,6 +1444,65 @@ export default async function AraReportPage({
               </ul>
             );
           })()}
+          {/* Phase 2 explainer. Everything above this page can only report what
+              respondents said about themselves, and several places in the report
+              point at Phase 2 as the step that tests those answers - so the
+              client needs to know what it is. It is a Division/Enterprise
+              deliverable, so a Department reader is told plainly that it is an
+              OPTIONAL addition rather than something already coming to them. */}
+          <div
+            style={{
+              marginTop: "18pt",
+              padding: "14pt 16pt",
+              background: "var(--ara-bg-soft)",
+              border: "1pt solid var(--ara-line)",
+              borderLeft: "3pt solid var(--ara-accent)",
+              borderRadius: "6pt",
+            }}
+          >
+            <h3 className="report-h3" style={{ marginTop: 0 }}>
+              Phase 2: consultant validation workshop{" "}
+              <span style={{ fontWeight: 500, color: "var(--ara-mute)", fontSize: "10pt" }}>
+                {hasPhase2 ? "(included in this engagement)" : "(optional addition)"}
+              </span>
+            </h3>
+            <p className="report-body" style={{ marginBottom: "8pt" }}>
+              Every score in this report comes from what your people said about
+              their own organization. Phase 2 is the facilitated session that
+              tests those answers against evidence, and it is what turns a
+              self-assessment into a validated baseline. In a half-day to a full
+              day with your consultant it covers:
+            </p>
+            <ul className="report-body" style={{ marginBottom: "8pt" }}>
+              <li>
+                <strong>Evidence review, pillar by pillar</strong> - a separate set of
+                consultant probing questions, never shown to respondents, used to ask
+                what exists in writing behind each score: the policy, the register,
+                the pipeline, the approval record.
+              </li>
+              <li>
+                <strong>Perception versus reality</strong> - where the evidence does not
+                support the self-reported score, the gap itself becomes a finding.
+                It is usually the most useful output of the day.
+              </li>
+              <li>
+                <strong>A validated maturity band per pillar</strong> - your consultant
+                records a confirmed score alongside the self-assessed one, so both are
+                visible and the change is auditable.
+              </li>
+              <li>
+                <strong>Written findings and a capability-building plan</strong> -
+                bilingual notes from the session and a training plan ranked by the
+                gaps confirmed on the day, issued as an updated report.
+              </li>
+            </ul>
+            <p className="report-body report-muted" style={{ fontSize: "9pt", margin: 0 }}>
+              {hasPhase2
+                ? "Your consultant will schedule this session as part of the current engagement."
+                : "Not included at the current engagement scope. Ask your VIFM consultant to quote it as an addition to this assessment."}
+            </p>
+          </div>
+
           <p className="report-body" style={{ marginTop: "16pt" }}>
             To discuss engagement, contact your VIFM consultant or
             email <strong>contact@viftraining.com</strong>.
@@ -1514,7 +1582,7 @@ export default async function AraReportPage({
           <h2 className="report-h2">{t("appendix")}</h2>
 
           <h3 className="report-h3">{rtl ? "بطاقة معلومات التقييم" : "Assessment Fact Sheet"}</h3>
-          {orgFactSheetRows(rtl ? "ar" : "en").map((r) => (
+          {orgFactSheetRows(rtl ? "ar" : "en", { hasPhase2 }).map((r) => (
             <div
               key={r.label}
               dir={rtl ? "rtl" : "ltr"}
@@ -1633,14 +1701,22 @@ export default async function AraReportPage({
             do not contribute to the headline score.
           </p>
 
-          <h3 className="report-h3">Disclaimer</h3>
-          <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
-            Investment signals indicate relative scale and category of financial
-            commitment required. Actual costs vary based on organization size,
-            existing infrastructure, vendor selection, and negotiated contracts.
-            VIFM recommends conducting a detailed cost-benefit analysis for each
-            high-investment initiative before budget allocation.
-          </p>
+          {/* Gated on the SAME condition as the investment matrix it explains.
+              Department reports stop before the strategic-output sections, so
+              this was defining "investment signals" for a reader who never saw
+              a single one. */}
+          {hasPhase2 && (
+            <>
+              <h3 className="report-h3">Disclaimer</h3>
+              <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
+                Investment signals indicate relative scale and category of financial
+                commitment required. Actual costs vary based on organization size,
+                existing infrastructure, vendor selection, and negotiated contracts.
+                VIFM recommends conducting a detailed cost-benefit analysis for each
+                high-investment initiative before budget allocation.
+              </p>
+            </>
+          )}
 
           {/* The window is READ from ARA_RETENTION_YEARS - the same constant the
               purge job enforces. It previously said "three years" while the

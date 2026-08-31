@@ -1056,7 +1056,12 @@ export default async function AraReportPage({
           // count true and the grouping readable. tierTotals is passed as a
           // belt-and-braces truth source in case a single tier ever outgrows a
           // page and has to be split anyway.
-          const FIRST = 5, PER_PAGE = 7;
+          // Caps are measured, not guessed: at 5 on the first page the section
+          // ran 310mm on a 297mm sheet once the intro gained its basis note,
+          // and the applicable-framework count turned out to reach 8 in Tier 1
+          // alone rather than the 4 the original split assumed.
+          const FIRST = 4, PER_PAGE = 6;
+          const capFor = (chunkIndex: number) => (chunkIndex === 0 ? FIRST : PER_PAGE);
           const tierTotals: Record<number, number> = {};
           for (const f of complianceSummaries) tierTotals[f.tier] = (tierTotals[f.tier] ?? 0) + 1;
           const byTier = [1, 2, 3]
@@ -1064,16 +1069,20 @@ export default async function AraReportPage({
             .filter((g) => g.length > 0);
           const chunks: (typeof complianceSummaries)[] = [];
           for (const group of byTier) {
-            const capFor = (i: number) => (i === 0 ? FIRST : PER_PAGE);
+            let rest = group;
+            // Top up the current page if this tier fits in what is left of it.
             const last = chunks[chunks.length - 1];
-            if (last && last.length + group.length <= capFor(chunks.length - 1)) {
-              last.push(...group);
+            if (last && last.length + rest.length <= capFor(chunks.length - 1)) {
+              last.push(...rest);
               continue;
             }
-            // A tier that cannot fit on a page of its own is split; every other
-            // tier stays whole.
-            for (let i = 0; i < group.length; i += capFor(chunks.length)) {
-              chunks.push(group.slice(i, i + capFor(chunks.length)));
+            // Otherwise start a fresh page, splitting the tier only if it is
+            // too big for a page of its own. tierTotals keeps the header count
+            // truthful across any such split.
+            while (rest.length > 0) {
+              const cap = capFor(chunks.length);
+              chunks.push(rest.slice(0, cap));
+              rest = rest.slice(cap);
             }
           }
           return chunks.map((chunk, ci) => (

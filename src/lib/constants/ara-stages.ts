@@ -46,11 +46,12 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
   /**
    * Approximate length of the deliverable PDF report.
    *
-   * Not a fixed number: the report is 13 fixed pages plus one page per
-   * in-scope pillar, plus compliance and roster pages, plus 2 for the
-   * strategic outputs on Division/Enterprise. The old fixed figures (8 / 27 /
-   * 27-60) were far off - a Department run with a custom 8-pillar scope and
-   * 40 respondents renders 24 pages, not 8.
+   * Not a fixed number: it grows with the pillar set, the framework count and
+   * the cohort size. MEASURED on standard-scope runs, 2026-08-31 (Saudi /
+   * general, cohort small enough that the roster fits the profile page):
+   * Department 4 pillars = 19 pages, Division 6 = 23, Enterprise 8 = 25. A
+   * Department run at custom 8-pillar scope with 40 respondents renders 24.
+   * The old figures (8 / 27 / 27-60) were guesses and were far off.
    */
   report_pages: string;
 }> = [
@@ -266,9 +267,14 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
 
   // Regulatory
   { group: "Regulatory", feature_en: "Regulatory framework mapping", feature_ar: "ربط الأطر التنظيمية",
-    // No "top 3" limit exists in compliance.ts - every framework applicable to
-    // the client's region and sector is loaded and scored at every stage.
-    individual: false, department: "All applicable", division: "All applicable", enterprise: "All applicable + sectoral" },
+    // No "top 3" limit exists in compliance.ts. A framework is scored when its
+    // requirements touch a pillar in scope, so coverage scales with the pillar
+    // set rather than with the tier. Measured on Saudi / general standard runs
+    // (2026-08-31): Department 5 frameworks, Division 6, Enterprise 7.
+    individual: false,
+    department: "Frameworks touching your 4 pillars",
+    division: "Frameworks touching your 6 pillars",
+    enterprise: "All applicable + sectoral" },
   { group: "Regulatory", feature_en: "Shadow AI alert detection", feature_ar: "كشف تنبيهات الذكاء الاصطناعي الخفي",
     individual: false, department: true, division: true, enterprise: true },
 

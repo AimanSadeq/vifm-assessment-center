@@ -1,4 +1,5 @@
 import { TOKENS } from "./report-primitives";
+import { ARA_MATURITY_LEVELS } from "@/lib/constants/ara-pillars";
 
 /**
  * Print-safe inline-SVG charts for the ARC portrait report (client request
@@ -88,13 +89,15 @@ export function PillarBandChart({ values, mean, benchmark = 4, lang = "en" }: {
   const W = 520, H = 64, LEFT = 8, RIGHT = 8, BAND_Y = 22, BAND_H = 16;
   const chartW = W - LEFT - RIGHT;
   const x = (v: number) => LEFT + ((Math.max(1, Math.min(5, v)) - 1) / 4) * chartW;
-  const ZONES = [
-    { from: 1, to: 2, label: rtl ? "ناشئ" : "Nascent" },
-    { from: 2, to: 3, label: rtl ? "استكشاف" : "Exploring" },
-    { from: 3, to: 4, label: rtl ? "تطوّر" : "Developing" },
-    { from: 4, to: 4.5, label: rtl ? "جاهز" : "AI Ready" },
-    { from: 4.5, to: 5, label: rtl ? "رائد" : "Leading" },
-  ];
+  // Zones come from the CANONICAL five-level maturity model (the same
+  // ARA_MATURITY_LEVELS the scoring engine + every prior report use), so the
+  // chart's bands can never drift from the L1-L5 labels elsewhere. The chart
+  // axis starts at 1, so Level 1's zone renders from 1.0.
+  const ZONES = ARA_MATURITY_LEVELS.map((m, i) => ({
+    from: Math.max(1, m.min),
+    to: i < ARA_MATURITY_LEVELS.length - 1 ? Math.max(1, ARA_MATURITY_LEVELS[i + 1].min) : 5,
+    label: `L${m.level} ${rtl ? m.label_ar : m.label_en}`,
+  }));
   // Deterministic dot stacking: bucket values to 0.1 and stack duplicates
   // vertically so 40 dots never smear into one blob.
   const buckets = new Map<number, number>();

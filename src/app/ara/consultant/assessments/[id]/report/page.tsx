@@ -1553,7 +1553,7 @@ function PillarPages({
           <Metric
             label="Maturity level"
             value={row?.maturity_label_en ?? "Unscored"}
-            suffix={score != null ? `L${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+            suffix={row?.maturity_level != null ? `L${row.maturity_level}` : ""}
             tone="brand"
           />
         </div>

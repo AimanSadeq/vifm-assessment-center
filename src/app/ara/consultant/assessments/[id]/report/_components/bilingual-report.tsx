@@ -25,6 +25,7 @@ import { tr } from "./report-i18n";
 type PillarRow = {
   pillar_id: string;
   raw_score: number | null;
+  maturity_level?: number | null;
   maturity_label_en: string | null;
   benchmark_gap: number | null;
   self_assessment_score: number | null;
@@ -631,7 +632,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   <Metric
                     label={tr("en", "maturity_short")}
                     value={row?.maturity_label_en ?? tr("en", "unscored")}
-                    suffix={score != null ? `L${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+                    suffix={row?.maturity_level != null ? `L${row.maturity_level}` : ""}
                     tone="brand"
                   />
                 </div>
@@ -663,7 +664,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   <Metric
                     label={tr("ar", "maturity_short")}
                     value={row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : tr("ar", "unscored")}
-                    suffix={score != null ? `المستوى ${Math.max(1, Math.min(5, Math.ceil(score)))}` : ""}
+                    suffix={row?.maturity_level != null ? `المستوى ${row.maturity_level}` : ""}
                     tone="brand"
                   />
                 </div>

@@ -81,13 +81,14 @@ export function StatTile({ label, value, suffix, accent, accentColor = TOKENS.ac
   return (
     <div style={{
       padding: "14pt 16pt", background: TOKENS.bgSoft,
-      border: `1pt solid ${TOKENS.line}`, borderRadius: "6pt",
-      borderTop: `3pt solid ${accentColor}`,
+      border: `1pt solid ${TOKENS.line}`, borderRadius: "3pt",
     }}>
       <p style={{
         fontSize: "8.5pt", letterSpacing: "0.08em", textTransform: "uppercase",
         color: TOKENS.mute, margin: 0, fontWeight: 600,
+        display: "flex", alignItems: "center", gap: "5pt",
       }}>
+        <span style={{ width: "5pt", height: "5pt", background: accentColor, display: "inline-block", flexShrink: 0 }} />
         {label}
       </p>
       <p style={{
@@ -414,8 +415,7 @@ export function FindingsPanel({ variant, title, items, emptyMessage }: {
   return (
     <div style={{
       padding: "14pt 16pt", background: "white",
-      border: `1pt solid ${TOKENS.line}`, borderRadius: "6pt",
-      borderTop: `3pt solid ${color}`,
+      border: `1pt solid ${TOKENS.line}`, borderRadius: "3pt",
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "6pt",
         marginBottom: "10pt" }}>
@@ -511,41 +511,48 @@ export function RecommendationCard({ rec, index }: {
     High: TOKENS.rose,
   }[rec.effort];
 
+  void effortColor; // effort is now a quiet text label, not a colored pill
   return (
     <article style={{
-      padding: "14pt 16pt", background: "white",
-      border: `1pt solid ${TOKENS.line}`, borderRadius: "6pt",
-      borderTop: `3pt solid ${horizonColor}`,
+      padding: "13pt 16pt", background: "white",
+      border: `1pt solid ${TOKENS.line}`, borderRadius: "3pt",
       breakInside: "avoid", pageBreakInside: "avoid",
     }}>
-      <div style={{
-        display: "flex", justifyContent: "space-between", alignItems: "baseline",
-      }}>
+      <div style={{ display: "grid", gridTemplateColumns: "22pt 1fr", gap: "10pt", alignItems: "start" }}>
         <span style={{
-          fontSize: "10pt", fontWeight: 700, color: TOKENS.mute,
-          fontVariantNumeric: "tabular-nums", letterSpacing: "0.04em",
+          width: "20pt", height: "20pt", background: TOKENS.navy, color: "white",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: "10pt", fontWeight: 700, fontVariantNumeric: "tabular-nums",
         }}>
-          {String(index).padStart(2, "0")}
+          {index}
         </span>
-        <div style={{ display: "flex", gap: "6pt" }}>
-          <Chip color={horizonColor}>{horizonLabel}</Chip>
-          <Chip color={effortColor} variant="outline">{rec.effort} effort</Chip>
+        <div>
+          <h4 style={{
+            fontSize: "12pt", fontWeight: 600, color: TOKENS.navy,
+            margin: "0 0 3pt", lineHeight: 1.25,
+          }}>
+            {rec.title}
+          </h4>
+          <p style={{
+            fontSize: "7.5pt", letterSpacing: "0.09em", textTransform: "uppercase",
+            color: TOKENS.mute, margin: 0, fontWeight: 600,
+            display: "flex", alignItems: "center", gap: "5pt",
+          }}>
+            <span style={{ width: "5pt", height: "5pt", background: horizonColor, display: "inline-block", flexShrink: 0 }} />
+            {horizonLabel}
+            <span aria-hidden="true" style={{ color: TOKENS.line }}>|</span>
+            {rec.effort} effort
+          </p>
         </div>
       </div>
-      <h4 style={{
-        fontSize: "12pt", fontWeight: 600, color: TOKENS.navy,
-        margin: "8pt 0 6pt",
-      }}>
-        {rec.title}
-      </h4>
       <p style={{
         fontSize: "10pt", color: TOKENS.ink2, lineHeight: 1.55,
-        margin: "0 0 10pt",
+        margin: "9pt 0 10pt",
       }}>
         {rec.body}
       </p>
       <div style={{
-        borderTop: `1pt dashed ${TOKENS.line}`, paddingTop: "8pt",
+        borderTop: `1pt solid ${TOKENS.line}`, paddingTop: "7pt",
         fontSize: "9pt", color: TOKENS.mute,
       }}>
         <strong style={{ color: TOKENS.ink2 }}>Expected outcome · </strong>

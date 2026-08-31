@@ -26,6 +26,7 @@ import { araAssessmentProvisional } from "@/lib/ara/provisional";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { ProvisionalReportStrip } from "@/components/shared/provisional-banner";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
+import { PageRef } from "./_components/page-ref";
 import { ARA_RETENTION_YEARS } from "@/lib/constants/ara-retention";
 import {
   SectionHeader, StatTile, Metric, FindingCard, inferFindingType,
@@ -797,6 +798,7 @@ export default async function AraReportPage({
                 row={row}
                 notes={pillarNotes}
                 lang={rtl ? "ar" : "en"}
+                hasPhase2={hasPhase2}
                 respondentMeans={pillarRespondentMeans.get(pillar.id) ?? []}
                 workforceNote={
                   (pillar.id === "talent" || pillar.id === "culture") &&
@@ -1095,7 +1097,7 @@ export default async function AraReportPage({
                   This is a readiness indication derived from the assessment
                   responses, not a legal or certification audit. Requirements are
                   verified against documentary evidence in the Phase 2 validation
-                  workshop{hasPhase2 ? "" : ", an optional addition at this engagement scope (see Next Steps)"}.
+                  workshop{hasPhase2 ? "" : (<>, an optional addition at this engagement scope (see <PageRef label="Next Steps" targetId="report-next-steps" word="page" />)</>)}.
                 </p>
                 </>
               )}
@@ -1116,7 +1118,7 @@ export default async function AraReportPage({
                     approved acceptable-use policy, it carries data-protection and
                     cybersecurity exposure under the {region} frameworks above.
                     Confirm which of these tools are sanctioned, and for what data
-                    {hasPhase2 ? ", in the Phase 2 validation workshop" : "; the optional Phase 2 validation workshop is the step designed to do this"}.
+                    {hasPhase2 ? ", in the Phase 2 validation workshop" : (<>; the optional Phase 2 validation workshop (see <PageRef label="Next Steps" targetId="report-next-steps" word="page" />) is the step designed to do this</>)}.
                   </Callout>
                 ) : (
                   <Callout tone="warn" title="Unsanctioned AI use would go undetected">
@@ -1399,7 +1401,7 @@ export default async function AraReportPage({
          * ORDERED by this cohort's gaps, and the ones that address a pillar
          * requiring focus say which. Services matching no gap still appear (a
          * client may want them) but sort last and make no tailored claim. */}
-        <section className="report-page">
+        <section className="report-page" id="report-next-steps">
           <h2 className="report-h2">{t("next_steps")}</h2>
           <p className="report-body">
             Virginia Institute of Finance and Management (VIFM) offers the
@@ -1732,6 +1734,7 @@ export default async function AraReportPage({
             erasure sooner, contact VIFM directly.
           </p>
         </section>
+
       </div>
     </>
   );
@@ -1825,6 +1828,7 @@ function PillarPages({
   lang = "en",
   workforceNote = null,
   respondentMeans = [],
+  hasPhase2 = true,
 }: {
   pillarId: AraPillarId;
   name: string;
@@ -1832,6 +1836,8 @@ function PillarPages({
   row: PillarScoreRow | undefined;
   notes: ConsultantNoteRow[];
   lang?: "en" | "ar";
+  /** Whether the engagement includes the Phase 2 validation workshop. */
+  hasPhase2?: boolean;
   /** Talent/Culture <-> workforce bridge note (Mode C); null hides it. */
   workforceNote?: string | null;
   /** Per-respondent pillar means - powers the spread band chart. */
@@ -1917,8 +1923,8 @@ function PillarPages({
           {respondentMeans.length > 1 && (
             <p style={{ fontSize: "8pt", color: TOKENS.mute, margin: "2pt 0 0" }}>
               {lang === "ar"
-                ? `كل نقطة تمثل متوسط أحد المشاركين (${respondentMeans.length} مشاركاً) - التباعد الواسع يشير إلى تفاوت في التجربة يستحق نقاش ورشة المرحلة الثانية.`
-                : `Each dot is one respondent's average on this pillar (${respondentMeans.length} respondents) - a wide spread signals uneven experience worth probing in the Phase 2 workshop.`}
+                ? `كل نقطة تمثل متوسط أحد المشاركين (${respondentMeans.length} مشاركاً) - التباعد الواسع يشير إلى تفاوت في التجربة${hasPhase2 ? " يستحق نقاش ورشة التحقق في المرحلة الثانية" : " يستحق المتابعة مع الفريق"}.`
+                : `Each dot is one respondent's average on this pillar (${respondentMeans.length} respondents) - a wide spread signals uneven experience${hasPhase2 ? " worth probing in the Phase 2 validation workshop" : " worth following up with the team"}.`}
             </p>
           )}
         </div>
@@ -1927,7 +1933,17 @@ function PillarPages({
         <h3 className="report-h3" style={{ marginTop: "8pt" }}>Key findings</h3>
         {notes.length === 0 ? (
           <EmptyCallout>
-            Detailed findings will be added by the consultant during the Phase 2 workshop.
+            {hasPhase2 ? (
+              lang === "ar" ? (
+                <>ستتم إضافة النتائج التفصيلية من قبل المستشار خلال ورشة التحقق في المرحلة الثانية (انظر <PageRef label="الخطوات التالية" targetId="report-next-steps" word="صفحة" />).</>
+              ) : (
+                <>Detailed findings are added by the consultant during the Phase 2 validation workshop (see <PageRef label="Next Steps" targetId="report-next-steps" word="page" />).</>
+              )
+            ) : lang === "ar" ? (
+              <>لا توجد نتائج مسجّلة من المستشار لهذه الركيزة. تُنتج النتائج التفصيلية المدعومة بالأدلة في ورشة التحقق الاختيارية بالمرحلة الثانية (انظر <PageRef label="الخطوات التالية" targetId="report-next-steps" word="صفحة" />).</>
+            ) : (
+              <>No consultant findings are recorded for this pillar. Detailed findings tested against evidence are produced in the optional Phase 2 validation workshop (see <PageRef label="Next Steps" targetId="report-next-steps" word="page" />).</>
+            )}
           </EmptyCallout>
         ) : (
           <div className="finding-stack">

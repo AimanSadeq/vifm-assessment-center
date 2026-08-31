@@ -47,9 +47,13 @@ export function VouchersClient({
   vouchers,
   orgs,
   companies,
+  pillarAvailability,
 }: {
   vouchers: VoucherRow[];
   orgs: OrgOption[];
+  /** Per-pillar Layer-1 question availability on the active bank, by region
+   *  (region isolation applied; voucher runs are sector='general'). */
+  pillarAvailability?: Record<"uae" | "saudi", Record<string, number>>;
   companies: CompanyRollup[];
 }) {
   const [pending, startTransition] = useTransition();
@@ -408,29 +412,73 @@ export function VouchersClient({
                     </select>
                   </div>
                 </div>
-                {assessmentKind === "org" && (
+                {assessmentKind === "org" && (() => {
+                  // Alignment with the assessment + region: availability comes
+                  // from the ACTIVE bank with region isolation applied - the
+                  // same filter a redeemed respondent's form uses - so the
+                  // designed total always matches what is actually served.
+                  const effRegion: "uae" | "saudi" =
+                    (selectedOrg
+                      ? orgList.find((o) => o.id === selectedOrg)?.region === "saudi"
+                        ? "saudi"
+                        : "uae"
+                      : batchRegion === "saudi"
+                        ? "saudi"
+                        : "uae");
+                  const avail = pillarAvailability?.[effRegion] ?? {};
+                  const qppNum = orgQpp ? Math.max(1, Number(orgQpp) || 0) : null;
+                  const servedFor = (id: string) => {
+                    const a = avail[id];
+                    if (a == null) return qppNum; // no availability data - assume the budget
+                    return qppNum == null ? a : Math.min(qppNum, a);
+                  };
+                  const selected = ARA_PILLARS.filter((pl) => orgPillars.has(pl.id));
+                  const totalServed = selected.reduce((sum, pl) => sum + (servedFor(pl.id) ?? 0), 0);
+                  const short = qppNum == null ? [] : selected.filter((pl) => (avail[pl.id] ?? Infinity) < qppNum);
+                  const regionLabel = effRegion === "saudi" ? "Saudi" : "UAE";
+                  return (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">
-                      Pillars in scope ({orgPillars.size}/8{orgQpp ? ` - ${orgPillars.size * Number(orgQpp)} questions total` : ""})
-                    </Label>
-                    <div className="grid gap-1.5 sm:grid-cols-2">
-                      {ARA_PILLARS.map((pl) => (
-                        <label key={pl.id} className="flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-2.5 py-1.5 text-xs">
-                          <input
-                            type="checkbox"
-                            checked={orgPillars.has(pl.id)}
-                            onChange={() => toggleOrgPillar(pl.id)}
-                            className="h-3.5 w-3.5 accent-[#5391D5]"
-                          />
-                          <span className="font-medium">{pl.name_en}</span>
-                        </label>
-                      ))}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <Label className="text-xs">Assessment design - pillars in scope</Label>
+                      <span className="rounded-full border border-[#5391D5]/40 bg-[#5391D5]/10 px-2.5 py-0.5 text-[11px] font-semibold tabular-nums text-[#010131]">
+                        {orgPillars.size} pillar{orgPillars.size === 1 ? "" : "s"} · {totalServed} question{totalServed === 1 ? "" : "s"} · {regionLabel} bank
+                      </span>
                     </div>
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {ARA_PILLARS.map((pl) => {
+                        const a = avail[pl.id];
+                        const on = orgPillars.has(pl.id);
+                        return (
+                          <label key={pl.id} className={`flex cursor-pointer items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${on ? "border-[#5391D5]/50 bg-[#5391D5]/5" : "border-input bg-background hover:bg-muted"}`}>
+                            <span className="flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={on}
+                                onChange={() => toggleOrgPillar(pl.id)}
+                                className="h-3.5 w-3.5 accent-[#5391D5]"
+                              />
+                              <span className="font-medium">{pl.name_en}</span>
+                            </span>
+                            {a != null && (
+                              <span className="tabular-nums text-[10px] text-muted-foreground">
+                                {on && qppNum != null ? `${Math.min(qppNum, a)} of ${a}` : `${a} avail.`}
+                              </span>
+                            )}
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {short.length > 0 && (
+                      <p className="text-[11px] text-amber-700">
+                        {short.map((pl) => `${pl.name_en} has only ${avail[pl.id]} ${regionLabel}-eligible question${(avail[pl.id] ?? 0) === 1 ? "" : "s"}`).join("; ")} - those pillars serve their full set.
+                      </p>
+                    )}
                     <p className="text-[11px] text-muted-foreground">
-                      Each redemption provisions a department-stage org assessment with exactly this design. The report carries a reduced-form caveat when a question budget is set.
+                      Each redemption provisions a department-stage assessment with exactly this design, drawn from the {regionLabel} question bank. The client report carries a reduced-form caveat when a question budget is set.
                     </p>
                   </div>
-                )}
+                  );
+                })()}
               </div>
 
               <div className="flex justify-end">

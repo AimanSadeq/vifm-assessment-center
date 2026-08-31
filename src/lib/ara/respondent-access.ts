@@ -246,7 +246,15 @@ export async function loadQuestionsForRespondent(
       .is("individual_factor_id", null)
       .is("agentic_dimension_id", null)
       .returns<AraQuestion[]>();
-    let pillarItems = data ?? [];
+    // Region/sector isolation BEFORE the cap: the budget must be spent on items
+    // this assessment can actually serve, or a region-specific item inside the
+    // capped window would silently shrink the pillar below its designed budget
+    // (the final uniform filter below would drop it after capping).
+    let pillarItems = (data ?? []).filter(
+      (qq) =>
+        (qq.region === "both" || qq.region === ctx.assessment.region) &&
+        (qq.sector === "all" || qq.sector === ctx.assessment.sector)
+    );
     // Custom-scope length lever (migration 00198): cap each pillar to N items,
     // curated order (objective first). NULL/undefined = full standard form.
     const perPillar = (ctx.assessment as { questions_per_pillar?: number | null }).questions_per_pillar;
@@ -272,7 +280,13 @@ export async function loadQuestionsForRespondent(
     // 'deep_dive' includes both 'snapshot' and 'deep_dive_extra'
 
     const { data } = await q.returns<AraQuestion[]>();
-    let individual = data ?? [];
+    // Region/sector isolation BEFORE the cap (same reasoning as the pillar
+    // branch above): the budget must be spent on servable items only.
+    let individual = (data ?? []).filter(
+      (qq) =>
+        (qq.region === "both" || qq.region === ctx.assessment.region) &&
+        (qq.sector === "all" || qq.sector === ctx.assessment.sector)
+    );
     // Per-client length lever (migration 00143): cap each factor to N items,
     // keeping the objective items first so a shorter ARC still calibrates.
     // NULL/undefined = no cap (the full deep-dive).

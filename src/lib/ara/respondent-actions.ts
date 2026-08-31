@@ -229,7 +229,7 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
     if (typeof cap === "number" && cap > 0) {
       let factorQuery = sb
         .from("ara_questions")
-        .select("id, individual_factor_id, question_type, question_number")
+        .select("id, individual_factor_id, question_type, question_number, region, sector")
         .eq("version_id", effectiveVersionId)
         .eq("layer", 1)
         .eq("is_active", true)
@@ -238,9 +238,14 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
         factorQuery = factorQuery.eq("tier", "snapshot");
       }
       const { data: factorItems } = await factorQuery;
-      const kept = new Set(
-        capPerFactor((factorItems ?? []) as AraQuestion[], cap).map((q) => q.id)
+      // Region/sector filter BEFORE the cap - must mirror the serve path
+      // exactly, or the kept set diverges from what the form actually served.
+      const eligibleFactorItems = ((factorItems ?? []) as AraQuestion[]).filter(
+        (qq) =>
+          (qq.region === "both" || qq.region === assessment.region) &&
+          (qq.sector === "all" || qq.sector === assessment.sector)
       );
+      const kept = new Set(capPerFactor(eligibleFactorItems, cap).map((q) => q.id));
       if (!kept.has(question.id)) {
         return { ok: false, error: "You are not assigned to this section" };
       }
@@ -282,16 +287,21 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
     if (typeof perPillar === "number" && perPillar > 0) {
       const { data: pillarItems } = await sb
         .from("ara_questions")
-        .select("id, pillar_id, question_type, question_number")
+        .select("id, pillar_id, question_type, question_number, region, sector")
         .eq("version_id", effectiveVersionId)
         .eq("layer", 1)
         .eq("is_active", true)
         .eq("pillar_id", question.pillar_id)
         .is("individual_factor_id", null)
         .is("agentic_dimension_id", null);
-      const kept = new Set(
-        capPerPillar((pillarItems ?? []) as AraQuestion[], perPillar).map((q) => q.id)
+      // Region/sector filter BEFORE the cap - must mirror the serve path
+      // exactly, or the kept set diverges from what the form actually served.
+      const eligiblePillarItems = ((pillarItems ?? []) as AraQuestion[]).filter(
+        (qq) =>
+          (qq.region === "both" || qq.region === assessment.region) &&
+          (qq.sector === "all" || qq.sector === assessment.sector)
       );
+      const kept = new Set(capPerPillar(eligiblePillarItems, perPillar).map((q) => q.id));
       if (!kept.has(question.id)) {
         return { ok: false, error: "You are not assigned to this section" };
       }

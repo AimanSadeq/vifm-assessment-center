@@ -68,6 +68,40 @@ export default async function VouchersAdminPage() {
   }
   const companies = Array.from(byCompany.values()).sort((a, b) => b.delegates - a.delegates);
 
+  // Per-pillar question availability on the ACTIVE bank, split by region - the
+  // org-design panel aligns its pillar counts + totals with what a redemption
+  // will actually serve (region isolation; voucher runs are sector='general').
+  const pillarAvailability: Record<"uae" | "saudi", Record<string, number>> = { uae: {}, saudi: {} };
+  try {
+    const { data: activeBank } = await sb
+      .from("ara_question_bank_versions")
+      .select("id")
+      .eq("is_active", true)
+      .maybeSingle<{ id: string }>();
+    if (activeBank) {
+      const { data: bankQs } = await sb
+        .from("ara_questions")
+        .select("pillar_id, region, sector")
+        .eq("version_id", activeBank.id)
+        .eq("layer", 1)
+        .eq("is_active", true)
+        .is("individual_factor_id", null)
+        .is("agentic_dimension_id", null)
+        .limit(2000);
+      for (const q of (bankQs ?? []) as { pillar_id: string | null; region: string; sector: string }[]) {
+        if (!q.pillar_id) continue;
+        if (!(q.sector === "all" || q.sector === "general")) continue;
+        for (const r of ["uae", "saudi"] as const) {
+          if (q.region === "both" || q.region === r) {
+            pillarAvailability[r][q.pillar_id] = (pillarAvailability[r][q.pillar_id] ?? 0) + 1;
+          }
+        }
+      }
+    }
+  } catch {
+    /* best-effort - the panel falls back to countless labels */
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-4">
@@ -80,6 +114,7 @@ export default async function VouchersAdminPage() {
         vouchers={(vouchers ?? []) as VoucherRow[]}
         orgs={(orgs ?? []) as OrgOption[]}
         companies={companies}
+        pillarAvailability={pillarAvailability}
       />
     </div>
   );

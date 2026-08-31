@@ -1011,9 +1011,12 @@ export default async function AraReportPage({
 
         {/* ─── Investment priority matrix ─── *
          * Strategic-output sections (Investment Matrix + Roadmap) are
-         * Stage 2+ deliverables. Stage 1 Department reports are designed
-         * to be sales-leading samples and stop after the gap heatmap. */}
-        {assessment.engagement_stage !== "department" && (
+         * Previously Stage 2+ only, on the theory that a Department report was
+         * a sales-leading sample. Commercial reality is the opposite: most
+         * demand is departmental, so the Department deliverable is the product
+         * and must be complete. Tier now differs by SCOPE (how many units are
+         * assessed), not by which sections a client is allowed to see. */}
+        {(
           <section className="report-page">
             <h2 className="report-h2">{t("investment_matrix")}</h2>
             <p className="report-body">
@@ -1028,8 +1031,8 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── PAGE 23-24 - Roadmap (Stage 2+ only) ─── */}
-        {assessment.engagement_stage !== "department" && (
+        {/* ─── Roadmap - every tier, see the note on the investment matrix ─── */}
+        {(
           <section className="report-page">
             <h2 className="report-h2">{t("roadmap")}</h2>
             <p className="report-body">
@@ -1712,11 +1715,10 @@ export default async function AraReportPage({
             do not contribute to the headline score.
           </p>
 
-          {/* Gated on the SAME condition as the investment matrix it explains.
-              Department reports stop before the strategic-output sections, so
-              this was defining "investment signals" for a reader who never saw
-              a single one. */}
-          {hasPhase2 && (
+          {/* The investment matrix now renders at every tier, so its disclaimer
+              does too. It was briefly gated as a proxy for "did the matrix
+              render", which is no longer a question. */}
+          {(
             <>
               <h3 className="report-h3">Disclaimer</h3>
               <p className="report-body report-muted" style={{ fontSize: "9pt" }}>

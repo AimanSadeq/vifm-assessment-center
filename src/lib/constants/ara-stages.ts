@@ -47,10 +47,11 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
    * Approximate length of the deliverable PDF report.
    *
    * Not a fixed number: it grows with the pillar set, the framework count and
-   * the cohort size. MEASURED on standard-scope runs, 2026-08-31 (Saudi /
-   * general, cohort small enough that the roster fits the profile page):
-   * Department 4 pillars = 19 pages, Division 6 = 23, Enterprise 8 = 25. A
-   * Department run at custom 8-pillar scope with 40 respondents renders 24.
+   * the cohort size - NOT with the tier, which no longer withholds any
+   * section. MEASURED on standard-scope runs, 2026-08-31 (Saudi / general,
+   * cohort small enough that the roster fits the profile page):
+   * Department 4 pillars = 21 pages, Division 6 = 23, Enterprise 8 = 25. A
+   * Department run at custom 8-pillar scope with 40 respondents renders 26.
    * The old figures (8 / 27 / 27-60) were guesses and were far off.
    */
   report_pages: string;
@@ -72,7 +73,7 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     tone: "teal",
     applicable_pillars: ["data", "talent", "culture", "operations"],
     typical_respondents: "1-2",
-    report_pages: "~19+",
+    report_pages: "~21+",
   },
   {
     id: "division",
@@ -218,11 +219,15 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
   // a commercial promise. It had drifted badly from the product (client review
   // 2026-08-31): it claimed Department reports had no Shadow AI alert, no
   // year-on-year, no use-case portfolio and only the "top 3" regulatory
-  // frameworks, while the report shipped all four. The whole report contains
-  // exactly TWO stage gates - the investment matrix and the 12-month roadmap,
-  // both `engagement_stage !== "department"`. Everything else is gated by
-  // DATA (does a prior assessment exist, are there use cases, is the peer
-  // sample big enough), not by tier.
+  // frameworks, while the report shipped all four.
+  //
+  // The report now contains NO stage gates at all. Every section renders at
+  // every tier; what still varies is gated by DATA (is there a prior
+  // assessment, are there use cases, is the peer sample big enough) or by
+  // SCOPE (how many pillars, how many respondents). The one thing a Department
+  // engagement does not include is the Phase 2 consultant workshop, which is
+  // consultant time rather than report content and is offered as a paid
+  // addition.
   //
   // So: before setting any cell to false, point at the code that enforces it.
   // If nothing enforces it, the cell is true and the tiering has to be built
@@ -279,11 +284,14 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
     individual: false, department: true, division: true, enterprise: true },
 
   // Strategic outputs
-  // These two ARE genuinely gated: `engagement_stage !== "department"`.
+  // Ungated 2026-08-31 (commercial decision): most demand is departmental, so
+  // the Department deliverable IS the product and ships complete. Tiers now
+  // differ by SCOPE - how many units are assessed and who answers - not by
+  // which sections the client is allowed to see.
   { group: "Strategic outputs", feature_en: "Investment priority matrix", feature_ar: "مصفوفة أولويات الاستثمار",
-    individual: false, department: false, division: true, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
   { group: "Strategic outputs", feature_en: "12-month action roadmap", feature_ar: "خارطة طريق ١٢ شهراً",
-    individual: false, department: false, division: true, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
   // Rendered on every org report; the column fills in once enough comparable
   // engagements exist. It is a data threshold, not a tier.
   { group: "Strategic outputs", feature_en: "Peer benchmarks (sector medians)", feature_ar: "مقارنة بالنظراء",

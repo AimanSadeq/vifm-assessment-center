@@ -43,7 +43,15 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
   applicable_pillars: ReadonlyArray<AraPillarId>;
   /** Typical stakeholder count - shown on the comparison page. */
   typical_respondents: string;
-  /** Page count of the deliverable PDF report. */
+  /**
+   * Approximate length of the deliverable PDF report.
+   *
+   * Not a fixed number: the report is 13 fixed pages plus one page per
+   * in-scope pillar, plus compliance and roster pages, plus 2 for the
+   * strategic outputs on Division/Enterprise. The old fixed figures (8 / 27 /
+   * 27-60) were far off - a Department run with a custom 8-pillar scope and
+   * 40 respondents renders 24 pages, not 8.
+   */
   report_pages: string;
 }> = [
   {
@@ -63,7 +71,7 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     tone: "teal",
     applicable_pillars: ["data", "talent", "culture", "operations"],
     typical_respondents: "1-2",
-    report_pages: "8",
+    report_pages: "~19+",
   },
   {
     id: "division",
@@ -84,7 +92,7 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
       "strategy", "data", "talent", "culture", "operations", "governance",
     ],
     typical_respondents: "4-8",
-    report_pages: "27",
+    report_pages: "~23+",
   },
   {
     id: "enterprise",
@@ -106,7 +114,7 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
       "governance", "operations", "model_management",
     ],
     typical_respondents: "8-15+",
-    report_pages: "27-60",
+    report_pages: "~25+",
   },
   {
     id: "individual",
@@ -204,9 +212,31 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
   division: boolean | string;
   enterprise: boolean | string;
 }> = [
+  // ─────────────────────────────────────────────────────────────────────
+  // KEEP THIS TABLE TRUE. It is the public comparison page, so every cell is
+  // a commercial promise. It had drifted badly from the product (client review
+  // 2026-08-31): it claimed Department reports had no Shadow AI alert, no
+  // year-on-year, no use-case portfolio and only the "top 3" regulatory
+  // frameworks, while the report shipped all four. The whole report contains
+  // exactly TWO stage gates - the investment matrix and the 12-month roadmap,
+  // both `engagement_stage !== "department"`. Everything else is gated by
+  // DATA (does a prior assessment exist, are there use cases, is the peer
+  // sample big enough), not by tier.
+  //
+  // So: before setting any cell to false, point at the code that enforces it.
+  // If nothing enforces it, the cell is true and the tiering has to be built
+  // first.
+  // ─────────────────────────────────────────────────────────────────────
+
   // Scope
   { group: "Scope", feature_en: "Pillars assessed", feature_ar: "الركائز المقيّمة",
-    individual: "4 personal factors", department: "4 of 8 · you choose", division: "6 of 8 · you choose", enterprise: "All 8" },
+    individual: "4 personal factors",
+    // Standard scope is exactly the stage's pillar count; the wizard's
+    // custom-scope toggle allows any set of 1+ pillars with a per-pillar
+    // question budget. Enterprise always resolves to all 8.
+    department: "4 of 8 · any set on custom scope",
+    division: "6 of 8 · any set on custom scope",
+    enterprise: "All 8" },
   { group: "Scope", feature_en: "Typical stakeholders", feature_ar: "المستجيبون النموذجيون",
     individual: "1", department: "1-2", division: "4-8", enterprise: "8-15+" },
   { group: "Scope", feature_en: "Bilingual EN / AR", feature_ar: "ثنائي اللغة",
@@ -215,12 +245,16 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
   // Diagnostic
   { group: "Diagnostic", feature_en: "Layer 1 self-assessment questions", feature_ar: "أسئلة الطبقة الأولى",
     individual: true, department: true, division: true, enterprise: true },
+  // The Phase 2 guide tab (and its Layer 2 items) is available on every org
+  // assessment - no stage gate on the tab or the query.
   { group: "Diagnostic", feature_en: "Layer 2 consultant guide questions", feature_ar: "أسئلة الطبقة الثانية",
-    individual: false, department: false, division: true, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
   { group: "Diagnostic", feature_en: "Supporting evidence upload", feature_ar: "رفع الأدلة الداعمة",
     individual: false, department: true, division: true, enterprise: true },
+  // Portfolio tab is available at every org stage; the report section renders
+  // whenever use cases have been logged, regardless of tier.
   { group: "Diagnostic", feature_en: "AI use-case portfolio review", feature_ar: "مراجعة محفظة حالات الاستخدام",
-    individual: false, department: false, division: true, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
 
   // Validation
   { group: "Validation", feature_en: "Auto-scored maturity bands", feature_ar: "تصنيف نضج تلقائي",
@@ -232,25 +266,36 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
 
   // Regulatory
   { group: "Regulatory", feature_en: "Regulatory framework mapping", feature_ar: "ربط الأطر التنظيمية",
-    individual: false, department: "Top 3 frameworks", division: "All applicable", enterprise: "All applicable + sectoral" },
+    // No "top 3" limit exists in compliance.ts - every framework applicable to
+    // the client's region and sector is loaded and scored at every stage.
+    individual: false, department: "All applicable", division: "All applicable", enterprise: "All applicable + sectoral" },
   { group: "Regulatory", feature_en: "Shadow AI alert detection", feature_ar: "كشف تنبيهات الذكاء الاصطناعي الخفي",
-    individual: false, department: false, division: true, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
 
   // Strategic outputs
+  // These two ARE genuinely gated: `engagement_stage !== "department"`.
   { group: "Strategic outputs", feature_en: "Investment priority matrix", feature_ar: "مصفوفة أولويات الاستثمار",
     individual: false, department: false, division: true, enterprise: true },
   { group: "Strategic outputs", feature_en: "12-month action roadmap", feature_ar: "خارطة طريق ١٢ شهراً",
     individual: false, department: false, division: true, enterprise: true },
+  // Rendered on every org report; the column fills in once enough comparable
+  // engagements exist. It is a data threshold, not a tier.
   { group: "Strategic outputs", feature_en: "Peer benchmarks (sector medians)", feature_ar: "مقارنة بالنظراء",
-    individual: false, department: false, division: false, enterprise: true },
+    individual: false, department: "Once 3+ peers", division: "Once 3+ peers", enterprise: "Once 3+ peers" },
+  // The section is always rendered so the contents stay stable run to run;
+  // it shows a baseline message until a comparable prior assessment exists.
   { group: "Strategic outputs", feature_en: "Year-on-year reassessment", feature_ar: "إعادة التقييم السنوية",
-    individual: false, department: false, division: false, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
 
   // Deliverable
   { group: "Deliverable", feature_en: "Branded PDF report", feature_ar: "تقرير PDF مع علامتنا",
-    individual: "1-page snapshot", department: "8 pages", division: "27 pages", enterprise: "27-60 pages" },
+    // Length = 13 fixed pages + one per in-scope pillar + compliance pages +
+    // roster pages (+2 for the strategic outputs on Division/Enterprise), so
+    // it grows with scope and cohort size rather than being a fixed number.
+    individual: "1-page snapshot", department: "From ~19 pages", division: "From ~23 pages", enterprise: "From ~25 pages" },
+  // ?language=bilingual is accepted for any org assessment - no stage check.
   { group: "Deliverable", feature_en: "Side-by-side bilingual landscape report", feature_ar: "تقرير ثنائي اللغة أفقي",
-    individual: false, department: false, division: false, enterprise: true },
+    individual: false, department: true, division: true, enterprise: true },
   { group: "Deliverable", feature_en: "Consultant report walkthrough", feature_ar: "جلسة عرض التقرير",
     individual: false, department: "Optional", division: true, enterprise: true },
 

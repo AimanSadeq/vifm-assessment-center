@@ -637,3 +637,88 @@ export async function overrideComplianceStatus(formData: FormData) {
   revalidatePath(`/ara/consultant/assessments/${parsed.data.assessment_id}`);
   return { ok: true };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Unit hierarchy - a rollup owns the units beneath it (migration 00200)
+//
+// A Division is composed of departments (HR = L&D + Training +
+// Compensation); an Enterprise is composed of divisions. Each unit is a normal
+// assessment with its own complete report; linking them lets the parent render
+// the comparison layer that a single unit cannot produce.
+// ─────────────────────────────────────────────────────────────
+
+/** Walks up the parent chain to prove `candidateId` is not already an ancestor
+ *  of `parentId`. The DB CHECK only stops self-parenting; a longer cycle
+ *  (A -> B -> A) would otherwise hang every rollup that walked it. */
+async function wouldCreateCycle(
+  sb: ReturnType<typeof createServiceClient>,
+  parentId: string,
+  candidateId: string
+): Promise<boolean> {
+  if (parentId === candidateId) return true;
+  let cursor: string | null = parentId;
+  // Bounded: an org tree is 3 levels, so 16 is generous and guarantees exit
+  // even against pre-existing bad data.
+  for (let i = 0; i < 16 && cursor; i++) {
+    const res: { data: { parent_assessment_id: string | null } | null } = await sb
+      .from("ara_assessments")
+      .select("parent_assessment_id")
+      .eq("id", cursor)
+      .maybeSingle<{ parent_assessment_id: string | null }>();
+    cursor = res.data?.parent_assessment_id ?? null;
+    if (cursor === candidateId) return true;
+  }
+  return false;
+}
+
+export async function linkUnitToRollup(rollupId: string, unitId: string) {
+  try { await requireAssessmentOwner(rollupId); } catch (e) { return authErr(e); }
+  // Both sides must be the caller's - otherwise a consultant could pull another
+  // consultant's assessment into their own rollup and read its scores.
+  try { await requireAssessmentOwner(unitId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+
+  const { data: rows, error: readErr } = await sb
+    .from("ara_assessments")
+    .select("id, organization_id, parent_assessment_id, scope_label")
+    .in("id", [rollupId, unitId])
+    .returns<{ id: string; organization_id: string; parent_assessment_id: string | null; scope_label: string | null }[]>();
+  if (readErr) return { ok: false, error: readErr.message };
+  const rollup = rows?.find((r) => r.id === rollupId);
+  const unit = rows?.find((r) => r.id === unitId);
+  if (!rollup || !unit) return { ok: false, error: "Assessment not found" };
+  if (rollup.organization_id !== unit.organization_id) {
+    return { ok: false, error: "A unit can only roll up into a parent in the same organization." };
+  }
+  if (unit.parent_assessment_id && unit.parent_assessment_id !== rollupId) {
+    return { ok: false, error: "That unit already rolls up into another engagement. Remove it there first." };
+  }
+  if (await wouldCreateCycle(sb, rollupId, unitId)) {
+    return { ok: false, error: "That would make the rollup a child of itself." };
+  }
+
+  const { error } = await sb
+    .from("ara_assessments")
+    .update({ parent_assessment_id: rollupId })
+    .eq("id", unitId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/ara/consultant/assessments/${rollupId}`);
+  revalidatePath(`/ara/consultant/assessments/${rollupId}/rollup`);
+  return { ok: true };
+}
+
+export async function unlinkUnitFromRollup(rollupId: string, unitId: string) {
+  try { await requireAssessmentOwner(rollupId); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  // Scope the update by the parent as well, so this can only ever detach a
+  // unit that is genuinely under THIS rollup.
+  const { error } = await sb
+    .from("ara_assessments")
+    .update({ parent_assessment_id: null })
+    .eq("id", unitId)
+    .eq("parent_assessment_id", rollupId);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath(`/ara/consultant/assessments/${rollupId}`);
+  revalidatePath(`/ara/consultant/assessments/${rollupId}/rollup`);
+  return { ok: true };
+}

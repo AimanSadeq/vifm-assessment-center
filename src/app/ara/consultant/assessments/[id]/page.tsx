@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+import { UnitRollupPanel, type LinkableUnit } from "./_components/unit-rollup-panel";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
@@ -202,6 +203,47 @@ export default async function AraAssessmentDetailPage({
       .eq("assessment_id", assessment.id)
       .order("created_at", { ascending: false }),
   ]);
+
+  // Unit hierarchy (migration 00200). A Division owns its departments; an
+  // Enterprise owns its divisions. Both queries are best-effort: on an
+  // environment without 00200 the column is missing, the selects error, and
+  // the panel simply renders with nothing to link.
+  const [linkedRes, candidateRes] = await Promise.all([
+    sb
+      .from("ara_assessments")
+      .select("id, scope_label, engagement_stage, status")
+      .eq("parent_assessment_id", assessment.id)
+      .returns<{ id: string; scope_label: string | null; engagement_stage: string; status: string }[]>(),
+    sb
+      .from("ara_assessments")
+      .select("id, scope_label, engagement_stage, status")
+      .eq("organization_id", assessment.organization_id)
+      .is("parent_assessment_id", null)
+      .neq("id", assessment.id)
+      .neq("engagement_stage", "individual")
+      .returns<{ id: string; scope_label: string | null; engagement_stage: string; status: string }[]>(),
+  ]);
+  const unitIds = [...(linkedRes.data ?? []), ...(candidateRes.data ?? [])].map((r) => r.id);
+  const completedByUnit = new Map<string, number>();
+  if (unitIds.length > 0) {
+    const { data: unitResp } = await sb
+      .from("ara_respondents")
+      .select("assessment_id, completed_at")
+      .in("assessment_id", unitIds);
+    for (const r of unitResp ?? []) {
+      if (!r.completed_at) continue;
+      completedByUnit.set(r.assessment_id, (completedByUnit.get(r.assessment_id) ?? 0) + 1);
+    }
+  }
+  const toUnit = (r: { id: string; scope_label: string | null; engagement_stage: string; status: string }): LinkableUnit => ({
+    id: r.id,
+    label: r.scope_label?.trim() || `${r.engagement_stage} unit`,
+    stage: r.engagement_stage,
+    status: r.status,
+    respondents: completedByUnit.get(r.id) ?? 0,
+  });
+  const linkedUnits = (linkedRes.data ?? []).map(toUnit);
+  const availableUnits = (candidateRes.data ?? []).map(toUnit);
 
   const pillarMap = new Map<string, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id, p));
@@ -581,6 +623,20 @@ export default async function AraAssessmentDetailPage({
           </TabsList>
 
           <TabsContent value="overview" className="space-y-0">
+
+        {/* Unit hierarchy - only meaningful above a single unit, so it is shown
+            on Division and Enterprise engagements (and on any engagement that
+            already owns units, so an existing link is never orphaned). */}
+        {(assessment.engagement_stage === "division" ||
+          assessment.engagement_stage === "enterprise" ||
+          linkedUnits.length > 0) && (
+          <UnitRollupPanel
+            assessmentId={assessment.id}
+            linked={linkedUnits}
+            available={availableUnits}
+            stageLabel={ARA_STAGE_MAP[assessment.engagement_stage]?.label_en ?? assessment.engagement_stage}
+          />
+        )}
 
         {/* ─── Shadow AI alert ─── */}
         {shadowAi.triggered && (

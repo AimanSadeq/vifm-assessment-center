@@ -575,6 +575,30 @@ export function BilingualReport(p: BilingualReportProps) {
                     {pillar.name_ar}
                   </h2>
                 </div>
+                {/* Talent/Culture ↔ workforce bridge (Mode C): these two pillars
+                    are where individual capability lives institutionally, so
+                    point the reader at the person-level evidence when the
+                    engagement measured the individual layer. */}
+                {(pillar.id === "talent" || pillar.id === "culture") &&
+                  p.includeIndividualLayer &&
+                  p.workforceRollup &&
+                  p.workforceRollup.respondents.some((r) => r.overall != null) && (
+                    <div
+                      style={{
+                        gridColumn: "1 / -1",
+                        display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt",
+                        border: "1pt solid #bcd7f0", background: "#eef5fc", borderRadius: "3pt",
+                        padding: "4pt 8pt", marginTop: "4pt", fontSize: "8pt", color: "#1e4e79",
+                      }}
+                    >
+                      <p style={{ margin: 0 }}>
+                        <b>Person-level evidence:</b> this engagement also measured individual AI readiness across the cohort - see the Workforce AI Readiness section for the four-factor results behind this pillar.
+                      </p>
+                      <p style={{ margin: 0, textAlign: "right" }} dir="rtl">
+                        <b>دليل على مستوى الأفراد:</b> قاس هذا التقييم أيضاً الجاهزية الفردية للذكاء الاصطناعي لدى المجموعة - راجع قسم جاهزية القوى العاملة للاطلاع على نتائج العوامل الأربعة الداعمة لهذه الركيزة.
+                      </p>
+                    </div>
+                  )}
               </div>
 
               {/* Metric strip - split into language-locked halves so the

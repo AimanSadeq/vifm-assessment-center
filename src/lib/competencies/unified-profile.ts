@@ -49,7 +49,7 @@ export type CompetencySignal = {
   kind: CompetencySignalKind;
   relation: CompetencyRelation;
   layer: CompetencyLayer;
-  value: number; // 0–100 normalized
+  value: number; // 0-100 normalized
   display: string; // human-readable, e.g. "B2"
 };
 
@@ -72,7 +72,7 @@ export const LANGUAGE_SKILLS: {
 
 const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];
 
-/** CEFR band → normalized 0–100 + the band as display. */
+/** CEFR band → normalized 0-100 + the band as display. */
 export function cefrSignal(cefr: string): { value: number; display: string } {
   const i = CEFR_ORDER.indexOf(cefr);
   const idx = i < 0 ? 0 : i;
@@ -84,7 +84,7 @@ export function cefrSignal(cefr: string): { value: number; display: string } {
 export type TechnicalSignal = {
   domainKey: string;
   domainName: string;
-  level: number | null; // 1–5 from an assessment; null = evidence only
+  level: number | null; // 1-5 from an assessment; null = evidence only
   label: string;
   normalized: number | null;
   source: "assessment" | "academy";
@@ -178,7 +178,7 @@ export async function buildUnifiedProfile(input: {
     /* eng_fluent_results not migrated / no placement - tolerant */
   }
 
-  // ── Technical Competency framework: assessment results (leveled 1–5) +
+  // ── Technical Competency framework: assessment results (leveled 1-5) +
   //    Academy completions (softer evidence), keyed by domain. ──
   const techByDomain = new Map<string, TechnicalSignal>();
   try {
@@ -314,7 +314,7 @@ export async function buildUnifiedProfile(input: {
       candidate_id: string | null;
       taker_email: string | null;
     }>;
-    // "<source_kind>:<source_key>" → { value 0–100, band }
+    // "<source_kind>:<source_key>" → { value 0-100, band }
     const psyValue = new Map<string, { value: number; band: string }>();
     let seenCognitive = false;
     for (const r of rows) {

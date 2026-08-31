@@ -6,7 +6,7 @@ import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
  *
  * Renders one completed Logica (cognitive) result. When the instrument is
  * CALIBRATED (a norm group ≥ the minimum exists for every scale) each scale shows
- * a percentile + a 1–10 sten band; otherwise it shows the indicative raw-score
+ * a percentile + a 1-10 sten band; otherwise it shows the indicative raw-score
  * band only and says so plainly. Every page states the tier so the report can
  * never over-claim its own rigour.
  *
@@ -149,7 +149,7 @@ function StenBand({ sten }: { sten: number }) {
       </View>
       <View style={s.stenScale}>
         <Text style={s.stenScaleText}>Low (1)</Text>
-        <Text style={s.stenScaleText}>Average (5–6)</Text>
+        <Text style={s.stenScaleText}>Average (5-6)</Text>
         <Text style={s.stenScaleText}>High (10)</Text>
       </View>
     </View>
@@ -185,7 +185,7 @@ export function PsychometricReport({ data, provisional }: { data: PsyReportData;
           <Text style={s.legendTitle}>How to read this report</Text>
           <Text style={s.legendBody}>
             {calibrated
-              ? `Each scale is reported as a percentile and a sten (standard-ten) score relative to the VIFM reference group${data.normSource ? ` (${data.normSource})` : ""}. A percentile of 70 means the result is at or above 70% of that group; stens run 1–10 with 5–6 as the average band. Higher is stronger.`
+              ? `Each scale is reported as a percentile and a sten (standard-ten) score relative to the VIFM reference group${data.normSource ? ` (${data.normSource})` : ""}. A percentile of 70 means the result is at or above 70% of that group; stens run 1-10 with 5-6 as the average band. Higher is stronger.`
               : `This is an INDICATIVE result: scales are reported as raw-score bands, not norm-referenced percentiles. Percentiles and stens become available once a calibrated norm group is established. Bands reflect % correct.`}
           </Text>
         </View>
@@ -249,7 +249,7 @@ export function PsychometricReport({ data, provisional }: { data: PsyReportData;
             <View style={s.scaleStatRow}>
               <View style={s.scaleStat}>
                 <Text style={s.scaleStatNum}>{Math.round(data.overall.normalized)}</Text>
-                <Text style={s.scaleStatLabel}>composite (0–100)</Text>
+                <Text style={s.scaleStatLabel}>composite (0-100)</Text>
               </View>
               {calibrated && data.overall.percentile != null && (
                 <View style={s.scaleStat}>

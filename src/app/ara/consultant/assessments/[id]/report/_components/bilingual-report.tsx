@@ -393,7 +393,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_MATURITY_LEVELS.map((m) => (
               <li key={m.level}>
-                <strong>L{m.level} {m.label_en}</strong> ({m.min.toFixed(1)}–{m.max.toFixed(1)}) - {tr("en", `maturity_l${m.level}` as any)}
+                <strong>L{m.level} {m.label_en}</strong> ({m.min.toFixed(1)}-{m.max.toFixed(1)}) - {tr("en", `maturity_l${m.level}` as any)}
               </li>
             ))}
           </ul>
@@ -401,7 +401,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_OVERALL_BANDS.map((b) => (
               <li key={b.label_en}>
-                <strong style={{ color: b.color }}>{b.label_en}</strong> ({b.min.toFixed(1)}–{b.max.toFixed(1)})
+                <strong style={{ color: b.color }}>{b.label_en}</strong> ({b.min.toFixed(1)}-{b.max.toFixed(1)})
               </li>
             ))}
           </ul>
@@ -413,7 +413,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_MATURITY_LEVELS.map((m) => (
               <li key={m.level}>
-                <strong>المستوى {m.level} - {m.label_ar}</strong> ({m.min.toFixed(1)}–{m.max.toFixed(1)}) - {tr("ar", `maturity_l${m.level}` as any)}
+                <strong>المستوى {m.level} - {m.label_ar}</strong> ({m.min.toFixed(1)}-{m.max.toFixed(1)}) - {tr("ar", `maturity_l${m.level}` as any)}
               </li>
             ))}
           </ul>
@@ -421,7 +421,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <ul className="report-body">
             {ARA_OVERALL_BANDS.map((b) => (
               <li key={b.label_en}>
-                <strong style={{ color: b.color }}>{b.label_ar}</strong> ({b.min.toFixed(1)}–{b.max.toFixed(1)})
+                <strong style={{ color: b.color }}>{b.label_ar}</strong> ({b.min.toFixed(1)}-{b.max.toFixed(1)})
               </li>
             ))}
           </ul>

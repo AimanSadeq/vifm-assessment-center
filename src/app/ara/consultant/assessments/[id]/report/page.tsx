@@ -21,6 +21,7 @@ import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
 import { BilingualReport } from "./_components/bilingual-report";
 import { PillarProfileChart, PillarBandChart } from "./_components/report-charts";
+import { recommendationsForPillar } from "./_components/report-recommendations";
 import { araAssessmentProvisional } from "@/lib/ara/provisional";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { ProvisionalReportStrip } from "@/components/shared/provisional-banner";
@@ -311,7 +312,11 @@ export default async function AraReportPage({
   const overall = overallScore?.overall_score != null ? Number(overallScore.overall_score) : null;
   const overallLabel = overallScore?.overall_label_en ?? null;
 
+  // % of the 4.00 AI Ready target - the headline way scores are expressed in
+  // this report (a signed gap like "+1.69" read as being AHEAD of target).
+  const pctOfTarget = (score: number) => Math.round((score / 4.0) * 100);
   const strengths: Array<{ pillar: string; score: number }> = [];
+  const approaching: Array<{ pillar: string; score: number }> = [];
   const gaps: Array<{ pillar: string; score: number; gap: number }> = [];
   scopedPillars.forEach((p) => {
     const row = pillarMap.get(p.id);
@@ -319,6 +324,7 @@ export default async function AraReportPage({
     const s = Number(row.raw_score);
     if (s >= 4.0) strengths.push({ pillar: p.name_en, score: s });
     else if (s < 3.0) gaps.push({ pillar: p.name_en, score: s, gap: Number(row.benchmark_gap ?? 0) });
+    else approaching.push({ pillar: p.name_en, score: s });
   });
   strengths.sort((a, b) => b.score - a.score);
   gaps.sort((a, b) => a.score - b.score);
@@ -452,13 +458,18 @@ export default async function AraReportPage({
       )}
 
       <div className={bare ? "" : "bg-gray-100 py-8"} dir={outerDir}>
-        {provisionalStrip}
         {/* ─── PAGE 1 - Cover ─── */}
         <section
           className="report-page flex flex-col justify-between"
           style={{ background: "#010131", color: "white" }}
         >
           <div>
+            {/* The provisional disclosure lives ON the cover: as a sibling above
+                the page sections it joined the print flow and pushed a sliver of
+                every page onto the next. */}
+            {provisionalStrip && (
+              <div style={{ marginBottom: "10pt" }}>{provisionalStrip}</div>
+            )}
             <div className="flex items-center gap-3">
               <VifmLogo variant="white" size="md" />
             </div>
@@ -515,7 +526,7 @@ export default async function AraReportPage({
           <SectionHeader
             eyebrow="Executive summary"
             title={t("exec_summary")}
-            kicker={`Weighted aggregate of the ${scopedPillars.length} in-scope AI Readiness pillars, calibrated against ${region} frameworks`}
+            kicker={`Weighted average of the ${scopedPillars.length} in-scope AI Readiness pillars. Regulatory compliance is assessed separately against the frameworks applicable to ${region}.`}
           />
 
           {/* Custom-scope caveat (migration 00198): a reduced form answers N
@@ -548,17 +559,18 @@ export default async function AraReportPage({
               accentColor="#5391D5"
             />
             <StatTile
-              label="Maturity band"
-              value={overallLabel ?? "-"}
-              accent={`Weighted aggregate, ${scopedPillars.length} pillars`}
-              accentColor="#6b7280"
-            />
-            <StatTile
-              label="At / above benchmark"
+              label="At / above target"
               value={String(strengths.length)}
               suffix={`/ ${scopedPillars.length}`}
               accent="Pillars scoring ≥ 4.00"
               accentColor="#34D399"
+            />
+            <StatTile
+              label="Approaching target"
+              value={String(approaching.length)}
+              suffix={`/ ${scopedPillars.length}`}
+              accent="Pillars scoring 3.00 - 3.99"
+              accentColor="#FBBF24"
             />
             <StatTile
               label="Requiring focus"
@@ -582,7 +594,8 @@ export default async function AraReportPage({
                 <strong>{overall != null ? overall.toFixed(2) : "-"} / 5.00</strong>
                 {overallLabel && <> ({overallLabel})</>}. The profile shows{" "}
                 <strong>{strengths.length}</strong> {strengths.length === 1 ? "pillar" : "pillars"} at
-                or above the AI Ready benchmark and <strong>{gaps.length}</strong>{" "}
+                or above the AI Ready target, <strong>{approaching.length}</strong> approaching it,
+                and <strong>{gaps.length}</strong>{" "}
                 {gaps.length === 1 ? "pillar" : "pillars"} requiring focus.
                 {strengths.length > 0 && (
                   <> Leading strengths are <strong>{strengths.slice(0, 2).map(s => s.pillar).join(" and ")}</strong>.</>
@@ -602,10 +615,14 @@ export default async function AraReportPage({
             gap: "12pt", marginTop: "18pt" }}>
             <FindingsPanel
               variant="strength"
-              title="Headline strengths"
-              items={strengths.slice(0, 3).map(s => ({
+              title={strengths.length > 0 ? "Headline strengths" : "Relative strengths"}
+              emptyMessage={undefined}
+              items={(strengths.length > 0
+                ? strengths.slice(0, 3)
+                : [...approaching, ...gaps].sort((a, b) => b.score - a.score).slice(0, 3)
+              ).map(s => ({
                 headline: s.pillar,
-                metric: `${s.score.toFixed(2)} / 5.0`,
+                metric: `${s.score.toFixed(2)} · ${pctOfTarget(s.score)}% of target`,
               }))}
             />
             <FindingsPanel
@@ -613,7 +630,7 @@ export default async function AraReportPage({
               title="Critical gaps"
               items={gaps.slice(0, 3).map(g => ({
                 headline: g.pillar,
-                metric: `${g.score.toFixed(2)} · ${g.gap > 0 ? "+" : ""}${g.gap.toFixed(2)} vs benchmark`,
+                metric: `${g.score.toFixed(2)} · ${pctOfTarget(g.score)}% of target`,
               }))}
             />
           </div>
@@ -624,7 +641,7 @@ export default async function AraReportPage({
           <h2 className="report-h2">{t("how_to_read")}</h2>
           <p className="report-body">
             This report summarises findings across the {scopedPillars.length} in-scope
-            pillars of AI Readiness. Each pillar is scored 1–5 against a
+            pillars of AI Readiness. Each pillar is scored 1-5 against a
             behavioural rubric, and the overall score is a weighted aggregate.
           </p>
 
@@ -648,7 +665,7 @@ export default async function AraReportPage({
                       {m.label_ar}
                     </span>
                   </td>
-                  <td style={cell}>{m.min.toFixed(1)}–{m.max.toFixed(1)}</td>
+                  <td style={cell}>{m.min.toFixed(1)}-{m.max.toFixed(1)}</td>
                   <td style={cell} className="report-muted">
                     {m.level === 1 && "No AI activity or understanding."}
                     {m.level === 2 && "Early discovery; ad-hoc pilots."}
@@ -678,7 +695,7 @@ export default async function AraReportPage({
               >
                 <div>{b.label_en}</div>
                 <div style={{ fontSize: "8pt", opacity: 0.9 }}>
-                  {b.min.toFixed(1)}–{b.max.toFixed(1)}
+                  {b.min.toFixed(1)}-{b.max.toFixed(1)}
                 </div>
               </div>
             ))}
@@ -718,7 +735,7 @@ export default async function AraReportPage({
           </div>
         </section>
 
-        {/* ─── PAGES 6–21 - Pillar Deep Dives (2 pages each) ─── *
+        {/* ─── PAGES 6-21 - Pillar Deep Dives (2 pages each) ─── *
          * Only emit deep-dives for pillars that are in scope for the
          * assessment's engagement stage. Stage 1 produces 4 pillar
          * pairs; Stage 2 produces 6; Stage 3 produces all 8. */}
@@ -807,7 +824,7 @@ export default async function AraReportPage({
                 <th style={cellHeadRight}>
                   {peerBenchmarks.has_enough_data ? "Peer median" : "Peer median (pending)"}
                 </th>
-                <th style={cellHeadRight}>Gap</th>
+                <th style={cellHeadRight}>% of target</th>
               </tr>
             </thead>
             <tbody>
@@ -828,8 +845,8 @@ export default async function AraReportPage({
                     <td style={cellRight}>{s != null ? s.toFixed(2) : "-"}</td>
                     <td style={cellRight} className="report-muted">4.00</td>
                     <td style={cellRight} className="report-muted">{peerValue}</td>
-                    <td style={{ ...cellRight, color: gap != null && gap > 0 ? "#FB7185" : "#34D399" }}>
-                      {gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "-"}
+                    <td style={{ ...cellRight, color: s != null && s >= 4 ? "#34D399" : "#FB7185" }}>
+                      {s != null ? `${Math.round((s / 4.0) * 100)}%` : "-"}
                     </td>
                   </tr>
                 );
@@ -974,15 +991,15 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── PAGE 23–24 - Roadmap (Stage 2+ only) ─── */}
+        {/* ─── PAGE 23-24 - Roadmap (Stage 2+ only) ─── */}
         {assessment.engagement_stage !== "department" && (
           <section className="report-page">
             <h2 className="report-h2">{t("roadmap")}</h2>
             <p className="report-body">
               A phased 12-month roadmap translates findings into action across
-              three horizons: immediate stabilisation (Quick Wins, months 0–3),
-              institutionalisation (Build, months 3–9), and scaled transformation
-              (Transform, months 9–12).
+              three horizons: immediate stabilisation (Quick Wins, months 0-3),
+              institutionalisation (Build, months 3-9), and scaled transformation
+              (Transform, months 9-12).
             </p>
             <div style={{ marginTop: "16pt" }}>
               <GanttRoadmap initiatives={roadmapInitiatives} />
@@ -1374,7 +1391,7 @@ export default async function AraReportPage({
 
           <h3 className="report-h3">Scoring methodology</h3>
           <p className="report-body">
-            Each pillar raw score is the average of answered questions on a 1–5 scale.
+            Each pillar raw score is the average of answered questions on a 1-5 scale.
             The overall organizational score is the weighted average of the scored,
             in-scope pillars - each pillar contributes its raw score × its pillar
             weight, with weights renormalised over the pillars actually scored.
@@ -1562,7 +1579,10 @@ function PillarPages({
   const selfScore = row?.self_assessment_score != null ? Number(row.self_assessment_score) : null;
   const perceptionGap = row?.perception_gap != null ? Number(row.perception_gap) : null;
 
-  const gapValue = gap != null ? (gap > 0 ? `+${gap.toFixed(2)}` : gap.toFixed(2)) : "-";
+  // Expressed as % of the 4.00 AI Ready target: a signed distance ("+1.34")
+  // read as being ahead of target, which is the opposite of what it meant.
+  const targetPct = score != null ? Math.round((score / 4.0) * 100) : null;
+  const gapValue = targetPct != null ? `${targetPct}%` : "-";
   const gapTone: "positive" | "negative" | "neutral" =
     gap == null ? "neutral" : gap <= 0 ? "positive" : "negative";
   const perceptionTone: "neutral" | "warning" =
@@ -1570,7 +1590,10 @@ function PillarPages({
   const perceptionValue =
     perceptionGap != null ? (perceptionGap > 0 ? `+${perceptionGap.toFixed(2)}` : perceptionGap.toFixed(2)) : "-";
 
-  const recs = recommendationsFor(name, score);
+  // Pillar-SPECIFIC recommendations (the previous generator keyed only on the
+  // score band, so every pillar in a band repeated the same three actions and
+  // the same expected outcomes).
+  const recs = recommendationsForPillar(pillarId, score);
 
   return (
     <>
@@ -1596,9 +1619,9 @@ function PillarPages({
             tone={score == null ? "neutral" : score >= 4.0 ? "positive" : score < 3.0 ? "negative" : "warning"}
           />
           <Metric
-            label="Benchmark gap"
+            label="Progress to target"
             value={gapValue}
-            suffix="vs 4.00"
+            suffix="of the 4.00 AI Ready target"
             tone={gapTone}
           />
           <Metric

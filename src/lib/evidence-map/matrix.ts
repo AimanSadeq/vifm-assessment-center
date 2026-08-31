@@ -148,14 +148,14 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
         ac: presenceCell(metrics.ac.ratings, "ICC computable - {n} ratings", "no ratings yet"),
         arc_org: p("Phase 2 consultant validation logged"),
         arc_ind: na("single self-report"),
-        fluent: p("human–AI QWK ≥ .70 logged"),
+        fluent: p("human-AI QWK ≥ .70 logged"),
         technical: na("auto-scored MCQ"),
         reflect: p("multi-rater; anonymity gate ≥3"),
         psy: na("auto/keyed scoring"),
       },
     },
     {
-      category: "Test–retest reliability",
+      category: "Test-retest reliability",
       blurb: "Scores are stable across repeated administrations.",
       cells: {
         ac: m("not tracked"),
@@ -184,7 +184,7 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
       category: "Norms (local / GCC)",
       blurb: "Percentiles referenced to a relevant population.",
       cells: {
-        ac: na("criterion-referenced (1–5)"),
+        ac: na("criterion-referenced (1-5)"),
         arc_org: m("GCC norms accruing"),
         arc_ind: m("GCC norms accruing"),
         fluent: na("CEFR criterion-referenced"),

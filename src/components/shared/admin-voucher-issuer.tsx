@@ -233,7 +233,7 @@ export function AdminVoucherIssuer({
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* STEP 1 — details + options */}
+          {/* STEP 1 - details + options */}
           {step === 1 && (
             <>
               <VoucherDetailsFields value={details} onChange={setDetails} clients={clients} />
@@ -255,7 +255,7 @@ export function AdminVoucherIssuer({
             </>
           )}
 
-          {/* STEP 2 — delivery choice */}
+          {/* STEP 2 - delivery choice */}
           {step === 2 && (
             <>
               <p className="text-sm text-muted-foreground">
@@ -285,7 +285,7 @@ export function AdminVoucherIssuer({
             </>
           )}
 
-          {/* STEP 3a — to client */}
+          {/* STEP 3a - to client */}
           {step === 3 && target === "client" && (
             <>
               <div className="flex flex-wrap items-end gap-3">
@@ -321,7 +321,7 @@ export function AdminVoucherIssuer({
             </>
           )}
 
-          {/* STEP 3b — to delegates */}
+          {/* STEP 3b - to delegates */}
           {step === 3 && target === "delegates" && (
             <>
               <p className="text-sm text-muted-foreground">

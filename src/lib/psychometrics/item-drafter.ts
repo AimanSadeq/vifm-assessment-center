@@ -39,7 +39,7 @@ function cognitivePrompt(scaleKey: string, scaleName: string, count: number): st
     : "logical reasoning (a clean single-construct reasoning item)";
   return [
     `Write ${count} multiple-choice ${kind} items for the "${scaleName}" subtest.`,
-    `Each item: 3–4 options, exactly one defensible correct answer, solvable in under a minute, no trick wording.`,
+    `Each item: 3-4 options, exactly one defensible correct answer, solvable in under a minute, no trick wording.`,
     `Content MUST be domain-neutral (no finance/banking/business framing) and culture-fair.`,
     `Return a JSON array. Each element:`,
     `{ "stem_en": "...", "stem_ar": "...", "options_en": ["..."], "options_ar": ["..."],`,

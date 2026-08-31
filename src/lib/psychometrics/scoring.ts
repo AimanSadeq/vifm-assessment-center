@@ -34,7 +34,7 @@ export type PsyTestPublic =
 export type ScaleScore = {
   key: string;
   raw: number;          // % correct
-  normalized: number;   // 0–100
+  normalized: number;   // 0-100
   band: PsyBand;
   bandLabel: string;
   sten?: number;        // norm-referenced (Tier 2)

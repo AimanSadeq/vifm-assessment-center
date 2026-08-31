@@ -26,8 +26,8 @@
  * THE READINESS INDEX - how it is calculated
  * ──────────────────────────────────────────────────────────────────────────
  * Computed over the target role's competencies (role_profile_competencies),
- * each carrying a weight (0.5–10), a priority (high/medium/low), and a target
- * proficiency on the 1–5 scale (role_profiles.default_target_proficiency,
+ * each carrying a weight (0.5-10), a priority (high/medium/low), and a target
+ * proficiency on the 1-5 scale (role_profiles.default_target_proficiency,
  * typically 4).
  *
  *   1. Coverage. A role competency is "covered" when the 360 produced an
@@ -107,7 +107,7 @@ export type ReadinessConfig = {
   /** Aggregation + data sufficiency. */
   useWeights: boolean;
   minOthersPerCompetency: number;
-  /** Fraction (0–1) of role competencies that must be covered to assert a tier. */
+  /** Fraction (0-1) of role competencies that must be covered to assert a tier. */
   coverageMinPct: number;
   /** Advisory: |gap − cutoff| at or under this flags the result as borderline. */
   borderlineBand: number;
@@ -133,9 +133,9 @@ export const DEFAULT_READINESS_CONFIG: ReadinessConfig = {
   raterAgreementSpreadMax: 3,
   yearLayerEnabled: false,
   yearMap: {
-    ready_now: "0–2 years",
-    ready_soon: "1–3 years",
-    developing: "3–5 years",
+    ready_now: "0-2 years",
+    ready_soon: "1-3 years",
+    developing: "3-5 years",
     not_ready: "Beyond 5 years / not in pipeline",
   },
 };
@@ -197,7 +197,7 @@ export type RoleCompetencyReq = {
   name: string;
   weight: number;
   priority: RoleCompetencyPriority;
-  /** Target proficiency 1–5 (defaults to role_profiles.default_target_proficiency). */
+  /** Target proficiency 1-5 (defaults to role_profiles.default_target_proficiency). */
   target: number;
   /** VIFM domain (RESULTS / PEOPLE / THINKING / SELF) for the 9-box axes.
    *  Optional: when absent the 9-box falls back to the overall mean per axis. */
@@ -245,7 +245,7 @@ export type ReadinessResult = {
   weightedOthers: number | null;
   weightedTarget: number | null;
   overallGap: number | null;
-  /** 0–1. */
+  /** 0-1. */
   coveragePct: number;
   coveredCount: number;
   totalCount: number;

@@ -55,7 +55,7 @@ ${d.consultantName ? `${d.consultantName} has invited you` : "You have been invi
 Your secure response link (do not share):
 ${d.respondentUrl}
 
-The assessment takes 20–30 minutes. Your answers are saved automatically as you go, and you can pause and resume at any time using the same link.
+The assessment takes 20-30 minutes. Your answers are saved automatically as you go, and you can pause and resume at any time using the same link.
 
 If you have questions, please reply to this email.
 
@@ -86,7 +86,7 @@ ${d.respondentUrl}
         <p>Hello ${d.respondentName},</p>
         <p>${d.consultantName ? `${d.consultantName} has invited you` : "You have been invited"} to participate in the AI Readiness Compass for <strong>${d.organizationName}</strong>: ${d.assessmentName}.</p>
         <p><a href="${d.respondentUrl}" style="color:#5391D5;">Open your secure response link</a> (do not share).</p>
-        <p>The assessment takes 20–30 minutes. Answers save automatically; you can pause and resume.</p>
+        <p>The assessment takes 20-30 minutes. Answers save automatically; you can pause and resume.</p>
         <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
         <div dir="rtl" style="text-align:right;">
           <p>مرحبًا ${d.respondentName}،</p>

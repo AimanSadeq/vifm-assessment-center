@@ -66,7 +66,7 @@ export type CompetencyBreakdown = {
   competency: string; // localized
   correct: number;
   total: number;
-  pct: number; // 0–100, 0 when total is 0
+  pct: number; // 0-100, 0 when total is 0
   skills: SkillBreakdownLite[];
 };
 

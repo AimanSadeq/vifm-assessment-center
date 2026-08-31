@@ -230,7 +230,7 @@ function CourseSlot({ course, t }: { course: CourseRow; t: ServerT }) {
           <Badge variant="outline" className="text-[10px] tabular-nums">
             {course.min_duration_days === course.max_duration_days
               ? `${course.default_duration_days}d`
-              : `${course.min_duration_days}–${course.max_duration_days}d`}
+              : `${course.min_duration_days}-${course.max_duration_days}d`}
           </Badge>
         </div>
       </div>

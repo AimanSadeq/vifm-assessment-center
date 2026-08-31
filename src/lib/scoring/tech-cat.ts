@@ -3,7 +3,7 @@
  *
  * Thin, PURE wrapper over the generic Rasch engine in ./irt.ts (reused verbatim
  * from Fluent): it adds the technical-specific pieces - seeding a difficulty
- * from the easy/medium/hard label, mapping a θ estimate onto the 1–5
+ * from the easy/medium/hard label, mapping a θ estimate onto the 1-5
  * proficiency scale with a confidence band, and a maximum-information adaptive
  * SIMULATION used to prove the flow converges with fewer items than a fixed
  * form. No DB import, so it stays unit-testable + node-runnable; the DB-side
@@ -49,14 +49,14 @@ export function calibrateItemFields(input: {
   return { irt_b: seedDifficulty(input.difficulty), irt_se: null };
 }
 
-/** θ (logit) → 0–100 normalized: θ=0→50, ±4 → 0/100 (12.5 pts per logit). */
+/** θ (logit) → 0-100 normalized: θ=0→50, ±4 → 0/100 (12.5 pts per logit). */
 export function thetaToNormalized(theta: number): number {
   return Math.round(Math.min(100, Math.max(0, 50 + 12.5 * theta)));
 }
 
 export type TechAbility = TechProficiency & { lowLevel: number; highLevel: number; se: number };
 
-/** Map a θ estimate + its standard error onto the 1–5 band (point + ±1.96·SE). */
+/** Map a θ estimate + its standard error onto the 1-5 band (point + ±1.96·SE). */
 export function thetaToProficiency(theta: number, se = 0): TechAbility {
   const point = proficiencyFromPercent(thetaToNormalized(theta));
   const lo = proficiencyFromPercent(thetaToNormalized(theta - 1.96 * se));

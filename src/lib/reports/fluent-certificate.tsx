@@ -15,7 +15,7 @@ export type FluentCertificateData = {
   date: string; // already formatted
   overall_cefr: string;
   level_label: string;
-  range?: string | null; // indicative confidence band, e.g. "B1–B2"
+  range?: string | null; // indicative confidence band, e.g. "B1-B2"
   skills: Array<{ label: string; cefr: string }>;
 };
 

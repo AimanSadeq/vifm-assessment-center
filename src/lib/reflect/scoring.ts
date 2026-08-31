@@ -172,7 +172,7 @@ export type CohortScoring = {
     /**
      * P1 cohort distribution: counts of participants whose Others-mean for
      * THIS competency falls below the favorable zone (<3.5), within it
-     * (3.5–4.25 inclusive), or above (>4.25). Participants with no others
+     * (3.5-4.25 inclusive), or above (>4.25). Participants with no others
      * data are excluded from all three. Used by the "% below / within /
      * above" stacked-bar on the cohort PDF - the exec-summary slide every
      * competitor uses to anchor org-level training decisions.

@@ -28,8 +28,11 @@ export function ProvisionalReportStrip({ language }: { language: "en" | "ar" | "
       </div>
     );
   };
+  // Callers that paginate (the ARC report) must render this INSIDE their first
+  // page section - as a sibling above the pages it joins the print flow and
+  // offsets every page, which bled the cover's footer onto page 2.
   return (
-    <div style={{ padding: "12pt 12pt 0" }}>
+    <div className="ara-provisional-strip" style={{ padding: "12pt 12pt 0" }}>
       {language === "bilingual" ? (
         <>
           {box("en")}

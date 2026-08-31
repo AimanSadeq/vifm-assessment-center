@@ -89,7 +89,7 @@ export const ARA_MATURITY_LEVELS: ReadonlyArray<{
 
 // Same 0.0 floor as maturity levels - a weighted overall can be below
 // 1.0 when score_map values assign 0 to some answers. Display copy in
-// the report still uses the 1.0–5.0 labels from the handover.
+// the report still uses the 1.0-5.0 labels from the handover.
 export const ARA_OVERALL_BANDS: ReadonlyArray<{
   label_en: string;
   label_ar: string;

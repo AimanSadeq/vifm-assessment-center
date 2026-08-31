@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 /**
  * Animated numeric counter that eases from 0 to the target on mount.
  *
- * - If `value` is a non-numeric string (e.g. "27–60"), it renders verbatim.
+ * - If `value` is a non-numeric string (e.g. "27-60"), it renders verbatim.
  * - Respects `prefers-reduced-motion` (jumps straight to the final value).
  * - Runs once; safe to render inside RSC-driven pages.
  */

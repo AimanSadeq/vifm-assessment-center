@@ -20,11 +20,11 @@ export type TechnicalEvidenceInput = {
 const MENU: AnchorMenuEntry[] = [
   // ── Content validity & job analysis (the core defensibility for a knowledge test) ──
   { tags: ["*"], name: "Content validity ratio (Lawshe)",
-    citation: "Lawshe, C. H. (1975). A quantitative approach to content validity. Personnel Psychology, 28(4), 563–575." },
+    citation: "Lawshe, C. H. (1975). A quantitative approach to content validity. Personnel Psychology, 28(4), 563-575." },
   { tags: ["*"], name: "Job analysis for licensure/certification (Raymond)",
-    citation: "Raymond, M. R. (2001). Job analysis and the specification of content for licensure and certification examinations. Applied Measurement in Education, 14(4), 369–415." },
+    citation: "Raymond, M. R. (2001). Job analysis and the specification of content for licensure and certification examinations. Applied Measurement in Education, 14(4), 369-415." },
   { tags: ["*"], name: "Validity argument (Kane)",
-    citation: "Kane, M. T. (2013). Validating the interpretations and uses of test scores. Journal of Educational Measurement, 50(1), 1–73." },
+    citation: "Kane, M. T. (2013). Validating the interpretations and uses of test scores. Journal of Educational Measurement, 50(1), 1-73." },
   { tags: ["*"], name: "Standards for Educational and Psychological Testing",
     citation: "American Educational Research Association, American Psychological Association, & National Council on Measurement in Education (2014). Standards for educational and psychological testing. AERA." },
   { tags: ["*"], name: "NCCA Standards for Certification Programs",
@@ -32,7 +32,7 @@ const MENU: AnchorMenuEntry[] = [
 
   // ── Item writing & test construction ──
   { tags: ["*"], name: "Multiple-choice item-writing guidelines (Haladyna et al.)",
-    citation: "Haladyna, T. M., Downing, S. M., & Rodriguez, M. C. (2002). A review of multiple-choice item-writing guidelines for classroom assessment. Applied Measurement in Education, 15(3), 309–333." },
+    citation: "Haladyna, T. M., Downing, S. M., & Rodriguez, M. C. (2002). A review of multiple-choice item-writing guidelines for classroom assessment. Applied Measurement in Education, 15(3), 309-333." },
   { tags: ["*"], name: "Introduction to Classical and Modern Test Theory (Crocker & Algina)",
     citation: "Crocker, L., & Algina, J. (1986). Introduction to classical and modern test theory. Holt, Rinehart & Winston." },
   { tags: ["*"], name: "Taxonomy of educational objectives (Anderson & Krathwohl)",
@@ -42,7 +42,7 @@ const MENU: AnchorMenuEntry[] = [
   { tags: ["*"], name: "Standard Setting (Cizek & Bunch)",
     citation: "Cizek, G. J., & Bunch, M. B. (2007). Standard setting: A guide to establishing and evaluating performance standards on tests. Sage." },
   { tags: ["*"], name: "Scales, norms, and equivalent scores (Angoff)",
-    citation: "Angoff, W. H. (1971). Scales, norms, and equivalent scores. In R. L. Thorndike (Ed.), Educational measurement (2nd ed., pp. 508–600). American Council on Education." },
+    citation: "Angoff, W. H. (1971). Scales, norms, and equivalent scores. In R. L. Thorndike (Ed.), Educational measurement (2nd ed., pp. 508-600). American Council on Education." },
 ];
 
 export async function suggestTechnicalValidationEvidence(

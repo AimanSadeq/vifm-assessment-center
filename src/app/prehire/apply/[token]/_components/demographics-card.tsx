@@ -20,9 +20,9 @@ const GENDERS: Opt[] = [
 ];
 const AGE_BANDS: Opt[] = [
   { value: "under_25", label: "Under 25", label_ar: "أقل من 25" },
-  { value: "25_34", label: "25–34", label_ar: "25–34" },
-  { value: "35_44", label: "35–44", label_ar: "35–44" },
-  { value: "45_54", label: "45–54", label_ar: "45–54" },
+  { value: "25_34", label: "25-34", label_ar: "25-34" },
+  { value: "35_44", label: "35-44", label_ar: "35-44" },
+  { value: "45_54", label: "45-54", label_ar: "45-54" },
   { value: "55_plus", label: "55 or older", label_ar: "55 فأكثر" },
   { value: "prefer_not_to_say", label: "Prefer not to say", label_ar: "أفضّل عدم الإجابة" },
 ];

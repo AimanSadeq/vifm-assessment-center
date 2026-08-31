@@ -1,7 +1,7 @@
 /**
  * Competency gap-severity computation.
  *
- * Converts a numeric BARS score (1–5) and a target proficiency (default 3 =
+ * Converts a numeric BARS score (1-5) and a target proficiency (default 3 =
  * Competent) into a labelled severity badge for at-a-glance reading in
  * reports, client dashboards, and the wash-up view.
  *

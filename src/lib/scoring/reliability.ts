@@ -6,7 +6,7 @@ import { CEFR_ORDER, type CefrLevel, type FluentResult } from "@/lib/ai/fluent-e
  * A single CEFR level reads as point-certain, but the estimate carries real
  * uncertainty - especially from a short receptive section (research wants
  * ~40 items; Fluent currently has ~10) and from disagreement across the four
- * skills. We surface an indicative RANGE (e.g. "B1–B2") plus an underpowered
+ * skills. We surface an indicative RANGE (e.g. "B1-B2") plus an underpowered
  * flag rather than implying false precision. A proper item bank + IRT
  * (Phase 3) would replace the small-sample term with a true standard error.
  */
@@ -88,7 +88,7 @@ export function overallConfidenceBand(result: FluentResult): ConfidenceBand {
   };
 }
 
-/** "B1" if the band collapses to one level, else "B1–B2". */
+/** "B1" if the band collapses to one level, else "B1-B2". */
 export function formatBand(band: ConfidenceBand): string {
-  return band.low === band.high ? band.low : `${band.low}–${band.high}`;
+  return band.low === band.high ? band.low : `${band.low}-${band.high}`;
 }

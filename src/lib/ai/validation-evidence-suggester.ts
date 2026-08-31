@@ -4,7 +4,7 @@ import type { AraQuestionValidationEvidence } from "@/types/ara";
 /**
  * Per-item validation-evidence suggester.
  *
- * Takes a question and its construct context, returns 1–3 anchor
+ * Takes a question and its construct context, returns 1-3 anchor
  * instruments from the curated bibliography in
  * docs/ARA-Methodology-Brief.md §6. The bibliography is inlined into
  * the prompt as a closed menu so Claude has to pick from known,
@@ -38,17 +38,17 @@ const ANCHOR_MENU = [
   { construct: "AI Sense-Check", name: "AI Literacy review (Ng et al.)",
     citation: "Ng, D. T. K., Leung, J. K. L., Chu, S. K. W., & Qiao, M. S. (2021). Conceptualizing AI literacy: An exploratory review. Computers and Education: AI, 2, 100041." },
   { construct: "AI Working Practice", name: "Technology Acceptance Model (TAM)",
-    citation: "Davis, F. D. (1989). Perceived usefulness, perceived ease of use, and user acceptance of information technology. MIS Quarterly, 13(3), 319–340." },
+    citation: "Davis, F. D. (1989). Perceived usefulness, perceived ease of use, and user acceptance of information technology. MIS Quarterly, 13(3), 319-340." },
   { construct: "AI Working Practice", name: "Unified Theory of Acceptance and Use of Technology (UTAUT)",
-    citation: "Venkatesh, V., Morris, M. G., Davis, G. B., & Davis, F. D. (2003). User acceptance of information technology: Toward a unified view. MIS Quarterly, 27(3), 425–478." },
+    citation: "Venkatesh, V., Morris, M. G., Davis, G. B., & Davis, F. D. (2003). User acceptance of information technology: Toward a unified view. MIS Quarterly, 27(3), 425-478." },
   { construct: "AI Working Practice", name: "Generative AI productivity outcomes (Brynjolfsson et al.)",
     citation: "Brynjolfsson, E., Li, D., & Raymond, L. R. (2025). Generative AI at work. Quarterly Journal of Economics." },
   { construct: "AI Collaboration", name: "UTAUT2 - social influence",
-    citation: "Venkatesh, V., Thong, J. Y. L., & Xu, X. (2012). Consumer acceptance and use of information technology: Extending UTAUT (UTAUT2). MIS Quarterly, 36(1), 157–178." },
+    citation: "Venkatesh, V., Thong, J. Y. L., & Xu, X. (2012). Consumer acceptance and use of information technology: Extending UTAUT (UTAUT2). MIS Quarterly, 36(1), 157-178." },
   { construct: "AI Collaboration", name: "Communities of Practice (Wenger)",
     citation: "Wenger, E. (1998). Communities of practice: Learning, meaning, and identity. Cambridge University Press." },
   { construct: "AI Adaptive Mindset", name: "Technology Readiness Index 2.0",
-    citation: "Parasuraman, A., & Colby, C. L. (2015). An updated and streamlined Technology Readiness Index: TRI 2.0. Journal of Service Research, 18(1), 59–74." },
+    citation: "Parasuraman, A., & Colby, C. L. (2015). An updated and streamlined Technology Readiness Index: TRI 2.0. Journal of Service Research, 18(1), 59-74." },
   { construct: "AI Adaptive Mindset", name: "Growth-mindset theory (Dweck)",
     citation: "Dweck, C. S. (2006). Mindset: The new psychology of success. Random House." },
 
@@ -57,7 +57,7 @@ const ANCHOR_MENU = [
   // in src/lib/constants/ara-pillars.ts so the menu-filter in
   // buildPrompt() finds the right anchors.
   { construct: "Strategy & Vision", name: "AI for the real world (Davenport & Ronanki)",
-    citation: "Davenport, T. H., & Ronanki, R. (2018). Artificial intelligence for the real world. Harvard Business Review, 96(1), 108–116." },
+    citation: "Davenport, T. H., & Ronanki, R. (2018). Artificial intelligence for the real world. Harvard Business Review, 96(1), 108-116." },
   { construct: "Strategy & Vision", name: "Competing in the age of AI (Iansiti & Lakhani)",
     citation: "Iansiti, M., & Lakhani, K. R. (2020). Competing in the age of AI. Harvard Business Review Press." },
   { construct: "Data Foundations", name: "DAMA-DMBOK",
@@ -65,7 +65,7 @@ const ANCHOR_MENU = [
   { construct: "Data Foundations", name: "EDM Council DCAM",
     citation: "EDM Council (2020). Data Management Capability Assessment Model (DCAM)." },
   { construct: "Technology & Infrastructure", name: "Hidden technical debt in ML (Sculley et al.)",
-    citation: "Sculley, D., Holt, G., Golovin, D., et al. (2015). Hidden technical debt in machine learning systems. NeurIPS 28, 2503–2511." },
+    citation: "Sculley, D., Holt, G., Golovin, D., et al. (2015). Hidden technical debt in machine learning systems. NeurIPS 28, 2503-2511." },
   { construct: "Technology & Infrastructure", name: "Software engineering challenges for ML (Lwakatare et al.)",
     citation: "Lwakatare, L. E., Raj, A., Bosch, J., Olsson, H. H., & Crnkovic, I. (2019). A taxonomy of software engineering challenges for ML systems. XP 2019." },
   { construct: "Talent & Skills", name: "WEF Future of Jobs Report",
@@ -75,7 +75,7 @@ const ANCHOR_MENU = [
   { construct: "Culture & Change Readiness", name: "Leading Digital (Westerman et al.)",
     citation: "Westerman, G., Bonnet, D., & McAfee, A. (2014). Leading Digital: Turning Technology into Business Transformation. HBR Press." },
   { construct: "Culture & Change Readiness", name: "Radical innovation across nations (Tellis et al.)",
-    citation: "Tellis, G. J., Prabhu, J. C., & Chandy, R. K. (2009). Radical innovation across nations: The preeminence of corporate culture. Journal of Marketing, 73(1), 3–23." },
+    citation: "Tellis, G. J., Prabhu, J. C., & Chandy, R. K. (2009). Radical innovation across nations: The preeminence of corporate culture. Journal of Marketing, 73(1), 3-23." },
   { construct: "Governance, Ethics & Compliance", name: "NIST AI RMF 1.0",
     citation: "National Institute of Standards and Technology (2023). AI Risk Management Framework 1.0 (AI RMF 1.0). NIST AI 100-1." },
   { construct: "Governance, Ethics & Compliance", name: "ISO/IEC 42001:2023",
@@ -85,9 +85,9 @@ const ANCHOR_MENU = [
   { construct: "Operations & Use Case Portfolio", name: "Accelerate / DORA metrics",
     citation: "Forsgren, N., Humble, J., & Kim, G. (2018). Accelerate: The Science of Lean Software and DevOps. IT Revolution Press." },
   { construct: "Model Management & Monitoring", name: "ML Test Score (Breck et al.)",
-    citation: "Breck, E., Cai, S., Nielsen, E., Salib, M., & Sculley, D. (2017). The ML test score: A rubric for ML production readiness. IEEE Big Data, 1123–1132." },
+    citation: "Breck, E., Cai, S., Nielsen, E., Salib, M., & Sculley, D. (2017). The ML test score: A rubric for ML production readiness. IEEE Big Data, 1123-1132." },
   { construct: "Model Management & Monitoring", name: "Model Cards (Mitchell et al.)",
-    citation: "Mitchell, M., Wu, S., Zaldivar, A., et al. (2019). Model cards for model reporting. FAT* 2019, 220–229." },
+    citation: "Mitchell, M., Wu, S., Zaldivar, A., et al. (2019). Model cards for model reporting. FAT* 2019, 220-229." },
 ];
 
 const SYSTEM_PROMPT =
@@ -123,7 +123,7 @@ function buildPrompt(input: ValidationSuggesterInput): string {
     `${menuText}\n\n` +
     `Return JSON of this exact shape:\n` +
     `{\n` +
-    `  "construct_summary": "<5–10 word summary of the construct this item taps>",\n` +
+    `  "construct_summary": "<5-10 word summary of the construct this item taps>",\n` +
     `  "anchor_instruments": [\n` +
     `    {\n` +
     `      "name": "<exact name from menu>",\n` +

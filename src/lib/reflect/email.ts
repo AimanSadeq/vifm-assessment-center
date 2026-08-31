@@ -69,7 +69,7 @@ You'll be rating ${d.roleLabel} on a short set of observable behaviours. Your re
 Your secure response link (do not share):
 ${d.respondentUrl}
 
-The form takes 10–15 minutes. Your answers are saved automatically as you go, and you can pause and resume any time using the same link.
+The form takes 10-15 minutes. Your answers are saved automatically as you go, and you can pause and resume any time using the same link.
 
 If you have questions, please reply to this email.
 
@@ -101,13 +101,13 @@ ${d.respondentUrl}
       body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
   <p>Hello ${d.raterName},</p>
   <p>${d.participantName} has nominated you to provide 360° leadership feedback as part of <strong>${d.engagementName}</strong> at ${d.organizationName}.</p>
-  <p>You'll rate ${d.roleLabel} on a short set of observable behaviours (10–15 minutes). Peer and direct-report scores are only revealed once at least ${d.anonymityN} raters in each group have responded.</p>
+  <p>You'll rate ${d.roleLabel} on a short set of observable behaviours (10-15 minutes). Peer and direct-report scores are only revealed once at least ${d.anonymityN} raters in each group have responded.</p>
   <p><a href="${d.respondentUrl}" style="color:#5391D5;">Open your secure response link</a> - do not share.</p>
   <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
   <div dir="rtl" style="text-align:right;">
     <p>مرحبًا ${d.raterName}،</p>
     <p>تمت ترشيحك من قِبل ${d.participantName} لتقديم تغذية راجعة قيادية ضمن برنامج <strong>${d.engagementName}</strong> في ${d.organizationName}.</p>
-    <p>ستقوم بتقييم ${d.roleLabel} وفق مجموعة موجزة من السلوكيات الملاحظة (10–15 دقيقة). لا تظهر نتائج فئتي الزملاء والتقارير المباشرة إلا بعد إجابة ${d.anonymityN} مقيّمين على الأقل.</p>
+    <p>ستقوم بتقييم ${d.roleLabel} وفق مجموعة موجزة من السلوكيات الملاحظة (10-15 دقيقة). لا تظهر نتائج فئتي الزملاء والتقارير المباشرة إلا بعد إجابة ${d.anonymityN} مقيّمين على الأقل.</p>
     <p><a href="${d.respondentUrl}" style="color:#5391D5;">افتح رابطك الآمن للإجابة</a> - يُرجى عدم مشاركته.</p>
   </div>
 </div>`,

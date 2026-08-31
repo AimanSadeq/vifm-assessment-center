@@ -107,12 +107,12 @@ const NUMBERS: Array<{ value: number; labelKey: string; tone: Tone }> = [
 // `name` and `nameAr` are intentional bilingual labels shown together
 // regardless of locale, so they stay literal. Only `purposeKey` is translated.
 const EXERCISES: Array<{ name: string; nameAr: string; minutes: string; purposeKey: string }> = [
-  { name: "In-Basket / E-Tray",         nameAr: "صندوق الوارد",       minutes: "60–90", purposeKey: "inBasketPurpose" },
-  { name: "Role Play",                  nameAr: "تمثيل الأدوار",       minutes: "30–45", purposeKey: "rolePlayPurpose" },
-  { name: "Group Exercise",             nameAr: "تمرين جماعي",        minutes: "45–60", purposeKey: "groupPurpose" },
-  { name: "Case Study",                 nameAr: "دراسة حالة",          minutes: "60–90", purposeKey: "casePurpose" },
-  { name: "Oral Presentation",          nameAr: "عرض شفهي",            minutes: "20–30", purposeKey: "oralPurpose" },
-  { name: "Competency-Based Interview", nameAr: "مقابلة قائمة على الجدارات", minutes: "45–60", purposeKey: "cbiPurpose" },
+  { name: "In-Basket / E-Tray",         nameAr: "صندوق الوارد",       minutes: "60-90", purposeKey: "inBasketPurpose" },
+  { name: "Role Play",                  nameAr: "تمثيل الأدوار",       minutes: "30-45", purposeKey: "rolePlayPurpose" },
+  { name: "Group Exercise",             nameAr: "تمرين جماعي",        minutes: "45-60", purposeKey: "groupPurpose" },
+  { name: "Case Study",                 nameAr: "دراسة حالة",          minutes: "60-90", purposeKey: "casePurpose" },
+  { name: "Oral Presentation",          nameAr: "عرض شفهي",            minutes: "20-30", purposeKey: "oralPurpose" },
+  { name: "Competency-Based Interview", nameAr: "مقابلة قائمة على الجدارات", minutes: "45-60", purposeKey: "cbiPurpose" },
 ];
 
 // `label` values are standards/legal names kept verbatim; only `bodyKey` translates.

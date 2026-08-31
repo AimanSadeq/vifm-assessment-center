@@ -215,7 +215,7 @@ export async function fetchReportData(
       duration_label:
         c.min_duration_days === c.max_duration_days
           ? `${c.default_duration_days}d`
-          : `${c.min_duration_days}–${c.max_duration_days}d`,
+          : `${c.min_duration_days}-${c.max_duration_days}d`,
       total_score: c.total_score,
       drivers: c.drivers.map((d) => ({
         label: d.label,

@@ -32,7 +32,7 @@ const MENU: AnchorMenuEntry[] = [
   { tags: ["*"], name: "Language Testing and Validation (Weir)",
     citation: "Weir, C. J. (2005). Language testing and validation: An evidence-based approach. Palgrave Macmillan." },
   { tags: ["*"], name: "Validity (Messick)",
-    citation: "Messick, S. (1989). Validity. In R. L. Linn (Ed.), Educational measurement (3rd ed., pp. 13–103). Macmillan." },
+    citation: "Messick, S. (1989). Validity. In R. L. Linn (Ed.), Educational measurement (3rd ed., pp. 13-103). Macmillan." },
   { tags: ["*"], name: "Measuring Second Language Performance (McNamara)",
     citation: "McNamara, T. F. (1996). Measuring second language performance. Longman." },
   { tags: ["*"], name: "Standards for Educational and Psychological Testing",
@@ -48,7 +48,7 @@ const MENU: AnchorMenuEntry[] = [
   { tags: ["LISTENING"], name: "Assessing Listening (Buck)",
     citation: "Buck, G. (2001). Assessing listening. Cambridge University Press." },
   { tags: ["LISTENING"], name: "Cognitive validity of listening (Field)",
-    citation: "Field, J. (2013). Cognitive validity. In A. Geranpayeh & L. Taylor (Eds.), Examining listening (pp. 77–151). Cambridge University Press." },
+    citation: "Field, J. (2013). Cognitive validity. In A. Geranpayeh & L. Taylor (Eds.), Examining listening (pp. 77-151). Cambridge University Press." },
 ];
 
 export async function suggestFluentValidationEvidence(

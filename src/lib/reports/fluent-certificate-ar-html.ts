@@ -42,7 +42,7 @@ export type FluentCertificateArData = {
   date: string; // already formatted (Arabic locale)
   overall_cefr: string;
   level_label: string; // Arabic CEFR band label, e.g. "متوسط"
-  range?: string | null; // indicative confidence band, e.g. "B1–B2"
+  range?: string | null; // indicative confidence band, e.g. "B1-B2"
   skills: Array<{ label: string; cefr: string }>; // label already in Arabic
 };
 

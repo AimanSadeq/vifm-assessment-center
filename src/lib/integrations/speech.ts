@@ -5,7 +5,7 @@
  *    listening items (replaces robotic browser SpeechSynthesis; the script
  *    stays server-side so it can't be read as text).
  *  - assessPronunciation(): pronunciation assessment on a WAV → accuracy /
- *    fluency / completeness / prosody / overall scores (0–100), the acoustic
+ *    fluency / completeness / prosody / overall scores (0-100), the acoustic
  *    dimension a Whisper transcript can't capture.
  *
  * Both no-op (return null) when AZURE_SPEECH_KEY / AZURE_SPEECH_REGION are
@@ -76,11 +76,11 @@ export async function synthesizeSpeech(text: string): Promise<Buffer | null> {
 }
 
 export type PronunciationScore = {
-  accuracy: number; // 0–100, phoneme accuracy vs native
-  fluency: number; // 0–100, pausing/rhythm
-  completeness: number; // 0–100, proportion of reference spoken (unscripted ≈ 100)
-  prosody: number | null; // 0–100, stress/intonation (null if unavailable)
-  pron: number; // 0–100, overall pronunciation score
+  accuracy: number; // 0-100, phoneme accuracy vs native
+  fluency: number; // 0-100, pausing/rhythm
+  completeness: number; // 0-100, proportion of reference spoken (unscripted ≈ 100)
+  prosody: number | null; // 0-100, stress/intonation (null if unavailable)
+  pron: number; // 0-100, overall pronunciation score
 };
 
 type AzureScores = {

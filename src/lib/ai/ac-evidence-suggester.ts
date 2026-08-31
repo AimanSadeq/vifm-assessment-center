@@ -7,7 +7,7 @@ import type { ValidationEvidence } from "@/types/evidence";
  * (the ARC item suggester) but with an assessment-centre / competency-
  * modelling bibliography instead of the AI-readiness one.
  *
- * Takes a competency + its domain context and returns 1–3 anchor
+ * Takes a competency + its domain context and returns 1-3 anchor
  * instruments from a CLOSED, curated menu so Claude has to pick from
  * known, spot-checkable citations rather than fabricate paper-level
  * details. Output is always `review_status: 'ai_proposed'` - an admin
@@ -31,21 +31,21 @@ export type AcEvidenceSuggesterInput = {
 const ANCHOR_MENU: Array<{ domains: string[]; name: string; citation: string }> = [
   // ── General - assessment-centre method & competency-modelling validity ──
   { domains: ["*"], name: "ITAG Assessment Center Guidelines (6th ed.)",
-    citation: "International Taskforce on Assessment Center Guidelines (2015). Guidelines and ethical considerations for assessment center operations (6th ed.). Journal of Management, 41(4), 1244–1273." },
+    citation: "International Taskforce on Assessment Center Guidelines (2015). Guidelines and ethical considerations for assessment center operations (6th ed.). Journal of Management, 41(4), 1244-1273." },
   { domains: ["*"], name: "Assessment Centers in HRM (Thornton & Rupp)",
     citation: "Thornton, G. C., III, & Rupp, D. E. (2006). Assessment centers in human resource management: Strategies for prediction, diagnosis, and development. Lawrence Erlbaum." },
   { domains: ["*"], name: "AC dimension criterion validity meta-analysis (Arthur et al.)",
-    citation: "Arthur, W., Jr., Day, E. A., McNelly, T. L., & Edens, P. S. (2003). A meta-analysis of the criterion-related validity of assessment center dimensions. Personnel Psychology, 56(1), 125–153." },
+    citation: "Arthur, W., Jr., Day, E. A., McNelly, T. L., & Edens, P. S. (2003). A meta-analysis of the criterion-related validity of assessment center dimensions. Personnel Psychology, 56(1), 125-153." },
   { domains: ["*"], name: "AC validity meta-analysis (Gaugler et al.)",
-    citation: "Gaugler, B. B., Rosenthal, D. B., Thornton, G. C., & Bentson, C. (1987). Meta-analysis of assessment center validity. Journal of Applied Psychology, 72(3), 493–511." },
+    citation: "Gaugler, B. B., Rosenthal, D. B., Thornton, G. C., & Bentson, C. (1987). Meta-analysis of assessment center validity. Journal of Applied Psychology, 72(3), 493-511." },
   { domains: ["*"], name: "Competence at Work (Spencer & Spencer)",
     citation: "Spencer, L. M., & Spencer, S. M. (1993). Competence at work: Models for superior performance. Wiley." },
   { domains: ["*"], name: "The Competent Manager (Boyatzis)",
     citation: "Boyatzis, R. E. (1982). The competent manager: A model for effective performance. Wiley." },
   { domains: ["*"], name: "Doing competency modeling right (Campion et al.)",
-    citation: "Campion, M. A., Fink, A. A., Ruggeberg, B. J., Carr, L., Phillips, G. M., & Odman, R. B. (2011). Doing competencies well: Best practices in competency modeling. Personnel Psychology, 64(1), 225–262." },
+    citation: "Campion, M. A., Fink, A. A., Ruggeberg, B. J., Carr, L., Phillips, G. M., & Odman, R. B. (2011). Doing competencies well: Best practices in competency modeling. Personnel Psychology, 64(1), 225-262." },
   { domains: ["*"], name: "The Great Eight competencies (Bartram)",
-    citation: "Bartram, D. (2005). The Great Eight competencies: A criterion-centric approach to validation. Journal of Applied Psychology, 90(6), 1185–1203." },
+    citation: "Bartram, D. (2005). The Great Eight competencies: A criterion-centric approach to validation. Journal of Applied Psychology, 90(6), 1185-1203." },
   { domains: ["*"], name: "Standards for Educational and Psychological Testing",
     citation: "American Educational Research Association, American Psychological Association, & National Council on Measurement in Education (2014). Standards for educational and psychological testing. AERA." },
   { domains: ["*"], name: "ISO 10667 assessment service delivery",
@@ -53,27 +53,27 @@ const ANCHOR_MENU: Array<{ domains: string[]; name: string; citation: string }> 
 
   // ── THINKING - reasoning, problem-solving, judgement, strategy ──
   { domains: ["THINKING"], name: "Validity of selection methods (Schmidt & Hunter)",
-    citation: "Schmidt, F. L., & Hunter, J. E. (1998). The validity and utility of selection methods in personnel psychology. Psychological Bulletin, 124(2), 262–274." },
+    citation: "Schmidt, F. L., & Hunter, J. E. (1998). The validity and utility of selection methods in personnel psychology. Psychological Bulletin, 124(2), 262-274." },
   { domains: ["THINKING"], name: "Leadership skills / complex problem solving (Mumford et al.)",
-    citation: "Mumford, M. D., Zaccaro, S. J., Harding, F. D., Jacobs, T. O., & Fleishman, E. A. (2000). Leadership skills for a changing world: Solving complex social problems. Leadership Quarterly, 11(1), 11–35." },
+    citation: "Mumford, M. D., Zaccaro, S. J., Harding, F. D., Jacobs, T. O., & Fleishman, E. A. (2000). Leadership skills for a changing world: Solving complex social problems. Leadership Quarterly, 11(1), 11-35." },
 
   // ── RESULTS - achievement, drive, execution, accountability ──
   { domains: ["RESULTS"], name: "Testing for competence (McClelland)",
-    citation: "McClelland, D. C. (1973). Testing for competence rather than for intelligence. American Psychologist, 28(1), 1–14." },
+    citation: "McClelland, D. C. (1973). Testing for competence rather than for intelligence. American Psychologist, 28(1), 1-14." },
   { domains: ["RESULTS"], name: "Goal-setting theory (Locke & Latham)",
-    citation: "Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation. American Psychologist, 57(9), 705–717." },
+    citation: "Locke, E. A., & Latham, G. P. (2002). Building a practically useful theory of goal setting and task motivation. American Psychologist, 57(9), 705-717." },
 
   // ── PEOPLE - interpersonal, leadership, influence, communication ──
   { domains: ["PEOPLE"], name: "Emotional intelligence (Mayer, Salovey & Caruso)",
-    citation: "Mayer, J. D., Salovey, P., & Caruso, D. R. (2008). Emotional intelligence: New ability or eclectic traits? American Psychologist, 63(6), 503–517." },
+    citation: "Mayer, J. D., Salovey, P., & Caruso, D. R. (2008). Emotional intelligence: New ability or eclectic traits? American Psychologist, 63(6), 503-517." },
   { domains: ["PEOPLE"], name: "Effective leadership behavior (Yukl)",
-    citation: "Yukl, G. (2012). Effective leadership behavior: What we know and what questions need more attention. Academy of Management Perspectives, 26(4), 66–85." },
+    citation: "Yukl, G. (2012). Effective leadership behavior: What we know and what questions need more attention. Academy of Management Perspectives, 26(4), 66-85." },
 
   // ── SELF - integrity, adaptability, resilience, self-management ──
   { domains: ["SELF"], name: "Big Five and job performance (Barrick & Mount)",
-    citation: "Barrick, M. R., & Mount, M. K. (1991). The Big Five personality dimensions and job performance: A meta-analysis. Personnel Psychology, 44(1), 1–26." },
+    citation: "Barrick, M. R., & Mount, M. K. (1991). The Big Five personality dimensions and job performance: A meta-analysis. Personnel Psychology, 44(1), 1-26." },
   { domains: ["SELF"], name: "Adaptive performance taxonomy (Pulakos et al.)",
-    citation: "Pulakos, E. D., Arad, S., Donovan, M. A., & Plamondon, K. E. (2000). Adaptability in the workplace: Development of a taxonomy of adaptive performance. Journal of Applied Psychology, 85(4), 612–624." },
+    citation: "Pulakos, E. D., Arad, S., Donovan, M. A., & Plamondon, K. E. (2000). Adaptability in the workplace: Development of a taxonomy of adaptive performance. Journal of Applied Psychology, 85(4), 612-624." },
 ];
 
 const SYSTEM_PROMPT =

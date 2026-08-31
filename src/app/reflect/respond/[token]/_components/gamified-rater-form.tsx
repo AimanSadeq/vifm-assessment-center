@@ -128,7 +128,7 @@ const G = {
     criticalTitle: "ما الكفايات الأكثر أهمية لهذا الدور؟",
     tenureTitle: "منذ متى تعمل مع هذا الشخص؟",
     tenureLead: "اختياري - يضيف سياقًا لرأيك.",
-    tenure: { less_than_6mo: "< 6 أشهر", six_mo_to_2yr: "6 أشهر – سنتان", two_to_5yr: "سنتان – 5 سنوات", over_5yr: "5 سنوات +" },
+    tenure: { less_than_6mo: "< 6 أشهر", six_mo_to_2yr: "6 أشهر - سنتان", two_to_5yr: "سنتان - 5 سنوات", over_5yr: "5 سنوات +" },
     submit: "إرسال رأيي",
     submitting: "جارٍ الإرسال…",
     needAll: "قيّم كل البطاقات قبل الإرسال",

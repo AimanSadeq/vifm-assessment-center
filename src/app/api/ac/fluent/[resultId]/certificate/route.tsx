@@ -166,7 +166,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
   ];
   const band = row.result?.reliability;
   const rangeText =
-    band?.low && band?.high ? (band.low === band.high ? band.low : `${band.low}–${band.high}`) : null;
+    band?.low && band?.high ? (band.low === band.high ? band.low : `${band.low}-${band.high}`) : null;
 
   // Language for the PDF: explicit ?lang= wins, else the vifm-locale
   // cookie. Anything other than "ar" falls back to English.

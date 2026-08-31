@@ -109,7 +109,7 @@ export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
     {
       label: "Honest limits",
       value:
-        "Self-report (mitigated by the Phase 2 validation workshop); calibrated against UAE and Saudi regulatory frameworks; results lock to the question-bank version active at creation so the report is reproducible.",
+        "Self-report (mitigated by the Phase 2 validation workshop); compliance is assessed against the UAE or Saudi regulatory frameworks applicable to the client; results lock to the question-bank version active at creation so the report is reproducible.",
     },
     { label: "Methodology", value: `Full methodology brief: ${METHODOLOGY_URL}` },
   ];

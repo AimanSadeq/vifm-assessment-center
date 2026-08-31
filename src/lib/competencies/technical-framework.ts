@@ -80,7 +80,7 @@ export const TECH_DOMAINS: TechDomain[] = [
 export const techDomainByKey = (k: string): TechDomain | null =>
   TECH_DOMAINS.find((d) => d.key === k) ?? null;
 
-// ── Proficiency scale (1–5) ──────────────────────────────────────
+// ── Proficiency scale (1-5) ──────────────────────────────────────
 // Deliberately coarse: a short assessment yields an INDICATIVE band, not a
 // certified grade. The label set is the single source of truth for display.
 export const TECH_LEVELS = ["Awareness", "Foundational", "Working", "Proficient", "Expert"] as const;
@@ -88,14 +88,14 @@ export type TechLevel = 1 | 2 | 3 | 4 | 5;
 
 export type TechProficiency = { level: TechLevel; label: string; normalized: number };
 
-/** Map an assessment score (0–100) to an indicative 1–5 proficiency band. */
+/** Map an assessment score (0-100) to an indicative 1-5 proficiency band. */
 export function proficiencyFromPercent(pct: number): TechProficiency {
   const p = Math.max(0, Math.min(100, pct));
   const level: TechLevel = p >= 85 ? 5 : p >= 70 ? 4 : p >= 55 ? 3 : p >= 40 ? 2 : 1;
   return { level, label: TECH_LEVELS[level - 1], normalized: Math.round(p) };
 }
 
-/** Normalized 0–100 for a 1–5 level (for blending onto the golden thread). */
+/** Normalized 0-100 for a 1-5 level (for blending onto the golden thread). */
 export function normalizedFromLevel(level: number): number {
   const l = Math.max(1, Math.min(5, Math.round(level)));
   return Math.round(((l - 1) / 4) * 100);

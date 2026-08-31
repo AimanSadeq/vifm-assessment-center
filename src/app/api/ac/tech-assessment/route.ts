@@ -12,7 +12,7 @@
  *     When the result clears the domain's documented cut-score, a
  *     'technical_proficiency' credential is issued. This is the defensible,
  *     sellable path.
- *   • INDICATIVE - live AI-authored items (no human review). Renders a 1–5
+ *   • INDICATIVE - live AI-authored items (no human review). Renders a 1-5
  *     band but NEVER issues a credential. The honest fallback when a domain's
  *     approved bank is too thin to certify (or ANTHROPIC_API_KEY is absent).
  *

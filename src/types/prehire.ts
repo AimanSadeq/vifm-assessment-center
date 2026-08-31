@@ -47,9 +47,9 @@ export type PrehireDecision = "advanced" | "rejected" | "hold" | "withdrawn";
 /** One entry in a requisition's ordered stage plan (stored as jsonb). */
 export type PrehireStagePlanEntry = {
   kind: PrehireStageKind;
-  /** Relative weight in the composite (0–1). Weights are normalized at scoring time. */
+  /** Relative weight in the composite (0-1). Weights are normalized at scoring time. */
   weight: number;
-  /** Minimum normalized score (0–100) to "pass" this stage. null = no hurdle. */
+  /** Minimum normalized score (0-100) to "pass" this stage. null = no hurdle. */
   cut_score: number | null;
   /** If true, a fail on this stage flags the candidate for review (never auto-rejects). */
   required: boolean;

@@ -10,7 +10,7 @@
 export const formatFitScore = (n: number): string => (Math.round(n * 10) / 10).toString();
 
 /**
- * Present a raw fit score on a 0–10 scale (one decimal), relative to the
+ * Present a raw fit score on a 0-10 scale (one decimal), relative to the
  * strongest match in the same list (the top course = 10.0). Ranking is
  * unchanged - this is presentation only, so an open-ended weighted sum
  * (e.g. 10.2) reads as a clean score out of 10 (e.g. 9.2, 5.7). Returns a

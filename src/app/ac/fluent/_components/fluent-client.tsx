@@ -53,7 +53,7 @@ type FluentResult = {
   integrity?: IntegritySignal;
 };
 
-const bandText = (r: ConfidenceBand): string => (r.low === r.high ? r.low : `${r.low}–${r.high}`);
+const bandText = (r: ConfidenceBand): string => (r.low === r.high ? r.low : `${r.low}-${r.high}`);
 
 const MAX_PLAYS = 2;
 

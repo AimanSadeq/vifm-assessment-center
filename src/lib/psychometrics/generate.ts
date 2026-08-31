@@ -89,7 +89,7 @@ function cognitivePrompt(lang: Lang, perSubtest: number, subtests: string[]): st
     `Return ONE JSON array (no markdown fences). Each element:`,
     `{ "scale": ${subtests.map((s) => `"${s}"`).join("|")}, "stem": "<text>", "options": ["a","b","c","d"],`,
     `  "correct": <0-based index>, "difficulty": "easy"|"medium"|"hard" }`,
-    `Provide 3–4 options each, exactly one correct. Use ONLY the listed subtests for "scale".`,
+    `Provide 3-4 options each, exactly one correct. Use ONLY the listed subtests for "scale".`,
   ].join("\n");
 }
 

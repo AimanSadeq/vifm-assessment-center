@@ -259,7 +259,7 @@ function CourseCard({ course, t }: { course: CatalogueRow; t: ServerT }) {
   const durationLabel =
     course.min_duration_days === course.max_duration_days
       ? `${course.default_duration_days}d`
-      : `${course.min_duration_days}–${course.max_duration_days}d`;
+      : `${course.min_duration_days}-${course.max_duration_days}d`;
   const overviewSnippet = course.overview_en
     ? course.overview_en.length > 200
       ? course.overview_en.slice(0, 200).trimEnd() + "…"

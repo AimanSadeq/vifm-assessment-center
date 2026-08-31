@@ -431,7 +431,7 @@ export function VouchersClient({
             <select value={functionId} onChange={(e) => setFunctionId(e.target.value)} className="rounded-md border border-border bg-card px-3 py-2 text-foreground">
               {functions.map((f) => {
                 const r = readiness[f.id];
-                const tag = r ? (r.certifiable ? " — vetted bank" : " — AI questions") : "";
+                const tag = r ? (r.certifiable ? " - vetted bank" : " - AI questions") : "";
                 return (
                   <option key={f.id} value={f.id}>{f.nodeId ? `${f.nodeId} · ` : ""}{f.nameEn}{tag}</option>
                 );

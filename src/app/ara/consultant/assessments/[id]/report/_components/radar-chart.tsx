@@ -117,7 +117,14 @@ export function RadarChart({
         const isLeft = pt.x < CENTER - 5;
         const anchor = isLeft ? "end" : isRight ? "start" : "middle";
         const label = language === "ar" ? p.name_ar : p.name_en;
-        const words = language === "ar" ? [label] : label.split(" & ");
+        // Wrap on "&" WITHOUT losing it - splitting on " & " silently dropped
+        // the ampersand, so pillar names rendered as "Strategy / Vision".
+        const words =
+          language === "ar"
+            ? [label]
+            : label.includes(" & ")
+              ? [label.split(" & ")[0] + " &", label.split(" & ").slice(1).join(" & ")]
+              : [label];
         return (
           <text key={p.id} x={pt.x} y={pt.y} textAnchor={anchor} fontSize="10" fill="#374151">
             {words.map((w, wi) => (

@@ -6,7 +6,7 @@ import { getAIClient, AI_MODEL } from "./client";
  *
  * The recommender answers "which VIFM courses are relevant to this
  * learner's gaps?". This engine answers "in what ORDER, grouped how,
- * and why?" - it sequences the recommended courses into 2–4 stages,
+ * and why?" - it sequences the recommended courses into 2-4 stages,
  * foundational competencies first, and writes a rationale, a concrete
  * milestone, and a measurable outcome for each stage. Bilingual EN/AR.
  *
@@ -181,7 +181,7 @@ export async function generateUpskillingPathway(input: {
     `You are a learning & development architect for VIFM, a GCC finance & ` +
     `management institute. Given a learner's diagnosed ${sourceLabel} and a ranked ` +
     `set of recommended VIFM courses (each tagged with the gaps it closes and a ` +
-    `relevance weight 1–3), design a SEQUENCED upskilling pathway of 2–4 stages. ` +
+    `relevance weight 1-3), design a SEQUENCED upskilling pathway of 2-4 stages. ` +
     `Put foundational/prerequisite competencies first; group related competencies ` +
     `into the same stage; assign every recommended course to exactly one stage using ` +
     `its code. For each stage write a tight rationale (why this, why now), one ` +

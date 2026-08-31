@@ -20,7 +20,7 @@ import {
   type FluentTest,
 } from "@/lib/ai/fluent-english";
 
-// Served ramp per skill: 2 each A1–B2, 1 each C1/C2 = 10 items (matches the
+// Served ramp per skill: 2 each A1-B2, 1 each C1/C2 = 10 items (matches the
 // live-AI test shape so scoring + reporting are unchanged).
 const RAMP: Record<CefrLevel, number> = { A1: 2, A2: 2, B1: 2, B2: 2, C1: 1, C2: 1 };
 

@@ -147,7 +147,7 @@ function CohortReport({
         <div className="lead">
           {rtl
             ? "اللون يدل على المتوسط: الأخضر = أعلى، البرتقالي = منخفض. القيم بين 1 و5."
-            : "Colour = mean rating. Green = high, orange = low. Values 1–5."}
+            : "Colour = mean rating. Green = high, orange = low. Values 1-5."}
         </div>
         <div className="heatmap-wrap">
           <table className="heatmap">
@@ -186,8 +186,8 @@ function CohortReport({
         <h2>{rtl ? "توزيع القادة حول النطاق المرجعي" : "Where the cohort sits vs the Favorable Zone"}</h2>
         <p className="lead">
           {rtl
-            ? "لكل كفاية، نسبة المشاركين الذين يقع متوسط آراء الآخرين عنهم تحت النطاق المرجعي (<3.5)، داخله (3.5–4.25)، أو فوقه (>4.25). البرامج التدريبية تستهدف عادةً الكفايات التي تظهر فيها شريحة حمراء كبيرة."
-            : "For each competency, the share of participants whose Others-mean sits below the Favorable Zone (<3.5), within it (3.5–4.25), or above (>4.25). Training programmes typically target competencies showing a large red segment."}
+            ? "لكل كفاية، نسبة المشاركين الذين يقع متوسط آراء الآخرين عنهم تحت النطاق المرجعي (<3.5)، داخله (3.5-4.25)، أو فوقه (>4.25). البرامج التدريبية تستهدف عادةً الكفايات التي تظهر فيها شريحة حمراء كبيرة."
+            : "For each competency, the share of participants whose Others-mean sits below the Favorable Zone (<3.5), within it (3.5-4.25), or above (>4.25). Training programmes typically target competencies showing a large red segment."}
         </p>
         <div className="dist-bars">
           {scoring.competencies.map((c) => {
@@ -230,7 +230,7 @@ function CohortReport({
         </div>
         <div className="dist-legend">
           <span className="dist-legend-item"><span className="dist-swatch dist-below" /> {rtl ? "أقل من النطاق (<3.5)" : "Below zone (<3.5)"}</span>
-          <span className="dist-legend-item"><span className="dist-swatch dist-within" /> {rtl ? "داخل النطاق (3.5–4.25)" : "Within zone (3.5–4.25)"}</span>
+          <span className="dist-legend-item"><span className="dist-swatch dist-within" /> {rtl ? "داخل النطاق (3.5-4.25)" : "Within zone (3.5-4.25)"}</span>
           <span className="dist-legend-item"><span className="dist-swatch dist-above" /> {rtl ? "أعلى من النطاق (>4.25)" : "Above zone (>4.25)"}</span>
         </div>
       </section>

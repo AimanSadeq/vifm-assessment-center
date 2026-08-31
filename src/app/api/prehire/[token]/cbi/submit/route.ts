@@ -74,7 +74,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
     );
   }
 
-  // BARS 1–5 → 0–100 for the composite. Clamp defensively before persisting:
+  // BARS 1-5 → 0-100 for the composite. Clamp defensively before persisting:
   // scoreCbiInterview is AI-derived and could return an out-of-range value on
   // a prompt-injection or hallucination; clamping here keeps the stored row
   // consistent with what computeComposite would produce.

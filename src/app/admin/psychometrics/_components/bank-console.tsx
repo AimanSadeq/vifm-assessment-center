@@ -411,7 +411,7 @@ function NormPanel({ kind, scales }: { kind: PsyKind; scales: ScaleReadiness[] }
         <div className="text-sm">
           <span className="font-semibold text-dark">Norm group</span>{" "}
           <span className="text-slate-500">
-            {hasNorms ? `n = ${minN}${minN !== maxN ? `–${maxN}` : ""} per scale` : "none loaded"}
+            {hasNorms ? `n = ${minN}${minN !== maxN ? `-${maxN}` : ""} per scale` : "none loaded"}
             {hasNorms && !fullyNormed && ` · below the ${PSY_TIER.minNormN} threshold (still indicative)`}
             {hasNorms && fullyNormed && " · norm-referencing active"}
           </span>

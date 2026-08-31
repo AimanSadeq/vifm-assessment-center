@@ -208,7 +208,7 @@ export function PrehireVouchersClient({
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* STEP 1 — requisition + label */}
+            {/* STEP 1 - requisition + label */}
             {step === 1 && (
               <>
                 <VoucherDetailsFields value={details} onChange={setDetails} clients={clients} clientHint="Defaults to the requisition's organisation if left blank." />
@@ -229,7 +229,7 @@ export function PrehireVouchersClient({
               </>
             )}
 
-            {/* STEP 2 — delivery choice */}
+            {/* STEP 2 - delivery choice */}
             {step === 2 && (
               <>
                 <p className="text-sm text-muted-foreground">
@@ -251,7 +251,7 @@ export function PrehireVouchersClient({
               </>
             )}
 
-            {/* STEP 3a — to client */}
+            {/* STEP 3a - to client */}
             {step === 3 && target === "client" && (
               <>
                 <div className="flex flex-wrap items-end gap-3">
@@ -287,7 +287,7 @@ export function PrehireVouchersClient({
               </>
             )}
 
-            {/* STEP 3b — to applicants */}
+            {/* STEP 3b - to applicants */}
             {step === 3 && target === "delegates" && (
               <>
                 <p className="text-sm text-muted-foreground">

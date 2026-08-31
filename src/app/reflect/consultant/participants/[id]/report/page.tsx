@@ -160,8 +160,8 @@ function ReportBody({
           <span className="favorable-zone-swatch" />
           <span>
             {rtl
-              ? "النطاق المرجعي (3.5–4.25) هو المدى الذي يتم فيه عادةً تقييم القادة الفعّالين في 360 درجة. تظهر شرائح ملوّنة خفيفة على كل شريط لتعطيك خلفية مقارنة سريعة."
-              : "The Favorable Zone (3.5–4.25) is the range where effective leaders are typically rated on 360s. A soft band appears on every bar so you can see, at a glance, whether each rater group's mean is within, below, or above that benchmark."}
+              ? "النطاق المرجعي (3.5-4.25) هو المدى الذي يتم فيه عادةً تقييم القادة الفعّالين في 360 درجة. تظهر شرائح ملوّنة خفيفة على كل شريط لتعطيك خلفية مقارنة سريعة."
+              : "The Favorable Zone (3.5-4.25) is the range where effective leaders are typically rated on 360s. A soft band appears on every bar so you can see, at a glance, whether each rater group's mean is within, below, or above that benchmark."}
           </span>
         </div>
       </section>
@@ -322,7 +322,7 @@ function ReportBody({
                 <div key={g.rater_role} className="group-bar-row">
                   <span className="group-bar-label">{roleLabelShort(g.rater_role, rtl)}</span>
                   <span className="group-bar-track">
-                    {/* Favorable Zone band: 3.5–4.25 on a 0–5 scale = 70%–85% of track */}
+                    {/* Favorable Zone band: 3.5-4.25 on a 0-5 scale = 70%-85% of track */}
                     <span className="favorable-zone" />
                     {g.hidden_by_anonymity ? (
                       <em className="group-bar-hidden">{rtl ? "إخفاء الهوية" : "Anonymised"}</em>
@@ -781,7 +781,7 @@ function CoverWheel({
   return (
     <div className="cover-wheel-wrap">
       <svg viewBox={`0 0 ${size} ${size}`} width="100%" height="auto" className="cover-wheel">
-        {/* Favorable Zone band (3.5–4.25) - annular wedge */}
+        {/* Favorable Zone band (3.5-4.25) - annular wedge */}
         <circle cx={cx} cy={cy} r={(4.25 / 5) * r} fill="rgba(217, 119, 6, 0.10)" />
         <circle cx={cx} cy={cy} r={(3.5 / 5) * r} fill="white" />
 
@@ -953,8 +953,8 @@ function TenureBreakdownCard({
 
   const rows: Array<{ key: keyof typeof tb.counts; label: string }> = [
     { key: "less_than_6mo", label: rtl ? "أقل من 6 أشهر" : "Less than 6 months" },
-    { key: "six_mo_to_2yr", label: rtl ? "من 6 أشهر إلى سنتين" : "6 months – 2 years" },
-    { key: "two_to_5yr", label: rtl ? "من سنتين إلى 5 سنوات" : "2 – 5 years" },
+    { key: "six_mo_to_2yr", label: rtl ? "من 6 أشهر إلى سنتين" : "6 months - 2 years" },
+    { key: "two_to_5yr", label: rtl ? "من سنتين إلى 5 سنوات" : "2 - 5 years" },
     { key: "over_5yr", label: rtl ? "أكثر من 5 سنوات" : "More than 5 years" },
   ];
 
@@ -1093,7 +1093,7 @@ function CriticalAlignmentCard({
 
 // ──────────────────────────────────────────────────────────────
 // Reference Group Comparison (P3.2). For every competency, a
-// horizontal 1–5 line with a coloured dot per rater group. Lets
+// horizontal 1-5 line with a coloured dot per rater group. Lets
 // the reader scan misalignment patterns ("manager + peers low,
 // direct reports high") in one page. Mirrors competitor pattern.
 // ──────────────────────────────────────────────────────────────
@@ -1512,8 +1512,8 @@ function fmtScore(v: number | null): string {
  * Returns "unknown" for short / mixed / non-text content so the caller
  * can decide not to render a chip.
  *
- * The Arabic block range U+0600–U+06FF covers all standard Arabic
- * letters; the Latin range U+0041–U+007A covers A–Z and a–z. We don't
+ * The Arabic block range U+0600-U+06FF covers all standard Arabic
+ * letters; the Latin range U+0041-U+007A covers A-Z and a-z. We don't
  * try to be exhaustive about CJK / Cyrillic / etc - the only choice the
  * consultant is making is "do I need Arabic translation for this?".
  */
@@ -1536,14 +1536,14 @@ function detectVerbatimLanguage(text: string): "ar" | "en" | "unknown" {
 function tenureLabelShort(t: string, rtl: boolean): string {
   const en: Record<string, string> = {
     less_than_6mo: "<6mo",
-    six_mo_to_2yr: "6mo–2y",
-    two_to_5yr: "2–5y",
+    six_mo_to_2yr: "6mo-2y",
+    two_to_5yr: "2-5y",
     over_5yr: "5y+",
   };
   const ar: Record<string, string> = {
     less_than_6mo: "أقل من 6 أشهر",
-    six_mo_to_2yr: "6 أشهر–سنتان",
-    two_to_5yr: "سنتان–5 سنوات",
+    six_mo_to_2yr: "6 أشهر-سنتان",
+    two_to_5yr: "سنتان-5 سنوات",
     over_5yr: "5 سنوات+",
   };
   return (rtl ? ar : en)[t] ?? t;
@@ -1688,7 +1688,7 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .group-bar-label { color: var(--vifm-muted); }
 .group-bar-track { height: 3mm; background: var(--vifm-soft); border-radius: 1.5mm; overflow: hidden; position: relative; }
 .group-bar-fill { display: block; height: 100%; background: linear-gradient(90deg, var(--vifm-accent), var(--vifm-primary)); position: relative; z-index: 1; }
-/* Favorable Zone overlay: 3.5–4.25 on 0–5 scale = 70%–85% of track. Sits
+/* Favorable Zone overlay: 3.5-4.25 on 0-5 scale = 70%-85% of track. Sits
    under the score fill so the fill still reads clearly. */
 .favorable-zone { position: absolute; top: 0; bottom: 0; left: 70%; width: 15%; background: rgba(217, 119, 6, 0.18); border-left: 0.4pt dashed rgba(217, 119, 6, 0.55); border-right: 0.4pt dashed rgba(217, 119, 6, 0.55); z-index: 0; }
 .favorable-zone-legend { display: flex; gap: 4mm; align-items: center; font-size: 9.5pt; color: var(--vifm-muted); background: var(--vifm-soft); padding: 3mm 4mm; border-radius: 2mm; margin-top: 2mm; }

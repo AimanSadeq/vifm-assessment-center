@@ -19,7 +19,7 @@ import type { BehavioralIndicator, QuizAnswer, QuizQuestion } from "@/types/data
  * Kicks off an AI-generated quiz attempt for a single competency. Returns the
  * new attempt id on success - caller redirects to /candidate/quiz/[id].
  *
- * The AI call is the slow step (15–30 s); the page shows a "Preparing your
+ * The AI call is the slow step (15-30 s); the page shows a "Preparing your
  * quiz" loading state during that window.
  */
 export async function startQuizAttemptAction(values: StartQuizValues) {

@@ -9,7 +9,7 @@
  * Receptive skills are auto-scored; writing + speaking are Claude-scored
  * (ensemble), with Azure pronunciation blended into speaking when available.
  *
- * The overall CEFR band maps to 0–100 (A1→0 … C2→100) so it sits on the same
+ * The overall CEFR band maps to 0-100 (A1→0 … C2→100) so it sits on the same
  * normalized scale as the quiz and CBI stages and rolls into the composite.
  * A failed cut never auto-rejects - it only flags the candidate for review.
  */
@@ -183,7 +183,7 @@ export async function POST(req: Request, { params }: { params: { token: string }
     speaking,
   });
 
-  // CEFR band → 0–100 (A1→0 … C2→100), consistent with quiz/cbi normalization.
+  // CEFR band → 0-100 (A1→0 … C2→100), consistent with quiz/cbi normalization.
   const idx = Math.max(0, CEFR_ORDER.indexOf(result.overall_cefr));
   const normalized = Math.round((idx / (CEFR_ORDER.length - 1)) * 100);
   const cut = ctx.requisition.stage_config.find((s) => s.kind === "fluent")?.cut_score ?? null;

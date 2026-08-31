@@ -46,8 +46,10 @@ export function MaturityGauge({ score }: { score: number | null }) {
   // Canonical band lookup - the single source of truth in scoring.ts.
   const band = score != null ? overallBandFromScore(score) : null;
 
+  // Canvas extends below the hub so the score label (drawn clear of the
+  // needle sweep) is never clipped.
   return (
-    <svg viewBox="0 0 300 180" className="w-full max-w-md mx-auto">
+    <svg viewBox="0 0 300 218" className="w-full max-w-md mx-auto">
       {/* Bands - contiguous segments drawn FROM the canonical constant so the
           gauge can never desync from ARA_OVERALL_BANDS (display floor is 1.0
           by convention; the sub-1.0 tail of Not Ready is clamped visually). */}
@@ -77,9 +79,9 @@ export function MaturityGauge({ score }: { score: number | null }) {
           so a centred label was crossed out by the needle at mid-range scores. */}
       <text
         x={CENTER}
-        y={CENTER + 42}
+        y={CENTER + 40}
         textAnchor="middle"
-        fontSize="32"
+        fontSize="30"
         fontWeight="600"
         fill="#010131"
       >
@@ -87,9 +89,9 @@ export function MaturityGauge({ score }: { score: number | null }) {
       </text>
       <text
         x={CENTER}
-        y={CENTER + 60}
+        y={CENTER + 56}
         textAnchor="middle"
-        fontSize="11"
+        fontSize="10"
         fill="#6b7280"
       >
         / 5.0
@@ -112,13 +114,14 @@ export function MaturityGauge({ score }: { score: number | null }) {
         );
       })}
 
-      {/* Band label below gauge */}
+      {/* Band label - last in the stack under the hub (score, /5.0, band),
+          so nothing overlaps the needle sweep or the score. */}
       {band && (
         <text
           x={CENTER}
-          y={CENTER + 40}
+          y={CENTER + 76}
           textAnchor="middle"
-          fontSize="13"
+          fontSize="12.5"
           fontWeight="600"
           fill={band.color}
         >

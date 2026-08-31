@@ -243,8 +243,8 @@ const s = StyleSheet.create({
 
 const PHASE_LABELS = {
   high: { weeks: "First 30 days", subtitle: "Mission-critical gaps. Start immediately.", color: C.phase30 },
-  medium: { weeks: "Days 30–60", subtitle: "Build momentum on broader development.", color: C.phase60 },
-  low: { weeks: "Days 60–90", subtitle: "Sustain growth - round out the profile.", color: C.phase90 },
+  medium: { weeks: "Days 30-60", subtitle: "Build momentum on broader development.", color: C.phase60 },
+  low: { weeks: "Days 60-90", subtitle: "Sustain growth - round out the profile.", color: C.phase90 },
 };
 
 function GapPill({
@@ -453,7 +453,7 @@ function CompetencyDevelopmentPage({ d }: { d: ReportData }) {
           Useful prompts to discuss with your manager, mentor, or coach:
         </Text>
         <Text style={[s.tipText, { marginBottom: 3 }]}>
-          · Which 1–2 actions in &quot;Now&quot; will I commit to in the next two weeks?
+          · Which 1-2 actions in &quot;Now&quot; will I commit to in the next two weeks?
         </Text>
         <Text style={[s.tipText, { marginBottom: 3 }]}>
           · What specific situations at work could I use to practice each behaviour?

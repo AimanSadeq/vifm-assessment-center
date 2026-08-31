@@ -290,7 +290,7 @@ export function VouchersClient({
         <CardContent className="space-y-4">
           {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
 
-          {/* STEP 1 — client + scope */}
+          {/* STEP 1 - client + scope */}
           {step === 1 && (
             <>
               <div className="flex flex-wrap items-end gap-3">
@@ -506,7 +506,7 @@ export function VouchersClient({
             </>
           )}
 
-          {/* STEP 2 — delivery choice */}
+          {/* STEP 2 - delivery choice */}
           {step === 2 && (
             <>
               <p className="text-sm text-muted-foreground">
@@ -536,7 +536,7 @@ export function VouchersClient({
             </>
           )}
 
-          {/* STEP 3 — to client */}
+          {/* STEP 3 - to client */}
           {step === 3 && target === "client" && (
             <>
               <div className="flex flex-wrap items-end gap-3">
@@ -585,7 +585,7 @@ export function VouchersClient({
             </>
           )}
 
-          {/* STEP 3 — to delegates */}
+          {/* STEP 3 - to delegates */}
           {step === 3 && target === "delegates" && (
             <>
               <p className="text-sm text-muted-foreground">

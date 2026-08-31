@@ -24,7 +24,7 @@ export type QuizGeneratorInput = {
   indicators: Pick<BehavioralIndicator, "indicator_type" | "description">[];
   /** Three development tips for this competency */
   developmentTips?: string[];
-  /** Candidate's current BARS score (1–5) - drives difficulty bias */
+  /** Candidate's current BARS score (1-5) - drives difficulty bias */
   currentScore: number | null;
   /** Target proficiency for this candidate's role */
   targetScore: number;
@@ -92,13 +92,13 @@ function buildInstructions(input: QuizGeneratorInput) {
       : `Use multiple_choice (4 options each, exactly one correct); at most one true_false; do NOT use pattern_recognition. Mix difficulty sensibly.`,
     `Points by difficulty: easy=10, medium=15, hard=20.`,
     "",
-    `For pattern_recognition the sequence MUST be 4–6 cells, with exactly one`,
+    `For pattern_recognition the sequence MUST be 4-6 cells, with exactly one`,
     `cell as null (= the "?") and the others as numbers or short strings.`,
     `Pick a pattern (arithmetic, geometric, alternating, doubling) that a`,
     `professional could solve in under 30 seconds.`,
     "",
     `Every question must include an Explanation that a learner can read AFTER`,
-    `submitting an answer to understand the right answer - 2–3 sentences,`,
+    `submitting an answer to understand the right answer - 2-3 sentences,`,
     `concrete, references the competency by name when natural.`,
     "",
     `Return ONE JSON array with exactly ${n} element${n === 1 ? "" : "s"}. No markdown`,

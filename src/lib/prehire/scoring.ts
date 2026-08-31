@@ -17,15 +17,15 @@ export type PrehireRecommendation = "advance" | "review" | "hold" | "incomplete"
 
 export type StageScore = {
   kind: PrehireStageKind;
-  weight: number; // normalized weight actually applied (0–1)
-  normalized: number | null; // 0–100
+  weight: number; // normalized weight actually applied (0-1)
+  normalized: number | null; // 0-100
   cutScore: number | null;
   required: boolean;
   passed: boolean | null; // null when not yet scored
 };
 
 export type CompositeResult = {
-  composite: number | null; // 0–100, null until all required stages are scored
+  composite: number | null; // 0-100, null until all required stages are scored
   perStage: StageScore[];
   requiredFailures: PrehireStageKind[]; // required stages below their cut-score
   scoredCount: number;

@@ -7,7 +7,7 @@
  *   • generateTechnicalAssessment() authors items WITH an answer key (held
  *     server-side; never sent to the browser - see stripAnswerKey()).
  *   • scoreTechnicalAssessment() grades server-side and maps the score to a
- *     1–5 proficiency band + per-skill breakdown.
+ *     1-5 proficiency band + per-skill breakdown.
  *
  * Positioning (honest by design): this is an INDICATIVE proficiency signal, not
  * a certified qualification. AI-authored items should be human-reviewed /
@@ -42,7 +42,7 @@ export type TechItem = {
   /** Case context for a `scenario` item (shown above the question). */
   scenario?: string;
   question: string;
-  options: string[]; // 4 for single/scenario; 4–6 for multi
+  options: string[]; // 4 for single/scenario; 4-6 for multi
   /** The correct option for single/scenario (the first correct one for multi). */
   correct_index: number;
   /** All correct options for a `multi` item. */
@@ -98,7 +98,7 @@ export type TechResult = {
   correct: number;
   total: number;
   pct: number;
-  proficiency: TechProficiency; // level 1–5 + label + normalized
+  proficiency: TechProficiency; // level 1-5 + label + normalized
   band: TechBand; // indicative confidence range around the level
   perSkill: TechSkillBreakdown[];
   ai_generated: boolean;
@@ -169,7 +169,7 @@ const arabicLangLines = (language: "en" | "ar"): string[] =>
       ]
     : [];
 
-/** Fisher–Yates shuffle of the 4 options → new option order + the index the
+/** Fisher-Yates shuffle of the 4 options → new option order + the index the
  *  correct answer moved to. LLMs bias the correct answer toward option A;
  *  re-randomising per administration defeats "always pick A" + position memo -
  *  a defensibility/integrity must-fix. */
@@ -185,7 +185,7 @@ function shuffleMcq(origOptions: string[], origCorrect: number): { options: stri
   };
 }
 
-/** Generalized Fisher–Yates over N options carrying a SET of correct positions
+/** Generalized Fisher-Yates over N options carrying a SET of correct positions
  *  (handles multi-select). Returns the shuffled options + the correct positions
  *  in the new order. Re-randomising per administration defeats "always pick A"
  *  + position memorisation - a defensibility/integrity must-fix. */

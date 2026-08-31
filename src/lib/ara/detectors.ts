@@ -8,8 +8,8 @@ import { ARA_PILLAR_MAP } from "@/lib/constants/ara-pillars";
 // Flags two kinds of disagreement:
 //   (a) Same question answered by ≥2 respondents with a score spread
 //       greater than 2 points.
-//   (b) Per-pillar average score by one respondent is Level 4–5 while
-//       another respondent on the same pillar is at Level 1–2.
+//   (b) Per-pillar average score by one respondent is Level 4-5 while
+//       another respondent on the same pillar is at Level 1-2.
 // ─────────────────────────────────────────────────────────────
 
 export type GapAlert =
@@ -122,7 +122,7 @@ export async function detectAraGaps(assessmentId: string): Promise<GapAlert[]> {
     }
   }
 
-  // ─── (b) Per-pillar L4–5 vs L1–2 split ───────────────────────
+  // ─── (b) Per-pillar L4-5 vs L1-2 split ───────────────────────
   const byPillarByRespondent = new Map<string, Map<string, { name: string; scores: number[] }>>();
   for (const r of typed) {
     if (r.question_score == null || !r.question || !r.respondent) continue;

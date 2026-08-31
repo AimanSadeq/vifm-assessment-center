@@ -66,7 +66,7 @@ export function overallBandFromScore(overall: number) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Full recalculation - Levels 2–5
+// Full recalculation - Levels 2-5
 // Called after a response is saved. Idempotent.
 // ─────────────────────────────────────────────────────────────
 export async function recalculateAssessmentScores(assessmentId: string): Promise<void> {

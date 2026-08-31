@@ -2,10 +2,10 @@ import { getServerT } from "@/lib/i18n/server";
 
 /**
  * Gantt-style 12-month roadmap across three horizons.
- * Horizons from handover §12.2 (pages 23–24):
- *   Quick Wins : 0–3 months  (Cyan)
- *   Build      : 3–9 months  (Accent Blue)
- *   Transform  : 9–12 months (Navy)
+ * Horizons from handover §12.2 (pages 23-24):
+ *   Quick Wins : 0-3 months  (Cyan)
+ *   Build      : 3-9 months  (Accent Blue)
+ *   Transform  : 9-12 months (Navy)
  */
 export async function GanttRoadmap({
   initiatives,

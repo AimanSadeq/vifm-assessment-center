@@ -162,9 +162,9 @@ export const ARA_INDIVIDUAL_FACTOR_IDS: AraIndividualFactorId[] = [
 /**
  * Three narrative stages for an individual's overall AI-readiness score.
  * Aligns with the rose/amber/emerald tone tiers used elsewhere
- * (<3 / 3–3.99 / ≥4) so the stage label and the visual tone agree.
+ * (<3 / 3-3.99 / ≥4) so the stage label and the visual tone agree.
  *
- * Names are VIFM-original; thresholds are tuned to the 1–5 scoring scale.
+ * Names are VIFM-original; thresholds are tuned to the 1-5 scoring scale.
  */
 export type AraIndividualMaturityStageId = "emerging" | "practising" | "embedded";
 
@@ -225,7 +225,7 @@ const STAGE_EMBEDDED: AraIndividualMaturityStage = {
 };
 
 /**
- * Bucket an overall 1–5 readiness score into one of three narrative
+ * Bucket an overall 1-5 readiness score into one of three narrative
  * stages. Returns Emerging for any score below 3 (including 0 from
  * "no data" - caller should suppress the badge in that case).
  */

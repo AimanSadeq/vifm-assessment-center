@@ -168,7 +168,7 @@ export async function RecommendedCoursesPanel({
                   <Badge variant="outline" className="text-[10px] tabular-nums">
                     {c.min_duration_days === c.max_duration_days
                       ? `${c.default_duration_days}d`
-                      : `${c.min_duration_days}–${c.max_duration_days}d`}
+                      : `${c.min_duration_days}-${c.max_duration_days}d`}
                   </Badge>
                 </div>
                 <span className="inline-flex items-center gap-1 text-[10px] text-accent">

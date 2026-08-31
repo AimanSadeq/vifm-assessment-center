@@ -303,7 +303,7 @@ export async function addBridgeAction(input: { domainKey: string; competencyId: 
   return { ok: true };
 }
 
-/** Change the contribution weight (1–3) of an existing bridge row. */
+/** Change the contribution weight (1-3) of an existing bridge row. */
 export async function setBridgeWeightAction(input: { id: string; weight: number }) {
   const g = await guard();
   if ("error" in g) return g;

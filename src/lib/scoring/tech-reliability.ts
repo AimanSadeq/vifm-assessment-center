@@ -3,10 +3,10 @@ import { proficiencyFromPercent } from "@/lib/competencies/technical-framework";
 /**
  * Reliability + confidence band for a technical assessment result.
  *
- * A single 1–5 proficiency level reads as point-certain, but a short MCQ test
+ * A single 1-5 proficiency level reads as point-certain, but a short MCQ test
  * carries real uncertainty - from few items (binomial standard error) and from
  * disagreement ACROSS the in-scope skills. We surface an indicative RANGE
- * (e.g. "Working–Proficient") + an underpowered flag rather than implying false
+ * (e.g. "Working-Proficient") + an underpowered flag rather than implying false
  * precision. This is classical (works on every run, calibrated or not); a fully
  * adaptive IRT run (tech-cat.ts) yields a tighter true standard error.
  */
@@ -30,7 +30,7 @@ export type TechBand = {
  * Indicative ± band on the overall score, combining the binomial SE of the
  * proportion-correct with cross-skill disagreement (item-count-weighted SD of
  * per-skill accuracy) and a small-sample inflation term that shrinks toward
- * zero as the test approaches ~24 items. Mapped back onto the 1–5 scale via the
+ * zero as the test approaches ~24 items. Mapped back onto the 1-5 scale via the
  * same proficiencyFromPercent cut-points as the point estimate, so the band
  * always brackets the reported level.
  */

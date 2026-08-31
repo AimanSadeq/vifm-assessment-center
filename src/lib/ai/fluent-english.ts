@@ -134,13 +134,13 @@ export type WritingIssue = {
 
 export type WritingScore = {
   cefr: CefrLevel;
-  task_achievement: number; // 1–5
-  coherence: number; // 1–5 - coherence & cohesion (organisation)
-  lexical_range: number; // 1–5 - lexical resource (vocabulary use)
-  grammar: number; // 1–5 - grammatical range & accuracy
-  register: number; // 1–5 - business-like / professional tone fit
-  etiquette: number; // 1–5 - courtesy, politeness, cultural appropriateness
-  mechanics: number; // 1–5 - spelling & punctuation
+  task_achievement: number; // 1-5
+  coherence: number; // 1-5 - coherence & cohesion (organisation)
+  lexical_range: number; // 1-5 - lexical resource (vocabulary use)
+  grammar: number; // 1-5 - grammatical range & accuracy
+  register: number; // 1-5 - business-like / professional tone fit
+  etiquette: number; // 1-5 - courtesy, politeness, cultural appropriateness
+  mechanics: number; // 1-5 - spelling & punctuation
   feedback_en: string;
   feedback_ar: string | null;
   /** Specific grammar / spelling / etiquette issues with corrections (FLU-4). */
@@ -166,16 +166,16 @@ export type WritingScore = {
 export type SpeakingScore = {
   attempted: boolean;
   cefr: CefrLevel;
-  fluency: number; // 1–5
-  coherence: number; // 1–5
-  lexical_range: number; // 1–5
-  grammar: number; // 1–5
+  fluency: number; // 1-5
+  coherence: number; // 1-5
+  lexical_range: number; // 1-5
+  grammar: number; // 1-5
   transcript: string; // what Whisper heard
   feedback_en: string;
   feedback_ar: string | null;
   ai_generated: boolean;
-  pronunciation?: number; // 1–5, mapped from Azure pronunciation assessment
-  azure?: PronunciationScore | null; // raw 0–100 acoustic scores (accuracy/fluency/prosody)
+  pronunciation?: number; // 1-5, mapped from Azure pronunciation assessment
+  azure?: PronunciationScore | null; // raw 0-100 acoustic scores (accuracy/fluency/prosody)
   /** True ONLY on a genuine scoring error (see WritingScore.scoring_failed). */
   scoring_failed?: boolean;
 };
@@ -616,17 +616,17 @@ export async function generateFluentTest(input: {
     `Produce a short English placement test as JSON covering four skills.`,
     ``,
     `READING: exactly 10 reading items on a difficulty ramp (two A1, two A2, two B1,`,
-    `two B2, one C1, one C2). Each = a 1–3 sentence passage + one question + four options (one correct).`,
+    `two B2, one C1, one C2). Each = a 1-3 sentence passage + one question + four options (one correct).`,
     ``,
     `LISTENING: exactly 10 items on a ramp (two A1, two A2, two B1, two B2, one C1, one C2).`,
-    `Each "script" is 1–2 sentences of natural SPOKEN English that will be read aloud to the`,
+    `Each "script" is 1-2 sentences of natural SPOKEN English that will be read aloud to the`,
     `candidate (they will NOT see the text), then one question + four options (one correct).`,
     `Keep scripts self-contained and answerable from a single hearing.`,
     ``,
-    `WRITING: one task at B1–B2 - a realistic short workplace writing prompt`,
-    `(email or short opinion), ~70–90 target words.`,
+    `WRITING: one task at B1-B2 - a realistic short workplace writing prompt`,
+    `(email or short opinion), ~70-90 target words.`,
     ``,
-    `SPEAKING: one task at B1–B2 - a realistic short spoken prompt the candidate`,
+    `SPEAKING: one task at B1-B2 - a realistic short spoken prompt the candidate`,
     `answers by talking for ~45 seconds (describe / explain / give an opinion).`,
     wantsAr
       ? `Provide BOTH the writing and speaking prompts in English AND Modern Standard Arabic (Gulf-friendly).`
@@ -813,7 +813,7 @@ export async function scoreFluentWriting(input: {
   const system =
     `You are a CEFR-certified English writing examiner for a GCC finance & management ` +
     `institute. Score a candidate's written response against the task on SEVEN criteria, ` +
-    `each 1–5 (1 = far below, 5 = excellent for the level): ` +
+    `each 1-5 (1 = far below, 5 = excellent for the level): ` +
     `Task Achievement (does it fully address the prompt); ` +
     `Coherence & Cohesion (organisation, logical flow, linking); ` +
     `Lexical Resource (range and precision of vocabulary); ` +
@@ -821,7 +821,7 @@ export async function scoreFluentWriting(input: {
     `Register (professional, business-like tone appropriate to a workplace email/message); ` +
     `Etiquette (courtesy, politeness, appropriate greetings/closings, cultural sensitivity); ` +
     `Mechanics (spelling and punctuation). ` +
-    `Then assign an overall CEFR level (A1–C2) and write feedback_en as 3-5 sentences of ` +
+    `Then assign an overall CEFR level (A1-C2) and write feedback_en as 3-5 sentences of ` +
     `coaching feedback addressed directly to the writer as "you", following this contract: ` +
     `(1) open by naming concretely what the response achieved AND what it missed against this ` +
     `specific task - reference their actual content, never a generic verdict like "your response ` +
@@ -942,9 +942,9 @@ export async function scoreFluentSpeaking(input: {
     `of a candidate's spoken response (produced by automatic speech recognition, so it ` +
     `may contain minor transcription noise - do not penalise that). You CANNOT judge ` +
     `pronunciation or accent from a transcript, so do not. Score four criteria, each ` +
-    `1–5: Fluency & Coherence (infer hesitation/repetition/false-starts from the text), ` +
+    `1-5: Fluency & Coherence (infer hesitation/repetition/false-starts from the text), ` +
     `Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy. Then assign ` +
-    `an overall CEFR level (A1–C2) and write feedback_en as 3-5 sentences of coaching ` +
+    `an overall CEFR level (A1-C2) and write feedback_en as 3-5 sentences of coaching ` +
     `feedback addressed directly to the speaker as "you", following this contract: ` +
     `(1) open by naming concretely what the response achieved AND what it missed against ` +
     `this specific task - reference their actual content, never a generic verdict; ` +
@@ -1111,7 +1111,7 @@ export async function scoreFluentSpeakingEnsemble(input: {
   };
 }
 
-// Azure PronScore (0–100) → CEFR rank (1–6) for blending into the speaking band.
+// Azure PronScore (0-100) → CEFR rank (1-6) for blending into the speaking band.
 const pronToNum = (pron: number): number => {
   if (pron >= 88) return 6;
   if (pron >= 78) return 5;
@@ -1124,7 +1124,7 @@ const pronToNum = (pron: number): number => {
 /**
  * Blend Azure pronunciation into a Claude-scored speaking result: the overall
  * speaking CEFR becomes 0.7·content + 0.3·pronunciation, and pronunciation is
- * surfaced as a fifth criterion (1–5) plus the raw Azure scores. Returns the
+ * surfaced as a fifth criterion (1-5) plus the raw Azure scores. Returns the
  * score unchanged when no pronunciation assessment is available.
  */
 export function blendPronunciation(score: SpeakingScore, pron: PronunciationScore | null): SpeakingScore {

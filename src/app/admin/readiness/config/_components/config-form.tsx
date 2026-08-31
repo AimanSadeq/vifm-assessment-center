@@ -171,7 +171,7 @@ export function ReadinessConfigForm({ initial }: { initial: ReadinessConfig }) {
         </div>
         <div className="flex flex-wrap gap-6">
           <NumField label="Min Others per competency" hint="Raters needed to count as covered" value={minOthers} onChange={setMinOthers} step="1" />
-          <NumField label="Coverage minimum" hint="Fraction 0–1 (0.7 = 70%). Below this → Insufficient Data" value={coverageMin} onChange={setCoverageMin} step="0.05" />
+          <NumField label="Coverage minimum" hint="Fraction 0-1 (0.7 = 70%). Below this → Insufficient Data" value={coverageMin} onChange={setCoverageMin} step="0.05" />
         </div>
       </section>
 

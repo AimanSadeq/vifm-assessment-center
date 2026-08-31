@@ -768,7 +768,7 @@ export const COGNITIVE_SEED_V1: CognitiveSeedItem[] = [
     options_en: ["No valid conclusion follows.", "Some cups on the shelf are made of glass.", "All glass things are cups on the shelf.", "No cup on the shelf is made of glass."], correct_index: 0,
     stem_ar: "كل الأكواب على الرف خضراء. بعض الأشياء الخضراء مصنوعة من الزجاج. أي استنتاج يتبع بالضرورة؟",
     options_ar: ["لا يتبع أي استنتاج صحيح.", "بعض الأكواب على الرف مصنوعة من الزجاج.", "كل الأشياء الزجاجية أكواب على الرف.", "لا شيء من الأكواب على الرف مصنوع من الزجاج."],
-    rationale_en: "Cups are a subset of green things, but the glass green things could lie entirely outside that subset, so no cup–glass link is forced (index 0). 'Some cups are glass' and 'No cup is glass' are both unproven; 'All glass things are cups' reverses the premise.",
+    rationale_en: "Cups are a subset of green things, but the glass green things could lie entirely outside that subset, so no cup-glass link is forced (index 0). 'Some cups are glass' and 'No cup is glass' are both unproven; 'All glass things are cups' reverses the premise.",
   },
   {
     subtest: "deductive", facet: "ded_syllogism", difficulty: "medium",

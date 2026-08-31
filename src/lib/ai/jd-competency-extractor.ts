@@ -51,7 +51,7 @@ function buildInstructions(
     `{\n` +
     `  "competencyId": "<id from list above>",\n` +
     `  "competencyName": "<exact name from list>",\n` +
-    `  "weight": <number 1.0–10.0, higher = more important to this role>,\n` +
+    `  "weight": <number 1.0-10.0, higher = more important to this role>,\n` +
     `  "priority": "high" | "medium" | "low",\n` +
     `  "reasoning": "<1 sentence: which JD requirement maps to this competency>"\n` +
     `}\n\n` +

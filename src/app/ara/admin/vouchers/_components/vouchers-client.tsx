@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3, SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,9 +67,21 @@ export function VouchersClient({
   // Org-design vouchers (migration 00199): what a redemption provisions.
   // "personal" = the 4-factor Personal ARC (default, unchanged); "org" = an org
   // PILLAR assessment carrying the designed scope below.
-  const [assessmentKind, setAssessmentKind] = useState<"personal" | "org">("personal");
+  const [assessmentKind, setAssessmentKind] = useState<"personal" | "department" | "division" | "enterprise">("personal");
   const [orgPillars, setOrgPillars] = useState<Set<string>>(new Set(ARA_PILLARS.map((pl) => pl.id)));
-  const [orgQpp, setOrgQpp] = useState("6");
+  const [orgQpp, setOrgQpp] = useState("");
+  // Picking a stage presets the STANDARD design (the stage's default pillars +
+  // the full question set - 49 / 71 / 99 questions) which the admin may then
+  // customize. Enterprise always covers all 8 pillars (the runtime ignores
+  // overrides there), so its pillar picker is locked.
+  const pickAssessmentKind = (k: "personal" | "department" | "division" | "enterprise") => {
+    setAssessmentKind(k);
+    if (k !== "personal") {
+      const defaults = ARA_STAGE_MAP[k]?.applicable_pillars ?? ARA_PILLARS.map((pl) => pl.id);
+      setOrgPillars(new Set(defaults));
+      setOrgQpp(""); // standard = full question set
+    }
+  };
   const toggleOrgPillar = (id: string) =>
     setOrgPillars((prev) => {
       const next = new Set(prev);
@@ -124,8 +137,8 @@ export function VouchersClient({
     const fd = new FormData();
     fd.set("emails", delegateEmails);
     fd.set("itemsPerFactor", itemsPerFactor);
-    if (assessmentKind === "org") {
-      fd.set("engagementStage", "department");
+    if (assessmentKind !== "personal") {
+      fd.set("engagementStage", assessmentKind);
       for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
       if (orgQpp) fd.set("questionsPerPillar", orgQpp);
     }
@@ -224,8 +237,8 @@ export function VouchersClient({
     fd.set("region", batchRegion);
     fd.set("language", language);
     fd.set("itemsPerFactor", itemsPerFactor);
-    if (assessmentKind === "org") {
-      fd.set("engagementStage", "department");
+    if (assessmentKind !== "personal") {
+      fd.set("engagementStage", assessmentKind);
       for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
       if (orgQpp) fd.set("questionsPerPillar", orgQpp);
     }
@@ -366,9 +379,11 @@ export function VouchersClient({
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="w-72 space-y-1.5">
                     <Label className="text-xs">Assessment</Label>
-                    <select value={assessmentKind} onChange={(e) => setAssessmentKind(e.target.value as "personal" | "org")} className={selectClass} aria-label="Assessment kind">
-                      <option value="personal">Personal ARC (4-factor individual)</option>
-                      <option value="org">Org pillar assessment (custom scope)</option>
+                    <select value={assessmentKind} onChange={(e) => pickAssessmentKind(e.target.value as "personal" | "department" | "division" | "enterprise")} className={selectClass} aria-label="Assessment kind">
+                      <option value="personal">Personal ARC (individual · 4 factors)</option>
+                      <option value="department">Department · Stage 1 (4 pillars, 49 Qs standard)</option>
+                      <option value="division">Division · Stage 2 (6 pillars, 71 Qs standard)</option>
+                      <option value="enterprise">Enterprise · Stage 3 (8 pillars, 99 Qs standard)</option>
                     </select>
                   </div>
                   {assessmentKind === "personal" && (
@@ -382,7 +397,7 @@ export function VouchersClient({
                     </select>
                   </div>
                   )}
-                  {assessmentKind === "org" && (
+                  {assessmentKind !== "personal" && (
                   <div className="w-44 space-y-1.5">
                     <Label className="text-xs">Questions per pillar</Label>
                     <Input
@@ -412,7 +427,7 @@ export function VouchersClient({
                     </select>
                   </div>
                 </div>
-                {assessmentKind === "org" && (() => {
+                {assessmentKind !== "personal" && (() => {
                   // Alignment with the assessment + region: availability comes
                   // from the ACTIVE bank with region isolation applied - the
                   // same filter a redeemed respondent's form uses - so the
@@ -448,13 +463,15 @@ export function VouchersClient({
                       {ARA_PILLARS.map((pl) => {
                         const a = avail[pl.id];
                         const on = orgPillars.has(pl.id);
+                        const locked = assessmentKind === "enterprise";
                         return (
-                          <label key={pl.id} className={`flex cursor-pointer items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${on ? "border-[#5391D5]/50 bg-[#5391D5]/5" : "border-input bg-background hover:bg-muted"}`}>
+                          <label key={pl.id} className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${locked ? "cursor-default" : "cursor-pointer"} ${on ? "border-[#5391D5]/50 bg-[#5391D5]/5" : "border-input bg-background hover:bg-muted"}`}>
                             <span className="flex items-center gap-2">
                               <input
                                 type="checkbox"
                                 checked={on}
-                                onChange={() => toggleOrgPillar(pl.id)}
+                                disabled={locked}
+                                onChange={() => !locked && toggleOrgPillar(pl.id)}
                                 className="h-3.5 w-3.5 accent-[#5391D5]"
                               />
                               <span className="font-medium">{pl.name_en}</span>
@@ -474,7 +491,7 @@ export function VouchersClient({
                       </p>
                     )}
                     <p className="text-[11px] text-muted-foreground">
-                      Each redemption provisions a department-stage assessment with exactly this design, drawn from the {regionLabel} question bank. Question budget: any number 1-20 per pillar; 6 recommended, below 4 gets unreliable. The client report carries a reduced-form caveat when a budget is set.
+                      Each redemption provisions a {assessmentKind}-stage assessment with exactly this design, drawn from the {regionLabel} question bank.{assessmentKind === "enterprise" ? " Enterprise always covers all 8 pillars." : ""} Question budget: blank = the standard full set; any number 1-20 per pillar; 6 recommended, below 4 gets unreliable. The client report carries a reduced-form caveat when a budget is set.
                     </p>
                   </div>
                   );

@@ -47,6 +47,14 @@ export type CreateBatchInput = {
   /** Per-client ARC length: max individual-layer questions per factor a redeemed
    *  code serves. NULL/undefined = the full deep-dive (no cap). Migration 00143. */
   itemsPerFactor?: number | null;
+  /** What a redemption provisions (migration 00199). 'individual' (default) =
+   *  the personal 4-factor ARC. An org stage provisions an org pillar
+   *  assessment carrying the voucher's designed scope. */
+  engagementStage?: "individual" | "department" | "division" | "enterprise";
+  /** Org vouchers: the designed pillar set (custom scope). NULL = stage default. */
+  pillarsInScope?: string[] | null;
+  /** Org vouchers: per-pillar question budget (migration 00198). NULL = full form. */
+  questionsPerPillar?: number | null;
   contactName?: string | null;
   contactTitle?: string | null;
   contactEmail?: string | null;
@@ -84,6 +92,15 @@ export async function createVoucherBatch(
     contact_title: input.contactTitle ?? null,
     contact_email: input.contactEmail ?? null,
     ...(ipf != null ? { items_per_factor: ipf } : {}),
+    // Org-design vouchers (migration 00199): only touch the columns when an org
+    // stage is chosen, so personal vouchers still insert on a pre-00199 DB.
+    ...(input.engagementStage && input.engagementStage !== "individual"
+      ? {
+          engagement_stage: input.engagementStage,
+          pillars_in_scope: input.pillarsInScope && input.pillarsInScope.length > 0 ? input.pillarsInScope : null,
+          questions_per_pillar: input.questionsPerPillar ?? null,
+        }
+      : {}),
   }));
 
   const { data, error } = await sb.from("ara_vouchers").insert(rows).select("code");
@@ -199,18 +216,49 @@ export async function redeemVoucher(
   const region = voucher.region === "saudi" ? "saudi" : "uae";
   const language = voucher.default_language === "ar" ? "ar" : "en";
 
-  // Per-client length cap (migration 00143). The claim RPC doesn't return it, so
-  // fetch by id; tolerant of the column not existing yet (treated as no cap).
+  // Per-client length cap (migration 00143) + org design (migration 00199). The
+  // claim RPC doesn't return them, so fetch by id; tolerant of the columns not
+  // existing yet (treated as no cap / personal voucher).
   let itemsPerFactor: number | null = null;
+  let orgStage: "department" | "division" | "enterprise" | null = null;
+  let orgPillars: string[] | null = null;
+  let orgQpp: number | null = null;
   try {
     const { data: vrow } = await sb
       .from("ara_vouchers")
-      .select("items_per_factor")
+      .select("items_per_factor, engagement_stage, pillars_in_scope, questions_per_pillar")
       .eq("id", voucher.id)
-      .maybeSingle<{ items_per_factor: number | null }>();
+      .maybeSingle<{
+        items_per_factor: number | null;
+        engagement_stage: string | null;
+        pillars_in_scope: string[] | null;
+        questions_per_pillar: number | null;
+      }>();
     itemsPerFactor = vrow?.items_per_factor ?? null;
+    const st = vrow?.engagement_stage;
+    if (st === "department" || st === "division" || st === "enterprise") {
+      orgStage = st;
+      orgPillars = Array.isArray(vrow?.pillars_in_scope) && vrow.pillars_in_scope.length > 0 ? vrow.pillars_in_scope : null;
+      orgQpp = vrow?.questions_per_pillar ?? null;
+    }
   } catch {
-    /* column absent pre-migration - no cap */
+    /* columns absent pre-migration - personal voucher, no cap */
+  }
+  if (!orgStage) {
+    // Older DBs (or personal vouchers): retry the cap-only read when the wide
+    // select failed above because 00199 isn't applied but 00143 is.
+    if (itemsPerFactor == null) {
+      try {
+        const { data: vrow } = await sb
+          .from("ara_vouchers")
+          .select("items_per_factor")
+          .eq("id", voucher.id)
+          .maybeSingle<{ items_per_factor: number | null }>();
+        itemsPerFactor = vrow?.items_per_factor ?? null;
+      } catch {
+        /* column absent pre-migration - no cap */
+      }
+    }
   }
 
   // 2. Org: the voucher's tagged client org, else the shared practice org.
@@ -242,7 +290,10 @@ export async function redeemVoucher(
     .maybeSingle<{ id: string }>();
   if (!activeBank) return fail("The assessment isn't available right now. Please contact VIFM.");
 
-  // 4. Provision the individual run (sandbox/practice).
+  // 4. Provision the run (sandbox/practice). Personal vouchers provision the
+  // individual 4-factor ARC (unchanged); org-design vouchers (migration 00199)
+  // provision an org pillar assessment carrying the voucher's designed scope -
+  // pillars_in_scope + questions_per_pillar (custom-scope levers 00029/00198).
   const { data: assessment, error: assessErr } = await sb
     .from("ara_assessments")
     .insert({
@@ -252,10 +303,17 @@ export async function redeemVoucher(
       sector: "general",
       default_language: language,
       is_sandbox: voucher.is_practice !== false,
-      engagement_stage: "individual",
+      engagement_stage: orgStage ?? "individual",
       assessment_tier: tier,
       include_individual_layer: false,
-      ...(itemsPerFactor != null ? { items_per_factor: itemsPerFactor } : {}),
+      ...(orgStage
+        ? {
+            ...(orgPillars ? { pillars_in_scope: orgPillars } : {}),
+            ...(orgQpp != null ? { questions_per_pillar: orgQpp } : {}),
+          }
+        : itemsPerFactor != null
+          ? { items_per_factor: itemsPerFactor }
+          : {}),
       scope_label: `${input.redeemerName.trim()} · ${input.companyName.trim()}`,
       question_bank_version_id: activeBank.id,
       status: "active",

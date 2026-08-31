@@ -56,6 +56,22 @@ async function requireAdmin() {
 // MAY cap the length per client via itemsPerFactor (max questions per factor);
 // omitted = the full 60-question deep-dive. Migration 00143.
 const itemsPerFactorSchema = z.coerce.number().int().min(1).max(15).optional();
+
+// Org-design vouchers (migration 00199): a voucher may instead provision an org
+// PILLAR assessment on redemption, carrying the designed scope - which pillars
+// and how many questions per pillar (custom-scope levers 00029/00198).
+const ARA_PILLAR_IDS = [
+  "strategy", "data", "technology", "talent",
+  "culture", "governance", "operations", "model_management",
+] as const;
+const engagementStageSchema = z
+  .enum(["individual", "department", "division", "enterprise"])
+  .default("individual");
+const questionsPerPillarSchema = z.coerce.number().int().min(1).max(20).optional();
+function parsePillars(formData: FormData): string[] {
+  const valid = new Set<string>(ARA_PILLAR_IDS);
+  return Array.from(new Set(formData.getAll("pillars_in_scope").map(String))).filter((p) => valid.has(p));
+}
 const batchSchema = z.object({
   count: z.coerce.number().int().min(1).max(500),
   label: z.string().max(200).optional(),
@@ -65,6 +81,8 @@ const batchSchema = z.object({
   region: z.enum(["uae", "saudi"]).default("uae"),
   language: z.enum(["en", "ar"]).default("en"),
   itemsPerFactor: itemsPerFactorSchema,
+  engagementStage: engagementStageSchema,
+  questionsPerPillar: questionsPerPillarSchema,
   expiresAt: z.string().optional(),
   contactName: z.string().max(200).optional(),
   contactTitle: z.string().max(200).optional(),
@@ -84,6 +102,8 @@ export async function createVoucherBatchAction(formData: FormData) {
     region: formData.get("region") || "uae",
     language: formData.get("language") || "en",
     itemsPerFactor: formData.get("itemsPerFactor") || undefined,
+    engagementStage: formData.get("engagementStage") || "individual",
+    questionsPerPillar: formData.get("questionsPerPillar") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
     contactName: formData.get("contactName") || undefined,
     contactTitle: formData.get("contactTitle") || undefined,
@@ -91,6 +111,10 @@ export async function createVoucherBatchAction(formData: FormData) {
   });
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+  const orgPillars = parsePillars(formData);
+  if (parsed.data.engagementStage !== "individual" && orgPillars.length === 0) {
+    return { ok: false as const, error: "Select at least one pillar for an org assessment voucher." };
   }
 
   const caller = await requireRole(["admin"]).catch(() => null);
@@ -124,6 +148,9 @@ export async function createVoucherBatchAction(formData: FormData) {
     maxUses: parsed.data.maxUses,
     isPractice: false,
     itemsPerFactor: parsed.data.itemsPerFactor ?? null,
+    engagementStage: parsed.data.engagementStage,
+    pillarsInScope: parsed.data.engagementStage !== "individual" ? orgPillars : null,
+    questionsPerPillar: parsed.data.engagementStage !== "individual" ? (parsed.data.questionsPerPillar ?? null) : null,
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
     contactName: parsed.data.contactName?.trim() || null,
@@ -141,6 +168,8 @@ const emailDelegatesSchema = z.object({
   organizationId: z.string().uuid().optional(),
   clientName: z.string().max(300).optional(),
   itemsPerFactor: itemsPerFactorSchema,
+  engagementStage: engagementStageSchema,
+  questionsPerPillar: questionsPerPillarSchema,
   expiresAt: z.string().optional(),
   contactName: z.string().max(200).optional(),
   contactTitle: z.string().max(200).optional(),
@@ -161,12 +190,18 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
     organizationId: formData.get("organizationId") || undefined,
     clientName: formData.get("clientName") || undefined,
     itemsPerFactor: formData.get("itemsPerFactor") || undefined,
+    engagementStage: formData.get("engagementStage") || "individual",
+    questionsPerPillar: formData.get("questionsPerPillar") || undefined,
     expiresAt: formData.get("expiresAt") || undefined,
     contactName: formData.get("contactName") || undefined,
     contactTitle: formData.get("contactTitle") || undefined,
     contactEmail: formData.get("contactEmail") || undefined,
   });
   if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  const orgPillarsD = parsePillars(formData);
+  if (parsed.data.engagementStage !== "individual" && orgPillarsD.length === 0) {
+    return { ok: false as const, error: "Select at least one pillar for an org assessment voucher." };
+  }
 
   // Parse the email list (one per line; tolerate commas/semicolons).
   const emails = Array.from(
@@ -211,6 +246,9 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
       maxUses: 1,
       isPractice: false,
       itemsPerFactor: parsed.data.itemsPerFactor ?? null,
+      engagementStage: parsed.data.engagementStage,
+      pillarsInScope: parsed.data.engagementStage !== "individual" ? orgPillarsD : null,
+      questionsPerPillar: parsed.data.engagementStage !== "individual" ? (parsed.data.questionsPerPillar ?? null) : null,
       expiresAt,
       createdBy: caller?.uid ?? null,
       contactName: parsed.data.contactName?.trim() || null,

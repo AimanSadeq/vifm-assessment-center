@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3, SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
+import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,6 +59,19 @@ export function VouchersClient({
   // Per-client ARC length - applies to BOTH generation forms. "" = the full
   // deep-dive (60); otherwise the max individual-layer questions per factor.
   const [itemsPerFactor, setItemsPerFactor] = useState("");
+  // Org-design vouchers (migration 00199): what a redemption provisions.
+  // "personal" = the 4-factor Personal ARC (default, unchanged); "org" = an org
+  // PILLAR assessment carrying the designed scope below.
+  const [assessmentKind, setAssessmentKind] = useState<"personal" | "org">("personal");
+  const [orgPillars, setOrgPillars] = useState<Set<string>>(new Set(ARA_PILLARS.map((pl) => pl.id)));
+  const [orgQpp, setOrgQpp] = useState("6");
+  const toggleOrgPillar = (id: string) =>
+    setOrgPillars((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // ── Issue wizard state ──
   const [step, setStep] = useState(1);
@@ -106,6 +120,11 @@ export function VouchersClient({
     const fd = new FormData();
     fd.set("emails", delegateEmails);
     fd.set("itemsPerFactor", itemsPerFactor);
+    if (assessmentKind === "org") {
+      fd.set("engagementStage", "department");
+      for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
+      if (orgQpp) fd.set("questionsPerPillar", orgQpp);
+    }
     if (selectedOrg) fd.set("organizationId", selectedOrg);
     if (expiresAt) fd.set("expiresAt", expiresAt);
     fd.set("contactName", contactName);
@@ -201,6 +220,11 @@ export function VouchersClient({
     fd.set("region", batchRegion);
     fd.set("language", language);
     fd.set("itemsPerFactor", itemsPerFactor);
+    if (assessmentKind === "org") {
+      fd.set("engagementStage", "department");
+      for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
+      if (orgQpp) fd.set("questionsPerPillar", orgQpp);
+    }
     if (expiresAt) fd.set("expiresAt", expiresAt);
     fd.set("contactName", contactName);
     fd.set("contactTitle", contactTitle);
@@ -337,6 +361,14 @@ export function VouchersClient({
                 </div>
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="w-72 space-y-1.5">
+                    <Label className="text-xs">Assessment</Label>
+                    <select value={assessmentKind} onChange={(e) => setAssessmentKind(e.target.value as "personal" | "org")} className={selectClass} aria-label="Assessment kind">
+                      <option value="personal">Personal ARC (4-factor individual)</option>
+                      <option value="org">Org pillar assessment (custom scope)</option>
+                    </select>
+                  </div>
+                  {assessmentKind === "personal" && (
+                  <div className="w-72 space-y-1.5">
                     <Label className="text-xs">Assessment length</Label>
                     <select value={itemsPerFactor} onChange={(e) => setItemsPerFactor(e.target.value)} className={selectClass} aria-label="Assessment length">
                       <option value="">Full ARC - 60 questions</option>
@@ -345,6 +377,19 @@ export function VouchersClient({
                       <option value="6">24 questions (6 per factor)</option>
                     </select>
                   </div>
+                  )}
+                  {assessmentKind === "org" && (
+                  <div className="w-44 space-y-1.5">
+                    <Label className="text-xs">Questions per pillar</Label>
+                    <select value={orgQpp} onChange={(e) => setOrgQpp(e.target.value)} className={selectClass} aria-label="Questions per pillar">
+                      <option value="">Full set per pillar</option>
+                      <option value="6">6 per pillar (recommended)</option>
+                      <option value="5">5 per pillar</option>
+                      <option value="4">4 per pillar</option>
+                      <option value="8">8 per pillar</option>
+                    </select>
+                  </div>
+                  )}
                   <div className="w-40 space-y-1.5">
                     <Label className="text-xs">Region {selectedOrg && <span className="text-[10px] font-normal text-muted-foreground">(from client)</span>}</Label>
                     <select className={selectClass} value={batchRegion} onChange={(e) => setBatchRegion(e.target.value)} disabled={!!selectedOrg}>
@@ -360,6 +405,29 @@ export function VouchersClient({
                     </select>
                   </div>
                 </div>
+                {assessmentKind === "org" && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">
+                      Pillars in scope ({orgPillars.size}/8{orgQpp ? ` - ${orgPillars.size * Number(orgQpp)} questions total` : ""})
+                    </Label>
+                    <div className="grid gap-1.5 sm:grid-cols-2">
+                      {ARA_PILLARS.map((pl) => (
+                        <label key={pl.id} className="flex cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-2.5 py-1.5 text-xs">
+                          <input
+                            type="checkbox"
+                            checked={orgPillars.has(pl.id)}
+                            onChange={() => toggleOrgPillar(pl.id)}
+                            className="h-3.5 w-3.5 accent-[#5391D5]"
+                          />
+                          <span className="font-medium">{pl.name_en}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Each redemption provisions a department-stage org assessment with exactly this design. The report carries a reduced-form caveat when a question budget is set.
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="flex justify-end">

@@ -10,6 +10,8 @@ import { ProvisionalBanner } from "@/components/shared/provisional-banner";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { calculateQuestionScore } from "@/lib/ara/scoring";
 import {
+  ARA_FACTOR_TONES,
+  getFactorTone,
   ARA_INDIVIDUAL_FACTORS,
   ARA_INDIVIDUAL_FACTOR_IDS,
   ARA_INDIVIDUAL_FACTOR_MAP,
@@ -450,7 +452,8 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
         <div className="grid gap-3 sm:grid-cols-2">
           {ARA_INDIVIDUAL_FACTORS.map((f) => {
             const score = factorScores[f.id];
-            const tone = score >= 4 ? "Strong" : score >= 3 ? "Developing" : "Opportunity";
+            const toneId = getFactorTone(score);
+            const tone = isAr ? ARA_FACTOR_TONES[toneId].ar : ARA_FACTOR_TONES[toneId].en;
             const toneColor =
               score >= 4 ? "bg-emerald-100 text-emerald-900 border-emerald-200"
               : score >= 3 ? "bg-amber-100 text-amber-900 border-amber-200"

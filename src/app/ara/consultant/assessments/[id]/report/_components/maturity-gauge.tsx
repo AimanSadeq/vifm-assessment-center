@@ -1,4 +1,5 @@
 import { ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
+import { overallBandFromScore } from "@/lib/ara/scoring";
 
 /**
  * Speedometer-style gauge showing overall score on a 1-5 scale.
@@ -42,20 +43,19 @@ export function MaturityGauge({ score }: { score: number | null }) {
   const needleAngle = score != null ? angleForScore(score) : angleForScore(1);
   const needleEnd = polar(needleAngle, RADIUS - 10);
 
-  // Lower-threshold lookup (highest band whose min <= score) so a score in a
-  // former band gap (e.g. 3.95) still resolves to a band instead of vanishing.
-  const band = score != null
-    ? [...ARA_OVERALL_BANDS].reverse().find((b) => score >= b.min) ?? null
-    : null;
+  // Canonical band lookup - the single source of truth in scoring.ts.
+  const band = score != null ? overallBandFromScore(score) : null;
 
   return (
     <svg viewBox="0 0 300 180" className="w-full max-w-md mx-auto">
-      {/* Bands - contiguous segments (no visual gaps between zones) */}
-      {arc(1.0, 2.0, "#FB7185")}
-      {arc(2.0, 3.0, "#FDBA74")}
-      {arc(3.0, 4.0, "#FBBF24")}
-      {arc(4.0, 4.5, "#34D399")}
-      {arc(4.5, 5.0, "#FBBF24")}
+      {/* Bands - contiguous segments drawn FROM the canonical constant so the
+          gauge can never desync from ARA_OVERALL_BANDS (display floor is 1.0
+          by convention; the sub-1.0 tail of Not Ready is clamped visually). */}
+      {ARA_OVERALL_BANDS.map((b, i) => {
+        const from = Math.max(1, b.min);
+        const to = i < ARA_OVERALL_BANDS.length - 1 ? Math.max(1, ARA_OVERALL_BANDS[i + 1].min) : 5.0;
+        return <g key={b.label_en}>{arc(from, to, b.color)}</g>;
+      })}
 
       {/* Needle */}
       {score != null && (

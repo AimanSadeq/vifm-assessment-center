@@ -229,6 +229,25 @@ const STAGE_EMBEDDED: AraIndividualMaturityStage = {
  * stages. Returns Emerging for any score below 3 (including 0 from
  * "no data" - caller should suppress the badge in that case).
  */
+/**
+ * Canonical per-factor TONE trio (distinct from the three maturity STAGES):
+ * the compact Strong / Developing / Opportunity read used on factor cards,
+ * voucher insights, and the personal PDFs. Same cuts as the stage model
+ * (>= 4 / >= 3). Centralised (2026-08-31 consistency audit) - surfaces must
+ * read labels from here, never restate them.
+ */
+export const ARA_FACTOR_TONES = {
+  strong: { en: "Strong", ar: "قوي" },
+  developing: { en: "Developing", ar: "قيد التطوير" },
+  opportunity: { en: "Opportunity", ar: "فرصة" },
+} as const;
+export type AraFactorToneId = keyof typeof ARA_FACTOR_TONES;
+export function getFactorTone(score: number): AraFactorToneId {
+  if (score >= 4) return "strong";
+  if (score >= 3) return "developing";
+  return "opportunity";
+}
+
 export function getIndividualMaturityStage(score: number): AraIndividualMaturityStage {
   if (score >= 4) return STAGE_EMBEDDED;
   if (score >= 3) return STAGE_PRACTISING;

@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { ARA_FACTOR_TONES, getFactorTone, ARA_INDIVIDUAL_MATURITY_STAGES } from "@/lib/constants/ara-individual-factors";
+import { MIN_NORM_SAMPLE } from "@/lib/ara/personal-norms";
 import type { ReactNode } from "react";
 import {
   BarChart3,
@@ -31,12 +33,14 @@ export const metadata = { title: "Cohort insights · AI Readiness Compass®" };
 
 type Props = { searchParams: { company?: string } };
 
-/** emerald >=4 / amber >=3 / rose <3 - the shared individual-readiness tone. */
+/** The canonical individual-readiness tone (labels from ARA_FACTOR_TONES). */
 function tone(score: number | null): { label: string; bg: string; fg: string; bar: string } {
   if (score == null) return { label: "No data", bg: "#f1f5f9", fg: "#475569", bar: "#cbd5e1" };
-  if (score >= 4) return { label: "Strong", bg: "#dcfce7", fg: "#166534", bar: "#16a34a" };
-  if (score >= 3) return { label: "Developing", bg: "#fef3c7", fg: "#92400e", bar: "#d97706" };
-  return { label: "Opportunity", bg: "#fee2e2", fg: "#991b1b", bar: "#dc2626" };
+  const id = getFactorTone(score);
+  const label = ARA_FACTOR_TONES[id].en;
+  if (id === "strong") return { label, bg: "#dcfce7", fg: "#166534", bar: "#16a34a" };
+  if (id === "developing") return { label, bg: "#fef3c7", fg: "#92400e", bar: "#d97706" };
+  return { label, bg: "#fee2e2", fg: "#991b1b", bar: "#dc2626" };
 }
 
 export default async function CohortInsightsPage({ searchParams }: Props) {
@@ -260,7 +264,7 @@ async function CompanyDetail({ company }: { company: string }) {
               </>
             ) : (
               <>
-                Population percentiles unlock once at least 50 individual snapshots are collected
+                Population percentiles unlock once at least {MIN_NORM_SAMPLE} individual snapshots are collected
                 (currently {insight.norm_sample_size}). Until then, read the scores against the target of 4.
               </>
             )}
@@ -321,9 +325,9 @@ async function CompanyDetail({ company }: { company: string }) {
             <CardDescription>How the {scoredCount} scored delegate{scoredCount === 1 ? "" : "s"} distribute across readiness stages.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <BandBar label="Embedded (4.0-5.0)" count={insight.band_distribution.embedded} total={scoredCount} color="#16a34a" />
-            <BandBar label="Practising (3.0-3.9)" count={insight.band_distribution.practising} total={scoredCount} color="#d97706" />
-            <BandBar label="Emerging (1.0-2.9)" count={insight.band_distribution.emerging} total={scoredCount} color="#dc2626" />
+            <BandBar label={`${ARA_INDIVIDUAL_MATURITY_STAGES[2].name_en} (4.0-5.0)`} count={insight.band_distribution.embedded} total={scoredCount} color="#16a34a" />
+            <BandBar label={`${ARA_INDIVIDUAL_MATURITY_STAGES[1].name_en} (3.0-3.9)`} count={insight.band_distribution.practising} total={scoredCount} color="#d97706" />
+            <BandBar label={`${ARA_INDIVIDUAL_MATURITY_STAGES[0].name_en} (1.0-2.9)`} count={insight.band_distribution.emerging} total={scoredCount} color="#dc2626" />
           </CardContent>
         </Card>
       )}

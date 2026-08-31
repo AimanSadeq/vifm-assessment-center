@@ -142,7 +142,7 @@ const HOW_TO_USE_PANELS_AR = {
     title: "كيف تقرأ هذه النتائج",
     bullets: [
       "1.0 - 2.9 - فرصة. منطقة إرساء الأساس؛ الممارسة المتعمَّدة ستحرّك العقرب بسرعة.",
-      "3.0 - 3.9 - متطوّر. العادة قائمة؛ المكسب التالي هو جعلها موثوقة لا ظرفية.",
+      "3.0 - 3.9 - قيد التطوير. العادة قائمة؛ المكسب التالي هو جعلها موثوقة لا ظرفية.",
       "4.0 - 5.0 - قوي. تعمل بطلاقة؛ التحدّي الآن مشاركة الممارسة واختبارها.",
     ],
   },
@@ -159,7 +159,7 @@ const HOW_TO_USE_PANELS_AR = {
 /** Tone-band metadata used by the factor cards. */
 function toneForAr(score: number): { label: string; bg: string; fg: string; stageId: AraIndividualMaturityStageId } {
   if (score >= 4) return { label: "قوي", bg: "#dcfce7", fg: "#166534", stageId: "embedded" };
-  if (score >= 3) return { label: "متطوّر", bg: "#fef3c7", fg: "#92400e", stageId: "practising" };
+  if (score >= 3) return { label: "قيد التطوير", bg: "#fef3c7", fg: "#92400e", stageId: "practising" };
   return { label: "فرصة", bg: "#fee2e2", fg: "#991b1b", stageId: "emerging" };
 }
 
@@ -702,7 +702,7 @@ ${data.provisional ? `
           <span class="legend-text">1.0 - 2.9</span>
         </div>
         <div class="legend-cell">
-          <span class="legend-pill" style="background:#fef3c7;color:#92400e">متطوّر</span>
+          <span class="legend-pill" style="background:#fef3c7;color:#92400e">قيد التطوير</span>
           <span class="legend-text">3.0 - 3.9</span>
         </div>
         <div class="legend-cell">

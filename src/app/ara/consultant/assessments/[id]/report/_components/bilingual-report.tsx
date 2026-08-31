@@ -27,6 +27,7 @@ type PillarRow = {
   raw_score: number | null;
   maturity_level?: number | null;
   maturity_label_en: string | null;
+  maturity_label_ar?: string | null;
   benchmark_gap: number | null;
   self_assessment_score: number | null;
   consultant_validated_score: number | null;
@@ -663,7 +664,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   />
                   <Metric
                     label={tr("ar", "maturity_short")}
-                    value={row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : tr("ar", "unscored")}
+                    value={row?.maturity_label_ar ?? (row?.maturity_label_en ? arabicMaturityLabel(row.maturity_label_en) : tr("ar", "unscored"))}
                     suffix={row?.maturity_level != null ? `المستوى ${row.maturity_level}` : ""}
                     tone="brand"
                   />
@@ -1155,7 +1156,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <div className="col-en">
             <h2 className="report-h2">Workforce AI Readiness</h2>
             <p className="report-body">
-              Alongside the eight pillar scores, this assessment measured the
+              Alongside the in-scope pillar scores, this assessment measured the
               personal AI readiness of {p.workforceRollup.cohort_size}{" "}
               respondent{p.workforceRollup.cohort_size === 1 ? "" : "s"}{" "}
               ({p.workforceRollup.completed_count} completed) across four VIFM
@@ -1207,7 +1208,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <div className="col-ar" dir="rtl">
             <h2 className="report-h2">الجاهزية الذكية للقوى العاملة</h2>
             <p className="report-body">
-              إلى جانب درجات الركائز الثماني، قاس هذا التقييم الجاهزية الشخصية
+              إلى جانب درجات الركائز المشمولة في النطاق، قاس هذا التقييم الجاهزية الشخصية
               للذكاء الاصطناعي لدى {p.workforceRollup.cohort_size} مشارك
               ({p.workforceRollup.completed_count} مكتمل) عبر أربعة عوامل
               جاهزية فردية من VIFM مرتبطة بمجالات التفكير والنتائج والأشخاص

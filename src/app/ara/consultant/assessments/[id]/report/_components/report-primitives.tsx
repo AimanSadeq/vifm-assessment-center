@@ -429,7 +429,7 @@ export function FindingsPanel({ variant, title, items, emptyMessage }: {
       </div>
       {items.length === 0 ? (
         <p style={{ fontSize: "9.5pt", color: TOKENS.mute, margin: 0, fontStyle: "italic" }}>
-          {emptyMessage ?? (variant === "strength" ? "No pillars at Advanced or above yet." : "No pillars below Developing - solid foundation.")}
+          {emptyMessage ?? (variant === "strength" ? "No pillars at Advancing or above yet." : "No pillars below Developing - solid foundation.")}
         </p>
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>

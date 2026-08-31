@@ -11,6 +11,8 @@ import {
   type AraIndividualFactorId,
   type AraIndividualMaturityStageId,
   type AraTalentLens,
+  ARA_FACTOR_TONES,
+  getFactorTone,
 } from "@/lib/constants/ara-individual-factors";
 import { type PersonalAnalysis, type DevelopmentAnalysis } from "@/lib/ara/personal-analysis";
 import { VIFM_VERTICAL_LABELS, type VifmVertical } from "@/types/database";
@@ -363,9 +365,11 @@ export type PersonalSnapshotData = {
 };
 
 function toneFor(score: number): { label: string; bg: string; fg: string; stageId: AraIndividualMaturityStageId } {
-  if (score >= 4) return { label: "Strong", bg: "#dcfce7", fg: "#166534", stageId: "embedded" };
-  if (score >= 3) return { label: "Developing", bg: "#fef3c7", fg: "#92400e", stageId: "practising" };
-  return { label: "Opportunity", bg: "#fee2e2", fg: "#991b1b", stageId: "emerging" };
+  // Labels come from the canonical ARA_FACTOR_TONES (consistency audit 2026-08-31).
+  const id = getFactorTone(score);
+  if (id === "strong") return { label: ARA_FACTOR_TONES.strong.en, bg: "#dcfce7", fg: "#166534", stageId: "embedded" };
+  if (id === "developing") return { label: ARA_FACTOR_TONES.developing.en, bg: "#fef3c7", fg: "#92400e", stageId: "practising" };
+  return { label: ARA_FACTOR_TONES.opportunity.en, bg: "#fee2e2", fg: "#991b1b", stageId: "emerging" };
 }
 
 /**

@@ -105,7 +105,7 @@ export default async function AraReportPage({
   ] = await Promise.all([
     sb
       .from("ara_pillar_scores")
-      .select("pillar_id, raw_score, maturity_level, maturity_label_en, benchmark_gap, self_assessment_score, consultant_validated_score, perception_gap")
+      .select("pillar_id, raw_score, maturity_level, maturity_label_en, maturity_label_ar, benchmark_gap, self_assessment_score, consultant_validated_score, perception_gap")
       .eq("assessment_id", assessment.id)
       .returns<PillarScoreRow[]>(),
     sb
@@ -573,10 +573,10 @@ export default async function AraReportPage({
               accentColor="#34D399"
             />
             <StatTile
-              label="Below benchmark"
+              label="Requiring focus"
               value={String(gaps.length)}
               suffix={`/ ${scopedPillars.length}`}
-              accent="Pillars requiring focus"
+              accent="Pillars scoring < 3.00"
               accentColor="#FB7185"
             />
           </div>
@@ -1013,10 +1013,10 @@ export default async function AraReportPage({
             <GapHeatmap scoresByPillarByBucket={heatmapData} pillars={scopedPillars} />
           </div>
           <div style={{ display: "flex", gap: "16pt", marginTop: "12pt", fontSize: "9pt" }}>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FB7185", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Critical (1–2)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FDBA74", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Early stage (2–3)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FBBF24", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Developing (3–4)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#34D399", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />At or above benchmark (4+)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FB7185", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Unaware (below 2.0)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FDBA74", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Exploring (2.0–2.9)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FBBF24", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Developing (3.0–3.9)</span>
+            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#34D399", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Advancing+ (4.0 and above)</span>
           </div>
         </section>
 

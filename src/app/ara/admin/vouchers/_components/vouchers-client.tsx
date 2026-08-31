@@ -381,13 +381,16 @@ export function VouchersClient({
                   {assessmentKind === "org" && (
                   <div className="w-44 space-y-1.5">
                     <Label className="text-xs">Questions per pillar</Label>
-                    <select value={orgQpp} onChange={(e) => setOrgQpp(e.target.value)} className={selectClass} aria-label="Questions per pillar">
-                      <option value="">Full set per pillar</option>
-                      <option value="6">6 per pillar (recommended)</option>
-                      <option value="5">5 per pillar</option>
-                      <option value="4">4 per pillar</option>
-                      <option value="8">8 per pillar</option>
-                    </select>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={20}
+                      value={orgQpp}
+                      onChange={(e) => setOrgQpp(e.target.value)}
+                      placeholder="blank = full set"
+                      aria-label="Questions per pillar"
+                    />
+                    <p className="text-[10px] text-muted-foreground">Any number 1-20; 6 recommended, below 4 gets unreliable.</p>
                   </div>
                   )}
                   <div className="w-40 space-y-1.5">

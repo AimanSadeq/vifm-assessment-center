@@ -353,6 +353,13 @@ export async function createAraAssessment(formData: FormData) {
   // into an array, dedupe, and validate cardinality against the stage.
   const rawPillars = formData.getAll("pillars_in_scope").map(String).filter(Boolean);
   const dedupedPillars = Array.from(new Set(rawPillars));
+  // Custom scope (migration 00198): when the wizard's toggle is on, the stage's
+  // exactly-4/exactly-6 pillar rule is relaxed (any 1-8 pillars) and an optional
+  // per-pillar question budget applies. The standard tiers stay untouched.
+  const customScope = formData.get("custom_scope") === "on";
+  const rawQpp = formData.get("questions_per_pillar");
+  const qppValue =
+    customScope && rawQpp != null && String(rawQpp).trim() !== "" ? Number(rawQpp) : null;
   const rawTimeLimit = formData.get("time_limit_minutes");
   const timeLimit = rawTimeLimit && String(rawTimeLimit).trim() !== "" ? Number(rawTimeLimit) : null;
   // Talent lens (migration 00134), captured from the launching pillar via
@@ -372,6 +379,7 @@ export async function createAraAssessment(formData: FormData) {
     // Tier only matters when the layer is on; default to snapshot otherwise.
     assessment_tier: includeIndividual && rawTier === "deep_dive" ? "deep_dive" : "snapshot",
     pillars_in_scope: dedupedPillars.length > 0 ? dedupedPillars : null,
+    questions_per_pillar: qppValue,
     time_limit_minutes: timeLimit,
   });
 
@@ -381,13 +389,23 @@ export async function createAraAssessment(formData: FormData) {
 
   // Cardinality enforcement per stage. department=4, division=6, and
   // enterprise ignores any user-submitted set (always all 8). individual
-  // doesn't use pillars at all.
+  // doesn't use pillars at all. CUSTOM SCOPE relaxes the must-equal rule
+  // (any 1-8 pillars) - the standard-tier SOP stays exactly as before.
   let pillarsToStore: string[] | null = parsed.data.pillars_in_scope ?? null;
-  if (parsed.data.engagement_stage === "department" && pillarsToStore && pillarsToStore.length !== 4) {
-    return { ok: false, error: "Department assessments must include exactly 4 pillars." };
-  }
-  if (parsed.data.engagement_stage === "division" && pillarsToStore && pillarsToStore.length !== 6) {
-    return { ok: false, error: "Division assessments must include exactly 6 pillars." };
+  if (customScope) {
+    if (
+      (parsed.data.engagement_stage === "department" || parsed.data.engagement_stage === "division") &&
+      (!pillarsToStore || pillarsToStore.length < 1)
+    ) {
+      return { ok: false, error: "Custom scope needs at least one pillar selected." };
+    }
+  } else {
+    if (parsed.data.engagement_stage === "department" && pillarsToStore && pillarsToStore.length !== 4) {
+      return { ok: false, error: "Department assessments must include exactly 4 pillars." };
+    }
+    if (parsed.data.engagement_stage === "division" && pillarsToStore && pillarsToStore.length !== 6) {
+      return { ok: false, error: "Division assessments must include exactly 6 pillars." };
+    }
   }
   if (parsed.data.engagement_stage === "enterprise" || parsed.data.engagement_stage === "individual") {
     pillarsToStore = null;
@@ -441,6 +459,11 @@ export async function createAraAssessment(formData: FormData) {
   if (talentLens) {
     insertPayload.talent_lens = talentLens;
   }
+  // Custom-scope question budget (migration 00198) - only added when set, so
+  // the insert still works on a DB without the column.
+  if (parsed.data.questions_per_pillar != null) {
+    insertPayload.questions_per_pillar = parsed.data.questions_per_pillar;
+  }
   let { data, error } = await sb.from("ara_assessments").insert(insertPayload).select("id").single();
 
   // Tolerant strip+retry: a DB without 00134 (and/or 00084) rejects the unknown
@@ -449,9 +472,10 @@ export async function createAraAssessment(formData: FormData) {
   if (error) {
     const code = (error as { code?: string }).code;
     if (code === "42703" || code === "PGRST204") {
-      const { talent_lens: _lens, time_limit_minutes: _limit, ...core } = insertPayload;
+      const { talent_lens: _lens, time_limit_minutes: _limit, questions_per_pillar: _qpp, ...core } = insertPayload;
       void _lens;
       void _limit;
+      void _qpp;
       ({ data, error } = await sb.from("ara_assessments").insert(core).select("id").single());
     }
   }

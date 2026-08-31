@@ -86,6 +86,10 @@ export type BilingualReportProps = {
    *  when null. Caller resolves via getPillarsForAssessment. Optional -
    *  defaults to stage default when omitted (back-compat). */
   pillarsInScope?: ReadonlyArray<AraPillarId>;
+  /** Custom-scope question budget (migration 00198): N Layer-1 questions per
+   *  pillar. When set, the report carries a reduced-form caveat - custom-form
+   *  scores are indicative and not benchmark-comparable to full-form runs. */
+  questionsPerPillar?: number | null;
   /** Workforce AI Readiness (Mode C) cohort rollup. The Workforce
    *  section renders only when includeIndividualLayer is true and at
    *  least one respondent has an overall score. */
@@ -202,6 +206,25 @@ export function BilingualReport(p: BilingualReportProps) {
        *   4. Bilingual narrative + FindingsPanel (strengths / gaps) */}
       <section className="report-page-bilingual-with-visual">
         <div>
+          {/* Custom-scope caveat (migration 00198): a reduced form answers N
+              questions per pillar, so scores are indicative and not directly
+              comparable to full-form benchmarks or prior full-form years. */}
+          {p.questionsPerPillar != null && (
+            <div
+              style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6mm",
+                border: "1px solid #f5d9a8", background: "#fffbeb", borderRadius: "4pt",
+                padding: "6pt 9pt", marginBottom: "5mm", fontSize: "8pt", color: "#78350f",
+              }}
+            >
+              <p style={{ margin: 0 }}>
+                <b>Custom reduced form.</b> This assessment used a custom scope of {scopedCount} pillar{scopedCount === 1 ? "" : "s"} at {p.questionsPerPillar} question{p.questionsPerPillar === 1 ? "" : "s"} per pillar. Scores are indicative and should not be compared directly against full-form benchmarks or prior full-form assessments.
+              </p>
+              <p style={{ margin: 0, textAlign: "right" }} dir="rtl">
+                <b>نموذج مخصّص مختصر.</b> استخدم هذا التقييم نطاقاً مخصّصاً من {arDigits(scopedCount)} ركائز بواقع {arDigits(p.questionsPerPillar)} أسئلة لكل ركيزة. النتائج استرشادية ولا ينبغي مقارنتها مباشرة بمعايير النموذج الكامل أو بتقييمات الأعوام السابقة الكاملة.
+              </p>
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
             <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "exec_summary")}</h2>
             <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>

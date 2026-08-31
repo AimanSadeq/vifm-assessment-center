@@ -409,6 +409,7 @@ export default async function AraReportPage({
               engagement_stage: assessment.engagement_stage,
               pillars_in_scope: assessment.pillars_in_scope ?? null,
             })}
+            questionsPerPillar={(assessment as { questions_per_pillar?: number | null }).questions_per_pillar ?? null}
             workforceRollup={workforceRollup}
             agenticRollup={agenticRollup}
             includeIndividualLayer={assessment.include_individual_layer}

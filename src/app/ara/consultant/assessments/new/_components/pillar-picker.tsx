@@ -37,6 +37,11 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
   const [selected, setSelected] = useState<Set<AraPillarId>>(
     new Set(defaultPillars)
   );
+  // Custom scope (migration 00198): relaxes the must-equal pillar rule (any
+  // 1-8 pillars) and adds an optional per-pillar question budget. The standard
+  // tier behaviour is completely unchanged while the toggle is off.
+  const [custom, setCustom] = useState(false);
+  const [questionsPerPillar, setQuestionsPerPillar] = useState<string>("6");
 
   const toggle = (id: AraPillarId) => {
     setSelected((prev) => {
@@ -44,9 +49,10 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
       if (next.has(id)) {
         next.delete(id);
       } else {
-        // If we're already at the cap, drop the oldest (first) and add new.
-        // This makes swapping a pillar one click instead of two.
-        if (next.size >= requiredCount) {
+        // Standard mode: if we're already at the cap, drop the oldest (first)
+        // and add new - swapping a pillar is one click instead of two. Custom
+        // mode has no cap (any subset up to all 8).
+        if (!custom && next.size >= requiredCount) {
           const first = next.values().next().value;
           if (first) next.delete(first);
         }
@@ -56,13 +62,15 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
     });
   };
 
-  const valid = selected.size === requiredCount;
+  const valid = custom ? selected.size >= 1 : selected.size === requiredCount;
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {t("araConsultant.pillar_picker_intro", { n: requiredCount })}
+          {custom
+            ? t("araConsultant.pillar_picker_custom_intro", "Custom scope: pick any pillars this assessment should cover.")
+            : t("araConsultant.pillar_picker_intro", { n: requiredCount })}
         </p>
         <span
           className={`text-[11px] font-bold uppercase tracking-wider px-2 py-1 rounded-full border tabular-nums ${
@@ -71,9 +79,57 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
               : "bg-amber-100 text-amber-900 border-amber-200"
           }`}
         >
-          {t("araConsultant.pillar_picker_counter", { selected: selected.size, required: requiredCount })}
+          {custom
+            ? `${selected.size} / 8`
+            : t("araConsultant.pillar_picker_counter", { selected: selected.size, required: requiredCount })}
         </span>
       </div>
+
+      {/* Custom-scope toggle: standard tiers (the SOP) stay exactly as they are;
+          custom unlocks any pillar combination + a per-pillar question budget. */}
+      <label className="flex items-start gap-2 rounded-md border border-input bg-muted/30 px-3 py-2 cursor-pointer">
+        <input
+          type="checkbox"
+          name="custom_scope"
+          checked={custom}
+          onChange={(e) => setCustom(e.target.checked)}
+          className="mt-0.5 h-4 w-4 accent-[#5391D5]"
+        />
+        <span className="min-w-0">
+          <span className="block text-sm font-medium">
+            {t("araConsultant.pillar_custom_toggle", "Custom scope (advanced)")}
+          </span>
+          <span className="block text-[11px] text-muted-foreground leading-snug">
+            {t(
+              "araConsultant.pillar_custom_hint",
+              "Override the standard tier: choose any pillar combination and set a question budget per pillar (e.g. a department run covering all 8 pillars at 6 questions each = 48 questions)."
+            )}
+          </span>
+        </span>
+      </label>
+
+      {custom && (
+        <label className="block text-sm">
+          <span className="text-muted-foreground">
+            {t("araConsultant.pillar_qpp_label", "Questions per pillar (blank = full set)")}
+          </span>
+          <input
+            type="number"
+            name="questions_per_pillar"
+            min={1}
+            max={20}
+            value={questionsPerPillar}
+            onChange={(e) => setQuestionsPerPillar(e.target.value)}
+            className="mt-1 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+          />
+          <span className="mt-1 block text-[11px] text-muted-foreground">
+            {t(
+              "araConsultant.pillar_qpp_hint",
+              "6 recommended; below 4 the per-pillar read gets unreliable. The report marks custom-form results as indicative (not benchmark-comparable to full forms)."
+            )}
+          </span>
+        </label>
+      )}
 
       <div className="grid gap-2 sm:grid-cols-2">
         {ARA_PILLARS.map((p) => {
@@ -118,7 +174,9 @@ export function PillarPicker({ defaultPillars, requiredCount }: Props) {
 
       {!valid && (
         <p className="text-[11px] text-amber-700">
-          {t("araConsultant.pillar_picker_warning", { n: requiredCount })}
+          {custom
+            ? t("araConsultant.pillar_custom_warning", "Select at least one pillar.")
+            : t("araConsultant.pillar_picker_warning", { n: requiredCount })}
         </p>
       )}
     </div>

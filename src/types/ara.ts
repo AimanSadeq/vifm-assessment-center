@@ -98,6 +98,8 @@ export type AraAssessment = {
   assessment_tier: "snapshot" | "deep_dive";
   /** Per-client ARC length cap: max individual-layer questions per factor (migration 00143). NULL = no cap (full). */
   items_per_factor?: number | null;
+  /** Custom-scope length cap: max Layer-1 questions per in-scope pillar (migration 00198). NULL = full standard form. */
+  questions_per_pillar?: number | null;
   /** Org-stage assessments can opt-in to also serving the individual factor items to all respondents. */
   include_individual_layer: boolean;
   /** Org-stage assessments can opt-in to the Agentic-AI Readiness layer (18 items, 6 dimensions; migration 00041). */

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateQuestionScore, recalculateAssessmentScores } from "@/lib/ara/scoring";
-import { loadRespondentByToken, loadQuestionsForRespondent, capPerFactor } from "@/lib/ara/respondent-access";
+import { loadRespondentByToken, loadQuestionsForRespondent, capPerFactor, capPerPillar } from "@/lib/ara/respondent-access";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import type { AraLanguage, AraPillarId, AraQuestion, AraRespondent } from "@/types/ara";
@@ -272,6 +272,29 @@ export async function saveAraAnswer(input: z.infer<typeof saveAnswerSchema>): Pr
           } as Parameters<typeof getPillarsForAssessment>[0]) as AraPillarId[]);
     if (!question.pillar_id || !effectivePillars.includes(question.pillar_id as AraPillarId)) {
       return { ok: false, error: "You are not assigned to this section" };
+    }
+    // Custom-scope length lever (questions_per_pillar, migration 00198): the
+    // read path caps each pillar to N items via capPerPillar, so the write path
+    // must accept only the KEPT set - otherwise a crafted call could answer the
+    // capped-out items a shortened form deliberately never serves and dilute
+    // the pillar means the rollups recompute from ara_responses.
+    const perPillar = (assessment as { questions_per_pillar?: number | null }).questions_per_pillar;
+    if (typeof perPillar === "number" && perPillar > 0) {
+      const { data: pillarItems } = await sb
+        .from("ara_questions")
+        .select("id, pillar_id, question_type, question_number")
+        .eq("version_id", effectiveVersionId)
+        .eq("layer", 1)
+        .eq("is_active", true)
+        .eq("pillar_id", question.pillar_id)
+        .is("individual_factor_id", null)
+        .is("agentic_dimension_id", null);
+      const kept = new Set(
+        capPerPillar((pillarItems ?? []) as AraQuestion[], perPillar).map((q) => q.id)
+      );
+      if (!kept.has(question.id)) {
+        return { ok: false, error: "You are not assigned to this section" };
+      }
     }
   }
 

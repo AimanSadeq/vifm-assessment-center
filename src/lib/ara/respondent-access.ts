@@ -119,6 +119,35 @@ export function capPerFactor(items: AraQuestion[], perFactor: number): AraQuesti
 }
 
 /**
+ * Cap each pillar's Layer-1 questions to `perPillar` - the CUSTOM-SCOPE length
+ * lever (migration 00198; e.g. HR department, 8 pillars x 6 questions = 48).
+ * Same discipline as capPerFactor: objective items first, then ratings, ordered
+ * by question_number, so the reduced form is deterministic and identical for
+ * every respondent. Exported so saveAraAnswer can verify a submitted pillar
+ * item is in the SERVED (kept) set - the write path must mirror this cap.
+ */
+export function capPerPillar(items: AraQuestion[], perPillar: number): AraQuestion[] {
+  const byPillar = new Map<string, AraQuestion[]>();
+  for (const q of items) {
+    const p = (q.pillar_id ?? "") as string;
+    const arr = byPillar.get(p);
+    if (arr) arr.push(q);
+    else byPillar.set(p, [q]);
+  }
+  const byNum = (a: AraQuestion, b: AraQuestion) =>
+    (a.question_number ?? 0) - (b.question_number ?? 0);
+  const out: AraQuestion[] = [];
+  for (const arr of byPillar.values()) {
+    const objective = arr.filter((q) => q.question_type !== "rating").sort(byNum);
+    const rating = arr.filter((q) => q.question_type === "rating").sort(byNum);
+    const keepObjective = objective.slice(0, perPillar);
+    const keepRating = rating.slice(0, Math.max(0, perPillar - keepObjective.length));
+    out.push(...keepObjective, ...keepRating);
+  }
+  return out;
+}
+
+/**
  * Load the Layer-1 question set applicable to this respondent.
  *
  * Three deployment modes:
@@ -217,7 +246,14 @@ export async function loadQuestionsForRespondent(
       .is("individual_factor_id", null)
       .is("agentic_dimension_id", null)
       .returns<AraQuestion[]>();
-    collected.push(...(data ?? []));
+    let pillarItems = data ?? [];
+    // Custom-scope length lever (migration 00198): cap each pillar to N items,
+    // curated order (objective first). NULL/undefined = full standard form.
+    const perPillar = (ctx.assessment as { questions_per_pillar?: number | null }).questions_per_pillar;
+    if (typeof perPillar === "number" && perPillar > 0) {
+      pillarItems = capPerPillar(pillarItems, perPillar);
+    }
+    collected.push(...pillarItems);
   }
 
   // ── Individual layer (Mode A, Mode B) ──

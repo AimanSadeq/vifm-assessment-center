@@ -376,6 +376,17 @@ export default async function AraAssessmentDetailPage({
                       {stage.is_pro_bono && <Sparkles className="h-2.5 w-2.5" />}
                       {t("araAssessmentDetail.stage_prefix", { number: stage.number })} · {stage.label_en}
                     </span>
+                    {/* Custom-scope marker (migration 00198): flags a non-standard
+                        pillar set and/or a per-pillar question budget. */}
+                    {(((assessment as { questions_per_pillar?: number | null }).questions_per_pillar ?? null) != null ||
+                      pillarsInScope.length !== (stage.applicable_pillars?.length ?? pillarsInScope.length)) && (
+                      <span className="inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-widest bg-sky-50 text-sky-700 border border-sky-200">
+                        Custom scope · {pillarsInScope.length} pillars
+                        {((assessment as { questions_per_pillar?: number | null }).questions_per_pillar ?? null) != null
+                          ? ` · ${(assessment as { questions_per_pillar?: number | null }).questions_per_pillar}/pillar`
+                          : ""}
+                      </span>
+                    )}
                     <span className="ara-eyebrow">
                       {assessment.assessment_year}
                     </span>

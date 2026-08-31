@@ -394,7 +394,7 @@ export async function createReassessmentFromPrior(
     "pillars_in_scope, include_agentic_layer, include_individual_layer, assessment_tier";
   let { data: prior, error: priorErr } = await sb
     .from("ara_assessments")
-    .select(`${PRIOR_CORE_COLS}, time_limit_minutes, talent_lens, items_per_factor`)
+    .select(`${PRIOR_CORE_COLS}, time_limit_minutes, talent_lens, items_per_factor, questions_per_pillar`)
     .eq("id", priorAssessmentId)
     .maybeSingle<{
       id: string;
@@ -417,6 +417,7 @@ export async function createReassessmentFromPrior(
       time_limit_minutes: number | null;
       talent_lens: string | null;
       items_per_factor: number | null;
+      questions_per_pillar: number | null;
     }>();
   if (priorErr) {
     const code = (priorErr as { code?: string }).code;
@@ -427,7 +428,7 @@ export async function createReassessmentFromPrior(
         .eq("id", priorAssessmentId)
         .maybeSingle<NonNullable<typeof prior>>());
       if (prior) {
-        prior = { ...prior, time_limit_minutes: null, talent_lens: null, items_per_factor: null };
+        prior = { ...prior, time_limit_minutes: null, talent_lens: null, items_per_factor: null, questions_per_pillar: null };
       }
     }
   }
@@ -503,6 +504,7 @@ export async function createReassessmentFromPrior(
   if (prior.time_limit_minutes != null) insertPayload.time_limit_minutes = prior.time_limit_minutes;
   if (prior.talent_lens) insertPayload.talent_lens = prior.talent_lens;
   if (prior.items_per_factor != null) insertPayload.items_per_factor = prior.items_per_factor;
+  if (prior.questions_per_pillar != null) insertPayload.questions_per_pillar = prior.questions_per_pillar;
 
   let { data: created, error: insertErr } = await sb
     .from("ara_assessments")
@@ -512,8 +514,8 @@ export async function createReassessmentFromPrior(
   if (insertErr) {
     const code = (insertErr as { code?: string }).code;
     if (code === "42703" || code === "PGRST204") {
-      const { time_limit_minutes: _limit, talent_lens: _lens, items_per_factor: _cap, ...core } = insertPayload;
-      void _limit; void _lens; void _cap;
+      const { time_limit_minutes: _limit, talent_lens: _lens, items_per_factor: _cap, questions_per_pillar: _qpp, ...core } = insertPayload;
+      void _limit; void _lens; void _cap; void _qpp;
       ({ data: created, error: insertErr } = await sb
         .from("ara_assessments")
         .insert(core)

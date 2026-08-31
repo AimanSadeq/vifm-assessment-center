@@ -58,6 +58,10 @@ export const createAraAssessmentSchema = z.object({
   // exactly 6; Enterprise is always all 8 (NULL skips the override).
   // Cardinality is checked at the action level after the stage is known.
   pillars_in_scope: z.array(araPillarSchema).nullable().optional(),
+  // Custom-scope question budget (migration 00198): cap each in-scope pillar to
+  // N Layer-1 questions. NULL = full standard form. Only settable when the
+  // wizard's custom-scope toggle is on (checked at the action level).
+  questions_per_pillar: z.coerce.number().int().min(1).max(20).nullable().optional(),
   // Optional per-instance time limit in minutes (migration 00084). NULL = no limit.
   time_limit_minutes: z.coerce.number().int().min(1).max(600).nullable().optional(),
 });

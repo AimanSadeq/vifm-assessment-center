@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslation } from "react-i18next";
-import { Check, Loader2, AlertCircle, HelpCircle, Zap, Save, ArrowDownCircle, Flag } from "lucide-react";
+import { Check, Loader2, AlertCircle, Zap, Save, ArrowDownCircle, Flag } from "lucide-react";
 import { AssessmentIntro, type IntroPoint } from "@/components/shared/assessment-intro";
 import { saveAraAnswer, markAraRespondentStarted, markAraRespondentComplete, simulateAraAnswers } from "@/lib/ara/respondent-actions";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
@@ -228,14 +228,21 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
         arr.sort((a, b) => a.question_number - b.question_number)
       )
     );
+    // Sequential display numbering ACROSS THE WHOLE SERVED FORM (client
+    // feedback 2026-08-31: bank question_numbers jump on subset forms - e.g. a
+    // custom-scope run showed Q4, Q7, Q17...). Numbered in the exact section
+    // render order below (pillars -> individual factors -> agentic), so every
+    // respondent sees Q1..Qn regardless of which bank items were served.
     const displayNumberById = new Map<string, number>();
     let counter = 0;
+    ARA_PILLARS.forEach((p) => {
+      (byPillar.get(p.id) ?? []).forEach((q) => displayNumberById.set(q.id, ++counter));
+    });
     ARA_INDIVIDUAL_FACTORS.forEach((factor) => {
-      const arr = byFactor.get(factor.id) ?? [];
-      arr.forEach((q) => {
-        counter += 1;
-        displayNumberById.set(q.id, counter);
-      });
+      (byFactor.get(factor.id) ?? []).forEach((q) => displayNumberById.set(q.id, ++counter));
+    });
+    ARA_AGENTIC_DIMENSIONS.forEach((d) => {
+      (byAgentic.get(d.id) ?? []).forEach((q) => displayNumberById.set(q.id, ++counter));
     });
     return { byPillar, byFactor, byAgentic, displayNumberById };
   }, [questions]);
@@ -818,6 +825,7 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                   answer={state[q.id]}
                   language={language}
                   onAnswer={updateAnswer}
+                  displayNumber={displayNumberById.get(q.id)}
                 />
               ))}
             </div>
@@ -920,6 +928,7 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
                   answer={state[q.id]}
                   language={language}
                   onAnswer={updateAnswer}
+                  displayNumber={displayNumberById.get(q.id)}
                 />
               ))}
             </div>
@@ -967,8 +976,6 @@ function QuestionRow({
 }) {
   const rtl = language === "ar";
   const text = rtl ? question.question_text_ar : question.question_text_en;
-  const helpText = rtl ? question.help_text_ar : question.help_text_en;
-  const [helpOpen, setHelpOpen] = useState(false);
   const codeNumber = displayNumber ?? question.question_number;
 
   // Every question shows its response type so respondents can tell a
@@ -996,21 +1003,8 @@ function QuestionRow({
             <span className="text-muted-foreground me-2">Q{codeNumber}.</span>
             {text}
           </p>
-          {helpText && (
-            <button
-              type="button"
-              onClick={() => setHelpOpen((v) => !v)}
-              className="mt-1 text-xs text-accent hover:underline inline-flex items-center gap-1"
-            >
-              <HelpCircle className="h-3 w-3" />
-              {helpOpen ? (rtl ? "إخفاء التلميح" : "Hide hint") : (rtl ? "عرض التلميح" : "Show hint")}
-            </button>
-          )}
-          {helpOpen && helpText && (
-            <p className="mt-2 text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
-              {helpText}
-            </p>
-          )}
+          {/* Hint affordance removed (client request 2026-08-31): help_text stays
+              in the bank for the consultant guide but is not respondent-facing. */}
         </div>
         <SaveIndicator state={answer?.state ?? "idle"} error={answer?.error} rtl={rtl} />
       </div>
@@ -1112,9 +1106,26 @@ function QuestionInput({
     type === "situational_judgment" ||
     type === "knowledge_check"
   ) {
+    // The bank stores options in TWO shapes: plain strings (the CSV import /
+    // question editor path - the majority) and {value,label} objects (some
+    // seeds). Normalize both so neither renders blank rows; for strings the
+    // option text IS the stored answer value (score_map keys on the text).
+    // Mirrors the admin question editor's normalization.
+    const normalized = (options && Array.isArray(options) ? options : [])
+      .map((o: unknown) => {
+        if (typeof o === "string") return o.trim() ? { value: o, label: o } : null;
+        if (o && typeof o === "object") {
+          const rec = o as { value?: unknown; label?: unknown };
+          const label = typeof rec.label === "string" ? rec.label : null;
+          if (!label) return null;
+          return { value: typeof rec.value === "string" ? rec.value : label, label };
+        }
+        return null;
+      })
+      .filter((o): o is { value: string; label: string } => o !== null);
     const opts =
-      options && Array.isArray(options) && options.length > 0
-        ? options
+      normalized.length > 0
+        ? normalized
         : type === "yes_no"
           ? [
               { value: "yes", label: rtl ? "نعم" : "Yes" },

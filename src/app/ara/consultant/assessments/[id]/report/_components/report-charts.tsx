@@ -30,7 +30,11 @@ export function PillarProfileChart({ items, benchmark = 4, lang = "en" }: {
 }) {
   const rtl = lang === "ar";
   const sorted = [...items].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  const W = 520, LABEL_W = 150, VALUE_W = 34, ROW_H = 19, GAP = 5, TOP = 16, BOTTOM = 14;
+  // LABEL_W is sized for the LONGEST canonical pillar name ("Governance,
+  // Ethics & Compliance" / "Operations & Use Case Portfolio", both 31 chars).
+  // At 150 it clipped exactly those two to "...Portfol…" - on a chart whose
+  // only job is to name pillars, two of eight were unreadable.
+  const W = 520, LABEL_W = 172, VALUE_W = 34, ROW_H = 19, GAP = 5, TOP = 16, BOTTOM = 14;
   const chartW = W - LABEL_W - VALUE_W;
   const H = TOP + sorted.length * (ROW_H + GAP) - GAP + BOTTOM;
   const x = (v: number) => LABEL_W + (Math.max(0, Math.min(5, v)) / 5) * chartW;
@@ -57,7 +61,7 @@ export function PillarProfileChart({ items, benchmark = 4, lang = "en" }: {
         return (
           <g key={it.label}>
             <text x={LABEL_W - 8} y={y + ROW_H / 2 + 3} textAnchor="end" fontFamily={FONT} fontSize={8.5} fontWeight={600} fill={TOKENS.ink2}>
-              {it.label.length > 30 ? it.label.slice(0, 29) + "…" : it.label}
+              {it.label.length > 38 ? it.label.slice(0, 37) + "…" : it.label}
             </text>
             {/* track */}
             <rect x={LABEL_W} y={y + 4} width={chartW} height={ROW_H - 8} fill={TOKENS.bgPanel} stroke={TOKENS.line} strokeWidth={0.75} />

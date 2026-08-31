@@ -3,9 +3,32 @@
 // (React-PDF for the personal EN report, Puppeteer HTML for the personal AR
 // report and the org report) can lay it out in its own way.
 
+import { ARA_MATURITY_LEVELS } from "@/lib/constants/ara-pillars";
+import { ARA_RETENTION_YEARS } from "@/lib/constants/ara-retention";
+
 export type FactSheetRow = { label: string; value: string };
 
 const METHODOLOGY_URL = "caliber.viftraining.com/api/ara/methodology/pdf";
+
+/**
+ * The maturity ladder, spelled out FROM the canonical constant.
+ *
+ * This row used to hand-type a CMMI-style ladder ("initial, developing,
+ * defined, managed, optimised") that exists nowhere else in ARC - every other
+ * surface in the same report reads ARA_MATURITY_LEVELS (Unaware / Exploring /
+ * Developing / Advancing / Leading). A reader who reached the appendix was
+ * handed a second, contradictory vocabulary for the number on page 1.
+ */
+export function maturityLadder(lang: "en" | "ar"): string {
+  return ARA_MATURITY_LEVELS.map(
+    (l) => `L${l.level} ${lang === "ar" ? l.label_ar : l.label_en}`
+  ).join(lang === "ar" ? "، " : ", ");
+}
+
+/** Retention sentence, derived so it can never drift from what we enforce. */
+export function retentionYears(): number {
+  return ARA_RETENTION_YEARS;
+}
 
 /** Personal snapshot / deep-dive fact sheet. */
 export function personalFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
@@ -74,17 +97,18 @@ export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
       {
         label: "الصيغة والبنود",
         value:
-          "بنود وفق مقياس نضج (مبدئي ← مُحسَّن) إضافة إلى بنود نعم/لا وإجابات قصيرة، وتُحتسب كمستوى نضج لكل ركيزة.",
+          "بنود وفق مقياس نضج (من أدنى درجة إلى أعلاها) إضافة إلى بنود نعم/لا وإجابات قصيرة، وتُحتسب كمستوى نضج لكل ركيزة.",
       },
       {
         label: "قراءة الدرجة",
-        value:
-          "تُقيَّم كل ركيزة على مقياس نضج من خمسة مستويات: مبدئي، قيد التطوير، مُعرَّف، مُدار، مُحسَّن.",
+        value: `تُحتسب لكل ركيزة درجة من 1.00 إلى 5.00 تُحدِّد موقعها على سُلَّم النضج ذي المستويات الخمسة: ${maturityLadder(
+          "ar"
+        )}. والدرجة 4.00 هي مستوى "الجاهزية للذكاء الاصطناعي" المستهدف، وليست سقف المقياس.`,
       },
       {
         label: "حدود صريحة",
         value:
-          "تقرير ذاتي (تُخفِّف ورشة التحقق في المرحلة الثانية من أثره)؛ مُعايَر مقابل الأطر التنظيمية في الإمارات والسعودية؛ تُقفل النتائج على نسخة بنك الأسئلة النشطة عند الإنشاء لضمان قابلية التكرار.",
+          "تقرير ذاتي (تُخفِّف ورشة التحقق في المرحلة الثانية من أثره)؛ ويُقيَّم الامتثال مقابل الأطر التنظيمية السارية على العميل في الإمارات أو السعودية؛ تُقفل النتائج على نسخة بنك الأسئلة النشطة عند الإنشاء لضمان قابلية التكرار.",
       },
       { label: "المنهجية", value: `موجز المنهجية الكامل: ${METHODOLOGY_URL}` },
     ];
@@ -99,12 +123,13 @@ export function orgFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
     {
       label: "Format & items",
       value:
-        "Capability-rubric items (initial through optimised) plus yes/no and short-answer items, scored as a maturity level per pillar.",
+        "Capability-rubric items (lowest to highest rung of the maturity ladder) plus yes/no and short-answer items, scored as a maturity level per pillar.",
     },
     {
       label: "Reading the score",
-      value:
-        "Each pillar is scored on a 5-level capability scale: initial, developing, defined, managed, optimised.",
+      value: `Each pillar averages to a 1.00-5.00 score, which places it on the five-level maturity ladder: ${maturityLadder(
+        "en"
+      )}. 4.00 is the AI Ready target, not the top of the scale.`,
     },
     {
       label: "Honest limits",

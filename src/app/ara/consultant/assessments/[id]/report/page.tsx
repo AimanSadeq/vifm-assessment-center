@@ -26,6 +26,7 @@ import { araAssessmentProvisional } from "@/lib/ara/provisional";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { ProvisionalReportStrip } from "@/components/shared/provisional-banner";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
+import { ARA_RETENTION_YEARS } from "@/lib/constants/ara-retention";
 import {
   SectionHeader, StatTile, Metric, FindingCard, inferFindingType,
   Callout, EmptyCallout, StatusChip, FindingsPanel, RecommendationCard,
@@ -315,6 +316,21 @@ export default async function AraReportPage({
   // % of the 4.00 AI Ready target - the headline way scores are expressed in
   // this report (a signed gap like "+1.69" read as being AHEAD of target).
   const pctOfTarget = (score: number) => Math.round((score / 4.0) * 100);
+
+  // Roster layout. Column presence is decided ONCE over the whole roster so the
+  // profile page and its continuation pages never disagree about the columns;
+  // a column nobody has data for is dropped rather than printed as "-".
+  const rosterShowRole = (respondents ?? []).some((r: any) => r.role_label_en);
+  const rosterShowPillars = (respondents ?? []).some(
+    (r: any) => (r.assignments ?? []).length > 0
+  );
+  const rosterCols = 2 + (rosterShowRole ? 1 : 0) + (rosterShowPillars ? 1 : 0);
+  // A Name+Status roster renders two-up (see RespondentTable), so twice the
+  // names fit per page. The first page is smaller: it shares the sheet with the
+  // client-details and methodology tables.
+  const rosterTwoUp = rosterCols === 2;
+  const ROSTER_FIRST_PAGE = rosterTwoUp ? 28 : 16;
+  const ROSTER_PER_PAGE = rosterTwoUp ? 44 : 22;
   const strengths: Array<{ pillar: string; score: number }> = [];
   const approaching: Array<{ pillar: string; score: number }> = [];
   const gaps: Array<{ pillar: string; score: number; gap: number }> = [];
@@ -610,25 +626,36 @@ export default async function AraReportPage({
             </div>
           </div>
 
-          {/* Findings panels */}
+          {/* Findings panels.
+              Both panels list EVERY pillar in their category, not a top-3 slice.
+              The slice silently dropped pillars the narrative had just counted:
+              on an 8-pillar run reading "4 approaching it, and 4 requiring
+              focus", the panels showed 3 and 3, leaving a reader to hunt for two
+              pillars that appear nowhere on the page. The two lists now sum to
+              the scored in-scope pillars, so the counts in the sentence above
+              and the rows below always reconcile. */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr",
             gap: "12pt", marginTop: "18pt" }}>
             <FindingsPanel
               variant="strength"
-              title={strengths.length > 0 ? "Headline strengths" : "Relative strengths"}
-              emptyMessage={undefined}
-              items={(strengths.length > 0
-                ? strengths.slice(0, 3)
-                : [...approaching, ...gaps].sort((a, b) => b.score - a.score).slice(0, 3)
-              ).map(s => ({
-                headline: s.pillar,
-                metric: `${s.score.toFixed(2)} · ${pctOfTarget(s.score)}% of target`,
-              }))}
+              title={
+                strengths.length > 0
+                  ? `At or approaching target (${strengths.length + approaching.length})`
+                  : `Closest to target (${approaching.length})`
+              }
+              emptyMessage="No pillar reached 3.00 in this run."
+              items={[...strengths, ...approaching]
+                .sort((a, b) => b.score - a.score)
+                .map(s => ({
+                  headline: s.pillar,
+                  metric: `${s.score.toFixed(2)} · ${pctOfTarget(s.score)}% of target`,
+                }))}
             />
             <FindingsPanel
               variant="gap"
-              title="Critical gaps"
-              items={gaps.slice(0, 3).map(g => ({
+              title={`Requiring focus (${gaps.length})`}
+              emptyMessage="Every in-scope pillar is at 3.00 or above."
+              items={gaps.map(g => ({
                 headline: g.pillar,
                 metric: `${g.score.toFixed(2)} · ${pctOfTarget(g.score)}% of target`,
               }))}
@@ -1012,14 +1039,31 @@ export default async function AraReportPage({
          * section may bleed a tail onto the next page). First page holds the
          * intro + the first frameworks; continuations carry their own header. */}
         {(() => {
+          // Chunk on TIER boundaries, never mid-tier. The old flat slice-by-count
+          // split Tier 2 across two pages, and because ComplianceSummary counts
+          // the frameworks IT is handed, both pages announced "TIER 2 · 1
+          // FRAMEWORK" for a tier that holds two. Keeping a tier whole makes the
+          // count true and the grouping readable. tierTotals is passed as a
+          // belt-and-braces truth source in case a single tier ever outgrows a
+          // page and has to be split anyway.
           const FIRST = 5, PER_PAGE = 7;
+          const tierTotals: Record<number, number> = {};
+          for (const f of complianceSummaries) tierTotals[f.tier] = (tierTotals[f.tier] ?? 0) + 1;
+          const byTier = [1, 2, 3]
+            .map((tier) => complianceSummaries.filter((f) => f.tier === tier))
+            .filter((g) => g.length > 0);
           const chunks: (typeof complianceSummaries)[] = [];
-          if (complianceSummaries.length <= FIRST + 1) {
-            chunks.push(complianceSummaries);
-          } else {
-            chunks.push(complianceSummaries.slice(0, FIRST));
-            for (let i = FIRST; i < complianceSummaries.length; i += PER_PAGE) {
-              chunks.push(complianceSummaries.slice(i, i + PER_PAGE));
+          for (const group of byTier) {
+            const capFor = (i: number) => (i === 0 ? FIRST : PER_PAGE);
+            const last = chunks[chunks.length - 1];
+            if (last && last.length + group.length <= capFor(chunks.length - 1)) {
+              last.push(...group);
+              continue;
+            }
+            // A tier that cannot fit on a page of its own is split; every other
+            // tier stays whole.
+            for (let i = 0; i < group.length; i += capFor(chunks.length)) {
+              chunks.push(group.slice(i, i + capFor(chunks.length)));
             }
           }
           return chunks.map((chunk, ci) => (
@@ -1028,19 +1072,54 @@ export default async function AraReportPage({
                 {t("compliance_summary")}{ci > 0 ? (rtl ? " (تتمة)" : " (continued)") : ""}
               </h2>
               {ci === 0 && (
+                <>
                 <p className="report-body">
-                  Compliance status against frameworks applicable to {region}, {sectorLabel.toLowerCase()} sector.
-                  Each framework is scored as a weighted percentage of met + partial requirements.
+                  Readiness against the regulatory frameworks applicable to {region},{" "}
+                  {sectorLabel.toLowerCase()} sector. Each requirement is mapped to the
+                  assessment responses that evidence it and marked met, partial, or
+                  action needed; the percentage counts a met requirement in full and a
+                  partial one at half weight.
                 </p>
+                {/* Says what this IS. Without it, a page of framework names and
+                    percentages reads as a legal compliance audit, which it is
+                    not - it is derived from self-reported readiness answers. */}
+                <p className="report-body report-muted" style={{ fontSize: "9pt", marginTop: "-6pt" }}>
+                  This is a readiness indication derived from the assessment
+                  responses, not a legal or certification audit. Requirements are
+                  verified against evidence in the Phase 2 workshop.
+                </p>
+                </>
               )}
-              <ComplianceSummary frameworks={chunk} />
+              <ComplianceSummary frameworks={chunk} tierTotals={tierTotals} />
+              {/* The detector fires on EITHER of two very different signals, and
+                  the copy must say which. Previously both produced the same
+                  sentence asserting that employees are using public AI tools -
+                  a claim about observed behaviour that the low-governance branch
+                  (any governance item scored <= 2.0) provides no evidence for at
+                  all. Naming the evidence is the difference between a finding
+                  and an accusation. */}
               {ci === chunks.length - 1 && shadowAi.triggered && (
-                <Callout tone="danger" title="Shadow AI Alert">
-                  Assessment responses indicate employees may be using public AI
-                  tools without formal organizational approval. This creates potential
-                  violations of data protection and cybersecurity regulations in {region}.
-                  Immediate action required.
-                </Callout>
+                shadowAi.matches.length > 0 ? (
+                  <Callout tone="danger" title="Shadow AI: named in responses">
+                    {shadowAi.matches.length} open-text{" "}
+                    {shadowAi.matches.length === 1 ? "response names" : "responses name"}{" "}
+                    a public AI tool by name. Where such use is not covered by an
+                    approved acceptable-use policy, it carries data-protection and
+                    cybersecurity exposure under the {region} frameworks above.
+                    Confirm in the Phase 2 workshop which of these tools are
+                    sanctioned, and for what data.
+                  </Callout>
+                ) : (
+                  <Callout tone="warn" title="Unsanctioned AI use would go undetected">
+                    No respondent named a public AI tool. What the responses do show
+                    is weak AI governance ({shadowAi.low_governance_scores.length}{" "}
+                    governance {shadowAi.low_governance_scores.length === 1 ? "answer" : "answers"}{" "}
+                    at level 2 or below), which means the organization currently has
+                    no reliable way to know whether staff are using public AI tools
+                    with work data. This is a control gap, not a finding of misuse.
+                    An acceptable-use policy with a monitoring route closes it.
+                  </Callout>
+                )
               )}
             </section>
           ));
@@ -1303,20 +1382,59 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── PAGE 27 - Next Steps ─── */}
+        {/* ─── PAGE 27 - Next Steps ─── *
+         * The lead-in claims these services are "mapped to the gaps identified
+         * in this assessment", but the list was hardcoded and identical for
+         * every client - the same defect the per-pillar recommendations had.
+         * Each service now declares which pillars it answers, the list is
+         * ORDERED by this cohort's gaps, and the ones that address a pillar
+         * requiring focus say which. Services matching no gap still appear (a
+         * client may want them) but sort last and make no tailored claim. */}
         <section className="report-page">
           <h2 className="report-h2">{t("next_steps")}</h2>
           <p className="report-body">
-            Virginia Institute of Finance and Management (VIFM) offers targeted
-            services mapped to the gaps identified in this assessment:
+            Virginia Institute of Finance and Management (VIFM) offers the
+            following services. They are ordered by the gaps this assessment
+            found, strongest match first:
           </p>
-          <ul className="report-body">
-            <li><strong>AI Strategy Workshop</strong> - co-design a 12-month AI roadmap aligned to your business goals.</li>
-            <li><strong>Data Foundations Programme</strong> - data quality, governance, and sovereignty.</li>
-            <li><strong>AI Governance Playbook</strong> - policy templates, acceptable-use frameworks, DPIAs tailored to {region}.</li>
-            <li><strong>AI Talent Development</strong> - role-based learning paths for leaders, specialists, and all staff.</li>
-            <li><strong>Annual Reassessment</strong> - track progress year-on-year against the same benchmark.</li>
-          </ul>
+          {(() => {
+            const gapByPillar = new Map(gaps.map((g) => [g.pillar, g.score]));
+            const services: Array<{
+              name: string; blurb: string; pillars: string[];
+            }> = [
+              { name: "AI Strategy Workshop", blurb: `co-design a 12-month AI roadmap aligned to your business goals.`, pillars: ["Strategy & Vision"] },
+              { name: "Data Foundations Programme", blurb: `data quality, governance, and sovereignty.`, pillars: ["Data Foundations"] },
+              { name: "AI Governance Playbook", blurb: `policy templates, acceptable-use frameworks, and DPIAs tailored to ${region}.`, pillars: ["Governance, Ethics & Compliance", "Model Management & Monitoring"] },
+              { name: "AI Talent Development", blurb: `role-based learning paths for leaders, specialists, and all staff.`, pillars: ["Talent & Skills", "Culture & Change Readiness"] },
+              { name: "Annual Reassessment", blurb: `track progress year-on-year against the same benchmark.`, pillars: [] },
+            ];
+            const matched = services.map((s) => {
+              const hits = s.pillars.filter((p) => gapByPillar.has(p));
+              const worst = hits.length
+                ? Math.min(...hits.map((p) => gapByPillar.get(p)!))
+                : Number.POSITIVE_INFINITY;
+              return { ...s, hits, worst };
+            });
+            matched.sort((a, b) => a.worst - b.worst);
+            return (
+              <ul className="report-body">
+                {matched.map((s) => (
+                  <li key={s.name}>
+                    <strong>{s.name}</strong> - {s.blurb}
+                    {s.hits.length > 0 && (
+                      <span className="report-muted">
+                        {" "}Addresses {s.hits.join(" and ")}, currently{" "}
+                        {s.hits
+                          .map((p) => `${gapByPillar.get(p)!.toFixed(2)} (${pctOfTarget(gapByPillar.get(p)!)}% of target)`)
+                          .join(" and ")}
+                        .
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            );
+          })()}
           <p className="report-body" style={{ marginTop: "16pt" }}>
             To discuss engagement, contact your VIFM consultant or
             email <strong>contact@viftraining.com</strong>.
@@ -1345,30 +1463,48 @@ export default async function AraReportPage({
                 <tbody>
                   <tr><td style={cellLabel}>Question bank</td><td style={cell}>v{version?.version_number ?? "-"} {version?.version_label && `· ${version.version_label}`}</td></tr>
                   <tr><td style={cellLabel}>Phase</td><td style={cell}>{assessment.phase.replace("phase", "Phase ")}</td></tr>
-                  <tr><td style={cellLabel}>Status</td><td style={cell}>{assessment.status}</td></tr>
-                  <tr><td style={cellLabel}>Scores frozen</td><td style={cell}>{overallScore?.score_frozen_at ? new Date(overallScore.score_frozen_at).toLocaleDateString() : "Not yet"}</td></tr>
+                  {/* Raw enum values ("active") and internal ops shorthand
+                      ("Not yet") were leaking into a client deliverable. Both
+                      now read as a sentence a client can act on. */}
+                  <tr>
+                    <td style={cellLabel}>Scores</td>
+                    <td style={cell}>
+                      {overallScore?.score_frozen_at
+                        ? `Final, locked ${new Date(overallScore.score_frozen_at).toLocaleDateString()}`
+                        : "Preliminary - not yet locked"}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
           </div>
 
           <h3 className="report-h3">Respondents ({(respondents ?? []).length})</h3>
-          <RespondentTable rows={(respondents ?? []).slice(0, 16)} />
+          <RespondentTable
+            rows={(respondents ?? []).slice(0, ROSTER_FIRST_PAGE)}
+            showRole={rosterShowRole}
+            showPillars={rosterShowPillars}
+          />
         </section>
 
         {/* Roster continuation pages - clean full pages, no bleed (client
             feedback 2026-08-31). 16 rows share page 4 with the profile; the
             remainder paginates at 30 rows per page. */}
         {(() => {
-          const rest = Math.max(0, (respondents ?? []).length - 16);
+          const all = respondents ?? [];
+          const rest = Math.max(0, all.length - ROSTER_FIRST_PAGE);
           if (rest === 0) return null;
-          const pages = Math.ceil(rest / 22);
+          const pages = Math.ceil(rest / ROSTER_PER_PAGE);
           const per = Math.ceil(rest / pages); // even distribution - no orphan page
           return Array.from({ length: pages }, (_, pi) => (
             <section key={pi} className="report-page">
               <h2 className="report-h2">{t("org_profile")}{rtl ? " (تتمة)" : " (continued)"}</h2>
               <h3 className="report-h3">Respondents (continued)</h3>
-              <RespondentTable rows={(respondents ?? []).slice(16 + pi * per, 16 + (pi + 1) * per)} />
+              <RespondentTable
+                rows={all.slice(ROSTER_FIRST_PAGE + pi * per, ROSTER_FIRST_PAGE + (pi + 1) * per)}
+                showRole={rosterShowRole}
+                showPillars={rosterShowPillars}
+              />
             </section>
           ));
         })()}
@@ -1506,11 +1642,18 @@ export default async function AraReportPage({
             high-investment initiative before budget allocation.
           </p>
 
+          {/* The window is READ from ARA_RETENTION_YEARS - the same constant the
+              purge job enforces. It previously said "three years" while the
+              platform deleted at two, so the notice both contradicted the
+              maximum-2-year commitment we sell on and promised the client
+              access to data that would already be gone. */}
           <h3 className="report-h3">Data retention notice</h3>
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
-            Client assessment data is retained for three years after archival.
-            Generated reports are retained indefinitely as VIFM business records.
-            To request data erasure, contact VIFM directly.
+            Client assessment data is retained for a maximum of {ARA_RETENTION_YEARS}{" "}
+            years from archival unless contractually extended, after which the
+            assessment record and its supporting materials are purged. Generated
+            reports are detached and retained as VIFM business records. To request
+            erasure sooner, contact VIFM directly.
           </p>
         </section>
       </div>
@@ -1523,14 +1666,57 @@ export default async function AraReportPage({
 // ─────────────────────────────────────────────────────────────
 /** Respondent roster table - extracted so the roster can paginate across
  *  clean report pages (16 rows on the profile page, 30 per continuation). */
-function RespondentTable({ rows }: { rows: any[] }) {
+/**
+ * Roster table. Columns that are empty for EVERY respondent are dropped rather
+ * than printed as a column of "-": on a run where nobody carries a role label
+ * or a per-pillar assignment (the common case), the old fixed four-column table
+ * spent half its width on two blank columns and pushed a 40-person roster
+ * across three pages.
+ *
+ * `showRole` / `showPillars` are decided once by the caller over the WHOLE
+ * roster, so continuation pages keep the same columns as the first.
+ */
+function RespondentTable({
+  rows,
+  showRole,
+  showPillars,
+  split = true,
+}: {
+  rows: any[];
+  showRole: boolean;
+  showPillars: boolean;
+  /** Internal: false on the recursive halves so the split happens exactly once. */
+  split?: boolean;
+}) {
+  // With only Name + Status the table is narrow, so a single column left half
+  // the page empty and pushed a 40-person roster over the page break. Split it
+  // into two side-by-side tables: same rows, half the height.
+  if (split && !showRole && !showPillars && rows.length > 8) {
+    const half = Math.ceil(rows.length / 2);
+    return (
+      <div style={{ display: "flex", gap: "16pt", alignItems: "flex-start" }}>
+        {[rows.slice(0, half), rows.slice(half)].map((part, i) => (
+          <div key={i} style={{ flex: 1, minWidth: 0 }}>
+            {part.length > 0 && (
+              <RespondentTable
+                rows={part}
+                showRole={false}
+                showPillars={false}
+                split={false}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
   return (
     <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
       <thead>
         <tr style={{ background: "#f3f4f6" }}>
           <th style={cellHead}>Name</th>
-          <th style={cellHead}>Role</th>
-          <th style={cellHead}>Pillars assigned</th>
+          {showRole && <th style={cellHead}>Role</th>}
+          {showPillars && <th style={cellHead}>Pillars assigned</th>}
           <th style={cellHead}>Status</th>
         </tr>
       </thead>
@@ -1538,12 +1724,14 @@ function RespondentTable({ rows }: { rows: any[] }) {
         {rows.map((r: any, i: number) => (
           <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
             <td style={cell}><strong>{r.name}</strong></td>
-            <td style={cell}>{r.role_label_en ?? "-"}</td>
-            <td style={cell}>
-              {(r.assignments ?? []).length === 0
-                ? "-"
-                : r.assignments.map((a: any) => ARA_PILLARS.find((p) => p.id === a.pillar_id)?.name_en ?? a.pillar_id).join(", ")}
-            </td>
+            {showRole && <td style={cell}>{r.role_label_en ?? "-"}</td>}
+            {showPillars && (
+              <td style={cell}>
+                {(r.assignments ?? []).length === 0
+                  ? "-"
+                  : r.assignments.map((a: any) => ARA_PILLARS.find((p) => p.id === a.pillar_id)?.name_en ?? a.pillar_id).join(", ")}
+              </td>
+            )}
             <td style={cell}>{r.completed_at ? "Completed" : "In progress"}</td>
           </tr>
         ))}

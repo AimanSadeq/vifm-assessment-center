@@ -46,10 +46,15 @@ export function MaturityGauge({ score }: { score: number | null }) {
   // Canonical band lookup - the single source of truth in scoring.ts.
   const band = score != null ? overallBandFromScore(score) : null;
 
-  // Canvas extends below the hub so the score label (drawn clear of the
-  // needle sweep) is never clipped.
+  // Canvas must clear the LAST element in the stack under the hub, not the
+  // first: the band label baseline sits at CENTER + 76 = 226, so a 218-tall
+  // viewBox cropped it (the client saw "Early Stage" sliced in half). Height is
+  // derived from that baseline plus descender room so adding another line below
+  // can never silently clip again.
+  const BAND_BASELINE = CENTER + 76;
+  const HEIGHT = BAND_BASELINE + 10;
   return (
-    <svg viewBox="0 0 300 218" className="w-full max-w-md mx-auto">
+    <svg viewBox={`0 0 300 ${HEIGHT}`} className="w-full max-w-md mx-auto">
       {/* Bands - contiguous segments drawn FROM the canonical constant so the
           gauge can never desync from ARA_OVERALL_BANDS (display floor is 1.0
           by convention; the sub-1.0 tail of Not Ready is clamped visually). */}
@@ -119,7 +124,7 @@ export function MaturityGauge({ score }: { score: number | null }) {
       {band && (
         <text
           x={CENTER}
-          y={CENTER + 76}
+          y={BAND_BASELINE}
           textAnchor="middle"
           fontSize="12.5"
           fontWeight="600"

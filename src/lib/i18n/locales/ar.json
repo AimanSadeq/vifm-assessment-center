@@ -3295,7 +3295,7 @@
     "compliance_framework_count_other": "{{count}} أطر",
     "compliance_requirement_count_one": "{{count}} متطلب",
     "compliance_requirement_count_other": "{{count}} متطلبات",
-    "compliance_compliant": "ممتثل",
+    "compliance_compliant": "المتطلبات المغطّاة",
     "compliance_met": "ملبّى",
     "compliance_partial": "جزئي",
     "compliance_action": "إجراء",

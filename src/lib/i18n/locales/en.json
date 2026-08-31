@@ -3287,7 +3287,7 @@
     "compliance_framework_count_other": "{{count}} frameworks",
     "compliance_requirement_count_one": "{{count}} requirement",
     "compliance_requirement_count_other": "{{count}} requirements",
-    "compliance_compliant": "Compliant",
+    "compliance_compliant": "Requirements covered",
     "compliance_met": "Met",
     "compliance_partial": "Partial",
     "compliance_action": "Action",

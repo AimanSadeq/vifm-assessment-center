@@ -30,8 +30,16 @@ const percentColor = (percent: number | null) => {
  */
 export async function ComplianceSummary({
   frameworks,
+  tierTotals,
 }: {
   frameworks: FrameworkComplianceSummary[];
+  /**
+   * True count of frameworks per tier across the WHOLE assessment. The caller
+   * paginates, so counting the frameworks handed to one page understates a tier
+   * that had to be split - which is how a two-framework Tier 2 came to announce
+   * itself as "1 FRAMEWORK" on two consecutive pages.
+   */
+  tierTotals?: Record<number, number>;
 }) {
   const t = await getServerT();
 
@@ -63,9 +71,14 @@ export async function ComplianceSummary({
               color: TOKENS.mute, textTransform: "uppercase",
               fontWeight: 700, margin: "0 0 8pt",
             }}>
-              {tierLabel[tier]} · {rows.length === 1
-                ? t("araReport.compliance_framework_count_one", { count: rows.length })
-                : t("araReport.compliance_framework_count_other", { count: rows.length })}
+              {(() => {
+                const n = tierTotals?.[tier] ?? rows.length;
+                return `${tierLabel[tier]} · ${
+                  n === 1
+                    ? t("araReport.compliance_framework_count_one", { count: n })
+                    : t("araReport.compliance_framework_count_other", { count: n })
+                }`;
+              })()}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8pt" }}>
               {rows.map((f) => <FrameworkCard key={f.framework_id} f={f} t={t} />)}

@@ -73,10 +73,11 @@ export function MaturityGauge({ score }: { score: number | null }) {
         </>
       )}
 
-      {/* Score label */}
+      {/* Score label - sits BELOW the hub: the needle sweeps the upper half,
+          so a centred label was crossed out by the needle at mid-range scores. */}
       <text
         x={CENTER}
-        y={CENTER - 35}
+        y={CENTER + 42}
         textAnchor="middle"
         fontSize="32"
         fontWeight="600"
@@ -86,7 +87,7 @@ export function MaturityGauge({ score }: { score: number | null }) {
       </text>
       <text
         x={CENTER}
-        y={CENTER - 15}
+        y={CENTER + 60}
         textAnchor="middle"
         fontSize="11"
         fill="#6b7280"

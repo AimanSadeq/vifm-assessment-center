@@ -705,55 +705,6 @@ export default async function AraReportPage({
           </div>
         </section>
 
-        {/* ─── PAGE 4 - Organization Profile ─── */}
-        <section className="report-page">
-          <h2 className="report-h2">{t("org_profile")}</h2>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginBottom: "16pt" }}>
-            <div>
-              <h3 className="report-h3">Client details</h3>
-              <table className="report-body" style={{ width: "100%" }}>
-                <tbody>
-                  <tr><td style={cellLabel}>Organization</td><td style={cell}>{assessment.organization?.name ?? "-"}</td></tr>
-                  <tr><td style={cellLabel}>Region</td><td style={cell}>{region}</td></tr>
-                  <tr><td style={cellLabel}>Sector</td><td style={cell}>{sectorLabel}</td></tr>
-                  <tr><td style={cellLabel}>Assessment year</td><td style={cell}>{assessment.assessment_year}</td></tr>
-                </tbody>
-              </table>
-            </div>
-            <div>
-              <h3 className="report-h3">Methodology</h3>
-              <table className="report-body" style={{ width: "100%" }}>
-                <tbody>
-                  <tr><td style={cellLabel}>Question bank</td><td style={cell}>v{version?.version_number ?? "-"} {version?.version_label && `· ${version.version_label}`}</td></tr>
-                  <tr><td style={cellLabel}>Phase</td><td style={cell}>{assessment.phase.replace("phase", "Phase ")}</td></tr>
-                  <tr><td style={cellLabel}>Status</td><td style={cell}>{assessment.status}</td></tr>
-                  <tr><td style={cellLabel}>Scores frozen</td><td style={cell}>{overallScore?.score_frozen_at ? new Date(overallScore.score_frozen_at).toLocaleDateString() : "Not yet"}</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <h3 className="report-h3">Respondents ({(respondents ?? []).length})</h3>
-          <RespondentTable rows={(respondents ?? []).slice(0, 16)} />
-        </section>
-
-        {/* Roster continuation pages - clean full pages, no bleed (client
-            feedback 2026-08-31). 16 rows share page 4 with the profile; the
-            remainder paginates at 30 rows per page. */}
-        {(() => {
-          const rest = Math.max(0, (respondents ?? []).length - 16);
-          if (rest === 0) return null;
-          const pages = Math.ceil(rest / 22);
-          const per = Math.ceil(rest / pages); // even distribution - no orphan page
-          return Array.from({ length: pages }, (_, pi) => (
-            <section key={pi} className="report-page">
-              <h2 className="report-h2">{t("org_profile")}{rtl ? " (تتمة)" : " (continued)"}</h2>
-              <h3 className="report-h3">Respondents (continued)</h3>
-              <RespondentTable rows={(respondents ?? []).slice(16 + pi * per, 16 + (pi + 1) * per)} />
-            </section>
-          ));
-        })()}
 
         {/* ─── PAGE 5 - Radar Overview ─── */}
         <section className="report-page">
@@ -857,7 +808,7 @@ export default async function AraReportPage({
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
             {peerBenchmarks.has_enough_data
               ? `Peer column shows the median score across ${peerBenchmarks.sample_size} anonymised ${sectorLabel.toLowerCase()} organisations in ${region}.`
-              : `Peer column shows indicative GCC best practice. Real peer medians unlock once ≥ ${peerBenchmarks.min_sample_required} comparable engagements have completed (current sample: ${peerBenchmarks.sample_size}).`}
+              : `Peer medians are not yet available: they unlock once ≥ ${peerBenchmarks.min_sample_required} comparable ${sectorLabel.toLowerCase()} engagements in ${region} have completed (current sample: ${peerBenchmarks.sample_size}). The AI Ready column (4.00) remains the reference target.`}
           </p>
           <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -866,7 +817,7 @@ export default async function AraReportPage({
                 <th style={cellHeadRight}>Current</th>
                 <th style={cellHeadRight}>AI Ready</th>
                 <th style={cellHeadRight}>
-                  {peerBenchmarks.has_enough_data ? "Peer median" : "GCC Best"}
+                  {peerBenchmarks.has_enough_data ? "Peer median" : "Peer median (pending)"}
                 </th>
                 <th style={cellHeadRight}>Gap</th>
               </tr>
@@ -877,9 +828,12 @@ export default async function AraReportPage({
                 const s = row?.raw_score != null ? Number(row.raw_score) : null;
                 const gap = s != null ? Number((4.0 - s).toFixed(2)) : null;
                 const peerCell = peerBenchmarks.pillars.find((pb) => pb.pillar_id === p.id);
+                // No invented reference values: until enough comparable
+                // engagements exist, the peer cell is explicitly empty rather
+                // than showing a made-up "best practice" figure.
                 const peerValue = peerBenchmarks.has_enough_data && peerCell?.median != null
                   ? peerCell.median.toFixed(2)
-                  : "4.50";
+                  : "-";
                 return (
                   <tr key={p.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                     <td style={cell}>{p.name_en}</td>
@@ -1365,6 +1319,56 @@ export default async function AraReportPage({
           </p>
         </section>
 
+        {/* ─── Organization Profile (moved to the end of the report per client review) ─── */}
+        <section className="report-page">
+          <h2 className="report-h2">{t("org_profile")}</h2>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginBottom: "16pt" }}>
+            <div>
+              <h3 className="report-h3">Client details</h3>
+              <table className="report-body" style={{ width: "100%" }}>
+                <tbody>
+                  <tr><td style={cellLabel}>Organization</td><td style={cell}>{assessment.organization?.name ?? "-"}</td></tr>
+                  <tr><td style={cellLabel}>Region</td><td style={cell}>{region}</td></tr>
+                  <tr><td style={cellLabel}>Sector</td><td style={cell}>{sectorLabel}</td></tr>
+                  <tr><td style={cellLabel}>Assessment year</td><td style={cell}>{assessment.assessment_year}</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div>
+              <h3 className="report-h3">Methodology</h3>
+              <table className="report-body" style={{ width: "100%" }}>
+                <tbody>
+                  <tr><td style={cellLabel}>Question bank</td><td style={cell}>v{version?.version_number ?? "-"} {version?.version_label && `· ${version.version_label}`}</td></tr>
+                  <tr><td style={cellLabel}>Phase</td><td style={cell}>{assessment.phase.replace("phase", "Phase ")}</td></tr>
+                  <tr><td style={cellLabel}>Status</td><td style={cell}>{assessment.status}</td></tr>
+                  <tr><td style={cellLabel}>Scores frozen</td><td style={cell}>{overallScore?.score_frozen_at ? new Date(overallScore.score_frozen_at).toLocaleDateString() : "Not yet"}</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <h3 className="report-h3">Respondents ({(respondents ?? []).length})</h3>
+          <RespondentTable rows={(respondents ?? []).slice(0, 16)} />
+        </section>
+
+        {/* Roster continuation pages - clean full pages, no bleed (client
+            feedback 2026-08-31). 16 rows share page 4 with the profile; the
+            remainder paginates at 30 rows per page. */}
+        {(() => {
+          const rest = Math.max(0, (respondents ?? []).length - 16);
+          if (rest === 0) return null;
+          const pages = Math.ceil(rest / 22);
+          const per = Math.ceil(rest / pages); // even distribution - no orphan page
+          return Array.from({ length: pages }, (_, pi) => (
+            <section key={pi} className="report-page">
+              <h2 className="report-h2">{t("org_profile")}{rtl ? " (تتمة)" : " (continued)"}</h2>
+              <h3 className="report-h3">Respondents (continued)</h3>
+              <RespondentTable rows={(respondents ?? []).slice(16 + pi * per, 16 + (pi + 1) * per)} />
+            </section>
+          ));
+        })()}
+
         {/* ─── APPENDIX ─── */}
         <section className="report-page">
           <h2 className="report-h2">{t("appendix")}</h2>
@@ -1675,11 +1679,6 @@ function PillarPages({
             </div>
           ))}
         </div>
-        <p style={{ fontSize: "8.5pt", color: TOKENS.mute, margin: "5pt 0 0", lineHeight: 1.45 }}>
-          <strong style={{ color: TOKENS.ink2 }}>How to sequence · </strong>
-          Work top-to-bottom: Quick Win actions unblock the Build actions, which unlock
-          the Transform action - each sized to fit a single quarter without new headcount.
-        </p>
       </section>
     </>
   );

@@ -54,7 +54,10 @@ export type BilingualReportProps = {
   scoreMap: Map<AraPillarId, number | null>;
   strengths: Array<{ pillar: string; score: number }>;
   gaps: Array<{ pillar: string; score: number; gap: number }>;
+  /** Per-pillar maturity-level counts (see gap-heatmap). */
   heatmapData: Map<AraPillarId, Map<number, number>>;
+  /** Respondents represented in the heatmap. */
+  heatmapCohortSize?: number;
   investmentData: Array<{ pillar_id: AraPillarId; raw_score: number | null; pillar_weight: number }>;
   roadmapInitiatives: Array<{ name: string; horizon: "quick" | "build" | "transform"; pillar: string }>;
   complianceSummaries: FrameworkComplianceSummary[];
@@ -771,7 +774,7 @@ export function BilingualReport(p: BilingualReportProps) {
             {tr("ar", "gap_heatmap")}
           </h2>
         </div>
-        <div><GapHeatmap scoresByPillarByBucket={p.heatmapData} pillars={scopedPillars} /></div>
+        <div><GapHeatmap countsByPillarByLevel={p.heatmapData} cohortSize={p.heatmapCohortSize ?? 0} pillars={scopedPillars} /></div>
         <div className="bilingual-text">
           <div className="col-en"><p className="report-body">{tr("en", "heatmap_intro")}</p></div>
           <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "heatmap_intro")}</p></div>

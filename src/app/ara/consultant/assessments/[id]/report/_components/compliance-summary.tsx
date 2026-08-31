@@ -151,18 +151,27 @@ function FrameworkCard({ f, t }: { f: FrameworkComplianceSummary; t: TFn }) {
         )}
       </div>
 
-      {/* Breakdown legend */}
-      <div style={{
-        display: "flex", flexWrap: "wrap", gap: "12pt",
-        fontSize: "9pt", color: TOKENS.ink2,
-      }}>
-        <Breakdown label={t("araReport.compliance_met")} value={f.met} color={TOKENS.emerald} />
-        <Breakdown label={t("araReport.compliance_partial")} value={f.partial} color={TOKENS.amber} />
-        <Breakdown label={t("araReport.compliance_action")} value={f.not_met} color={TOKENS.rose} />
-        {f.unknown > 0 && (
-          <Breakdown label={t("araReport.compliance_unknown")} value={f.unknown} color={TOKENS.muteGrey} />
-        )}
-      </div>
+      {/* Breakdown legend. When the compliance engine has not produced any
+          result for this framework, say so explicitly - rendering "0 met /
+          0 partial / 0 action" reads as total non-compliance when in fact
+          nothing has been evaluated. */}
+      {f.calculated === false ? (
+        <p style={{ fontSize: "9pt", color: TOKENS.mute, margin: 0, fontStyle: "italic" }}>
+          {t("araReport.compliance_not_evaluated")}
+        </p>
+      ) : (
+        <div style={{
+          display: "flex", flexWrap: "wrap", gap: "12pt",
+          fontSize: "9pt", color: TOKENS.ink2,
+        }}>
+          <Breakdown label={t("araReport.compliance_met")} value={f.met} color={TOKENS.emerald} />
+          <Breakdown label={t("araReport.compliance_partial")} value={f.partial} color={TOKENS.amber} />
+          <Breakdown label={t("araReport.compliance_action")} value={f.not_met} color={TOKENS.rose} />
+          {f.unknown > 0 && (
+            <Breakdown label={t("araReport.compliance_unknown")} value={f.unknown} color={TOKENS.muteGrey} />
+          )}
+        </div>
+      )}
     </article>
   );
 }

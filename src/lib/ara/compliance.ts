@@ -286,6 +286,25 @@ export async function summarizeComplianceByFramework(
   if (!scope) return [];
   const assessment = { region: scope.region, sector: scope.sector };
 
+  // Self-heal: the compliance engine is triggered manually from the consultant
+  // console, so an assessment can carry scored responses while holding zero
+  // compliance results - and the client report would then show every framework
+  // as "N requirements, 0 met, 0 partial, 0 action" (reads as total
+  // non-compliance, when in fact nothing was evaluated). If results are absent
+  // but responses exist, compute them now. Best-effort: a failure just falls
+  // through to the not-calculated state the callers already handle.
+  try {
+    const [{ count: resultCount }, { count: responseCount }] = await Promise.all([
+      sb.from("ara_compliance_results").select("id", { count: "exact", head: true }).eq("assessment_id", assessmentId),
+      sb.from("ara_responses").select("id", { count: "exact", head: true }).eq("assessment_id", assessmentId).not("question_score", "is", null),
+    ]);
+    if ((resultCount ?? 0) === 0 && (responseCount ?? 0) > 0) {
+      await recalculateAssessmentCompliance(assessmentId);
+    }
+  } catch {
+    /* leave the not-calculated state intact */
+  }
+
   const { data: frameworks } = await sb
     .from("ara_regulatory_frameworks")
     .select("id, framework_code, framework_name_en, framework_name_ar, region, applies_to_sectors, tier")

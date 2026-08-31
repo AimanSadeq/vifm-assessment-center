@@ -1,49 +1,87 @@
-import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { ARA_PILLARS, ARA_MATURITY_LEVELS } from "@/lib/constants/ara-pillars";
 import type { AraPillarId } from "@/types/ara";
 
 /**
- * Gap-analysis heatmap: pillars on Y, question-number buckets on X.
- * Each cell shows the average score of questions in that pillar × bucket
- * range, coloured by maturity (red / amber / green).
- * Cells with no data render as neutral grey.
+ * Cohort maturity-distribution heatmap: pillars on Y, the canonical maturity
+ * levels (L1 Unaware -> L5 Leading) on X. Each cell is HOW MANY respondents
+ * landed in that level for that pillar, shaded by concentration.
+ *
+ * Replaces the previous "Q1-2 / Q3-4 / ..." grid (client review 2026-08-31):
+ * those columns were the question bank's internal item numbers grouped in
+ * pairs - an arbitrary split with no meaning to a reader, and one that
+ * rendered ragged gaps whenever a custom-scope run served non-contiguous
+ * item numbers. Levels are read from ARA_MATURITY_LEVELS so the axis can
+ * never drift from the rest of the report.
  */
-export function GapHeatmap({
-  scoresByPillarByBucket,
-  pillars = ARA_PILLARS,
-}: {
-  // pillar_id → bucket_index (0..BUCKET_COUNT-1) → avg score
-  scoresByPillarByBucket: Map<AraPillarId, Map<number, number>>;
-  /** The assessment's IN-SCOPE pillars. Defaults to all 8 for back-compat,
-   *  but subset-stage callers must pass their scoped list - an 8-row heatmap
-   *  made a Department (4-pillar) engagement read as a half-assessed
-   *  enterprise. */
-  pillars?: typeof ARA_PILLARS;
-}) {
-  const BUCKET_COUNT = 5;
-  const BUCKET_LABELS = ["Q1–2", "Q3–4", "Q5–6", "Q7–8", "Q9+"];
 
-  const colorFor = (score: number | undefined) => {
-    if (score == null) return { bg: "#f3f4f6", fg: "#9ca3af" };
-    if (score >= 4.0) return { bg: "#34D399", fg: "white" };
-    if (score >= 3.0) return { bg: "#FBBF24", fg: "white" };
-    if (score >= 2.0) return { bg: "#FDBA74", fg: "white" };
-    return { bg: "#FB7185", fg: "white" };
+/** Per-pillar counts of respondents at each maturity level (1..5). */
+export type PillarLevelCounts = Map<AraPillarId, Map<number, number>>;
+
+export function GapHeatmap({
+  countsByPillarByLevel,
+  cohortSize,
+  pillars = ARA_PILLARS,
+  lang = "en",
+}: {
+  countsByPillarByLevel: PillarLevelCounts;
+  /** Respondents with a score on at least one pillar - drives the shading scale. */
+  cohortSize: number;
+  /** The assessment's IN-SCOPE pillars (a subset-stage run must pass its list). */
+  pillars?: typeof ARA_PILLARS;
+  lang?: "en" | "ar";
+}) {
+  const rtl = lang === "ar";
+  const levels = ARA_MATURITY_LEVELS;
+
+  // Shade by share-of-cohort within the pillar row, in the level's own colour
+  // family, so the eye lands on where people actually cluster.
+  const LEVEL_TINT: Record<number, { base: string; strong: string }> = {
+    1: { base: "#fdeef0", strong: "#FB7185" },
+    2: { base: "#fef2e7", strong: "#FDBA74" },
+    3: { base: "#fef8e7", strong: "#FBBF24" },
+    4: { base: "#eaf7f0", strong: "#34D399" },
+    5: { base: "#e6f6ee", strong: "#12805c" },
+  };
+
+  const cellStyle = (level: number, count: number, rowTotal: number) => {
+    if (count === 0 || rowTotal === 0) {
+      return { background: "#f9fafb", color: "#cbd5e1", border: "1px solid #f1f5f9" };
+    }
+    const share = count / rowTotal;
+    const tint = LEVEL_TINT[level] ?? LEVEL_TINT[3];
+    // Three steps keeps it legible in print (no alpha gradients).
+    if (share >= 0.4) return { background: tint.strong, color: "white", border: "none" };
+    if (share >= 0.15) return { background: tint.base, color: "#374151", border: `1px solid ${tint.strong}` };
+    return { background: "#ffffff", color: "#6b7280", border: "1px solid #e5e7eb" };
   };
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `120pt repeat(${BUCKET_COUNT}, 1fr)`, gap: "2pt", fontSize: "9pt" }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: `126pt repeat(${levels.length}, 1fr)`,
+        gap: "2pt",
+        fontSize: "9pt",
+      }}
+      dir={rtl ? "rtl" : "ltr"}
+    >
       <div />
-      {BUCKET_LABELS.map((b) => (
-        <div key={b} style={{ textAlign: "center", color: "#6b7280", fontSize: "8pt", paddingBottom: "2pt" }}>
-          {b}
+      {levels.map((l) => (
+        <div
+          key={l.level}
+          style={{ textAlign: "center", color: "#6b7280", fontSize: "7.5pt", paddingBottom: "3pt", lineHeight: 1.3 }}
+        >
+          <strong style={{ color: "#374151" }}>L{l.level}</strong>
+          <br />
+          {rtl ? l.label_ar : l.label_en}
         </div>
       ))}
       {pillars.map((p) => {
-        const byBucket = scoresByPillarByBucket.get(p.id) ?? new Map();
+        const byLevel = countsByPillarByLevel.get(p.id) ?? new Map<number, number>();
+        const rowTotal = levels.reduce((sum, l) => sum + (byLevel.get(l.level) ?? 0), 0);
         return (
-          <>
+          <div key={p.id} style={{ display: "contents" }}>
             <div
-              key={`${p.id}-label`}
               style={{
                 padding: "6pt 8pt",
                 fontWeight: 500,
@@ -53,63 +91,65 @@ export function GapHeatmap({
                 borderRadius: "3pt",
               }}
             >
-              {p.name_en}
+              {rtl ? p.name_ar : p.name_en}
             </div>
-            {Array.from({ length: BUCKET_COUNT }).map((_, b) => {
-              const score = byBucket.get(b);
-              const { bg, fg } = colorFor(score);
+            {levels.map((l) => {
+              const count = byLevel.get(l.level) ?? 0;
+              const st = cellStyle(l.level, count, rowTotal);
               return (
                 <div
-                  key={`${p.id}-${b}`}
+                  key={`${p.id}-${l.level}`}
                   style={{
-                    background: bg,
-                    color: fg,
+                    ...st,
                     padding: "6pt",
                     textAlign: "center",
                     borderRadius: "3pt",
                     fontWeight: 600,
-                    fontSize: "9pt",
+                    fontSize: "9.5pt",
                     minHeight: "24pt",
                   }}
                 >
-                  {score != null ? score.toFixed(2) : "-"}
+                  {count > 0 ? count : "-"}
                 </div>
               );
             })}
-          </>
+          </div>
         );
       })}
+      <div />
+      <div
+        style={{
+          gridColumn: `2 / span ${levels.length}`,
+          fontSize: "8pt",
+          color: "#6b7280",
+          paddingTop: "4pt",
+        }}
+      >
+        {rtl
+          ? `عدد المشاركين (من ${cohortSize}) في كل مستوى نضج لكل ركيزة. تُظهر الخلايا الملوّنة تركّز المجموعة.`
+          : `Number of respondents (of ${cohortSize}) at each maturity level, per pillar. Shaded cells show where the cohort concentrates.`}
+      </div>
     </div>
   );
 }
 
 /**
- * Bucket questions by number into 5 groups of 2 each for the heatmap.
+ * Build per-pillar maturity-level counts from per-respondent pillar means.
+ * A respondent is placed in the level their pillar average falls into, using
+ * the canonical lower-threshold rule (highest level whose min <= score).
  */
-export function bucketResponses(
-  rows: Array<{ pillar_id: string; question_number: number; question_score: number | null }>
-): Map<AraPillarId, Map<number, number>> {
-  const byPillarBucket = new Map<AraPillarId, Map<number, number[]>>();
-  for (const r of rows) {
-    if (r.question_score == null) continue;
-    const bucket = Math.min(4, Math.floor((r.question_number - 1) / 2));
-    const byBucket = byPillarBucket.get(r.pillar_id as AraPillarId) ?? new Map();
-    const arr = byBucket.get(bucket) ?? [];
-    arr.push(Number(r.question_score));
-    byBucket.set(bucket, arr);
-    byPillarBucket.set(r.pillar_id as AraPillarId, byBucket);
+export function bucketRespondentsByLevel(
+  meansByPillar: Map<string, number[]>
+): PillarLevelCounts {
+  const out: PillarLevelCounts = new Map();
+  for (const [pillarId, means] of meansByPillar) {
+    const byLevel = new Map<number, number>();
+    for (const m of means) {
+      let level = ARA_MATURITY_LEVELS[0].level;
+      for (const l of ARA_MATURITY_LEVELS) if (m >= l.min) level = l.level;
+      byLevel.set(level, (byLevel.get(level) ?? 0) + 1);
+    }
+    out.set(pillarId as AraPillarId, byLevel);
   }
-
-  const result = new Map<AraPillarId, Map<number, number>>();
-  Array.from(byPillarBucket.entries()).forEach(([pillar, byBucket]) => {
-    const avgMap = new Map<number, number>();
-    Array.from(byBucket.entries()).forEach(([bucket, scores]) => {
-      avgMap.set(
-        bucket,
-        scores.reduce((a: number, b: number) => a + b, 0) / scores.length,
-      );
-    });
-    result.set(pillar, avgMap);
-  });
-  return result;
+  return out;
 }

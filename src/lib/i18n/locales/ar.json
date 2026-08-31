@@ -3299,6 +3299,7 @@
     "compliance_met": "ملبّى",
     "compliance_partial": "جزئي",
     "compliance_action": "إجراء",
+    "compliance_not_evaluated": "لم يُقيَّم بعد - شغّل حساب الامتثال لتقييم هذا الإطار.",
     "compliance_unknown": "غير معروف"
   },
   "reflectConsultant": {

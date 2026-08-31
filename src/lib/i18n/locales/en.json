@@ -3291,6 +3291,7 @@
     "compliance_met": "Met",
     "compliance_partial": "Partial",
     "compliance_action": "Action",
+    "compliance_not_evaluated": "Not yet evaluated - run the compliance calculation to score this framework.",
     "compliance_unknown": "Unknown"
   },
   "reflectConsultant": {

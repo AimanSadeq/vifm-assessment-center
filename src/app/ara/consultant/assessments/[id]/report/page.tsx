@@ -15,7 +15,7 @@ import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import { MaturityGauge } from "./_components/maturity-gauge";
 import { RadarChart } from "./_components/radar-chart";
 import { ComplianceSummary } from "./_components/compliance-summary";
-import { GapHeatmap, bucketResponses } from "./_components/gap-heatmap";
+import { GapHeatmap, bucketRespondentsByLevel } from "./_components/gap-heatmap";
 import { InvestmentMatrix } from "./_components/investment-matrix";
 import { GanttRoadmap } from "./_components/gantt-roadmap";
 import { tr, type ReportLang } from "./_components/report-i18n";
@@ -269,28 +269,15 @@ export default async function AraReportPage({
     .order("stage")
     .order("created_at");
 
-  const heatmapData = bucketResponses(
-    (responseRows as Array<{
-      question_score: number | null;
-      question: {
-        pillar_id: string;
-        question_number: number;
-        individual_factor_id: string | null;
-        agentic_dimension_id: string | null;
-      } | null;
-    }>)
-      .filter(
-        (r) =>
-          r.question &&
-          r.question.individual_factor_id == null &&
-          r.question.agentic_dimension_id == null
-      )
-      .map((r) => ({
-        pillar_id: r.question!.pillar_id,
-        question_number: r.question!.question_number,
-        question_score: r.question_score,
-      }))
-  );
+  // Cohort maturity distribution per pillar (replaces the old item-number
+  // buckets): how many respondents land in each canonical maturity level.
+  // Built from the per-respondent pillar means computed above.
+  const heatmapData = bucketRespondentsByLevel(pillarRespondentMeans);
+  const heatmapCohortSize = new Set(
+    (responseRows as Array<{ respondent_id?: string | null }>)
+      .map((r) => r.respondent_id)
+      .filter(Boolean)
+  ).size;
 
   const pillarMap = new Map<AraPillarId, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id as AraPillarId, p));
@@ -422,6 +409,7 @@ export default async function AraReportPage({
             strengths={strengths}
             gaps={gaps}
             heatmapData={heatmapData}
+            heatmapCohortSize={heatmapCohortSize}
             investmentData={investmentData}
             roadmapInitiatives={roadmapInitiatives}
             complianceSummaries={complianceSummaries}
@@ -953,19 +941,18 @@ export default async function AraReportPage({
         <section className="report-page">
           <h2 className="report-h2">{t("gap_heatmap")}</h2>
           <p className="report-body">
-            Heatmap of average question scores across pillars and question
-            groups. Red cells indicate critical gaps; green cells indicate
-            maturity at or above the AI Ready benchmark.
+            Where the cohort sits on each pillar: every respondent is placed in the
+            maturity level their pillar average falls into, so the shaded cells show
+            how the {heatmapCohortSize} respondents distribute - concentration to the
+            left means a shared gap, a wide spread means uneven experience.
           </p>
           <div style={{ marginTop: "16pt" }}>
-            <GapHeatmap scoresByPillarByBucket={heatmapData} pillars={scopedPillars} />
+            <GapHeatmap countsByPillarByLevel={heatmapData} cohortSize={heatmapCohortSize} pillars={scopedPillars} lang={rtl ? "ar" : "en"} />
           </div>
-          <div style={{ display: "flex", gap: "16pt", marginTop: "12pt", fontSize: "9pt" }}>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FB7185", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Unaware (below 2.0)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FDBA74", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Exploring (2.0–2.9)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#FBBF24", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Developing (3.0–3.9)</span>
-            <span><span style={{ display: "inline-block", width: "10pt", height: "10pt", background: "#34D399", borderRadius: "2pt", marginRight: "4pt", verticalAlign: "middle" }} />Advancing+ (4.0 and above)</span>
-          </div>
+          <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "10pt" }}>
+            Scores run <strong>1.00 to 5.00</strong>. <strong>4.00 is the AI Ready target, not the
+            maximum</strong> - L4 Advancing (4.00-4.44) and L5 Leading (4.50-5.00) sit above it.
+          </p>
         </section>
 
         {/* ─── Investment priority matrix ─── *

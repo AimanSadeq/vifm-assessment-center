@@ -72,6 +72,47 @@
   page-break-after: auto;
 }
 
+/* ─── Running footer ──────────────────────────────────────────
+   Issuer on the left, page number on the right, on every page.
+   Done with CSS counters rather than Puppeteer's footerTemplate:
+   the PDF route renders with preferCSSPageSize and `@page{margin:0}`,
+   and a Puppeteer footer draws in the page margin - with no margin
+   it would be clipped away. One `.report-page` is exactly one sheet,
+   so incrementing per section gives a true page number.
+
+   The counter is reset on the wrapper rather than <body> so the
+   on-screen preview chrome cannot disturb it. */
+.report-body-wrap { counter-reset: ara-page; }
+.report-page { counter-increment: ara-page; }
+
+.report-page::before,
+.report-page::after {
+  position: absolute;
+  bottom: 10mm;
+  font-family: 'Open Sans', 'Calibri', Arial, sans-serif;
+  font-size: 7.5pt;
+  color: #9ca3af;
+  line-height: 1;
+}
+.report-page::before {
+  content: "Virginia Institute of Finance and Management";
+  left: 18mm;
+  letter-spacing: 0.03em;
+}
+.report-page::after {
+  content: counter(ara-page);
+  right: 18mm;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+/* The cover is a dark full-bleed page that already signs itself off in its
+   own footer row; a grey running footer on navy would be unreadable. It still
+   increments the counter, so page 2 is numbered 2. */
+.report-cover::before,
+.report-cover::after { content: none; }
+
 .report-h1 { font-size: 28pt; font-weight: 700; color: var(--ara-navy); margin: 0 0 8pt; letter-spacing: -0.01em; }
 .report-h2 { font-size: 18pt; font-weight: 700; color: var(--ara-navy); margin: 0 0 12pt; border-bottom: 2px solid var(--ara-accent); padding-bottom: 4pt; letter-spacing: -0.01em; }
 .report-h3 { font-size: 13pt; font-weight: 600; color: var(--ara-navy); margin: 10pt 0 6pt; }

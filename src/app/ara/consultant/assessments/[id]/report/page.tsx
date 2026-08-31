@@ -473,10 +473,10 @@ export default async function AraReportPage({
         </div>
       )}
 
-      <div className={bare ? "" : "bg-gray-100 py-8"} dir={outerDir}>
+      <div className={`report-body-wrap ${bare ? "" : "bg-gray-100 py-8"}`} dir={outerDir}>
         {/* ─── PAGE 1 - Cover ─── */}
         <section
-          className="report-page flex flex-col justify-between"
+          className="report-page report-cover flex flex-col justify-between"
           style={{ background: "#010131", color: "white" }}
         >
           <div>

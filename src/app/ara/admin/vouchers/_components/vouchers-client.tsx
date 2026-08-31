@@ -393,8 +393,8 @@ export function VouchersClient({
                       onChange={(e) => setOrgQpp(e.target.value)}
                       placeholder="blank = full set"
                       aria-label="Questions per pillar"
+                      title="Any number 1-20; 6 recommended, below 4 gets unreliable."
                     />
-                    <p className="text-[10px] text-muted-foreground">Any number 1-20; 6 recommended, below 4 gets unreliable.</p>
                   </div>
                   )}
                   <div className="w-40 space-y-1.5">
@@ -474,7 +474,7 @@ export function VouchersClient({
                       </p>
                     )}
                     <p className="text-[11px] text-muted-foreground">
-                      Each redemption provisions a department-stage assessment with exactly this design, drawn from the {regionLabel} question bank. The client report carries a reduced-form caveat when a question budget is set.
+                      Each redemption provisions a department-stage assessment with exactly this design, drawn from the {regionLabel} question bank. Question budget: any number 1-20 per pillar; 6 recommended, below 4 gets unreliable. The client report carries a reduced-form caveat when a budget is set.
                     </p>
                   </div>
                   );

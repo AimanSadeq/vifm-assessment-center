@@ -499,6 +499,23 @@ export default async function AraReportPage({
             kicker={`Weighted aggregate of the ${scopedPillars.length} in-scope AI Readiness pillars, calibrated against ${region} frameworks`}
           />
 
+          {/* Custom-scope caveat (migration 00198): a reduced form answers N
+              questions per pillar - scores are indicative and not directly
+              comparable to full-form benchmarks or prior full-form years. */}
+          {((assessment as { questions_per_pillar?: number | null }).questions_per_pillar ?? null) != null && (
+            <div style={{ border: "1pt solid #f5d9a8", background: "#fffbeb", borderRadius: "4pt", padding: "6pt 9pt", marginBottom: "8pt", fontSize: "8.5pt", color: "#78350f" }}>
+              {rtl ? (
+                <p style={{ margin: 0 }} dir="rtl">
+                  <b>نموذج مخصّص مختصر.</b> استخدم هذا التقييم نطاقاً مخصّصاً من {scopedPillars.length} ركائز بواقع {String((assessment as { questions_per_pillar?: number | null }).questions_per_pillar)} أسئلة لكل ركيزة. النتائج استرشادية ولا ينبغي مقارنتها مباشرة بمعايير النموذج الكامل أو بتقييمات الأعوام السابقة الكاملة.
+                </p>
+              ) : (
+                <p style={{ margin: 0 }}>
+                  <b>Custom reduced form.</b> This assessment used a custom scope of {scopedPillars.length} pillar{scopedPillars.length === 1 ? "" : "s"} at {(assessment as { questions_per_pillar?: number | null }).questions_per_pillar} question{(assessment as { questions_per_pillar?: number | null }).questions_per_pillar === 1 ? "" : "s"} per pillar. Scores are indicative and should not be compared directly against full-form benchmarks or prior full-form assessments.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* KPI strip - four tiles. Denominators reflect the assessment's
               SCOPED pillar count, not a hardcoded 8 - a Department (4) or
               Division (6) engagement previously read "2 / 8" as if half the
@@ -751,6 +768,16 @@ export default async function AraReportPage({
                 row={row}
                 notes={pillarNotes}
                 lang={rtl ? "ar" : "en"}
+                workforceNote={
+                  (pillar.id === "talent" || pillar.id === "culture") &&
+                  assessment.include_individual_layer &&
+                  workforceRollup &&
+                  workforceRollup.respondents.some((r) => r.overall != null)
+                    ? rtl
+                      ? "دليل على مستوى الأفراد: قاس هذا التقييم أيضاً الجاهزية الفردية للذكاء الاصطناعي لدى المجموعة - راجع قسم جاهزية القوى العاملة للاطلاع على نتائج العوامل الأربعة الداعمة لهذه الركيزة."
+                      : "Person-level evidence: this engagement also measured individual AI readiness across the cohort - see the Workforce AI Readiness section for the four-factor results behind this pillar."
+                    : null
+                }
               />
             );
           });
@@ -1411,6 +1438,7 @@ function PillarPages({
   row,
   notes,
   lang = "en",
+  workforceNote = null,
 }: {
   pillarId: AraPillarId;
   name: string;
@@ -1418,6 +1446,8 @@ function PillarPages({
   row: PillarScoreRow | undefined;
   notes: ConsultantNoteRow[];
   lang?: "en" | "ar";
+  /** Talent/Culture <-> workforce bridge note (Mode C); null hides it. */
+  workforceNote?: string | null;
 }) {
   const score = row?.raw_score != null ? Number(row.raw_score) : null;
   const gap = row?.benchmark_gap != null ? Number(row.benchmark_gap) : null;
@@ -1444,6 +1474,11 @@ function PillarPages({
           title={name}
           kicker={nameAr}
         />
+        {workforceNote && (
+          <div style={{ border: "1pt solid #bcd7f0", background: "#eef5fc", borderRadius: "4pt", padding: "5pt 9pt", marginBottom: "8pt", fontSize: "8.5pt", color: "#1e4e79" }} dir={lang === "ar" ? "rtl" : "ltr"}>
+            <p style={{ margin: 0 }}>{workforceNote}</p>
+          </div>
+        )}
 
         {/* Four-metric strip replaces the old score/gauge grid */}
         <div className="metric-strip">

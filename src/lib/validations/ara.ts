@@ -46,6 +46,8 @@ export const createAraAssessmentSchema = z.object({
   question_bank_version_id: z.string().uuid().nullable().optional(),
   engagement_stage: araEngagementStageSchema,
   scope_label: z.string().trim().min(1).max(120).nullable().optional(),
+  /** The unit above this one - the division a department sits in (00201). */
+  parent_unit_label: z.string().trim().max(120).nullable().optional(),
   // departmental-plus-personal - workforce readiness layer alongside the org pillar items.
   include_individual_layer: z.boolean().default(false),
   // Agentic-AI Readiness layer alongside the org pillar items (migration 00041).

@@ -14,6 +14,8 @@ export type LinkableUnit = {
   stage: string;
   status: string;
   respondents: number;
+  /** The division/group this unit declared at creation (migration 00201). */
+  parentUnitLabel?: string | null;
 };
 
 /**
@@ -27,16 +29,25 @@ export function UnitRollupPanel({
   assessmentId,
   linked,
   available,
+  suggestedUnitIds = [],
   stageLabel,
 }: {
   assessmentId: string;
   linked: LinkableUnit[];
   /** Same-org assessments not already parented elsewhere. */
   available: LinkableUnit[];
+  /**
+   * Units that named THIS engagement as their division when they were created.
+   * They are the reason the division name is captured up front: a client who
+   * buys departments months apart can still be grouped without anyone
+   * remembering the org chart.
+   */
+  suggestedUnitIds?: string[];
   stageLabel: string;
 }) {
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState("");
+  const suggested = available.filter((u) => suggestedUnitIds.includes(u.id));
 
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, okMsg: string) => {
     startTransition(async () => {
@@ -94,6 +105,36 @@ export function UnitRollupPanel({
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {suggested.length > 0 && (
+          <div className="rounded-lg border border-accent/40 bg-accent/5 p-3">
+            <p className="text-sm font-medium">
+              {suggested.length} assessment{suggested.length === 1 ? "" : "s"} named
+              this {stageLabel.toLowerCase()} when {suggested.length === 1 ? "it was" : "they were"} set up
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {suggested.map((u) => u.label).join(", ")}
+            </p>
+            <Button
+              size="sm"
+              className="mt-2 h-8"
+              disabled={pending}
+              onClick={() =>
+                startTransition(async () => {
+                  const results = await Promise.all(
+                    suggested.map((u) => linkUnitToRollup(assessmentId, u.id))
+                  );
+                  const failed = results.filter((r) => !r.ok);
+                  if (failed.length === 0) toast.success(`Linked ${results.length} units`);
+                  else toast.error(`${failed.length} of ${results.length} could not be linked: ${failed[0].error ?? ""}`);
+                })
+              }
+            >
+              <Link2 className="h-3.5 w-3.5 mr-1.5" />
+              Link all {suggested.length}
+            </Button>
           </div>
         )}
 

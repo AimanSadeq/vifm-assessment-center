@@ -417,6 +417,37 @@ export default async function NewAraAssessmentPage({
                 <p className="text-xs text-muted-foreground">{scopeLabelHelp}</p>
               </div>
 
+              {/* Parent unit (migration 00201). Captured NOW because the
+                  commercial sequence runs the other way round: a client buys
+                  one department, likes it, and comes back months later wanting
+                  another department "in the same division" plus a division
+                  report. If the division was never recorded, grouping them is
+                  guesswork. Optional - it costs one field and only pays off if
+                  they come back. Enterprise has no parent, so it is hidden. */}
+              {(stage.id === "department" || stage.id === "division") && (
+                <div className="space-y-2">
+                  <Label htmlFor="parent_unit_label">
+                    {stage.id === "department" ? "Division it belongs to" : "Enterprise or group it belongs to"}
+                  </Label>
+                  <input
+                    id="parent_unit_label"
+                    name="parent_unit_label"
+                    type="text"
+                    maxLength={120}
+                    placeholder={stage.id === "department" ? "e.g. Human Resources" : "e.g. Corporate Services"}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Optional, and it changes nothing about this assessment. It
+                    records where this unit sits so that if the client later
+                    wants a{" "}
+                    {stage.id === "department" ? "division" : "group"}{" "}
+                    report, the units can be grouped without anyone having to
+                    remember the org chart.
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="time_limit_minutes">{t("araConsultant.new_field_time_limit")}</Label>
                 <input

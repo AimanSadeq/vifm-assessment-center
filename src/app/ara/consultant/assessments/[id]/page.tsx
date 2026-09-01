@@ -216,12 +216,12 @@ export default async function AraAssessmentDetailPage({
       .returns<{ id: string; scope_label: string | null; engagement_stage: string; status: string }[]>(),
     sb
       .from("ara_assessments")
-      .select("id, scope_label, engagement_stage, status")
+      .select("id, scope_label, engagement_stage, status, parent_unit_label")
       .eq("organization_id", assessment.organization_id)
       .is("parent_assessment_id", null)
       .neq("id", assessment.id)
       .neq("engagement_stage", "individual")
-      .returns<{ id: string; scope_label: string | null; engagement_stage: string; status: string }[]>(),
+      .returns<{ id: string; scope_label: string | null; engagement_stage: string; status: string; parent_unit_label?: string | null }[]>(),
   ]);
   const unitIds = [...(linkedRes.data ?? []), ...(candidateRes.data ?? [])].map((r) => r.id);
   const completedByUnit = new Map<string, number>();
@@ -235,15 +235,27 @@ export default async function AraAssessmentDetailPage({
       completedByUnit.set(r.assessment_id, (completedByUnit.get(r.assessment_id) ?? 0) + 1);
     }
   }
-  const toUnit = (r: { id: string; scope_label: string | null; engagement_stage: string; status: string }): LinkableUnit => ({
+  const toUnit = (r: { id: string; scope_label: string | null; engagement_stage: string; status: string; parent_unit_label?: string | null }): LinkableUnit => ({
     id: r.id,
     label: r.scope_label?.trim() || `${r.engagement_stage} unit`,
     stage: r.engagement_stage,
     status: r.status,
     respondents: completedByUnit.get(r.id) ?? 0,
+    parentUnitLabel: r.parent_unit_label ?? null,
   });
   const linkedUnits = (linkedRes.data ?? []).map(toUnit);
   const availableUnits = (candidateRes.data ?? []).map(toUnit);
+
+  // The whole point of capturing the division name at creation (migration
+  // 00201): a rollup can now find the units that already declared they belong
+  // to it, instead of a consultant remembering which departments were sold as
+  // part of which division months earlier. Matched case- and space-insensitively
+  // because these are typed by hand across separate sittings.
+  const norm = (v: string | null | undefined) => (v ?? "").trim().toLowerCase();
+  const thisUnitName = norm(assessment.scope_label);
+  const suggestedUnitIds = thisUnitName
+    ? availableUnits.filter((u) => norm(u.parentUnitLabel) === thisUnitName).map((u) => u.id)
+    : [];
 
   const pillarMap = new Map<string, PillarScoreRow>();
   (pillarScores ?? []).forEach((p) => pillarMap.set(p.pillar_id, p));
@@ -634,6 +646,7 @@ export default async function AraAssessmentDetailPage({
             assessmentId={assessment.id}
             linked={linkedUnits}
             available={availableUnits}
+            suggestedUnitIds={suggestedUnitIds}
             stageLabel={ARA_STAGE_MAP[assessment.engagement_stage]?.label_en ?? assessment.engagement_stage}
           />
         )}

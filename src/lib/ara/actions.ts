@@ -345,6 +345,9 @@ export async function createAraAssessment(formData: FormData) {
   try { caller = await requireRole(["admin", "consultant"]); } catch (e) { return authErr(e); }
   const rawStage = String(formData.get("engagement_stage") ?? "enterprise");
   const rawScope = String(formData.get("scope_label") ?? "").trim();
+  // Division (or group) this unit belongs to - migration 00201. Recorded at
+  // creation so a later rollup can find its units without archaeology.
+  const rawParentUnit = String(formData.get("parent_unit_label") ?? "").trim();
   const includeIndividual = formData.get("include_individual_layer") === "on";
   const includeAgentic = formData.get("include_agentic_layer") === "on";
   const rawTier = String(formData.get("assessment_tier") ?? "snapshot");
@@ -374,6 +377,7 @@ export async function createAraAssessment(formData: FormData) {
     question_bank_version_id: formData.get("question_bank_version_id") || null,
     engagement_stage: rawStage,
     scope_label: rawScope.length > 0 ? rawScope : null,
+    parent_unit_label: rawParentUnit.length > 0 ? rawParentUnit : null,
     include_individual_layer: includeIndividual,
     include_agentic_layer: includeAgentic,
     // Tier only matters when the layer is on; default to snapshot otherwise.
@@ -440,6 +444,7 @@ export async function createAraAssessment(formData: FormData) {
     question_bank_version_id: parsed.data.question_bank_version_id || null,
     engagement_stage: parsed.data.engagement_stage,
     scope_label: parsed.data.scope_label ?? null,
+    ...(parsed.data.parent_unit_label ? { parent_unit_label: parsed.data.parent_unit_label } : {}),
     status: "draft",
     phase: "phase1",
     // Owner is the creating consultant (or null when an admin creates).

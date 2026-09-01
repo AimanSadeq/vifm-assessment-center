@@ -55,6 +55,14 @@ export type CreateBatchInput = {
   pillarsInScope?: string[] | null;
   /** Org vouchers: per-pillar question budget (migration 00198). NULL = full form. */
   questionsPerPillar?: number | null;
+  /** Org vouchers: the unit this code assesses, e.g. "Compensation" (00201).
+   *  Becomes the assessment's scope_label, so a later division rollup lists
+   *  unit names rather than "<redeemer> · <company>". */
+  unitLabel?: string | null;
+  /** Org vouchers: the unit ABOVE it - the division a department belongs to
+   *  (00201). Captured at issue so departments sold months apart can be
+   *  grouped into a division rollup later without guesswork. */
+  parentUnitLabel?: string | null;
   contactName?: string | null;
   contactTitle?: string | null;
   contactEmail?: string | null;
@@ -99,6 +107,8 @@ export async function createVoucherBatch(
           engagement_stage: input.engagementStage,
           pillars_in_scope: input.pillarsInScope && input.pillarsInScope.length > 0 ? input.pillarsInScope : null,
           questions_per_pillar: input.questionsPerPillar ?? null,
+          unit_label: input.unitLabel?.trim() || null,
+          parent_unit_label: input.parentUnitLabel?.trim() || null,
         }
       : {}),
   }));
@@ -223,15 +233,20 @@ export async function redeemVoucher(
   let orgStage: "department" | "division" | "enterprise" | null = null;
   let orgPillars: string[] | null = null;
   let orgQpp: number | null = null;
+  // Unit + parent-unit names carried by an org voucher (migration 00201).
+  let orgUnitLabel: string | null = null;
+  let orgParentUnitLabel: string | null = null;
   try {
     const { data: vrow } = await sb
       .from("ara_vouchers")
-      .select("items_per_factor, engagement_stage, pillars_in_scope, questions_per_pillar")
+      .select("items_per_factor, engagement_stage, pillars_in_scope, questions_per_pillar, unit_label, parent_unit_label")
       .eq("id", voucher.id)
       .maybeSingle<{
         items_per_factor: number | null;
         engagement_stage: string | null;
         pillars_in_scope: string[] | null;
+        unit_label: string | null;
+        parent_unit_label: string | null;
         questions_per_pillar: number | null;
       }>();
     itemsPerFactor = vrow?.items_per_factor ?? null;
@@ -240,6 +255,8 @@ export async function redeemVoucher(
       orgStage = st;
       orgPillars = Array.isArray(vrow?.pillars_in_scope) && vrow.pillars_in_scope.length > 0 ? vrow.pillars_in_scope : null;
       orgQpp = vrow?.questions_per_pillar ?? null;
+      orgUnitLabel = vrow?.unit_label?.trim() || null;
+      orgParentUnitLabel = vrow?.parent_unit_label?.trim() || null;
     }
   } catch {
     /* columns absent pre-migration - personal voucher, no cap */
@@ -314,7 +331,11 @@ export async function redeemVoucher(
         : itemsPerFactor != null
           ? { items_per_factor: itemsPerFactor }
           : {}),
-      scope_label: `${input.redeemerName.trim()} · ${input.companyName.trim()}`,
+      // A voucher that names its unit wins: a division rollup has to list
+      // "Compensation", not "Sara Ali · Acme Bank". The redeemer/company
+      // fallback stays for personal and unnamed practice vouchers.
+      scope_label: orgUnitLabel ?? `${input.redeemerName.trim()} · ${input.companyName.trim()}`,
+      ...(orgParentUnitLabel ? { parent_unit_label: orgParentUnitLabel } : {}),
       question_bank_version_id: activeBank.id,
       status: "active",
       phase: "phase1",

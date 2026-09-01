@@ -193,11 +193,11 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   // Split questions into pillar-only and individual-factor groups.
   // Items with individual_factor_id set belong to the personal factor
   // sections (AI Sense-Check etc.); items without belong to the org
-  // pillar sections (Strategy etc.). A Mode B/C respondent gets both;
-  // a Mode A (pure personal) respondent gets only the factor sections.
+  // pillar sections (Strategy etc.). A paid personal deep-dive / departmental-plus-personal respondent gets both;
+  // a free personal snapshot (pure personal) respondent gets only the factor sections.
   //
   // displayNumberById renumbers personal items 1..N in factor-then-
-  // question-number order, so a Mode A respondent sees Q1..Q24 instead
+  // question-number order, so a free personal snapshot respondent sees Q1..Q24 instead
   // of the org-style Q101..Q124 internal numbering.
   const { byPillar, byFactor, byAgentic, displayNumberById } = useMemo(() => {
     const byPillar = new Map<AraPillarId, AraQuestion[]>();
@@ -834,8 +834,8 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
       })}
 
       {/* Personal / individual-factor sections - render after any pillar
-           sections so a Mode B/C respondent sees pillars first then
-           personal factors. Pure Mode A respondents (Personal Snapshot)
+           sections so a paid personal deep-dive / departmental-plus-personal respondent sees pillars first then
+           personal factors. Pure free personal snapshot respondents (Personal Snapshot)
            only have factor questions, so this is the only rendered group. */}
       {ARA_INDIVIDUAL_FACTORS.map((factor) => {
         const qs = byFactor.get(factor.id) ?? [];

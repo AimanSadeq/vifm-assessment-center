@@ -133,7 +133,7 @@ export async function createDeepDivePersonalAssessment(
     organization_id: orgId,
     // Bind to the issuing consultant so they can open their own assessment under
     // requireAssessmentOwner (admins bypass ownership regardless). Was null,
-    // which locked a consultant issuer out of their own Mode B deep-dive.
+    // which locked a consultant issuer out of their own paid personal deep-dive.
     consultant_id: caller.uid,
     region: parsed.data.region,
     sector: "general",

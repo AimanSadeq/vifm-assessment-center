@@ -2,8 +2,8 @@
  * Norm-group + percentile computation for the Personal AI Readiness Snapshot.
  *
  * A respondent's overall and per-factor scores (1-5 means) are ranked against
- * the distribution of every *completed* personal respondent to date - Mode A
- * snapshots plus Mode B deep-dives and Mode C individual-layer respondents,
+ * the distribution of every *completed* personal respondent to date - free personal snapshot
+ * snapshots plus paid personal deep-dives and departmental-plus-personal individual-layer respondents,
  * all of whom answer the same four-factor items on the same 1-5 scale, so the
  * means are directly comparable regardless of tier or item count.
  *

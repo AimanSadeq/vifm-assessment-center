@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 // Client-level results-delivery preferences (migration 00108). Resolves who may
 // see a delegate's results and whether they are sent to the client contact.
 //
-// Tolerant by design: anonymous Mode A snapshots have no org, and if migration
+// Tolerant by design: anonymous free personal snapshots have no org, and if migration
 // 00108 isn't applied the columns are absent - both cases fall back to the
 // permissive default (delegate sees results, no client send), i.e. today's
 // behaviour, so nothing breaks before the migration lands.
@@ -28,7 +28,7 @@ const PERMISSIVE: OrgResultsPrefs = {
  * delegated/client engagement - the consultant sends the assessment and the
  * CLIENT receives the results (directly via send-to-client or collected via the
  * org "Collect all results" action), so the delegate does NOT see their own
- * results. Anonymous Mode A has no org (clientEmail null) and keeps them, as
+ * results. Anonymous free personal snapshot has no org (clientEmail null) and keeps them, as
  * does an org with an explicit respondent_can_view_results=false override.
  *
  * The on-screen page, the PDF route, and the completion email MUST all use this

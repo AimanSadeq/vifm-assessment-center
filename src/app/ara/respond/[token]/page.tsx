@@ -228,7 +228,7 @@ export default async function AraRespondPage({
         >
           <div className="space-y-6">
             {/* AI Use Case Portfolio (optional) - org-side only. Personal /
-                 individual-stage respondents (Mode A snapshot, Mode B deep-dive)
+                 individual-stage respondents (free personal snapshot, paid personal deep-dive)
                  are answering about their own behaviours, not their org's
                  portfolio, so the section is suppressed and the "your
                  consultant" copy doesn't leak into the self-served flow. */}

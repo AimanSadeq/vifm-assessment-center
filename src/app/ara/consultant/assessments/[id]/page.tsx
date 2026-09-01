@@ -268,7 +268,7 @@ export default async function AraAssessmentDetailPage({
     console.error("[ara-assessment-detail] recommender failed:", e);
   }
 
-  // Mode C - workforce readiness rollup, only when the org assessment
+  // departmental-plus-personal - workforce readiness rollup, only when the org assessment
   // opted into the individual layer. Pulls per-respondent factor scores
   // and cohort means; tolerant of empty data with null return.
   const workforceRollup = assessment.include_individual_layer
@@ -972,7 +972,7 @@ export default async function AraAssessmentDetailPage({
           <AraPathwayCard assessmentId={assessment.id} />
         </div>
 
-        {/* ─── Workforce readiness rollup (Mode C) ─── *
+        {/* ─── Workforce readiness rollup (departmental-plus-personal) ─── *
          * Only renders when the assessment opted into the individual
          * layer. Consultant sees cohort-level factor means + per-
          * respondent breakdown + course recommendations driven by

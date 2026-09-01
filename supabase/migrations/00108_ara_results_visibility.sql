@@ -7,7 +7,7 @@
 -- the three places a delegate sees results (the personal results page, the
 -- personal PDF, and the auto results email).
 --
--- Anonymous Mode A snapshots have no org, so they keep the permissive default
+-- Anonymous free personal snapshots have no org, so they keep the permissive default
 -- (the delegate always sees their own free snapshot).
 --
 -- Idempotent / re-runnable.

@@ -1,8 +1,8 @@
 /**
  * ARC individual "AI Readiness" credential.
  *
- * Issued when a person completes a personal AI-readiness assessment (Mode A
- * snapshot, Mode B deep-dive, or a Mode C individual respondent on an org
+ * Issued when a person completes a personal AI-readiness assessment (free personal snapshot
+ * snapshot, paid personal deep-dive, or a departmental-plus-personal individual respondent on an org
  * engagement). Parallels the Fluent CEFR + Technical credentials: an individual,
  * verifiable claim checkable at /verify/[code].
  *

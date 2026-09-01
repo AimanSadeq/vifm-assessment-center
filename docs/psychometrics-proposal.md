@@ -152,7 +152,7 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 **B — what only science + process deliver (slow, data-hungry):**
 8. **Reliability** — internal consistency (Cronbach α / McDonald ω **≥ .80** high-stakes), test–retest, parallel forms; report **SEM**.
 9. **Validity** — content (SME), construct (CFA, convergent/discriminant), and the selection gold standard **criterion validity** (predicts job performance), plus **incremental validity** over cognitive ability. Needs a **validation study with real outcome data.**
-10. **Norms / standardisation** — **GCC-appropriate** norm groups (percentiles, sten). Western norms are not defensible for Emirati / Saudi / expatriate populations (same constraint as ARA Mode A norming, at larger N).
+10. **Norms / standardisation** — **GCC-appropriate** norm groups (percentiles, sten). Western norms are not defensible for Emirati / Saudi / expatriate populations (same constraint as ARA free personal snapshot norming, at larger N).
 11. **Arabic equivalence** — back-translation + equivalence testing, **not** AI translation. A mistranslated item invalidates the score (VIFM's standing "AR strings need native review" caveat applies doubly to test items).
 12. **Qualified-user governance** — test-user competence (BPS Level A/B concept), consent, feedback rights, appeals, retention (PDPL/GDPR already covered).
 
@@ -202,7 +202,7 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 | DIF / invariance | Mantel-Haenszel / IRT-DIF; multi-group CFA | N ≥ 200 per group |
 | Criterion validity | Predictive/concurrent vs performance, range-restriction correction | N ≥ 100+ with outcomes |
 
-**Data sources:** (1) passive accrual as candidates take it (à la ARA Mode A); (2) **paid pilot cohorts** with client organisations; (3) **outcome-sharing partnerships** for criterion data. A qualified psychometrician (in-house or external consultant) should own sign-off.
+**Data sources:** (1) passive accrual as candidates take it (à la ARA free personal snapshot); (2) **paid pilot cohorts** with client organisations; (3) **outcome-sharing partnerships** for criterion data. A qualified psychometrician (in-house or external consultant) should own sign-off.
 
 ---
 

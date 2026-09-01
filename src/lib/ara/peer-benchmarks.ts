@@ -38,7 +38,7 @@ export async function computePeerBenchmarks(
   const sb = createServiceClient();
 
   // Find peer assessments - same region + sector, completed data, not sandbox.
-  // Individual-stage runs (Mode A snapshots / Mode B deep-dives) are excluded:
+  // Individual-stage runs (free personal snapshots / paid personal deep-dives) are excluded:
   // they persist region + sector like org runs but carry ZERO pillar data, so
   // counting them as "peer organizations" inflated the eligibility gate.
   const { data: peerAssessments } = await sb

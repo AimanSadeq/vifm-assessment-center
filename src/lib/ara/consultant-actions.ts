@@ -543,7 +543,7 @@ export async function createReassessmentFromPrior(
         role_label_ar: r.role_label_ar,
         language_preference: r.language_preference,
         // Carry role_key + individual_only (00007/00027): dropping
-        // individual_only turned a Mode C individual-only delegate into a
+        // individual_only turned a departmental-plus-personal individual-only delegate into a
         // pillar respondent with NO pillar assignments - a served-nothing/
         // unanswerable year-2 row.
         role_key: (r as { role_key?: string | null }).role_key ?? null,

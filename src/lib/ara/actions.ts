@@ -512,7 +512,7 @@ export async function createAraRespondent(formData: FormData) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
 
-  // Mode C - individual-only respondents skip pillar assignments and
+  // departmental-plus-personal - individual-only respondents skip pillar assignments and
   // only answer the four-factor items. Honoured only when the parent
   // assessment has include_individual_layer=true (defensive).
   const individualOnly = formData.get("individual_only") === "on";
@@ -675,7 +675,7 @@ export async function bulkImportAraRespondents(formData: FormData) {
   const iRoleAr   = idx("role_label_ar", "role_ar", "arabic_role");
   const iLang     = idx("language", "lang", "language_preference");
   const iPillars  = idx("pillars", "pillar_assignments");
-  // Mode C - workforce-readiness only respondents (skip pillar questions).
+  // departmental-plus-personal - workforce-readiness only respondents (skip pillar questions).
   const iIndividualOnly = idx("individual_only", "individual", "personal_only");
 
   if (iName === -1 || iEmail === -1) {

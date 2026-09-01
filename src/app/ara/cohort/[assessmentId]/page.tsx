@@ -30,7 +30,7 @@ export const dynamic = "force-dynamic";
  *  - Per-respondent names + emails are NOT shown - only counts and
  *    cohort aggregates.
  *  - Only renders for assessments with `include_individual_layer=true`
- *    (Mode C). Other assessments 404.
+ *    (departmental-plus-personal). Other assessments 404.
  *  - The URL is keyed by assessment.id (UUIDv4). Treat it as a
  *    share-by-link credential - anyone with the link can view.
  *  - No PDFs, no respondent-level scores, no editing.
@@ -57,7 +57,7 @@ export default async function PublicCohortDashboardPage({
       }
     >();
 
-  // Gate strictly: must be an org-side assessment with Mode C on.
+  // Gate strictly: must be an org-side assessment with departmental-plus-personal on.
   // Anything else returns 404 so an unrelated assessment id can't leak.
   const eligible =
     !!assessment &&

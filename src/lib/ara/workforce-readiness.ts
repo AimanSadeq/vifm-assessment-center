@@ -100,7 +100,7 @@ export async function computeWorkforceReadiness(
   );
 
   // 3. All responses for these respondents to those questions. PAGINATED:
-  //    a Mode C cohort's individual answers (respondents x up to 60 items)
+  //    a departmental-plus-personal cohort's individual answers (respondents x up to 60 items)
   //    can exceed the PostgREST 1000-row cap, which silently dropped the
   //    later respondents from the workforce rollup.
   const respondentIds = respondentRows.map((r) => r.id);

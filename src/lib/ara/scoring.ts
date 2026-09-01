@@ -82,7 +82,7 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
 
   // Load all scored responses joined with their question pillar_id.
   // Note: open_text responses have question_score = null and are skipped.
-  // PAGINATED: an enterprise Mode C + agentic cohort easily exceeds the
+  // PAGINATED: an enterprise departmental-plus-personal + agentic cohort easily exceeds the
   // PostgREST 1000-row cap (e.g. 12 respondents x ~139 items = 1668 rows);
   // an unpaginated read silently dropped the later respondents from every
   // persisted pillar mean. On a query error we ABORT (keeping the previous
@@ -226,7 +226,7 @@ export async function recalculateAssessmentScores(assessmentId: string): Promise
     // scores but the assessment has scored individual-factor responses, derive
     // the overall as the mean of the four factor means (the exact logic the
     // personal results page uses) and label it with the individual maturity
-    // stage. STAGE-GATED to individual: on a Mode C ORG assessment whose first
+    // stage. STAGE-GATED to individual: on a departmental-plus-personal ORG assessment whose first
     // submitters are individual_only respondents (no pillar answers yet), the
     // data-shape check alone published a personal-factor overall with a
     // personal maturity label onto the org record until the first pillar

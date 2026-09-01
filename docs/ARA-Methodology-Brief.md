@@ -18,7 +18,7 @@ The Compass measures AI readiness on two distinct planes:
 
 **Organisational (8 pillars).** *Strategy · Data · Technology · Talent · Culture · Governance · Operations · Model Management.* Used for Department, Division, and Enterprise stages. A respondent answering on this plane reports on the organisation's posture, not their own.
 
-**Individual (4 factors).** *AI Sense-Check · AI Working Practice · AI Collaboration · AI Adaptive Mindset.* Used for the Personal Snapshot, the consultant-led Personal Deep-Dive, and the optional individual layer in any organisational engagement (Mode C). A respondent answering on this plane reports on their own behaviour.
+**Individual (4 factors).** *AI Sense-Check · AI Working Practice · AI Collaboration · AI Adaptive Mindset.* Used for the Personal Snapshot, the consultant-led Personal Deep-Dive, and the optional individual layer in any organisational engagement (departmental-plus-personal). A respondent answering on this plane reports on their own behaviour.
 
 ### Why two planes
 
@@ -60,7 +60,7 @@ Items use observable behaviours (e.g., "I check AI-generated content for factual
 
 ### Construct validity
 
-Construct validity (does the four-factor model actually carve nature at its joints?) requires a confirmatory factor analysis with N ≥ 200 completed responses on the individual-side bank. We are accumulating responses passively through the free Personal Snapshot at `/ara/personal/start` and will run the CFA - and publish the loadings, fit indices, and any item revisions that result - once the threshold is met. Pre-CFA, the four-factor model is treated as a content-validated heuristic, not an empirically validated structure. Deep-dive (Mode B) and Mode C reports already note this disclosure.
+Construct validity (does the four-factor model actually carve nature at its joints?) requires a confirmatory factor analysis with N ≥ 200 completed responses on the individual-side bank. We are accumulating responses passively through the free Personal Snapshot at `/ara/personal/start` and will run the CFA - and publish the loadings, fit indices, and any item revisions that result - once the threshold is met. Pre-CFA, the four-factor model is treated as a content-validated heuristic, not an empirically validated structure. The paid personal deep-dive and departmental-plus-personal reports already note this disclosure.
 
 ### Criterion validity
 
@@ -195,7 +195,7 @@ This consolidates the evidence in two parts: **(A)** established coefficients fo
 **B. VIFM's own reliability - method, threshold, and current status**
 
 - **Internal consistency:** Cronbach's **α** per factor and per pillar; target **α ≥ .70**. Status: accumulating responses via the free Personal Snapshot; reported once **N ≥ 200** (individual) / **N ≥ 50** (organisational). Not yet met.
-- **Construct validity:** a confirmatory factor analysis of the four-factor individual model is planned at **N ≥ 200**; pre-CFA the structure is a content-validated heuristic (disclosed on every Deep-Dive and Mode C report).
+- **Construct validity:** a confirmatory factor analysis of the four-factor individual model is planned at **N ≥ 200**; pre-CFA the structure is a content-validated heuristic (disclosed on every Deep-Dive and departmental-plus-personal report).
 - **Test-retest:** computed from the annual-reassessment links once repeat data accrues.
 - **Criterion validity:** not claimed - the Compass is diagnostic/developmental, not a selection instrument.
 

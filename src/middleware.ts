@@ -15,7 +15,7 @@ const isAraRedeemRoute = (pathname: string) =>
   pathname === "/ara/redeem" || pathname.startsWith("/ara/redeem/");
 
 // Public ARC cohort dashboard - a share-by-link, read-only client view keyed
-// by the assessment UUID (no PII; gated server-side to Mode C assessments). The
+// by the assessment UUID (no PII; gated server-side to departmental-plus-personal assessments). The
 // page is designed as a share-by-link credential, so bypass auth like redeem.
 const isAraCohortRoute = (pathname: string) =>
   pathname.startsWith("/ara/cohort/");
@@ -25,7 +25,7 @@ const isAraCohortRoute = (pathname: string) =>
 const isAraMethodologyRoute = (pathname: string) =>
   pathname === "/api/ara/methodology/pdf";
 
-// Personal AI Readiness snapshot - anonymous Mode A start + the token-gated
+// Personal AI Readiness snapshot - anonymous free personal snapshot start + the token-gated
 // results page + the token-gated results PDF. No account: the unguessable token
 // plus handler-level gating (eligibility, completion, client visibility) protect
 // them. Without this, the server-side completion task that fetches the PDF to

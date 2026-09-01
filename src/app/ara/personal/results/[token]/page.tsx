@@ -52,8 +52,8 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
   if (!ctx) return notFound();
 
   // Personal results page is valid for:
-  //   - Mode A/B individual-stage assessments (the primary case), AND
-  //   - Mode C respondents on an org assessment that has the individual
+  //   - free personal snapshot / paid personal deep-dive individual-stage assessments (the primary case), AND
+  //   - departmental-plus-personal respondents on an org assessment that has the individual
   //     layer enabled - those respondents have answered the four-factor
   //     items and are entitled to see their personal breakdown.
   // Anyone else (org respondent on a no-layer assessment) gets a 404.
@@ -202,7 +202,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
     }
   }
 
-  // Mode C only - individual-vs-cohort means on each factor card.
+  // departmental-plus-personal only - individual-vs-cohort means on each factor card.
   // We deliberately exclude the current respondent from the cohort
   // mean so the delta isn't self-referential when the cohort is small.
   // Suppress the pill entirely when there are no other respondents
@@ -458,7 +458,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
               score >= 4 ? "bg-emerald-100 text-emerald-900 border-emerald-200"
               : score >= 3 ? "bg-amber-100 text-amber-900 border-amber-200"
               : "bg-rose-100 text-rose-900 border-rose-200";
-            // Mode C only - show delta vs cohort peers (excluding self).
+            // departmental-plus-personal only - show delta vs cohort peers (excluding self).
             const peerMean = cohortMeans[f.id];
             const showDelta = isModeC && cohortPeerCount > 0 && peerMean != null && score > 0;
             const delta = showDelta ? score - (peerMean as number) : 0;

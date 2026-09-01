@@ -426,7 +426,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
   // Personal results email - fires for any respondent whose assessment
   // produced individual-factor answers worth surfacing back to them:
   //   - engagement_stage='individual' (Modes A + B), OR
-  //   - org stage with include_individual_layer=true (Mode C)
+  //   - org stage with include_individual_layer=true (departmental-plus-personal)
   // Org-only respondents on assessments without the layer don't get
   // the email (their results live in the consultant's report).
   const personalEmailApplies =
@@ -458,7 +458,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
       // configured on the org (a delegated/client engagement - the consultant
       // sends the assessment and the CLIENT receives the results, directly via
       // send-to-client or collected via the org "Collect all results" action),
-      // the delegate does NOT receive their own results. Mode A (anonymous, no
+      // the delegate does NOT receive their own results. free personal snapshot (anonymous, no
       // org -> clientEmail null) keeps them, as does an explicit
       // respondent_can_view_results=false override.
       const delegateGetsOwnResults = delegateCanSeeOwnResults(prefs);
@@ -552,7 +552,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
       }
     }
 
-    // Org-stage post-completion work (incl. Mode C). Individual-stage
+    // Org-stage post-completion work (incl. departmental-plus-personal). Individual-stage
     // assessments have no org pillars / regulatory frameworks, so they skip
     // both the consultant notification and the compliance recalc.
     if (a?.engagement_stage !== "individual") {

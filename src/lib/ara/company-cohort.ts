@@ -73,7 +73,7 @@ export type CompanyCohortInsight = {
   completed: number;
   /** Redemptions whose run was purged (assessment/respondent FK set null). */
   purged: number;
-  // Factor rollup (shapes shared with the Mode C workforce rollup).
+  // Factor rollup (shapes shared with the departmental-plus-personal workforce rollup).
   factor_averages: WorkforceFactorAverage[];
   cohort_overall: number | null;
   respondents: WorkforceRespondent[];

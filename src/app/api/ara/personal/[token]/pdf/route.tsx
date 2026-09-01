@@ -80,8 +80,8 @@ export async function GET(
         { status: 403 }
       );
     }
-    // Same eligibility rule as the results page - Mode A/B individual-stage
-    // OR Mode C org-stage with include_individual_layer=true.
+    // Same eligibility rule as the results page - free personal snapshot / paid personal deep-dive individual-stage
+    // OR departmental-plus-personal org-stage with include_individual_layer=true.
     const isPersonalEligible =
       ctx.assessment.engagement_stage === "individual" ||
       !!ctx.assessment.include_individual_layer;

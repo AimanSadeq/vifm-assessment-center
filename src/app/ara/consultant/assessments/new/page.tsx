@@ -177,7 +177,7 @@ export default async function NewAraAssessmentPage({
             })}
           </div>
 
-          {/* Mode C signpost. The "Include individual layer" toggle is on
+          {/* departmental-plus-personal signpost. The "Include individual layer" toggle is on
               Step 2, but reviewers (incl. one on 2026-04-29) miss it
               entirely and assume the platform "removed corporate /
               department / division". Calling it out here means it's

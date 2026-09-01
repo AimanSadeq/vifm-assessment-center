@@ -234,7 +234,7 @@ export async function loadQuestionsForRespondent(
 
   const collected: AraQuestion[] = [];
 
-  // ── Pillar questions (Mode B without individual_only, Mode C) ──
+  // ── Pillar questions (paid personal deep-dive without individual_only, departmental-plus-personal) ──
   if (wantsPillar && effectivePillars.length > 0) {
     const { data } = await sb
       .from("ara_questions")
@@ -264,7 +264,7 @@ export async function loadQuestionsForRespondent(
     collected.push(...pillarItems);
   }
 
-  // ── Individual layer (Mode A, Mode B) ──
+  // ── Individual layer (free personal snapshot, paid personal deep-dive) ──
   if (wantsIndividual) {
     let q = sb
       .from("ara_questions")

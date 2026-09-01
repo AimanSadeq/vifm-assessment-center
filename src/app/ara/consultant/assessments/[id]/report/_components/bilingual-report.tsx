@@ -95,7 +95,7 @@ export type BilingualReportProps = {
    *  pillar. When set, the report carries a reduced-form caveat - custom-form
    *  scores are indicative and not benchmark-comparable to full-form runs. */
   questionsPerPillar?: number | null;
-  /** Workforce AI Readiness (Mode C) cohort rollup. The Workforce
+  /** Workforce AI Readiness (departmental-plus-personal) cohort rollup. The Workforce
    *  section renders only when includeIndividualLayer is true and at
    *  least one respondent has an overall score. */
   workforceRollup?: WorkforceReadinessRollup | null;
@@ -103,7 +103,7 @@ export type BilingualReportProps = {
    *  only when includeAgenticLayer is true and at least one respondent
    *  has answered agentic-dimension items. */
   agenticRollup?: AgenticReadinessRollup | null;
-  /** Mode C toggle - gates the Workforce AI Readiness section. */
+  /** departmental-plus-personal toggle - gates the Workforce AI Readiness section. */
   includeIndividualLayer?: boolean;
   /** Agentic-layer toggle - gates the Agentic-AI Readiness section. */
   includeAgenticLayer?: boolean;
@@ -580,7 +580,7 @@ export function BilingualReport(p: BilingualReportProps) {
                     {pillar.name_ar}
                   </h2>
                 </div>
-                {/* Talent/Culture ↔ workforce bridge (Mode C): these two pillars
+                {/* Talent/Culture ↔ workforce bridge (departmental-plus-personal): these two pillars
                     are where individual capability lives institutionally, so
                     point the reader at the person-level evidence when the
                     engagement measured the individual layer. */}
@@ -1149,7 +1149,7 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
-      {/* ─── Workforce AI Readiness (Mode C) ─── *
+      {/* ─── Workforce AI Readiness (departmental-plus-personal) ─── *
        * Renders only when this assessment opted into the individual
        * readiness layer AND at least one respondent has a four-factor
        * overall. Cohort-level rollup only - per-respondent breakdown

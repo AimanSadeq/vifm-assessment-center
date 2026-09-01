@@ -84,7 +84,7 @@ flowchart LR
 
 ### Delegate (respondent) roadmap
 
-The path for a person answering the survey — whether on behalf of an organisation (Mode B / C) or as a free Personal Snapshot (Mode A).
+The path for a person answering the survey — whether on behalf of an organisation (departmental plus personal) or as a free personal snapshot.
 
 ```mermaid
 flowchart LR
@@ -187,7 +187,7 @@ Key fields:
 - **Default language** — what the respondent form opens in (they can still toggle)
 - **Question bank version** — defaulted to the active version
 - **Scope label** — required for Department/Division (e.g., "Risk Management"), optional for Enterprise
-- **Include individual layer (Mode C)** — opt in to a per-respondent personal-readiness rollup alongside the org pillar items
+- **Include individual layer (departmental-plus-personal)** — opt in to a per-respondent personal-readiness rollup alongside the org pillar items
 - **Tier** — `snapshot` (24 personal items) or `deep_dive` (48). Only relevant when individual layer is on
 - **Sandbox** — toggle on for training/demo runs; protects real consultant dashboards from clutter
 
@@ -202,7 +202,7 @@ For each respondent:
 - Role (e.g., "CIO", "Head of Risk")
 - Language preference (EN / AR)
 - Pillar assignments — which of the 8 pillars they should answer for. Stage 1 has 4 in scope, Stage 2 has 6, Stage 3 has all 8.
-- **Individual-only flag (Mode C)** — when ticked, the respondent skips the pillar items and only answers the 4-factor personal layer
+- **Individual-only flag (departmental-plus-personal)** — when ticked, the respondent skips the pillar items and only answers the 4-factor personal layer
 
 CSV import is also supported — paste or upload `name, email, role, language, pillar_assignments` and the wizard validates row by row.
 
@@ -238,7 +238,7 @@ What's in this tab:
 - **Validated scores** — for each pillar, edit the auto-scored maturity band based on workshop findings
 - **Bilingual consultant notes** — write findings; if you write in EN the system translates to AR via Claude on save (you can edit the AR after)
 - **Capability-building plan** — VIFM course recommender ranked by per-pillar gap × course relevance
-- **Workforce readiness rollup card** — appears when Mode C is on; cohort overall + 4 factor cards + per-respondent breakdown table + a development-demand histogram (% of cohort below target per factor)
+- **Workforce readiness rollup card** — appears when the departmental-plus-personal layer is on; cohort overall + 4 factor cards + per-respondent breakdown table + a development-demand histogram (% of cohort below target per factor)
 
 #### 8. Generate the PDF report
 
@@ -272,7 +272,7 @@ Clicking the link opens the respondent form. The first prompt asks for language 
 
 #### 3. Answer the questions
 
-The form serves Layer 1 questions for the pillars you were assigned, plus (if Mode C is on) the four-factor personal items.
+The form serves Layer 1 questions for the pillars you were assigned, plus (if the departmental-plus-personal layer is on) the four-factor personal items.
 
 ![Respondent question — Likert scale](images/ara/22-respondent-question.png)
 
@@ -289,13 +289,13 @@ Features the respondent gets:
 Once every required item is answered, the *Submit* button enables. After submission:
 
 - The token still works for read-only access (you can re-open and download a copy if entitled)
-- For Personal / Mode C respondents — a results email fires with a link to your personal snapshot
+- For Personal / departmental-plus-personal respondents — a results email fires with a link to your personal snapshot
 
 ---
 
 ### Personal — taking the free snapshot
 
-The free Mode A path. Anonymous self-served at `/ara/personal/start`.
+The free personal snapshot path. Anonymous self-served at `/ara/personal/start`.
 
 #### 1. Start the snapshot
 
@@ -327,7 +327,7 @@ The results page surfaces:
 
 - **Overall score** with **maturity stage badge** (Emerging / Practising / Embedded)
 - **Per-factor cards** with score, tone (Strong/Developing/Opportunity), and a sharp behavioural description
-- **Vs cohort delta pill** — when you're part of a Mode C engagement, shows your score vs the cohort peer mean (excludes self)
+- **Vs cohort delta pill** — when you're part of a departmental-plus-personal engagement, shows your score vs the cohort peer mean (excludes self)
 - **Recommended VIFM programmes** — ranked by `gap × course relevance` × ★ HIGH FIT badge for high-confidence matches
 
 #### 4. Download the PDF
@@ -350,7 +350,7 @@ The PDF includes:
 - **12-month action roadmap** — gantt-style with owner, dependencies, target maturity
 - **Compliance summary** — mapped against the UAE/Saudi regulatory frameworks in scope
 - **Use-case portfolio review** — Stage 2/3
-- **Workforce AI Readiness** — when Mode C is on; cohort + 4 factor table + tier badge
+- **Workforce AI Readiness** — when the departmental-plus-personal layer is on; cohort + 4 factor table + tier badge
 - **Year-on-year comparison** — Stage 3 reassessments
 
 ---
@@ -461,13 +461,13 @@ Likert 1–5 across all factors and pillars:
 | `/ara` | Public | Landing page |
 | `/ara/engage` | Public | Stage comparison + sales pitch |
 | `/ara/roadmap` | Public | Platform overview |
-| `/ara/personal/start` | Public | Free Mode A snapshot entry |
+| `/ara/personal/start` | Public | Free personal snapshot entry |
 | `/ara/personal/results/[token]` | Respondent | Personal results + cohort delta |
 | `/api/ara/personal/[token]/pdf` | Respondent | Personal snapshot PDF |
 | `/ara/respond/[token]` | Respondent | Survey form (token-gated) |
 | `/ara/consultant` | Consultant | Dashboard |
 | `/ara/consultant/assessments/new` | Consultant | New assessment wizard (org-side) |
-| `/ara/consultant/personal-deep-dive/new` | Consultant | New paid Mode B deep-dive |
+| `/ara/consultant/personal-deep-dive/new` | Consultant | New paid personal deep-dive |
 | `/ara/consultant/assessments/[id]` | Consultant | Assessment detail (Phase 2 tab) |
 | `/api/ara/reports/[id]/pdf` | Consultant | Bilingual PDF report endpoint |
 | `/ara/admin` | Admin | Admin console |

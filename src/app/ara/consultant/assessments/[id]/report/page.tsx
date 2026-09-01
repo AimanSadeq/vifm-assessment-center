@@ -245,7 +245,7 @@ export default async function AraReportPage({
   // question-bank version. The render branch handles all three states.
   const yoyComparison = await computeYoYComparison(assessment.id);
 
-  // Mode C workforce readiness rollup - only when the assessment opted
+  // departmental-plus-personal workforce readiness rollup - only when the assessment opted
   // into the individual layer. Tolerant of missing data: returns null
   // and the section render branch falls through to nothing.
   const workforceRollup = assessment.include_individual_layer
@@ -1255,7 +1255,7 @@ export default async function AraReportPage({
           </section>
         )}
 
-        {/* ─── Workforce AI Readiness - Mode C only ─── *
+        {/* ─── Workforce AI Readiness - departmental-plus-personal only ─── *
          * Renders only when this assessment opted into the individual
          * readiness layer AND respondents have answered four-factor
          * items. Cohort-level rollup with overall + per-factor mean
@@ -1849,7 +1849,7 @@ function PillarPages({
   lang?: "en" | "ar";
   /** Whether the engagement includes the Phase 2 validation workshop. */
   hasPhase2?: boolean;
-  /** Talent/Culture <-> workforce bridge note (Mode C); null hides it. */
+  /** Talent/Culture <-> workforce bridge note (departmental-plus-personal); null hides it. */
   workforceNote?: string | null;
   /** Per-respondent pillar means - powers the spread band chart. */
   respondentMeans?: number[];

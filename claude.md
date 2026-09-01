@@ -21,7 +21,7 @@ All 5 development phases are **complete**. **Auth is ENABLED** (`AUTH_ENABLED = 
 
 **VIFM Courses workstream (2026-04-28):** The bridge that turns AC + ARA gap diagnoses into VIFM training-course recommendations. Four-day workstream shipped end-to-end. Day 1: schema (00023, 00024) + sidebar entry + manual editor for the seven blocks (Course Overview · Target Competencies · Course Objectives · Target Audience · Course Methodology · Course Outline · Note). Day 2: AI PDF extraction at `/admin/courses/import` — Claude reads all 6 PDF blocks + proposes AC competency tags + ARA pillar tags with rationale. 127 courses imported and tagged on the live DB. Day 3: course recommender library (`src/lib/recommender/courses.ts`) + panels on AC engagement detail (cohort-aggregated with per-candidate filter), ARA Phase 2 tab, and a 4th page on the candidate Learning Plan PDF showing top-5 recommended VIFM programmes with ★ HIGH FIT badges and per-driver chips. Day 3d/e/f: course mapping panel on `/admin/courses/[id]`, per-candidate recommendation filter via `?candidate=<id>`, training recommendations on the Learning Plan PDF. Lifecycle: re-import-overwrite by code/title (case-insensitive), per-row delete with confirmation, drag-and-drop on the import zone, and a Levenshtein duplicate-finder at `/admin/courses/duplicates`. Block 6 supports 4-level depth (main header → subsections → bullets → sub-bullets) via a markdown-style editor that round-trips structured jsonb.
 
-**ARA Personal / Individual readiness (2026-04-28):** Three deployment modes for VIFM-native four-factor individual AI readiness, designed mapped to the existing AC 4-domain framework (THINKING · RESULTS · PEOPLE · SELF). Factors: AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset. Mode A (free snapshot, 24 items, anonymous self-served at `/ara/personal/start`). Mode B (paid deep-dive, 48 items, consultant-issued at `/ara/consultant/personal-deep-dive/new` — requires admin/consultant role). Mode C (individual layer alongside an org engagement — toggle on the assessment-create wizard, optional `individual_only` respondents who skip pillar questions, workforce-readiness rollup card on the consultant assessment detail and a dedicated section in the bilingual org PDF). Schema in 00025 (engagement_stage extended + individual_factor_id), 00026 (16-item snapshot seed), 00027 (tier system + 32 more items + include_individual_layer + individual_only). Consultant dashboard surfaces personal-snapshot activity (last 30 days, snapshot vs deep-dive distinction). On completion, every individual respondent gets the personal results-link email (URL + PDF) regardless of mode; the personal results page + PDF endpoint are gated to individual-stage OR include_individual_layer=true assessments only.
+**ARA Personal / Individual readiness (2026-04-28):** Three deployment modes for VIFM-native four-factor individual AI readiness, designed mapped to the existing AC 4-domain framework (THINKING · RESULTS · PEOPLE · SELF). Factors: AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset. Free personal snapshot (24 items, anonymous self-served at `/ara/personal/start`). Paid personal deep-dive (48 items, consultant-issued at `/ara/consultant/personal-deep-dive/new` — requires admin/consultant role). Departmental plus personal (individual layer alongside an org engagement — toggle on the assessment-create wizard, optional `individual_only` respondents who skip pillar questions, workforce-readiness rollup card on the consultant assessment detail and a dedicated section in the bilingual org PDF). Schema in 00025 (engagement_stage extended + individual_factor_id), 00026 (16-item snapshot seed), 00027 (tier system + 32 more items + include_individual_layer + individual_only). Consultant dashboard surfaces personal-snapshot activity (last 30 days, snapshot vs deep-dive distinction). On completion, every individual respondent gets the personal results-link email (URL + PDF) regardless of mode; the personal results page + PDF endpoint are gated to individual-stage OR include_individual_layer=true assessments only.
 
 ## Tech Stack
 - **Framework:** Next.js 14 with App Router and TypeScript (strict mode)
@@ -85,11 +85,11 @@ src/
       academy/[enrollmentId]/lesson/[lessonKey]/  # Per-lesson AI knowledge-check (reuses the G3 quiz engine)
       credentials/[candidateId]/  # Candidate credential wallet (Academy / AC Ready Now / Fluent CEFR)
     ara/
-      personal/start/                  # Free Personal AI Readiness Snapshot entry (Mode A, anonymous)
+      personal/start/                  # Free Personal AI Readiness Snapshot entry (anonymous)
       personal/results/[token]/        # Bilingual results page — factor scores + course recommendations + PDF download
-      consultant/personal-deep-dive/new/  # Paid 48-item deep-dive issuance (Mode B, requires admin/consultant role)
+      consultant/personal-deep-dive/new/  # Paid 48-item deep-dive issuance (requires admin/consultant role)
       consultant/                      # Consultant dashboard with personal-snapshot-activity panel (last 30d, snapshot vs deep-dive)
-      consultant/assessments/[id]/     # Org assessment detail — adds Workforce Readiness rollup card on Phase 2 tab when Mode C
+      consultant/assessments/[id]/     # Org assessment detail — adds Workforce Readiness rollup card on Phase 2 tab when departmental-plus-personal
       respond/[token]/                 # Stage-aware respondent form — pillar questions + four-factor items based on assessment.engagement_stage / include_individual_layer / individual_only
     ac/                   # Standalone AC AI tools
       fluent/             # Fluent English placement — runner + cohort + calibration (admin "Fluent" nav link)
@@ -110,7 +110,7 @@ src/
       reports/[engId]/[candId]/learning-plan/  # Personalized 30/60/90 Learning Plan PDF + VIFM training recommendations page
       role-profiles/[id]/export/               # JSON export of role profile + competencies (G6)
       consent/[candId]/                        # Consent submission endpoint
-      ara/reports/[assessmentId]/pdf/          # Bilingual EN/AR/side-by-side ARA PDF (Puppeteer) — includes Workforce Readiness section when Mode C
+      ara/reports/[assessmentId]/pdf/          # Bilingual EN/AR/side-by-side ARA PDF (Puppeteer) — includes Workforce Readiness section when departmental-plus-personal
       ara/personal/[token]/pdf/                # Personal AI Readiness Snapshot PDF (React-PDF) — token-gated
       ac/cbi/                                  # CBI agent — {action: "turn" | "score"}
       ac/fluent/                               # Fluent start/score (+ /transcribe Whisper, /tts, /[resultId]/certificate PDF)
@@ -132,7 +132,7 @@ src/
     constants/            # Exercise type labels, ARA pillars, ARA stages, ARA individual factors (the 4 VIFM personal factors)
     i18n/                 # Config, provider (route-aware), cookie + locale constants, server-side getServerT helper, EN + AR locale files
     integrations/         # Email (7 AC templates incl. prehire_invitation), Video (Daily.co placeholder), Speech (Azure pronunciation; Whisper via scripts/), Transcription (shared Whisper+Azure helper for Fluent speaking)
-    ara/                  # ARA-specific helpers — auth-guards, email (3 ARA templates), respondent-access, scoring, distortion, year-on-year, peer-benchmarks, regulatory engine, workforce-readiness rollup (Mode C)
+    ara/                  # ARA-specific helpers — auth-guards, email (3 ARA templates), respondent-access, scoring, distortion, year-on-year, peer-benchmarks, regulatory engine, workforce-readiness rollup (departmental-plus-personal)
     reflect/              # Reflect 360 — actions, admin-actions, idp-actions, rater-access, rater-actions, scoring, validations, email
     academy/              # Academy completion (markEnrollmentComplete → academy_completion credential) + lesson-key helpers
     credentials/          # Shared issuer + public verification reader (issue.ts) + AC Ready-Now issuance (ac-ready-now.ts)
@@ -164,7 +164,7 @@ supabase/
     00023_vifm_courses.sql                    # vifm_courses + course→AC competency + course→ARA pillar tag tables (recommender bridge)
     00024_vifm_courses_add_note.sql           # vifm_courses.note_en/_ar — Block 7 admin annotations
     00025_ara_individual_stage.sql            # engagement_stage += 'individual' + ara_questions.individual_factor_id (4 VIFM factors)
-    00026_ara_individual_seed.sql             # 16 self-assessment items on v1.1 (4 per factor) — Mode A snapshot baseline
+    00026_ara_individual_seed.sql             # 16 self-assessment items on v1.1 (4 per factor) — free-snapshot baseline
     00027_ara_individual_tiers.sql            # tier discriminator on questions + assessments + 32 more items → 24 (snapshot) / 48 (deep-dive) per factor; include_individual_layer + individual_only flags
     00028_ara_question_validation_evidence.sql # ARA per-question validation_evidence JSONB (anchor instruments + human-review status)
     00029_assessment_pillars_in_scope.sql      # Per-assessment pillars_in_scope override (decouples pillar set from engagement_stage)
@@ -352,7 +352,7 @@ New module being built alongside the existing AC portal. Full spec in `VIFM_ARA_
 ### ARA deferred items (from earlier milestones)
 Track here - pick up as scope allows. Do NOT delete without user confirmation. Items in this list are confirmed un-shipped; items previously listed and now shipped have been removed.
 - ~~AUTH_ENABLED flip~~ **DONE** - auth enabled 2026-06-13 (commit `1092c28`); demo login hidden in production; enforcement verified (`/admin/*` + `/candidate/*` → `/login`). Provision admins via `scripts/create-admin.ts`.
-- **Mode A norm group accumulation:** percentile claims like "you scored at the X% percentile of GCC respondents" require ~200-500 completed Personal AI Readiness Snapshots in the DB. Passive — accumulates as people take the free snapshot. No action needed until the volume's there.
+- **Free-personal-snapshot norm group accumulation:** percentile claims like "you scored at the X% percentile of GCC respondents" require ~200-500 completed Personal AI Readiness Snapshots in the DB. Passive — accumulates as people take the free snapshot. No action needed until the volume's there.
 
 ### Recently shipped (2026-05-15)
 - **Customer-facing training catalogue with quote CTAs:** discoverable from `/ara` header nav, surfaced again on `/ara/engage` as a bridge section, and cross-linked from the personal results page below the gap-driven recommender. The full flow already existed at `/courses` (public listing with vertical+level filters), `/courses/[code]` (programme detail), `/courses/[code]/request-quote` (lead-gen form with org/role/cohort-size/timeline/notes), and `/admin/courses/quotes` + `/admin/courses/quotes/[id]` for consultant follow-up. Only the discoverability into the marketing surfaces was missing.
@@ -370,7 +370,7 @@ A separate readiness construct on the question bank measuring readiness to **del
 - **Six dimensions** ([src/lib/constants/ara-agentic-dimensions.ts](src/lib/constants/ara-agentic-dimensions.ts), bilingual + tone colour, each anchored to the `governance` or `model_management` pillar): Agent Governance & Accountability, Human-in-the-Loop & Oversight, Failure-Mode & Risk Awareness, Tool & Data Access Control, Autonomy Calibration, Auditability & Traceability.
 - **Schema (migration 00041):** `ara_questions.agentic_dimension_id` (CHECK-constrained to the six ids) + `ara_assessments.include_agentic_layer`. 18 seed items (3 per dimension, question numbers 201–218, Layer 2) live on the active v1.1 bank, so existing assessments inherit them the moment they opt in. The items carry a real `pillar_id` for storage compatibility but are always filtered by `agentic_dimension_id`, so they never pollute the 8-pillar scoring.
 - **Respondent flow** ([src/lib/ara/respondent-access.ts](src/lib/ara/respondent-access.ts)): served to org respondents only — `wantsAgentic = !isIndividualStage && include_agentic_layer && !individual_only`. The pillar query explicitly excludes agentic + individual items (`.is("agentic_dimension_id", null)`), so the three layers (pillar / individual-factor / agentic) never bleed into each other.
-- **Rollup + deliverables:** `computeAgenticReadiness(assessmentId)` ([src/lib/ara/agentic-readiness.ts](src/lib/ara/agentic-readiness.ts)) returns cohort mean per dimension + per-respondent breakdown + cohort overall (target = 4; null when no agentic answers yet) — mirrors the Mode C workforce rollup. Surfaces as a rollup card on the consultant assessment detail and an "Agentic-AI Readiness" section in the bilingual PDF report (cohort overall + six per-dimension rows; renders only when the layer is on and respondents have answered).
+- **Rollup + deliverables:** `computeAgenticReadiness(assessmentId)` ([src/lib/ara/agentic-readiness.ts](src/lib/ara/agentic-readiness.ts)) returns cohort mean per dimension + per-respondent breakdown + cohort overall (target = 4; null when no agentic answers yet) — mirrors the departmental-plus-personal workforce rollup. Surfaces as a rollup card on the consultant assessment detail and an "Agentic-AI Readiness" section in the bilingual PDF report (cohort overall + six per-dimension rows; renders only when the layer is on and respondents have answered).
 
 ### Critical ARA business rules
 - Reports are **never** auto-sent to clients - consultant controls delivery
@@ -432,11 +432,11 @@ VIFM is fundamentally a training company; the AC and ARA modules are *diagnostic
 - `recommendCoursesForAcCandidate({ engagementId, candidateId })` — per-candidate consensus_ratings → competency gaps → courses, ranked by sum(gap × relevance).
 - `recommendCoursesForAcCohort({ engagementId })` — aggregate variant, sums every candidate's gaps before ranking.
 - `recommendCoursesForAraAssessment({ assessmentId })` — ARA pillar maturity_level → gap (target=4) → courses tagged to those pillars.
-- `recommendCoursesForIndividualSnapshot({ factorScores })` — Mode A/B/C personal readiness → maps each below-target factor to AC competency names from `ARA_INDIVIDUAL_FACTORS`, looks up courses tagged to those competencies.
+- `recommendCoursesForIndividualSnapshot({ factorScores })` — all three personal modes personal readiness → maps each below-target factor to AC competency names from `ARA_INDIVIDUAL_FACTORS`, looks up courses tagged to those competencies.
 
 ### Recommender UI surfaces
 - **AC engagement detail** (`/admin/engagements/[id]`): cohort-aggregated panel below the engagement card, with a `?candidate=<id>` URL filter that switches to per-candidate view. Driver chips show competency name + gap × relevance + AI rationale on hover.
-- **ARA Phase 2 tab** (`/ara/consultant/assessments/[id]`): "Capability-building plan" card listing courses ranked by per-pillar maturity gap. When Mode C is on, also shows a "Workforce training plan" panel using the cohort factor scores.
+- **ARA Phase 2 tab** (`/ara/consultant/assessments/[id]`): "Capability-building plan" card listing courses ranked by per-pillar maturity gap. When the departmental-plus-personal layer is on, also shows a "Workforce training plan" panel using the cohort factor scores.
 - **Candidate Learning Plan PDF**: 4th page (after Cover, Roadmap, Per-Competency cards) showing top-5 recommended VIFM programmes with ★ HIGH FIT badging when `total_score >= 4`, per-driver chips, and the AI rationale for the top driver as a soft caption.
 - **ARA Personal Snapshot PDF + results page**: courses ranked by personal factor gaps (target=4), surfaced inline below the factor breakdown.
 
@@ -457,21 +457,25 @@ Mapped to the existing AC 4-domain framework (consistent with org-side ARA's 8 p
 
 ### Three deployment modes
 
+The letters A/B/C were internal shorthand and have been retired in favour of
+names that say what each mode is (client instruction 2026-09-01). None of this
+vocabulary was ever client-facing.
+
 | Mode | Stage | Tier | Items | Issuance | URL |
 |---|---|---|---|---|---|
-| A — Free snapshot | `individual` | `snapshot` | 24 (6/factor) | Anonymous self-served | `/ara/personal/start` |
-| B — Paid deep-dive | `individual` | `deep_dive` | 48 (12/factor) | Consultant-issued | `/ara/consultant/personal-deep-dive/new` |
-| C — Org engagement layer | dept/division/enterprise + `include_individual_layer=true` | `snapshot` or `deep_dive` | 24 or 48 | Wizard toggle on `/ara/consultant/assessments/new` | (alongside org pillar items) |
+| Free personal snapshot | `individual` | `snapshot` | 24 (6/factor) | Anonymous self-served | `/ara/personal/start` |
+| Paid personal deep-dive | `individual` | `deep_dive` | 48 (12/factor) | Consultant-issued | `/ara/consultant/personal-deep-dive/new` |
+| Departmental plus personal | dept/division/enterprise + `include_individual_layer=true` | `snapshot` or `deep_dive` | 24 or 48 | Wizard toggle on `/ara/consultant/assessments/new` | (alongside org pillar items) |
 
-All three modes share infrastructure: same `ara_questions` table (distinguished by `individual_factor_id` + `tier`), same `ara_respondents` flow (Mode C optionally `individual_only=true` to skip pillar questions), same results page (`/ara/personal/results/[token]` — gated to individual-stage OR include_individual_layer assessments) and same PDF endpoint (`/api/ara/personal/[token]/pdf`).
+All three modes share infrastructure: same `ara_questions` table (distinguished by `individual_factor_id` + `tier`), same `ara_respondents` flow (departmental-plus-personal optionally `individual_only=true` to skip pillar questions), same results page (`/ara/personal/results/[token]` — gated to individual-stage OR include_individual_layer assessments) and same PDF endpoint (`/api/ara/personal/[token]/pdf`).
 
-### Mode C consultant deliverables
+### Departmental-plus-personal consultant deliverables
 - **Workforce-readiness rollup card** on the assessment detail's Phase 2 tab — cohort overall + 4 factor cards with green/amber/rose tones (≥4 / ≥3 / <3) + per-respondent breakdown table with `· individual-only` markers.
 - **"Workforce training plan" panel** below the rollup — recommendCoursesForIndividualSnapshot driven by cohort factor means.
 - **Workforce AI Readiness section** in the bilingual org PDF — appears before "Next Steps" when the layer is on and respondents have answered. Cohort overall row + 4 per-factor rows + reading-the-scores legend + tier badge. Per-respondent breakdown intentionally not in the client-facing PDF (stays in consultant view; consultant decides what to surface).
 
 ### Email + delivery
-[src/lib/ara/email.ts](src/lib/ara/email.ts) ships 3 ARA email templates (each in EN / AR / bilingual): `ara_respondent_invitation` (M2.1), `ara_consultant_completion` (M3.3), `ara_personal_results_link` (Personal). The personal-results email fires on completion for Mode A, B, AND Mode C respondents — every individual respondent gets a direct link to their own results page + PDF, regardless of how the assessment was issued. Sandbox redirect honoured throughout via `SANDBOX_EMAIL_REDIRECT` env var; falls back to console-mock when Microsoft Graph creds are absent.
+[src/lib/ara/email.ts](src/lib/ara/email.ts) ships 3 ARA email templates (each in EN / AR / bilingual): `ara_respondent_invitation` (M2.1), `ara_consultant_completion` (M3.3), `ara_personal_results_link` (Personal). The personal-results email fires on completion for free personal snapshot, B, AND departmental-plus-personal respondents — every individual respondent gets a direct link to their own results page + PDF, regardless of how the assessment was issued. Sandbox redirect honoured throughout via `SANDBOX_EMAIL_REDIRECT` env var; falls back to console-mock when Microsoft Graph creds are absent.
 
 ### Consultant dashboard
 `/ara/consultant` filters out `engagement_stage='individual'` from the org-side pipeline view and renders a "Personal snapshots · last 30 days" panel showing snapshot vs deep-dive distinction (violet badge for deep-dive). Header copy reads e.g. `5 started · 2 completed · 1 deep-dive`.

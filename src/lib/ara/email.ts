@@ -142,6 +142,23 @@ Dashboard: ${d.assessmentUrl}`,
   // Snapshot. Carries the bookmarkable results URL plus the PDF
   // download URL so they can open either from any device. No
   // marketing copy - keep it minimal and respectful.
+  /**
+   * RETIRED BY POLICY - do not wire this up without an explicit decision.
+   *
+   * The taker never sees their own results (XP-13). The results page returns a
+   * thank-you card to anyone without a staff session, and the personal PDF
+   * route 403s a token-only caller. This template tells the employee the
+   * opposite on all three counts: that the results page is theirs to bookmark,
+   * that they can download the PDF, and that the page lists their four factor
+   * scores. Sending it would promise three things the product refuses.
+   *
+   * Confirmed by the client 2026-09-01: the employee should see neither their
+   * factor scores nor the report; results go to the organisation. The copy is
+   * kept only so it can be reused if that posture is ever reversed - in which
+   * case the page and PDF gates must be changed FIRST.
+   *
+   * It currently has no call site anywhere in the codebase.
+   */
   ara_personal_results_link: {
     en: (d) => ({
       contentType: "Text",

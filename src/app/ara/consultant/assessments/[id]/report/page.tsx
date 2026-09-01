@@ -375,6 +375,14 @@ export default async function AraReportPage({
     pillar_weight: ((assessment.pillar_weights as Record<string, number>)?.[p.id] ?? 12.5),
   }));
 
+  // Do the configured pillar weights differentiate at all? With the default
+  // 12.5% across all 8 they do not, and the investment matrix's vertical axis
+  // carries no information - which changes how the chart must be described.
+  const investmentWeightsVary = (() => {
+    const w = investmentData.map((d) => d.pillar_weight);
+    return w.length > 0 && Math.max(...w) - Math.min(...w) > 0.01;
+  })();
+
   // Roadmap initiatives - derive from gaps (Quick Wins / Build) and
   // strengths (Transform). Consultant Phase 2 work can replace later.
   const roadmapInitiatives = [
@@ -1019,11 +1027,21 @@ export default async function AraReportPage({
         {(
           <section className="report-page">
             <h2 className="report-h2">{t("investment_matrix")}</h2>
+            {/* The "focus on Quick Wins" instruction only makes sense when the
+                weights actually place pillars in different quadrants. With the
+                default uniform weights every pillar sits on the midline, and
+                telling the reader to look top-left points them at an empty
+                quadrant. */}
             <p className="report-body">
               Each pillar plotted by estimated effort required to close the gap
               (x-axis) versus business value as indicated by pillar weight
-              (y-axis). Focus on the top-left <strong>Quick Wins</strong> quadrant
-              first.
+              (y-axis).{" "}
+              {investmentWeightsVary ? (
+                <>Focus on the top-left <strong>Quick Wins</strong> quadrant first.</>
+              ) : (
+                <>Read it left to right: the pillars furthest left need the least
+                work to reach the 4.00 target.</>
+              )}
             </p>
             <div style={{ marginTop: "16pt" }}>
               <InvestmentMatrix pillarData={investmentData} />

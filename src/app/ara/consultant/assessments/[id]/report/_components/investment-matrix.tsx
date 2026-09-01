@@ -40,35 +40,85 @@ export async function InvestmentMatrix({
   const plotW = W - PAD * 2;
   const plotH = H - PAD * 2;
 
-  const maxWeight = Math.max(...pillarData.map((p) => p.pillar_weight), 12.5);
   const maxGap = 3.0; // 4.0 - 1.0
 
-  // Deterministic hash -> 2D jitter offset, so rerunning produces the
-  // same visual and colliding points spread predictably.
+  // Business value is normalised across the RANGE of configured weights, not
+  // against the maximum. Dividing by the max made every pillar read as maximum
+  // value whenever weights were uniform - which is the default, all 8 at
+  // 12.5% - so value resolved to 1.0 for all of them, y landed exactly on the
+  // top edge, and the jitter then pushed the whole cohort of dots OUTSIDE the
+  // plot box, floating above the Quick Wins label. Range-normalising also
+  // stops two genuinely different weights (10% and 15%) compressing into the
+  // top of the axis.
+  const weights = pillarData.map((p) => p.pillar_weight);
+  const minWeight = Math.min(...weights);
+  const maxWeight = Math.max(...weights);
+  const weightsVary = maxWeight - minWeight > 0.01;
+  /** 0..1 up the value axis; the midline when every pillar is weighted alike. */
+  const valueOf = (w: number) => (weightsVary ? (w - minWeight) / (maxWeight - minWeight) : 0.5);
+
+  const R = 11; // point radius - the clamp has to keep the whole dot inside
+
+  // Deterministic hash -> 2D jitter offset, so rerunning produces the same
+  // visual and colliding points spread predictably. Smaller than before because
+  // uniform weights now stack every point on one line, where a large offset
+  // reads as real vertical difference.
   const jitter = (pillarId: string) => {
     let h = 0;
     for (let i = 0; i < pillarId.length; i++) h = (h * 31 + pillarId.charCodeAt(i)) >>> 0;
-    const dx = ((h % 17) - 8) * 1.6; // -12.8..+12.8
-    const dy = (((h >> 8) % 17) - 8) * 1.6;
+    const dx = ((h % 13) - 6) * 1.5; // -9..+9
+    const dy = (((h >> 8) % 13) - 6) * 1.5;
     return { dx, dy };
   };
+
+  /** Keeps a jittered point (and its whole radius) inside the axes. */
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
   const pts = pillarData
     .filter((p) => p.raw_score != null)
     .map((p, i) => {
       const gap = Math.max(0, 4.0 - (p.raw_score as number));
       const effort = Math.min(1, gap / maxGap);
-      const value = Math.min(1, p.pillar_weight / maxWeight);
+      const value = valueOf(p.pillar_weight);
       const pillar = ARA_PILLARS.find((x) => x.id === p.pillar_id);
       const { dx, dy } = jitter(p.pillar_id);
       return {
         pillar_id: p.pillar_id,
         index: i + 1,
         name: pillar?.name_en ?? p.pillar_id,
-        x: PAD + effort * plotW + dx,
-        y: PAD + (1 - value) * plotH + dy,
+        x: clamp(PAD + effort * plotW + dx, PAD + R, PAD + plotW - R),
+        y: clamp(PAD + (1 - value) * plotH + dy, PAD + R, PAD + plotH - R),
       };
     });
+
+  // De-overlap. Hash jitter alone does not guarantee separation: two pillars
+  // with near-identical scores (Governance 2.31 and Model Management 2.42)
+  // landed on top of each other with one number unreadable. This pushes any
+  // colliding pair apart along the line between them, deterministically and
+  // in place, then re-clamps. A handful of passes is plenty for 8 points.
+  const MIN_SEP = R * 2 + 2;
+  for (let pass = 0; pass < 24; pass++) {
+    let moved = false;
+    for (let i = 0; i < pts.length; i++) {
+      for (let j = i + 1; j < pts.length; j++) {
+        const a = pts[i], b = pts[j];
+        let ddx = b.x - a.x, ddy = b.y - a.y;
+        let d = Math.hypot(ddx, ddy);
+        if (d >= MIN_SEP) continue;
+        // Exactly coincident: separate along a fixed axis so the result is
+        // stable rather than dependent on floating-point noise.
+        if (d < 0.001) { ddx = 1; ddy = 0; d = 1; }
+        const push = (MIN_SEP - d) / 2;
+        const ux = (ddx / d) * push, uy = (ddy / d) * push;
+        a.x = clamp(a.x - ux, PAD + R, PAD + plotW - R);
+        a.y = clamp(a.y - uy, PAD + R, PAD + plotH - R);
+        b.x = clamp(b.x + ux, PAD + R, PAD + plotW - R);
+        b.y = clamp(b.y + uy, PAD + R, PAD + plotH - R);
+        moved = true;
+      }
+    }
+    if (!moved) break;
+  }
 
   const midX = PAD + plotW / 2;
   const midY = PAD + plotH / 2;
@@ -82,6 +132,7 @@ export async function InvestmentMatrix({
   };
 
   return (
+    <>
     <svg viewBox={`0 0 ${totalW} ${H}`} className="w-full max-w-3xl mx-auto">
       {/* Quadrant backgrounds */}
       <rect x={PAD} y={PAD} width={plotW / 2} height={plotH / 2} fill={Q.quickWins} />
@@ -151,5 +202,21 @@ export async function InvestmentMatrix({
         ))}
       </g>
     </svg>
+
+    {/* If every pillar carries the same weight - the default, all 8 at 12.5% -
+        the vertical axis cannot separate them, and a reader looking at a 2x2
+        will otherwise read meaning into a position that carries none. Say it
+        rather than let the chart imply a judgement nobody made. */}
+    {!weightsVary && (
+      <p style={{ fontSize: "8.5pt", color: "#6b7280", marginTop: "8pt", lineHeight: 1.5 }}>
+        All in-scope pillars currently carry the same weight
+        ({maxWeight.toFixed(1)}%), so the vertical axis does not separate them and
+        every pillar sits on the midline. Priority here is read left to right:
+        the further right, the more work to reach the 4.00 target. To make
+        business value differentiate, set per-pillar weights on the assessment
+        before generating the report.
+      </p>
+    )}
+    </>
   );
 }

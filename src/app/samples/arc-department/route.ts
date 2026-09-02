@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { renderSampleReport } from "@/lib/reports/sample-fixture";
+import { selfOrigin } from "@/lib/reports/pdf-browser";
 
 /**
  * Public ARC sample - the DEPARTMENT report, rendered live from the fixture
@@ -14,7 +15,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const lang = url.searchParams.get("lang") === "ar" ? "ar" : "en";
   try {
-    const result = await renderSampleReport({ kind: "department", lang, origin: url.origin });
+    const result = await renderSampleReport({ kind: "department", lang, origin: selfOrigin(request.url) });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     return new NextResponse(new Uint8Array(result.pdf), {
       headers: {

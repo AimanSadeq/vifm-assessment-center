@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
   Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert, TrendingUp, TrendingDown, Minus,
-  FileDown, Eye, Cpu, Sparkles,
-} from "lucide-react";
+  FileDown, Eye, Cpu, Sparkles, FileText } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
@@ -243,6 +242,12 @@ export default async function AraAssessmentDetailPage({
     respondents: completedByUnit.get(r.id) ?? 0,
     parentUnitLabel: r.parent_unit_label ?? null,
   });
+  // respondent_id -> access token, for the per-person individual-report links
+  // in the workforce table (its rows come from the rollup, which carries ids).
+  const tokenByRespondentId = new Map(
+    (respondents ?? []).map((r: { id: string; access_token: string }) => [r.id, r.access_token])
+  );
+
   const linkedUnits = (linkedRes.data ?? []).map(toUnit);
   const availableUnits = (candidateRes.data ?? []).map(toUnit);
 
@@ -1124,13 +1129,25 @@ export default async function AraAssessmentDetailPage({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {workforceRollup.respondents.map((r) => (
+                        {workforceRollup.respondents.map((r) => {
+                          const token = tokenByRespondentId.get(r.respondent_id);
+                          return (
                           <TableRow key={r.respondent_id}>
                             <TableCell>
                               <div className="text-sm font-medium">{r.name}</div>
                               <div className="text-[10px] text-muted-foreground">
                                 {r.email}
                                 {r.individual_only && ` · ${t("araAssessmentDetail.individual_only_tag")}`}
+                                {token && r.completed_at && (
+                                  <>
+                                    {" · "}
+                                    <Link href={`/ara/personal/results/${token}`} target="_blank" className="text-accent hover:underline">report</Link>
+                                    {" "}
+                                    <a href={`/api/ara/personal/${token}/pdf?language=en`} className="hover:underline">EN</a>
+                                    {" / "}
+                                    <a href={`/api/ara/personal/${token}/pdf?language=ar`} className="hover:underline">AR</a>
+                                  </>
+                                )}
                               </div>
                             </TableCell>
                             {(["thinking_sense_check", "results_working_practice", "people_collaboration", "self_adaptive_mindset"] as const).map((fid) => {
@@ -1145,7 +1162,8 @@ export default async function AraAssessmentDetailPage({
                               {r.overall != null ? r.overall.toFixed(2) : "-"}
                             </TableCell>
                           </TableRow>
-                        ))}
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
@@ -1853,6 +1871,23 @@ export default async function AraAssessmentDetailPage({
                             isSandbox={!!assessment.is_sandbox}
                             alreadySent={!!r.first_opened_at}
                           />
+                          {/* Individual report - exists for every completed
+                              respondent on a departmental-plus-personal run but
+                              was reachable from nowhere in the UI (the dashboard
+                              panel lists standalone snapshots only). */}
+                          {assessment.include_individual_layer && r.completed_at && (
+                            <span className="inline-flex items-center gap-2 text-xs">
+                              <Link
+                                href={`/ara/personal/results/${r.access_token}`}
+                                target="_blank"
+                                className="inline-flex items-center gap-1 text-accent hover:underline"
+                              >
+                                <FileText className="h-3 w-3" /> Individual report
+                              </Link>
+                              <a href={`/api/ara/personal/${r.access_token}/pdf?language=en`} className="text-muted-foreground hover:underline">EN</a>
+                              <a href={`/api/ara/personal/${r.access_token}/pdf?language=ar`} className="text-muted-foreground hover:underline">AR</a>
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>

@@ -143,6 +143,28 @@ const isPersonaPublicRoute = (pathname: string) =>
 // the unguessable session UUID created server-side. The retention cron (Bearer
 // CRON_SECRET) also lives here. The admin report (/admin/proctor) is NOT matched
 // and stays session-gated.
+// Internal server-to-server render of an ARC consultant REPORT PAGE. The org
+// PDF routes and the public sample routes drive headless Chromium at
+// /ara/consultant/assessments/<id>/report|rollup with the server-only
+// x-ara-internal header. The page and the consultant layout already honour
+// that header (isInternalAraRender) - but this middleware ran first and bounced
+// a cookieless render to /login, so the sample routes shipped a print of the
+// login page. Narrow on purpose: only those two page paths, only with the
+// exact secret, compared in constant time. Edge runtime has no node:crypto, so
+// the compare is inlined rather than imported from lib/utils/secret.
+const isAraInternalReportRender = (request: NextRequest): boolean => {
+  const m = request.nextUrl.pathname.match(
+    /^\/ara\/consultant\/assessments\/[0-9a-f-]{36}\/(report|rollup)$/i,
+  );
+  if (!m) return false;
+  const given = request.headers.get("x-ara-internal");
+  const secret = process.env.CRON_SECRET;
+  if (!given || !secret || given.length !== secret.length) return false;
+  let diff = 0;
+  for (let i = 0; i < secret.length; i++) diff |= given.charCodeAt(i) ^ secret.charCodeAt(i);
+  return diff === 0;
+};
+
 const isProctorApiRoute = (pathname: string) =>
   pathname.startsWith("/api/proctor/");
 
@@ -219,7 +241,8 @@ export async function middleware(request: NextRequest) {
     isPublicPreviewRoute(request.nextUrl.pathname) ||
     isDemoRequestRoute(request.nextUrl.pathname) ||
     isSampleRoute(request.nextUrl.pathname) ||
-    isProposalClientRoute(request.nextUrl.pathname)
+    isProposalClientRoute(request.nextUrl.pathname) ||
+    isAraInternalReportRender(request)
   ) {
     return NextResponse.next();
   }

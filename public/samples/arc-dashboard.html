@@ -173,6 +173,7 @@
     .panel,.node{box-shadow:none} .view{display:block!important}
     @page{margin:12mm}
   }
+html[dir=rtl] .illus.en{display:none} html:not([dir=rtl]) .illus.ar{display:none} .illus{margin:12px 0 0;padding:10px 14px;border:1px solid #FBBF24;background:#fffbeb;color:#78350f;border-radius:8px;font-size:12.5px;line-height:1.5} .illus a{color:#78350f;text-decoration:underline}
 </style>
 </head>
 <body>
@@ -188,6 +189,9 @@
       <div class="langtoggle"><button id="enBtn" class="on" onclick="setLang('en')">EN</button><button id="arBtn" onclick="setLang('ar')">ع</button></div>
     </div>
   </header>
+
+  <div class="illus en"><b>Illustrative dashboard.</b> This interactive preview shows the drill-down experience - organisation to division to department to individual - on sample data. Its construct labels (AI Awareness, AI Adoption, AI Readiness) are illustrative; the shipped instrument scores eight organisational pillars and four individual factors, and the live reports are at <a href="/samples">caliber.viftraining.com/samples</a>.</div>
+  <div class="illus ar" dir="rtl"><b>لوحة توضيحية.</b> تعرض هذه المعاينة التفاعلية تجربة التنقّل من المنظمة إلى القطاع إلى الإدارة إلى الفرد على بيانات نموذجية. مسمّيات المحاور فيها (الوعي، التبنّي، الجاهزية) توضيحية؛ أما الأداة الفعلية فتقيس ثماني ركائز مؤسسية وأربعة عوامل فردية، والتقارير الحقيقية متاحة على <a href="/samples">caliber.viftraining.com/samples</a>.</div>
   <div class="orgline" id="orgLine"></div>
 
   <nav class="tabs" id="tabs"></nav>

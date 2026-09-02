@@ -6,7 +6,7 @@ import { overallBandFromScore } from "@/lib/ara/scoring";
  * Five colour bands match the handover §7.3 zones.
  * Pure SVG - prints cleanly and has zero client-side runtime.
  */
-export function MaturityGauge({ score }: { score: number | null }) {
+export function MaturityGauge({ score, lang = "en" }: { score: number | null; lang?: "en" | "ar" }) {
   const RADIUS = 110;
   const CENTER = 150;
   const START_ANGLE = -180;
@@ -130,7 +130,7 @@ export function MaturityGauge({ score }: { score: number | null }) {
           fontWeight="600"
           fill={band.color}
         >
-          {band.label_en}
+          {lang === "ar" ? band.label_ar : band.label_en}
         </text>
       )}
     </svg>

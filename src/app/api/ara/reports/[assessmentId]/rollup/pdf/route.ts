@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/ara/reports/[assessmentId]/rollup/pdf?weight=respondents|equal
+ * GET /api/ara/reports/[assessmentId]/rollup/pdf?weight=respondents|equal&language=en|ar
  *
  * The Division / Enterprise cross-unit comparison PDF. Renders
  * /ara/consultant/assessments/[id]/rollup?bare=1 in headless Chromium.
@@ -37,8 +37,9 @@ export async function GET(
 
   const url = new URL(req.url);
   const weight = url.searchParams.get("weight") === "equal" ? "equal" : "respondents";
+  const language = url.searchParams.get("language") === "ar" ? "ar" : "en";
   const reportUrl =
-    `${selfOrigin(req.url)}/ara/consultant/assessments/${params.assessmentId}/rollup?bare=1&weight=${weight}`;
+    `${selfOrigin(req.url)}/ara/consultant/assessments/${params.assessmentId}/rollup?bare=1&weight=${weight}&lang=${language}`;
 
   let browser: Browser | null = null;
   try {
@@ -76,7 +77,7 @@ export async function GET(
       preferCSSPageSize: true,
     });
 
-    const filename = `arc-rollup-${params.assessmentId.slice(0, 8)}.pdf`;
+    const filename = `arc-rollup-${params.assessmentId.slice(0, 8)}-${language}.pdf`;
     return new NextResponse(pdf as unknown as BodyInit, {
       status: 200,
       headers: {

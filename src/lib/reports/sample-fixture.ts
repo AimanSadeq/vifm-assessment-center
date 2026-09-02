@@ -67,7 +67,7 @@ export async function renderSampleReport(opts: {
   }
 
   const path = opts.kind === "division"
-    ? `/ara/consultant/assessments/${id}/rollup?bare=1`
+    ? `/ara/consultant/assessments/${id}/rollup?bare=1&lang=${opts.lang}`
     : `/ara/consultant/assessments/${id}/report?bare=1&lang=${opts.lang}`;
   const url = `${opts.origin}${path}`;
 
@@ -90,7 +90,7 @@ export async function renderSampleReport(opts: {
     }
     const pdf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
     const filename = opts.kind === "division"
-      ? "ARC-Division-Consolidation-Sample.pdf"
+      ? `ARC-Division-Consolidation-Sample-${opts.lang}.pdf`
       : `ARC-Department-Report-Sample-${opts.lang}.pdf`;
     return { ok: true, pdf: Buffer.from(pdf), filename };
   } finally {

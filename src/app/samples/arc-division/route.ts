@@ -6,19 +6,18 @@ import { renderSampleReport } from "@/lib/reports/sample-fixture";
  * fixture (Corporate Services over Human Resources and Finance at Ufuq
  * Digital Authority). The cross-unit comparison is what a division engagement
  * sells on top of the department reports beneath it. See
- * src/lib/reports/sample-fixture.ts for why this is a real render.
- *
- * English only for now: the rollup page has no Arabic edition yet, so a ?lang
- * parameter is deliberately NOT accepted - advertising ?lang=ar and silently
- * returning English would be the kind of mismatch these samples exist to end.
+ * src/lib/reports/sample-fixture.ts for why this is a real render. ?lang=ar
+ * for Arabic - added before the sample set went to any prospect, because the
+ * division head of a Saudi government client is this document's reader.
  */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const lang = url.searchParams.get("lang") === "ar" ? "ar" : "en";
   try {
-    const result = await renderSampleReport({ kind: "division", lang: "en", origin: url.origin });
+    const result = await renderSampleReport({ kind: "division", lang, origin: url.origin });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     return new NextResponse(new Uint8Array(result.pdf), {
       headers: {

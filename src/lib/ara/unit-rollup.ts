@@ -29,6 +29,8 @@ export type RollupUnit = {
   assessment_id: string;
   /** The unit's own name - scope_label, falling back to the stage label. */
   label: string;
+  /** Arabic name when the assessment carries one; falls back to `label`. */
+  label_ar: string;
   engagement_stage: AraEngagementStage;
   status: string;
   /** Respondents who completed - the weight, and the credibility of the score. */
@@ -106,12 +108,12 @@ export async function computeUnitRollup(
   };
 
   type ChildRow = {
-    id: string; scope_label: string | null; engagement_stage: string;
+    id: string; scope_label: string | null; scope_label_ar: string | null; engagement_stage: string;
     status: string; pillars_in_scope: string[] | null;
   };
   const { data: childRows, error } = await sb
     .from("ara_assessments")
-    .select("id, scope_label, engagement_stage, status, pillars_in_scope")
+    .select("id, scope_label, scope_label_ar, engagement_stage, status, pillars_in_scope")
     .eq("parent_assessment_id", parentAssessmentId)
     .returns<ChildRow[]>();
   // Tolerant of migration 00200 not being applied: no column, no rollup.
@@ -154,6 +156,7 @@ export async function computeUnitRollup(
     return {
       assessment_id: c.id,
       label: c.scope_label?.trim() || `${c.engagement_stage} unit`,
+      label_ar: c.scope_label_ar?.trim() || c.scope_label?.trim() || `${c.engagement_stage} unit`,
       engagement_stage: c.engagement_stage as AraEngagementStage,
       status: c.status as string,
       completed_respondents: completedByAssessment.get(c.id) ?? 0,

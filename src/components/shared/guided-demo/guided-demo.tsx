@@ -205,7 +205,7 @@ export function GuidedDemo() {
       type="button"
       onClick={() => launch(launchTrack.id)}
       title={`Start the guided ${launchTrack.label} walkthrough`}
-      className="fixed bottom-4 end-4 z-[70] inline-flex items-center gap-2 rounded-full border bg-[#010131] px-3.5 py-2 text-xs font-semibold text-white shadow-lg transition-transform hover:scale-105"
+      className="no-print print:hidden fixed bottom-4 end-4 z-[70] inline-flex items-center gap-2 rounded-full border bg-[#010131] px-3.5 py-2 text-xs font-semibold text-white shadow-lg transition-transform hover:scale-105"
       style={{ borderColor: launchTrack.accent }}
     >
       <span

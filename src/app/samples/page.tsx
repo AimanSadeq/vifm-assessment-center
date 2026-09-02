@@ -45,8 +45,8 @@ const SAMPLES = [
     title: "Division consolidation",
     subject: `${SAMPLE_DIVISION_LABEL} over ${SAMPLE_DEPARTMENT_LABEL} and Finance`,
     blurb:
-      "What a division engagement adds on top of its departments' own reports: the units ranked, every unit against every pillar, the gaps every unit shares (fix once, centrally) versus the pillars where units differ (capability that exists and has not travelled), and the pillars no unit assessed.",
-    pages: "5 pages",
+      "What a division engagement adds on top of its departments' own reports: the units ranked, every unit against every pillar with a profile radar and spread chart, the agenda matrix that sorts each pillar into central programme or practice transfer, a deep-dive page per pillar with division-level actions, workforce readiness across units, a twelve-month roadmap and pooled training.",
+    pages: "About 16 pages",
     arabic: true,
   },
   {
@@ -56,8 +56,8 @@ const SAMPLES = [
     title: "Enterprise consolidation",
     subject: `${SAMPLE_ENTERPRISE_LABEL} over Corporate Services and Operations`,
     blurb:
-      "The organisation-level view: divisions compared on the same scale, each division's score pooled from the departments beneath it, with a drill-down to every department so a board can see which division is carrying the number and which department inside it is dragging.",
-    pages: "6 pages",
+      "The organisation-level view: divisions compared on the same scale, each division's score pooled from the departments beneath it, with a drill-down to every department so a board can see which division is carrying the number and which department inside it is dragging - then the same deep dives, agenda matrix, roadmap and training as the division consolidation, at enterprise level.",
+    pages: "About 17 pages",
     arabic: true,
   },
   {

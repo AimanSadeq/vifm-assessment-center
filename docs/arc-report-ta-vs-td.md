@@ -2,6 +2,9 @@
 
 # ARC Personal Report: Talent Acquisition vs Talent Development - differentiation + enhancement plan
 
+> **Renderer note (2026-09-02):** `personal-snapshot.tsx` (EN, React-PDF) and `personal-snapshot-ar-html.ts` (AR, Puppeteer) were replaced by a single bilingual renderer, `src/lib/reports/personal-report-html.ts`, built through `personal-report-build.ts`. File references below that name the two old renderers now mean that one file. Item Q12 (cohort deltas into the PDF) is shipped: the report carries unit and organisation comparison rows.
+
+
 Prepared for the VIFM product owner by the lead consultant. Scope: the ARC Personal AI Readiness report (four factors - AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset) as rendered on-screen and in the EN/AR PDFs, and how it should diverge by `talent_lens`.
 
 ---

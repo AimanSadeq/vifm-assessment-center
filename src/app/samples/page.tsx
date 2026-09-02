@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Layers, Landmark, User, FileText } from "lucide-react";
+import { ArrowRight, Building2, Layers, Landmark, User, FileText, LayoutDashboard } from "lucide-react";
 import { AraTopBar } from "@/components/shared/ara-top-bar";
 import { BackLink } from "@/components/shared/back-link";
 import {
@@ -73,6 +73,23 @@ const SAMPLES = [
   },
 ] as const;
 
+/**
+ * The interactive dashboard sits beside the four documents but is not one of
+ * them: it is an illustrative preview of the drill-down experience on sample
+ * data, with its own EN/AR toggle, and its construct labels differ from the
+ * shipped instrument (the page says so under its header). Kept as a separate
+ * card so the "generated live through the client code path" claim above stays
+ * true of the documents it is made about.
+ */
+const DASHBOARD = {
+  href: "/samples/arc-dashboard",
+  kicker: "Interactive preview",
+  title: "Organisational dashboard",
+  subject: `${SAMPLE_ORG_NAME} - organisation to division to department to individual`,
+  blurb:
+    "Click through the whole tree the way a consultant would in the portal: overall readiness, divisions ranked, departments inside each, segments and training. Sample data, with a language toggle on the page. Illustrative - the shipped reports above are the deliverable.",
+} as const;
+
 export default function SamplesLandingPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -88,7 +105,7 @@ export default function SamplesLandingPage() {
               Sample reports
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl font-semibold text-white leading-[1.05] mt-4 mb-5">
-              One engagement. <span className="ara-accent-sweep">Four documents.</span>
+              One engagement. <span className="ara-accent-sweep">Four documents.</span> One dashboard.
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Every sample below is generated live from one fictional organisation,{" "}
@@ -139,6 +156,28 @@ export default function SamplesLandingPage() {
             );
           })}
         </div>
+
+        {/* ─── Interactive dashboard ─── */}
+        <article className="mt-5 flex flex-col gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm md:flex-row md:items-center">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-accent">
+              <LayoutDashboard className="h-4 w-4" />
+              {DASHBOARD.kicker}
+            </div>
+            <h2 className="mt-3 text-xl font-semibold text-primary">{DASHBOARD.title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{DASHBOARD.subject}</p>
+            <p className="mt-3 text-sm leading-relaxed text-foreground/80">{DASHBOARD.blurb}</p>
+          </div>
+          <div className="shrink-0">
+            <Link
+              href={DASHBOARD.href}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            >
+              Open the dashboard <ArrowRight className="h-4 w-4" />
+            </Link>
+            <p className="mt-2 text-xs text-muted-foreground">Interactive · EN / AR toggle on the page</p>
+          </div>
+        </article>
       </section>
 
       {/* ─── How they fit together ─── */}

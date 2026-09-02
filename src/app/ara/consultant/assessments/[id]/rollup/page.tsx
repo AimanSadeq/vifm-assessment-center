@@ -313,7 +313,14 @@ export default async function AraRollupReportPage({
                 const lvl = u.overall != null ? levelForScore(u.overall) : null;
                 return (
                   <tr key={u.assessment_id} style={{ borderTop: "1px solid #e5e7eb" }}>
-                    <td style={cell}><strong>{unitName(u)}</strong></td>
+                    <td style={cell}>
+                      <strong>{unitName(u)}</strong>
+                      {u.pooled && (
+                        <span style={{ color: "#6b7280", fontSize: "8.5pt" }}>
+                          {" "}({u.children.length} {T(u.children.length === 1 ? "department" : "departments", u.children.length === 1 ? "إدارة" : "إدارات")})
+                        </span>
+                      )}
+                    </td>
                     <td style={cell}>{u.completed_respondents}</td>
                     <td style={{ ...cell, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>
                       {u.overall != null ? u.overall.toFixed(2) : "-"}
@@ -327,6 +334,52 @@ export default async function AraRollupReportPage({
               })}
             </tbody>
           </table>
+
+        {/* ─── Drill-down: the departments inside each division (enterprise only) ─── *
+         * An enterprise compares its divisions, and each division's number is
+         * pooled from its departments. The reader who owns a division needs to
+         * see which department is carrying or dragging it. */}
+        {rollup.units.some((u) => u.children.length > 0) && (
+          <div style={{ marginTop: "18pt" }}>
+            <h3 className="report-h3">{T("Departments within each division", "الإدارات داخل كل قطاع")}</h3>
+            <p className="report-body">
+              {T(
+                "Each division's score above is a respondent-weighted pool of the departments listed here. A division can look average while one department inside it is well ahead and another well behind - this is where that shows.",
+                "درجة كل قطاع أعلاه هي متوسط مرجّح بعدد المشاركين للإدارات المدرجة هنا. قد يبدو القطاع متوسطاً بينما تتقدّم إدارة داخله كثيراً وتتأخر أخرى كثيراً - وهنا يظهر ذلك."
+              )}
+            </p>
+            {rollup.units.filter((u) => u.children.length > 0).map((div) => (
+              <div key={div.assessment_id} style={{ marginTop: "12pt" }}>
+                <h3 className="report-h3">{unitName(div)} · {div.overall != null ? div.overall.toFixed(2) : "-"}</h3>
+                <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
+                  <thead>
+                    <tr style={{ background: "#f3f4f6" }}>
+                      <th style={cellHead}>{T("Department", "الإدارة")}</th>
+                      <th style={cellHead}>{T("Respondents", "المشاركون")}</th>
+                      <th style={cellHead}>{T("Score", "الدرجة")}</th>
+                      <th style={cellHead}>{T("% of target", "% من المستهدف")}</th>
+                      <th style={cellHead}>{T("Maturity", "النضج")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...div.children].sort((a, b) => (b.overall ?? -1) - (a.overall ?? -1)).map((d) => {
+                      const lvl = d.overall != null ? levelForScore(d.overall) : null;
+                      return (
+                        <tr key={d.assessment_id} style={{ borderTop: "1px solid #e5e7eb" }}>
+                          <td style={cell}><strong>{unitName(d)}</strong></td>
+                          <td style={cell}>{d.completed_respondents}</td>
+                          <td style={{ ...cell, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{d.overall != null ? d.overall.toFixed(2) : "-"}</td>
+                          <td style={{ ...cell, fontVariantNumeric: "tabular-nums" }}>{d.overall != null ? `${pctOfTarget(d.overall)}%` : "-"}</td>
+                          <td style={cell}>{lvl != null ? `L${lvl} ${levelLabel(lvl)}` : T("Not scored", "لم تُحتسب")}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ))}
+          </div>
+        )}
         </section>
 
         {/* ─── Units x pillars matrix ─── */}

@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Building2, Layers, User, FileText } from "lucide-react";
+import { ArrowRight, Building2, Layers, Landmark, User, FileText } from "lucide-react";
 import { AraTopBar } from "@/components/shared/ara-top-bar";
 import { BackLink } from "@/components/shared/back-link";
 import {
   SAMPLE_ORG_NAME,
   SAMPLE_DIVISION_LABEL,
   SAMPLE_DEPARTMENT_LABEL,
+  SAMPLE_ENTERPRISE_LABEL,
 } from "@/lib/reports/sample-fixture";
 
 export const metadata = {
@@ -49,6 +50,17 @@ const SAMPLES = [
     arabic: true,
   },
   {
+    href: "/samples/arc-enterprise",
+    icon: Landmark,
+    kicker: "Stage 3 - Enterprise",
+    title: "Enterprise consolidation",
+    subject: `${SAMPLE_ENTERPRISE_LABEL} over Corporate Services and Operations`,
+    blurb:
+      "The organisation-level view: divisions compared on the same scale, each division's score pooled from the departments beneath it, with a drill-down to every department so a board can see which division is carrying the number and which department inside it is dragging.",
+    pages: "6 pages",
+    arabic: true,
+  },
+  {
     href: "/samples/arc-report",
     icon: User,
     kicker: "Individual layer",
@@ -76,7 +88,7 @@ export default function SamplesLandingPage() {
               Sample reports
             </span>
             <h1 className="ara-numeral text-4xl sm:text-5xl font-semibold text-white leading-[1.05] mt-4 mb-5">
-              One engagement. <span className="ara-accent-sweep">Three documents.</span>
+              One engagement. <span className="ara-accent-sweep">Four documents.</span>
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Every sample below is generated live from one fictional organisation,{" "}
@@ -90,7 +102,7 @@ export default function SamplesLandingPage() {
 
       {/* ─── The three deliverables ─── */}
       <section className="max-w-6xl mx-auto px-6 -mt-10 relative z-10 pb-12">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {SAMPLES.map((s) => {
             const Icon = s.icon;
             return (
@@ -132,12 +144,14 @@ export default function SamplesLandingPage() {
       {/* ─── How they fit together ─── */}
       <section className="ara-hero-subtle py-14 border-y">
         <div className="max-w-4xl mx-auto px-6">
-          <h2 className="text-2xl font-semibold text-primary mb-3">How the three fit together</h2>
+          <h2 className="text-2xl font-semibold text-primary mb-3">How the four fit together</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             A client usually starts with one department. That department&apos;s report is
             complete on its own. When a second department in the same division is
             assessed, the division consolidation compares them - which is the finding
-            no single report can produce. The individual layer can be switched on for
+            no single report can produce. Several divisions roll up the same way into the
+            enterprise consolidation, where each division&apos;s number is pooled from its
+            departments. The individual layer can be switched on for
             any department, in which case each person who completes it has their own
             report and the department report gains a workforce section. Each document
             is rendered from the same scored data, so the three never disagree.

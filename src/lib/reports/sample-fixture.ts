@@ -23,8 +23,10 @@ import { launchPdfBrowser, gotoInternalReportPage } from "@/lib/reports/pdf-brow
 export const SAMPLE_ORG_NAME = "Ufuq Digital Authority";
 export const SAMPLE_DIVISION_LABEL = "Corporate Services";
 export const SAMPLE_DEPARTMENT_LABEL = "Human Resources";
+/** The enterprise rollup is scoped to the whole organisation and named after it. */
+export const SAMPLE_ENTERPRISE_LABEL = SAMPLE_ORG_NAME;
 
-export type SampleKind = "department" | "division";
+export type SampleKind = "department" | "division" | "enterprise";
 
 export type SampleRenderResult =
   | { ok: true; pdf: Buffer; filename: string }
@@ -44,7 +46,7 @@ async function findFixtureAssessment(kind: SampleKind): Promise<string | null> {
     .eq("organization_id", org.id)
     .eq("is_sandbox", true)
     .eq("engagement_stage", kind)
-    .eq("scope_label", kind === "division" ? SAMPLE_DIVISION_LABEL : SAMPLE_DEPARTMENT_LABEL)
+    .eq("scope_label", kind === "division" ? SAMPLE_DIVISION_LABEL : kind === "enterprise" ? SAMPLE_ENTERPRISE_LABEL : SAMPLE_DEPARTMENT_LABEL)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle<{ id: string }>();
@@ -66,7 +68,7 @@ export async function renderSampleReport(opts: {
     return { ok: false, status: 503, error: "Sample rendering is not configured on this environment." };
   }
 
-  const path = opts.kind === "division"
+  const path = opts.kind === "division" || opts.kind === "enterprise"
     ? `/ara/consultant/assessments/${id}/rollup?bare=1&lang=${opts.lang}`
     : `/ara/consultant/assessments/${id}/report?bare=1&lang=${opts.lang}`;
   const url = `${opts.origin}${path}`;
@@ -91,7 +93,9 @@ export async function renderSampleReport(opts: {
     const pdf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
     const filename = opts.kind === "division"
       ? `ARC-Division-Consolidation-Sample-${opts.lang}.pdf`
-      : `ARC-Department-Report-Sample-${opts.lang}.pdf`;
+      : opts.kind === "enterprise"
+        ? `ARC-Enterprise-Consolidation-Sample-${opts.lang}.pdf`
+        : `ARC-Department-Report-Sample-${opts.lang}.pdf`;
     return { ok: true, pdf: Buffer.from(pdf), filename };
   } finally {
     await browser.close().catch(() => {});

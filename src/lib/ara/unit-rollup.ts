@@ -39,6 +39,17 @@ export type RollupUnit = {
   overall: number | null;
   /** Pillar id -> raw score, only for pillars in this unit's scope. */
   byPillar: Map<AraPillarId, number>;
+  /**
+   * Units beneath this one when it is itself a rollup - the departments inside
+   * a division that sits inside an enterprise. Empty for a leaf unit.
+   */
+  children: RollupUnit[];
+  /**
+   * True when this unit has no scores of its own and its numbers were POOLED
+   * from its children (respondent-weighted). A division inside an enterprise
+   * is the normal case: it is a comparison over departments, not a sitting.
+   */
+  pooled: boolean;
 };
 
 export type PillarSpread = {
@@ -96,9 +107,19 @@ const TARGET = 4.0;
 
 type PillarRow = { assessment_id: string; pillar_id: string; raw_score: number | null };
 
+/**
+ * Two levels deep at most: Enterprise -> Division -> Department. A division
+ * that is itself a rollup gets its pillar scores pooled from its departments,
+ * so an enterprise can compare divisions on the same scale a division compares
+ * departments. Deeper trees are not a product concept and the guard keeps a
+ * mis-linked cycle from recursing forever.
+ */
+const MAX_DEPTH = 2;
+
 export async function computeUnitRollup(
   parentAssessmentId: string,
-  weighting: RollupWeighting = "respondents"
+  weighting: RollupWeighting = "respondents",
+  depth = 0
 ): Promise<UnitRollup> {
   const sb = createServiceClient();
   const empty: UnitRollup = {
@@ -140,8 +161,45 @@ export async function computeUnitRollup(
     scoresByAssessment.set(row.assessment_id, m);
   }
 
-  const units: RollupUnit[] = childRows.map((c) => {
-    const byPillar = scoresByAssessment.get(c.id) ?? new Map<AraPillarId, number>();
+  const units: RollupUnit[] = [];
+  for (const c of childRows) {
+    const own = scoresByAssessment.get(c.id);
+
+    // A child with no scores of its own may be a rollup in its own right (a
+    // division inside an enterprise). Pool its departments so it can be
+    // compared alongside leaf units on the same 1.00-5.00 scale.
+    if (!own && depth < MAX_DEPTH) {
+      const sub = await computeUnitRollup(c.id, weighting, depth + 1);
+      const scored = sub.units.filter((u) => u.overall != null);
+      if (scored.length > 0) {
+        const pooled = new Map<AraPillarId, number>();
+        const acc = new Map<AraPillarId, { sum: number; w: number }>();
+        for (const u of scored) {
+          const w = weighting === "equal" ? 1 : Math.max(1, u.completed_respondents);
+          for (const [p, v] of u.byPillar) {
+            const a = acc.get(p) ?? { sum: 0, w: 0 };
+            a.sum += v * w; a.w += w; acc.set(p, a);
+          }
+        }
+        for (const [p, a] of acc) pooled.set(p, a.sum / a.w);
+        const values = [...pooled.values()];
+        units.push({
+          assessment_id: c.id,
+          label: c.scope_label?.trim() || `${c.engagement_stage} unit`,
+          label_ar: c.scope_label_ar?.trim() || c.scope_label?.trim() || `${c.engagement_stage} unit`,
+          engagement_stage: c.engagement_stage as AraEngagementStage,
+          status: c.status as string,
+          completed_respondents: sub.totalRespondents,
+          overall: values.length ? values.reduce((x, y) => x + y, 0) / values.length : null,
+          byPillar: pooled,
+          children: sub.units,
+          pooled: true,
+        });
+        continue;
+      }
+    }
+
+    const byPillar = own ?? new Map<AraPillarId, number>();
     // Restrict to the unit's OWN scope so a pillar it was never asked about
     // cannot drag its average down.
     const inScope = new Set(
@@ -153,7 +211,7 @@ export async function computeUnitRollup(
     const scoped = new Map<AraPillarId, number>();
     for (const [p, v] of byPillar) if (inScope.has(p)) scoped.set(p, v);
     const values = [...scoped.values()];
-    return {
+    units.push({
       assessment_id: c.id,
       label: c.scope_label?.trim() || `${c.engagement_stage} unit`,
       label_ar: c.scope_label_ar?.trim() || c.scope_label?.trim() || `${c.engagement_stage} unit`,
@@ -162,8 +220,10 @@ export async function computeUnitRollup(
       completed_respondents: completedByAssessment.get(c.id) ?? 0,
       overall: values.length ? values.reduce((a, b) => a + b, 0) / values.length : null,
       byPillar: scoped,
-    };
-  });
+      children: [],
+      pooled: false,
+    });
+  }
 
   units.sort((a, b) => (b.overall ?? -1) - (a.overall ?? -1));
 
@@ -231,7 +291,9 @@ export async function computeUnitRollup(
     overall,
     overallBand: overall != null ? overallBandFromScore(overall) : null,
     weighting,
-    totalRespondents: [...completedByAssessment.values()].reduce((a, b) => a + b, 0),
+    // Leaves are counted from their own respondents; a pooled unit contributes
+    // the respondents of the departments beneath it, never double-counted.
+    totalRespondents: units.reduce((a, u) => a + u.completed_respondents, 0),
     sharedGaps: spreads.filter((s) => s.sharedGap).sort((a, b) => a.mean - b.mean),
     unevenPillars: spreads
       .filter((s) => s.unitsScored > 1 && s.spread >= UNEVEN_THRESHOLD)

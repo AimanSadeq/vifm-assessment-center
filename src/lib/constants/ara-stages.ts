@@ -66,8 +66,10 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     tagline_en: "Where does your department stand on AI?",
     tagline_ar: "أين تقف إدارتك من الذكاء الاصطناعي؟",
     is_pro_bono: true,
-    price_label_en: "Complimentary",
-    price_label_ar: "مجاني",
+    // The first department is complimentary - it is the land; every further
+    // unit is priced per unit assessed (client decision 2026-09-02).
+    price_label_en: "First department complimentary",
+    price_label_ar: "الإدارة الأولى مجاناً",
     cta_en: "Start complimentary",
     cta_ar: "ابدأ مجاناً",
     tone: "teal",
@@ -85,8 +87,11 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     tagline_en: "Where does your division stand on AI?",
     tagline_ar: "أين يقف قسمك من الذكاء الاصطناعي؟",
     is_pro_bono: false,
-    price_label_en: "Fee-based engagement",
-    price_label_ar: "خدمة مدفوعة",
+    // Pricing model (client decision 2026-09-02): per unit assessed plus one
+    // consolidation deliverable - a division is N departments + the
+    // cross-unit consolidation, so the price follows what is actually done.
+    price_label_en: "Per department assessed + consolidation",
+    price_label_ar: "لكل إدارة مقيَّمة + التقرير الموحّد",
     cta_en: "Contact for engagement",
     cta_ar: "اتصل للتعاقد",
     tone: "violet",
@@ -106,8 +111,10 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     tagline_en: "Where does the whole organisation stand on AI?",
     tagline_ar: "أين تقف المنظمة بأكملها من الذكاء الاصطناعي؟",
     is_pro_bono: false,
-    price_label_en: "Fee-based engagement",
-    price_label_ar: "خدمة مدفوعة",
+    // Same model one level up: every division's units, plus the organisation-
+    // level consolidation.
+    price_label_en: "Per unit assessed + consolidation",
+    price_label_ar: "لكل وحدة مقيَّمة + التقرير الموحّد",
     cta_en: "Contact for engagement",
     cta_ar: "اتصل للتعاقد",
     tone: "gold",

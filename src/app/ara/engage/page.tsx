@@ -407,7 +407,10 @@ function CapabilityMatrix() {
                 {stage.label_en}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5">
-                {stage.is_pro_bono ? "Complimentary" : "Fee-based"}
+                {/* Read from the stage definition rather than restated here, so the
+                    pricing model (per unit assessed + consolidation) shows the same
+                    words everywhere. */}
+                {stage.price_label_en}
               </p>
             </div>
           );

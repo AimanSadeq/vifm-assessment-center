@@ -12,6 +12,8 @@ import {
 } from "@/lib/ara/respondent-access";
 import { touchAraRespondent, markAraRespondentComplete } from "@/lib/ara/respondent-actions";
 import { QuestionsForm, CompleteButton } from "./_components/questions-form";
+import { DemographicsSection } from "./_components/demographics-section";
+import { sanitiseDemographics } from "@/lib/constants/ara-demographics";
 import { LanguageToggle } from "./_components/language-toggle";
 import { MaterialsSection } from "./_components/materials-section";
 import { UseCasesSection } from "./_components/use-cases-section";
@@ -255,6 +257,17 @@ export default async function AraRespondPage({
                   file_name: m.file_name,
                   link_url: m.link_url,
                 }))}
+              />
+            )}
+
+            {/* Optional "about you" segments - individual-layer respondents
+                 only (the dashboard slices the four factors by group). Never
+                 scored; skippable; aggregates only. */}
+            {(ctx.assessment.engagement_stage === "individual" || ctx.assessment.include_individual_layer) && (
+              <DemographicsSection
+                token={params.token}
+                language={language}
+                initial={sanitiseDemographics((ctx.respondent as { demographics?: unknown }).demographics)}
               />
             )}
 

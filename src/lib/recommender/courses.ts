@@ -517,10 +517,16 @@ export async function recommendCoursesForAraAssessment(args: {
   /** Target maturity - defaults to 4 (Managed) which is "best practice" per most AI maturity frameworks. */
   target?: number;
   limit?: number;
+  /**
+   * Optional client override. The dashboard tree builder passes the service
+   * client so the public samples page (no session) and internal renders can
+   * read pillar scores the anon role cannot see.
+   */
+  client?: Awaited<ReturnType<typeof createClient>>;
 }): Promise<RecommendedCourse[]> {
   const limit = args.limit ?? TAG_LIMIT_DEFAULT;
   const target = args.target ?? 4;
-  const sb = await createClient();
+  const sb = args.client ?? (await createClient());
 
   // 1. Pull pillar scores for this assessment.
   const scoresRes = await sb

@@ -74,20 +74,19 @@ const SAMPLES = [
 ] as const;
 
 /**
- * The interactive dashboard sits beside the four documents but is not one of
- * them: it is an illustrative preview of the drill-down experience on sample
- * data, with its own EN/AR toggle, and its construct labels differ from the
- * shipped instrument (the page says so under its header). Kept as a separate
- * card so the "generated live through the client code path" claim above stays
- * true of the documents it is made about.
+ * The interactive dashboard is the fifth deliverable: the same engine output
+ * as the four documents, opened as a drill-down instead of a PDF. Since
+ * 2026-09-02 it renders live from the fixture (src/lib/ara/dashboard-tree.ts),
+ * so the "generated live through the client code path" claim above holds for
+ * it too. A consultant opens the identical dashboard on any client assessment.
  */
 const DASHBOARD = {
   href: "/samples/arc-dashboard",
-  kicker: "Interactive preview",
+  kicker: "Interactive",
   title: "Organisational dashboard",
-  subject: `${SAMPLE_ORG_NAME} - organisation to division to department to individual`,
+  subject: `${SAMPLE_ORG_NAME} - organisation to division to department to person`,
   blurb:
-    "Click through the whole tree the way a consultant would in the portal: overall readiness, divisions ranked, departments inside each, segments and training. Sample data, with a language toggle on the page. Illustrative - the shipped reports above are the deliverable.",
+    "Click through the whole tree the way a consultant does in the portal: overall readiness, divisions ranked, every department against every pillar, the people who ran the individual layer, optional segments, and matched training. Same numbers as the reports above, with a language toggle on the page.",
 } as const;
 
 export default function SamplesLandingPage() {
@@ -192,8 +191,10 @@ export default function SamplesLandingPage() {
             enterprise consolidation, where each division&apos;s number is pooled from its
             departments. The individual layer can be switched on for
             any department, in which case each person who completes it has their own
-            report and the department report gains a workforce section. Each document
-            is rendered from the same scored data, so the four never disagree.
+            report and the department report gains a workforce section. The dashboard
+            opens the same tree interactively, from the organisation down to one person.
+            Every document and the dashboard are rendered from the same scored data, so
+            they never disagree.
           </p>
           <p className="mt-4 text-xs text-muted-foreground">
             Sample data. {SAMPLE_ORG_NAME} is fictional; the respondents and their answers

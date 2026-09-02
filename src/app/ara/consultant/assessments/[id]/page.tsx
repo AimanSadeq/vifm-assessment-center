@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft, FlaskConical, Mail, Link2, Lock, Unlock, RefreshCw, Plus, Trash2,
   Archive, RotateCcw, BookOpen, AlertTriangle, ShieldAlert, TrendingUp, TrendingDown, Minus,
-  FileDown, Eye, Cpu, Sparkles, FileText } from "lucide-react";
+  FileDown, Eye, Cpu, Sparkles, FileText, LayoutDashboard } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
@@ -576,6 +576,11 @@ export default async function AraAssessmentDetailPage({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button size="sm" variant="outline" className="gap-1" asChild>
+              <Link href={`/ara/consultant/assessments/${assessment.id}/dashboard`}>
+                <LayoutDashboard className="h-3 w-3" /> Dashboard
+              </Link>
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm" className="gap-1">

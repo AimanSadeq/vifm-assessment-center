@@ -689,3 +689,22 @@ export async function simulateAraAnswers(
   revalidatePath(`/ara/respond/${token}`);
   return { ok: true };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Respondent answers the OPTIONAL "about you" block (dashboard segments).
+// Unknown keys are dropped, an empty answer clears the column, and a
+// completed respondent can no longer change it - it travels with the answers.
+// ─────────────────────────────────────────────────────────────
+export async function setAraRespondentDemographics(token: string, input: unknown): Promise<{ ok: boolean }> {
+  const sb = createServiceClient();
+  const respondent = await requireRespondent(token);
+  if (respondent.completed_at) return { ok: false };
+  const { sanitiseDemographics } = await import("@/lib/constants/ara-demographics");
+  const values = sanitiseDemographics(input);
+  const { error } = await sb
+    .from("ara_respondents")
+    .update({ demographics: values })
+    .eq("id", respondent.id);
+  // Tolerant of 00202 not being applied: the block is optional by design.
+  return { ok: !error };
+}

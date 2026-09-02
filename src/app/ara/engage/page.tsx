@@ -300,6 +300,28 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
            marketing page may want to explore the broader VIFM curriculum
            independently. Linked from the homepage header and surfaced
            again here as a discrete bridge into /courses. */}
+      {/* Sample reports - the three live-rendered deliverables (decision
+          2026-09-02). Sits before the catalogue bridge because a prospect who
+          has just read the stages wants to see the output before the courses. */}
+      <section className="border-t">
+        <div className="max-w-4xl mx-auto px-6 py-12 text-center">
+          <h2 className="text-2xl font-semibold text-primary mb-2">
+            See the reports a client actually receives
+          </h2>
+          <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-6">
+            A department report, a division consolidation and an individual report,
+            each generated live from a sample organisation through the same code
+            that produces a client&apos;s. English and Arabic.
+          </p>
+          <Link
+            href="/samples"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+          >
+            Open the sample reports <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </section>
+
       <section className="border-t bg-muted/30">
         <div className="max-w-4xl mx-auto px-6 py-12 text-center">
           <h2 className="text-2xl font-semibold text-primary mb-2">

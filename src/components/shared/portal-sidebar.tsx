@@ -51,8 +51,7 @@ import {
   History,
   FileText,
   Boxes,
-  type LucideIcon,
-} from "lucide-react";
+  type LucideIcon, Presentation } from "lucide-react";
 
 // `match` is the pathname used for active-state + de-dup; it defaults to `href`.
 // Links whose href carries a query string (e.g. /ara?lens=acquisition) set it to
@@ -180,6 +179,10 @@ const NAV: NavEntry[] = [
       icon: Layers,
       items: [
         link("/admin/licensed-preview", "Licensed Preview", MonitorPlay),
+        // Client-facing sample set (/samples): the live-rendered ARC deliverables
+        // plus the interactive dashboard, on one page BD can share. Public route,
+        // listed here so staff find it without remembering the URL.
+        link("/samples", "Sample reports", Presentation),
         link("/compare", "adminNav.comparePortals", Table2),
         link("/admin/models", "Scientific Models", Microscope),
         link("/evidence", "adminNav.researchValidity", BookOpen),

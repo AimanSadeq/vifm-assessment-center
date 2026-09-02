@@ -193,7 +193,7 @@ export default function SamplesLandingPage() {
             departments. The individual layer can be switched on for
             any department, in which case each person who completes it has their own
             report and the department report gains a workforce section. Each document
-            is rendered from the same scored data, so the three never disagree.
+            is rendered from the same scored data, so the four never disagree.
           </p>
           <p className="mt-4 text-xs text-muted-foreground">
             Sample data. {SAMPLE_ORG_NAME} is fictional; the respondents and their answers

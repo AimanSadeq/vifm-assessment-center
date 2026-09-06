@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Boxes, FileText } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
-import { loadBespokeServices } from "@/lib/bespoke/services";
+import { loadBespokeServices, loadBundleUsageMap } from "@/lib/bespoke/services";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
 import type { CaliberService } from "@/lib/clients/portal-services";
@@ -18,7 +18,7 @@ export const metadata = {
   description: "Combine VIFM services into a tailored package and assign it to a client.",
 };
 
-export default async function BespokeServicesPage() {
+export default async function BespokeServicesPage({ searchParams }: { searchParams?: { edit?: string; clone?: string } }) {
   // Self-gate: this page reads the full client list via the service-role
   // registry, so an authenticated non-admin must not reach it (the IDOR rail).
   try {
@@ -34,23 +34,31 @@ export default async function BespokeServicesPage() {
   // Persisted bundles (kind='bundle', active) -> the composer's saved list.
   const nameByAcId = new Map(platformClients.filter((c) => c.acId).map((c) => [c.acId as string, c.name]));
   const allCompetencyIds = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
-  const initialBundles: Composed[] = (await loadBespokeServices())
-    .filter((s) => s.kind === "bundle")
-    .map((s) => {
-      const cfg = s.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
-      return {
-        id: s.id,
-        nameEn: s.name_en,
-        nameAr: s.name_ar ?? "",
-        description: s.description ?? "",
-        services: s.service_keys as CaliberService[],
-        clientName: (s.organization_id && nameByAcId.get(s.organization_id)) || "Unassigned",
-        logicaSubtests:
-          cfg.logica?.subtests && cfg.logica.subtests.length > 0 ? cfg.logica.subtests : [...COGNITIVE_SUBTEST_KEYS],
-        personaCompetencyIds:
-          cfg.persona?.competencyIds && cfg.persona.competencyIds.length > 0 ? cfg.persona.competencyIds : allCompetencyIds,
-      };
-    });
+  const bundleRows = (await loadBespokeServices()).filter((s) => s.kind === "bundle");
+  // Usage decides whether a design may still be edited (see updateBundleAction).
+  const usage = await loadBundleUsageMap(bundleRows.map((b) => b.id));
+  const initialBundles: Composed[] = bundleRows.map((s) => {
+    const cfg = s.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
+    return {
+      id: s.id,
+      nameEn: s.name_en,
+      nameAr: s.name_ar ?? "",
+      description: s.description ?? "",
+      services: s.service_keys as CaliberService[],
+      clientName: (s.organization_id && nameByAcId.get(s.organization_id)) || "Unassigned",
+      logicaSubtests:
+        cfg.logica?.subtests && cfg.logica.subtests.length > 0 ? cfg.logica.subtests : [...COGNITIVE_SUBTEST_KEYS],
+      personaCompetencyIds:
+        cfg.persona?.competencyIds && cfg.persona.competencyIds.length > 0 ? cfg.persona.competencyIds : allCompetencyIds,
+      usage: usage.get(s.id),
+    };
+  });
+  // Arriving from a design sheet: open the composer on that bundle.
+  const initialMode = searchParams?.edit
+    ? ({ kind: "edit", id: searchParams.edit } as const)
+    : searchParams?.clone
+      ? ({ kind: "clone", id: searchParams.clone } as const)
+      : undefined;
 
   return (
     <div className="space-y-6">
@@ -101,7 +109,7 @@ export default async function BespokeServicesPage() {
         </div>
       </div>
 
-      <BespokeBuilder clients={clients} initialBundles={initialBundles} />
+      <BespokeBuilder clients={clients} initialBundles={initialBundles} initialMode={initialMode} />
     </div>
   );
 }

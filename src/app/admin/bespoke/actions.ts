@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createClientOrganization } from "@/lib/clients/registry";
-import { saveBundleService, archiveBundleService } from "@/lib/bespoke/services";
+import { saveBundleService, archiveBundleService, updateBundleService, loadBundleService, loadBundleUsage } from "@/lib/bespoke/services";
 import { PORTAL_SERVICE_IDS, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
@@ -43,22 +43,9 @@ export async function composeBundleAction(input: {
   const clientName = input.clientName?.trim() ?? "";
   if (!clientName) return { error: "Pick a client organisation." };
 
-  const services = PORTAL_SERVICE_IDS.filter((id) => (input.services ?? []).includes(id)) as CaliberService[];
-  if (services.length === 0) return { error: "Pick at least one service." };
-
-  // Per-service options: only a real subset is worth storing.
-  const serviceConfig: Record<string, unknown> = {};
-  if (services.includes("logica")) {
-    const picked = COGNITIVE_SUBTEST_KEYS.filter((k) => (input.logicaSubtests ?? []).includes(k));
-    if (picked.length === 0) return { error: "Pick at least one Logica element." };
-    if (picked.length < COGNITIVE_SUBTEST_KEYS.length) serviceConfig.logica = { subtests: picked };
-  }
-  if (services.includes("persona")) {
-    const known = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
-    const picked = known.filter((id) => (input.personaCompetencyIds ?? known).includes(id));
-    if (picked.length === 0) return { error: "Pick at least one Persona competency." };
-    if (picked.length < known.length) serviceConfig.persona = { competencyIds: picked };
-  }
+  const design = deriveDesign(input);
+  if ("error" in design) return { error: design.error };
+  const { services, serviceConfig } = design;
 
   const reg = await createClientOrganization({ name: clientName, createdBy: g.caller.isDev ? null : g.caller.uid });
   if (!reg.ok) return { error: reg.error };
@@ -78,6 +65,101 @@ export async function composeBundleAction(input: {
   revalidatePath("/portal");
   revalidatePath("/");
   return { ok: true, id: res.id };
+}
+
+
+type DesignInput = { services: string[]; logicaSubtests?: string[]; personaCompetencyIds?: string[] };
+
+/**
+ * Turn the composer's picks into what is stored: the ordered service keys and
+ * the per-service scope, where only a real SUBSET is worth storing. Shared by
+ * compose and update so an edited bundle is derived exactly like a new one.
+ */
+function deriveDesign(input: DesignInput): { services: CaliberService[]; serviceConfig: Record<string, unknown> } | { error: string } {
+  const services = PORTAL_SERVICE_IDS.filter((id) => (input.services ?? []).includes(id)) as CaliberService[];
+  if (services.length === 0) return { error: "Pick at least one service." };
+  const serviceConfig: Record<string, unknown> = {};
+  if (services.includes("logica")) {
+    const picked = COGNITIVE_SUBTEST_KEYS.filter((k) => (input.logicaSubtests ?? []).includes(k));
+    if (picked.length === 0) return { error: "Pick at least one Logica element." };
+    if (picked.length < COGNITIVE_SUBTEST_KEYS.length) serviceConfig.logica = { subtests: picked };
+  }
+  if (services.includes("persona")) {
+    const known = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+    const picked = known.filter((id) => (input.personaCompetencyIds ?? known).includes(id));
+    if (picked.length === 0) return { error: "Pick at least one Persona competency." };
+    if (picked.length < known.length) serviceConfig.persona = { competencyIds: picked };
+  }
+  return { services, serviceConfig };
+}
+
+/** Stable text form of a design, for "did the design change" comparisons. */
+function designKey(services: string[], config: Record<string, unknown>): string {
+  return JSON.stringify({ services: [...services].sort(), config });
+}
+
+/**
+ * Edit a composed bundle. Name, description and client can always change.
+ * The DESIGN (service mix + scope) is locked once anyone has been invited or
+ * a voucher has been issued against it: those people were promised the
+ * sitting as designed, and a changed mix would give them a different one.
+ * The honest path for a different design is Clone.
+ */
+export async function updateBundleAction(input: {
+  id: string;
+  nameEn: string;
+  nameAr?: string;
+  description?: string;
+  services: string[];
+  clientName: string;
+  logicaSubtests?: string[];
+  personaCompetencyIds?: string[];
+}): Promise<{ ok: true } | { error: string }> {
+  const g = await guard();
+  if (!g.ok) return { error: g.error };
+
+  const nameEn = input.nameEn?.trim() ?? "";
+  if (nameEn.length < 2) return { error: "Give the bespoke service a name." };
+  const clientName = input.clientName?.trim() ?? "";
+  if (!clientName) return { error: "Pick a client organisation." };
+
+  const current = await loadBundleService(input.id);
+  if (!current) return { error: "This bundle no longer exists." };
+
+  const design = deriveDesign(input);
+  if ("error" in design) return { error: design.error };
+
+  const designChanged = designKey(design.services, design.serviceConfig) !== designKey(current.service_keys, current.service_config);
+  if (designChanged) {
+    const usage = await loadBundleUsage(input.id);
+    if (usage.candidates > 0 || usage.vouchers > 0) {
+      const parts = [
+        usage.candidates > 0 ? `${usage.candidates} candidate${usage.candidates === 1 ? "" : "s"} invited` : null,
+        usage.vouchers > 0 ? `${usage.vouchers} voucher${usage.vouchers === 1 ? "" : "s"} issued` : null,
+      ].filter(Boolean).join(" and ");
+      return { error: `The design is locked: ${parts} against it. Name, description and client can still change; to change the services or their scope, clone the bundle instead.` };
+    }
+  }
+
+  const reg = await createClientOrganization({ name: clientName, createdBy: g.caller.isDev ? null : g.caller.uid });
+  if (!reg.ok) return { error: reg.error };
+
+  const res = await updateBundleService({
+    id: input.id,
+    nameEn,
+    nameAr: input.nameAr?.trim() || null,
+    description: input.description?.trim() || null,
+    organizationId: reg.organizationId,
+    serviceKeys: design.services,
+    serviceConfig: design.serviceConfig,
+  });
+  if ("error" in res) return { error: res.error };
+
+  revalidatePath("/admin/bespoke");
+  revalidatePath(`/admin/bespoke/${input.id}`);
+  revalidatePath("/portal");
+  revalidatePath("/");
+  return { ok: true };
 }
 
 /** Archive a composed bundle (it disappears from the portal + composer list). */

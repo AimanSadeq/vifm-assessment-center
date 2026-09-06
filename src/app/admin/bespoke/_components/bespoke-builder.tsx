@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Boxes, Languages, BrainCircuit, Layers, BadgeCheck, UserSearch, Compass, Aperture,
-  Check, Plus, Building2, Trash2, Sparkles, Package, UserCheck, Ticket,
+  Check, Plus, Building2, Trash2, Sparkles, Package, UserCheck, Ticket, Pencil, Copy, FileSearch, X, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +17,7 @@ import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
-import { composeBundleAction, archiveBundleAction, inviteBundleCandidateAction, createBundleVoucherAction, listBundleVouchersAction } from "../actions";
+import { composeBundleAction, updateBundleAction, archiveBundleAction, inviteBundleCandidateAction, createBundleVoucherAction, listBundleVouchersAction } from "../actions";
 import { ReportCoverageBadges } from "./report-coverage-badges";
 
 type ExistingVoucher = { code: string; used: number; max: number; label: string | null; expiresAt: string | null };
@@ -58,7 +59,14 @@ export type Composed = {
   logicaSubtests: string[];
   /** Persona competency scope (ids); full instrument when all 41. */
   personaCompetencyIds: string[];
+  /** How far the bundle has been used - decides whether its design may still change. */
+  usage?: { candidates: number; completed: number; vouchers: number; seatsUsed: number; seatsTotal: number };
 };
+
+/** What the composer is doing: composing fresh, editing a saved bundle, or composing a new one from a saved design. */
+type ComposerMode = { kind: "new" } | { kind: "edit"; id: string } | { kind: "clone"; fromId: string; fromName: string };
+
+const isUsed = (b: Composed) => !!b.usage && (b.usage.candidates > 0 || b.usage.vouchers > 0);
 
 const personaScopeLabel = (ids: string[]): string =>
   ids.length === ALL_COMPETENCY_IDS.length ? "Persona" : `Persona · ${ids.length} of ${ALL_COMPETENCY_IDS.length} competencies`;
@@ -228,31 +236,63 @@ function CreateVoucher({ bundleId }: { bundleId: string }) {
   );
 }
 
-export function BespokeBuilder({ clients, initialBundles = [] }: { clients: ClientOpt[]; initialBundles?: Composed[] }) {
-  const [nameEn, setNameEn] = useState("");
-  const [nameAr, setNameAr] = useState("");
-  const [description, setDescription] = useState("");
-  const [selected, setSelected] = useState<CaliberService[]>([]);
-  const [clientKey, setClientKey] = useState("");
+export function BespokeBuilder({ clients, initialBundles = [], initialMode }: {
+  clients: ClientOpt[];
+  initialBundles?: Composed[];
+  /** Arrive from a design sheet with ?edit=<id> or ?clone=<id>: the composer opens pre-filled. */
+  initialMode?: { kind: "edit" | "clone"; id: string };
+}) {
+  const initial = initialMode ? initialBundles.find((b) => b.id === initialMode.id) : undefined;
+  const clientKeyFor = (name: string) => clients.find((c) => c.name === name)?.key ?? "";
+  const [mode, setMode] = useState<ComposerMode>(
+    initial && initialMode
+      ? initialMode.kind === "edit"
+        ? { kind: "edit", id: initial.id }
+        : { kind: "clone", fromId: initial.id, fromName: initial.nameEn }
+      : { kind: "new" }
+  );
+  const [nameEn, setNameEn] = useState(initial ? (initialMode?.kind === "clone" ? `${initial.nameEn} (copy)` : initial.nameEn) : "");
+  const [nameAr, setNameAr] = useState(initial?.nameAr ?? "");
+  const [description, setDescription] = useState(initial?.description ?? "");
+  const [selected, setSelected] = useState<CaliberService[]>(initial ? [...initial.services] : []);
+  const [clientKey, setClientKey] = useState(initial ? clientKeyFor(initial.clientName) : "");
   const [composed, setComposed] = useState<Composed[]>(initialBundles);
   const [busy, setBusy] = useState(false);
   // Logica element scope: which subtests the package includes (default: all four).
-  const [logicaSubtests, setLogicaSubtests] = useState<string[]>([...COGNITIVE_SUBTEST_KEYS]);
+  const [logicaSubtests, setLogicaSubtests] = useState<string[]>(initial ? [...initial.logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS]);
   // Persona competency scope: which of the 41 the package serves (default: all).
-  const [personaIds, setPersonaIds] = useState<string[]>([...ALL_COMPETENCY_IDS]);
+  const [personaIds, setPersonaIds] = useState<string[]>(initial ? [...initial.personaCompetencyIds] : [...ALL_COMPETENCY_IDS]);
+
+  // Editing a bundle that has been delivered against: the design is locked
+  // (name, description and client stay editable). The server enforces the
+  // same rule; this just stops the admin building a change it will refuse.
+  const editing = mode.kind === "edit" ? composed.find((b) => b.id === mode.id) : undefined;
+  const designLocked = !!editing && isUsed(editing);
+
+  const fill = (b: Composed, kind: "edit" | "clone") => {
+    setNameEn(kind === "clone" ? `${b.nameEn} (copy)` : b.nameEn);
+    setNameAr(b.nameAr);
+    setDescription(b.description);
+    setSelected([...b.services]);
+    setClientKey(clientKeyFor(b.clientName));
+    setLogicaSubtests([...b.logicaSubtests]);
+    setPersonaIds([...b.personaCompetencyIds]);
+    setMode(kind === "edit" ? { kind: "edit", id: b.id } : { kind: "clone", fromId: b.id, fromName: b.nameEn });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const toggle = (id: CaliberService) =>
-    setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
+    !designLocked && setSelected((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
   const toggleLogicaSubtest = (key: string) =>
-    setLogicaSubtests((prev) =>
+    !designLocked && setLogicaSubtests((prev) =>
       prev.includes(key)
         ? prev.filter((k) => k !== key)
         : COGNITIVE_SUBTEST_KEYS.filter((k) => prev.includes(k) || k === key)
     );
   const togglePersonaId = (id: string) =>
-    setPersonaIds((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]));
+    !designLocked && setPersonaIds((prev) => (prev.includes(id) ? prev.filter((k) => k !== id) : [...prev, id]));
   const togglePersonaCluster = (ids: string[], on: boolean) =>
-    setPersonaIds((prev) => (on ? [...new Set([...prev, ...ids])] : prev.filter((k) => !ids.includes(k))));
+    !designLocked && setPersonaIds((prev) => (on ? [...new Set([...prev, ...ids])] : prev.filter((k) => !ids.includes(k))));
 
   const client = clients.find((c) => c.key === clientKey);
   const logicaOn = selected.includes("logica");
@@ -268,12 +308,49 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
     setNameEn(""); setNameAr(""); setDescription(""); setSelected([]); setClientKey("");
     setLogicaSubtests([...COGNITIVE_SUBTEST_KEYS]);
     setPersonaIds([...ALL_COMPETENCY_IDS]);
+    setMode({ kind: "new" });
   };
 
   const add = async () => {
     if (!canSave || !client || busy) return;
     setBusy(true);
     try {
+      if (mode.kind === "edit") {
+        const id = mode.id;
+        const res = await updateBundleAction({
+          id,
+          nameEn: nameEn.trim(),
+          nameAr: nameAr.trim() || undefined,
+          description: description.trim() || undefined,
+          services: [...selected],
+          clientName: client.name,
+          logicaSubtests: logicaOn ? [...logicaSubtests] : undefined,
+          personaCompetencyIds: personaOn ? [...personaIds] : undefined,
+        });
+        if ("error" in res) {
+          toast.error(res.error);
+          return;
+        }
+        setComposed((prev) =>
+          prev.map((b) =>
+            b.id === id
+              ? {
+                  ...b,
+                  nameEn: nameEn.trim(),
+                  nameAr: nameAr.trim(),
+                  description: description.trim(),
+                  services: [...selected],
+                  clientName: client.name,
+                  logicaSubtests: logicaOn ? [...logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS],
+                  personaCompetencyIds: personaOn ? [...personaIds] : [...ALL_COMPETENCY_IDS],
+                }
+              : b
+          )
+        );
+        toast.success(`"${nameEn.trim()}" updated.`);
+        reset();
+        return;
+      }
       const res = await composeBundleAction({
         nameEn: nameEn.trim(),
         nameAr: nameAr.trim() || undefined,
@@ -297,6 +374,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
           clientName: client.name,
           logicaSubtests: logicaOn ? [...logicaSubtests] : [...COGNITIVE_SUBTEST_KEYS],
           personaCompetencyIds: personaOn ? [...personaIds] : [...ALL_COMPETENCY_IDS],
+          usage: { candidates: 0, completed: 0, vouchers: 0, seatsUsed: 0, seatsTotal: 0 },
         },
         ...prev,
       ]);
@@ -326,6 +404,33 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
     <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
       {/* ── Builder ── */}
       <div className="space-y-6 rounded-xl border bg-card p-5">
+        {mode.kind !== "new" && (
+          <div className={`flex flex-wrap items-start justify-between gap-3 rounded-lg border p-3 ${designLocked ? "border-amber-300 bg-amber-50" : "border-[#5391D5]/40 bg-[#5391D5]/5"}`}>
+            <div className="text-xs">
+              <div className="inline-flex items-center gap-1.5 font-semibold text-foreground">
+                {mode.kind === "edit" ? <Pencil className="h-3.5 w-3.5 text-[#5391D5]" /> : <Copy className="h-3.5 w-3.5 text-[#5391D5]" />}
+                {mode.kind === "edit" ? `Editing: ${editing?.nameEn ?? "bundle"}` : `New bundle based on: ${mode.fromName}`}
+              </div>
+              <p className="mt-0.5 text-muted-foreground">
+                {mode.kind === "edit"
+                  ? designLocked
+                    ? `Design locked - ${editing?.usage?.candidates ?? 0} candidate${(editing?.usage?.candidates ?? 0) === 1 ? "" : "s"} invited and ${editing?.usage?.vouchers ?? 0} voucher${(editing?.usage?.vouchers ?? 0) === 1 ? "" : "s"} issued against it. Name, description and client can change; to change the services or their scope, clone it instead.`
+                    : "Nobody has been invited yet, so every part of the design can still change."
+                  : "Everything below is copied from the original. Rename it, adjust the services or scope, pick the client, then save - the original is untouched."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {mode.kind === "edit" && designLocked && editing && (
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => fill(editing, "clone")}>
+                  <Copy className="h-3.5 w-3.5" /> Clone instead
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" className="gap-1" onClick={reset}>
+                <X className="h-3.5 w-3.5" /> Cancel
+              </Button>
+            </div>
+          </div>
+        )}
         {/* 1. Identity */}
         <div className="space-y-3">
           <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
@@ -354,6 +459,7 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
         <div className="space-y-3">
           <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-foreground">
             <Package className="h-4 w-4 text-[#5391D5]" /> 2 · Choose the services to combine
+            {designLocked && <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800"><Lock className="h-3 w-3" /> Locked</span>}
           </h2>
           <p className="text-xs text-muted-foreground">Pick one or several - they bundle into a single bespoke service.</p>
           <div className="grid gap-2 sm:grid-cols-2">
@@ -549,7 +655,8 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
               : "Select at least one service"}
           </p>
           <Button onClick={add} disabled={!canSave || busy} className="gap-1.5">
-            <Plus className="h-4 w-4" /> {busy ? "Saving…" : "Add bespoke service"}
+            {mode.kind === "edit" ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+            {busy ? "Saving…" : mode.kind === "edit" ? "Save changes" : mode.kind === "clone" ? "Save as new bespoke service" : "Add bespoke service"}
           </Button>
         </div>
       </div>
@@ -620,15 +727,34 @@ export function BespokeBuilder({ clients, initialBundles = [] }: { clients: Clie
                         <Building2 className="h-3 w-3" /> {b.clientName}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => remove(b.id)}
-                      className="text-muted-foreground hover:text-destructive"
-                      aria-label="Archive bundle"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Link href={`/admin/bespoke/${b.id}`} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Design sheet - exactly how this bundle is structured" aria-label="Open design sheet">
+                        <FileSearch className="h-3.5 w-3.5" />
+                      </Link>
+                      <button type="button" onClick={() => fill(b, "edit")} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title={isUsed(b) ? "Edit name, description or client (design locked)" : "Edit"} aria-label="Edit bundle">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button type="button" onClick={() => fill(b, "clone")} className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Clone - compose a new bundle from this design" aria-label="Clone bundle">
+                        <Copy className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => remove(b.id)}
+                        className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+                        title="Archive"
+                        aria-label="Archive bundle"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                   </div>
+                  {b.usage && (
+                    <div className="mt-1 text-[11px] text-muted-foreground">
+                      {b.usage.candidates} invited · {b.usage.completed} completed · {b.usage.vouchers} voucher{b.usage.vouchers === 1 ? "" : "s"}
+                      {b.usage.seatsTotal > 0 ? ` (${b.usage.seatsUsed}/${b.usage.seatsTotal} seats)` : ""}
+                      {isUsed(b) && <span className="ms-1 inline-flex items-center gap-0.5 text-amber-700"><Lock className="h-3 w-3" /> design locked</span>}
+                    </div>
+                  )}
                   <div className="mt-2 flex flex-wrap gap-1">
                     {b.services.map((id) => (
                       <span

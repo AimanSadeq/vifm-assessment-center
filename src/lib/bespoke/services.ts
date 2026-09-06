@@ -183,3 +183,107 @@ export async function unpublishRoleReadinessService(roleConfigId: string): Promi
     .eq("kind", "role_readiness")
     .eq("role_config_id", roleConfigId);
 }
+
+/** One bundle row with its audit columns, or null. Kind-guarded. */
+export type BundleDetailRow = BespokeServiceRow & {
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+};
+
+export async function loadBundleService(id: string): Promise<BundleDetailRow | null> {
+  const svc = createServiceClient();
+  const cols = "id, kind, name_en, name_ar, description, organization_id, role_config_id, service_keys, status, is_sample, created_at, updated_at, created_by";
+  let { data, error } = await svc.from("bespoke_services").select(`${cols}, service_config`).eq("id", id).eq("kind", "bundle").maybeSingle();
+  if (error && isMissingColumnError(error)) ({ data, error } = await svc.from("bespoke_services").select(cols).eq("id", id).eq("kind", "bundle").maybeSingle());
+  if (error || !data) return null;
+  const r = data as unknown as Record<string, unknown>;
+  return {
+    id: r.id as string,
+    kind: "bundle",
+    name_en: r.name_en as string,
+    name_ar: (r.name_ar as string | null) ?? null,
+    description: (r.description as string | null) ?? null,
+    organization_id: (r.organization_id as string | null) ?? null,
+    role_config_id: null,
+    service_keys: Array.isArray(r.service_keys) ? (r.service_keys as string[]) : [],
+    service_config:
+      r.service_config && typeof r.service_config === "object" && !Array.isArray(r.service_config)
+        ? (r.service_config as Record<string, unknown>)
+        : {},
+    status: r.status as string,
+    is_sample: !!r.is_sample,
+    created_at: r.created_at as string,
+    updated_at: r.updated_at as string,
+    created_by: (r.created_by as string | null) ?? null,
+  };
+}
+
+/**
+ * How far a bundle has been USED - the fact that decides whether its design
+ * may still change. A candidate who has been invited, or a voucher that has
+ * been issued, was promised the design as it stood; changing the service mix
+ * under them would hand them a different sitting from the one sold.
+ */
+export type BundleUsage = { candidates: number; completed: number; vouchers: number; seatsUsed: number; seatsTotal: number };
+
+const emptyUsage = (): BundleUsage => ({ candidates: 0, completed: 0, vouchers: 0, seatsUsed: 0, seatsTotal: 0 });
+
+/** Usage for many bundles at once (the composer list). */
+export async function loadBundleUsageMap(ids: string[]): Promise<Map<string, BundleUsage>> {
+  const out = new Map<string, BundleUsage>();
+  if (ids.length === 0) return out;
+  const svc = createServiceClient();
+  const [cand, vou] = await Promise.all([
+    svc.from("bundle_candidates").select("bespoke_service_id, status").in("bespoke_service_id", ids),
+    svc.from("bundle_vouchers").select("bespoke_service_id, uses, max_uses").in("bespoke_service_id", ids),
+  ]);
+  for (const id of ids) out.set(id, emptyUsage());
+  for (const c of (cand.data ?? []) as Array<{ bespoke_service_id: string; status: string }>) {
+    const u = out.get(c.bespoke_service_id);
+    if (!u) continue;
+    u.candidates += 1;
+    if (c.status === "completed") u.completed += 1;
+  }
+  for (const v of (vou.data ?? []) as Array<{ bespoke_service_id: string; uses: number; max_uses: number }>) {
+    const u = out.get(v.bespoke_service_id);
+    if (!u) continue;
+    u.vouchers += 1;
+    u.seatsUsed += v.uses ?? 0;
+    u.seatsTotal += v.max_uses ?? 0;
+  }
+  return out;
+}
+
+export async function loadBundleUsage(id: string): Promise<BundleUsage> {
+  return (await loadBundleUsageMap([id])).get(id) ?? emptyUsage();
+}
+
+/**
+ * Update a composed bundle in place. The caller decides whether the design
+ * (service_keys + service_config) may change; this just writes. An empty
+ * config is written as {} so a scope that was removed does not linger.
+ */
+export async function updateBundleService(input: {
+  id: string;
+  nameEn: string;
+  nameAr?: string | null;
+  description?: string | null;
+  organizationId: string;
+  serviceKeys: string[];
+  serviceConfig?: Record<string, unknown>;
+}): Promise<{ ok: true } | { error: string }> {
+  const svc = createServiceClient();
+  const base = {
+    name_en: input.nameEn,
+    name_ar: input.nameAr ?? null,
+    description: input.description ?? null,
+    organization_id: input.organizationId,
+    service_keys: input.serviceKeys,
+  };
+  const config = input.serviceConfig ?? {};
+  let { error } = await svc.from("bespoke_services").update({ ...base, service_config: config }).eq("id", input.id).eq("kind", "bundle");
+  if (error && isMissingColumnError(error)) ({ error } = await svc.from("bespoke_services").update(base).eq("id", input.id).eq("kind", "bundle"));
+  if (error) return { error: error.message };
+  return { ok: true };
+}

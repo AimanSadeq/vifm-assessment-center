@@ -52,3 +52,7 @@ next-env.d.ts
 
 # local push backup (not repo content)
 vifm-unpushed-commits.bundle
+
+# Python bytecode
+__pycache__/
+*.pyc

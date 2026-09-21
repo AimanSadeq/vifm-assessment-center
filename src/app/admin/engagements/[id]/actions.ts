@@ -971,3 +971,217 @@ export async function linkReflectEngagementAction(
 
   return { ok: true, linked, mapped };
 }
+
+/**
+ * Answering a participant.
+ *
+ * A concern about how the centre was run, or an appeal against a result, has to
+ * be dealt with and the dealing recorded (BPS 5.44, 5.48, 6.11). The database
+ * refuses to let an answer be rewritten once given, so this writes it once and
+ * stamps who gave it.
+ */
+export async function respondToConcernAction(values: {
+  concernId: string;
+  response: string;
+  status: "acknowledged" | "resolved";
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const response = (values.response ?? "").trim();
+  if (response.length < 10) {
+    return { error: "Write the answer the participant will read. A status change on its own is not a reply." };
+  }
+
+  const sb = createServiceClient();
+  let responded_by_name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    responded_by_name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const now = new Date().toISOString();
+  const { data: row, error } = await sb
+    .from("ac_participant_concerns")
+    .update({
+      response,
+      status: values.status,
+      responded_by: uid,
+      responded_by_name,
+      acknowledged_at: now,
+      resolved_at: values.status === "resolved" ? now : null,
+    })
+    .eq("id", values.concernId)
+    .select("candidate_id, kind")
+    .single();
+  if (error) return { error: error.message };
+
+  // Tell them there is an answer waiting rather than making them come back and look.
+  const { data: cand } = await sb
+    .from("candidates")
+    .select("profile_id, engagement_id")
+    .eq("id", row.candidate_id as string)
+    .maybeSingle();
+  if (cand?.profile_id) {
+    await publishNotification({
+      profileId: cand.profile_id as string,
+      kind: "concern_answered",
+      title: row.kind === "appeal" ? "Your appeal has been answered" : "Your concern has been answered",
+      body: response.slice(0, 180),
+      link: `/candidate/concerns/${row.candidate_id as string}`,
+    });
+  }
+  return { ok: true };
+}
+
+/**
+ * Re-assessment for a participant disturbed or taken ill (BPS 5.50). Creating
+ * the record is the offer; declined is a legitimate outcome and is kept,
+ * because "we offered and they said no" is the part that gets questioned later.
+ */
+export async function requestReassessmentAction(values: {
+  engagementId: string;
+  candidateId: string;
+  reason: string;
+  exerciseId?: string | null;
+  deliveryLogId?: string | null;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin", "lead_assessor", "associate_assessor"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const reason = (values.reason ?? "").trim();
+  if (reason.length < 5) return { error: "Say what happened that makes re-assessment necessary." };
+
+  const sb = createServiceClient();
+  let requested_by_name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    requested_by_name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const { error } = await sb.from("ac_reassessment_requests").insert({
+    engagement_id: values.engagementId,
+    candidate_id: values.candidateId,
+    exercise_id: values.exerciseId || null,
+    delivery_log_id: values.deliveryLogId || null,
+    reason,
+    requested_by: uid,
+    requested_by_name,
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+export async function updateReassessmentAction(values: {
+  requestId: string;
+  status: "requested" | "scheduled" | "completed" | "declined";
+  scheduledFor?: string | null;
+  outcomeNote?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  if (values.status === "scheduled" && !values.scheduledFor) {
+    return { error: "A re-assessment marked as scheduled needs the date it is scheduled for." };
+  }
+  if (values.status === "declined" && (values.outcomeNote ?? "").trim().length < 5) {
+    return { error: "Record why it was declined. An offer turned down is the part that gets questioned later." };
+  }
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ac_reassessment_requests")
+    .update({
+      status: values.status,
+      scheduled_for: values.scheduledFor || null,
+      outcome_note: (values.outcomeNote ?? "").trim() || null,
+    })
+    .eq("id", values.requestId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * The decision, and telling the participant about it (BPS 5.9).
+ *
+ * VIFM assesses; the client decides. This records what the client decided and
+ * when, so the participant can be told - which is the duty the standard puts on
+ * the centre, and the one thing a participant most reliably complains about not
+ * getting.
+ */
+export async function recordCandidateDecisionAction(values: {
+  candidateId: string;
+  outcome: string;
+  decidedOn?: string | null;
+  note?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const outcome = (values.outcome ?? "").trim();
+  if (outcome.length < 2) return { error: "Record what the client decided." };
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("candidates")
+    .update({
+      decision_outcome: outcome,
+      decision_made_at: values.decidedOn || null,
+      decision_note: (values.note ?? "").trim() || null,
+    })
+    .eq("id", values.candidateId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+export async function notifyCandidateOfDecisionAction(candidateId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const sb = createServiceClient();
+  const { data: cand, error: readErr } = await sb
+    .from("candidates")
+    .select("id, full_name, profile_id, decision_outcome, decision_made_at, decision_communicated_at")
+    .eq("id", candidateId)
+    .maybeSingle();
+  if (readErr) return { error: readErr.message };
+  if (!cand) return { error: "Candidate not found." };
+  if (!cand.decision_outcome) {
+    return { error: "Record the decision before telling the participant about it." };
+  }
+  if (cand.decision_communicated_at) {
+    return { error: "This participant has already been told." };
+  }
+
+  const decidedOn = cand.decision_made_at
+    ? new Date(cand.decision_made_at as string).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+  if (cand.profile_id) {
+    await publishNotification({
+      profileId: cand.profile_id as string,
+      kind: "decision_recorded",
+      title: "A decision has been recorded on your assessment",
+      body: decidedOn
+        ? `${cand.decision_outcome as string}. Decided on ${decidedOn}.`
+        : (cand.decision_outcome as string),
+      link: `/candidate/welcome/${candidateId}`,
+    });
+  }
+
+  const { error } = await sb
+    .from("candidates")
+    .update({ decision_communicated_at: new Date().toISOString() })
+    .eq("id", candidateId);
+  if (error) return { error: error.message };
+  // A participant with no portal account cannot be told in the app, so say so
+  // rather than let the stamp imply they were.
+  return { ok: true, inApp: Boolean(cand.profile_id) };
+}

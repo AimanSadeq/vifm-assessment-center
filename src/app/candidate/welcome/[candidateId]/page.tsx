@@ -48,6 +48,24 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
 
   const hasConsented = (consents?.length ?? 0) > 0;
 
+  // The decision made on the assessment, once the participant has been told
+  // (BPS 5.9), and any re-assessment arranged for them (BPS 5.50). Both are
+  // tolerant of migration 00210 not being applied.
+  const reassessments = await supabase
+    .from("ac_reassessment_requests")
+    .select("id, reason, status, scheduled_for, outcome_note")
+    .eq("candidate_id", candidateId)
+    .neq("status", "declined")
+    .order("created_at", { ascending: false })
+    .then(
+      (r) => (r.data ?? []) as Record<string, unknown>[],
+      () => [] as Record<string, unknown>[]
+    );
+  const decisionToldAt = (candidate as { decision_communicated_at?: string | null }).decision_communicated_at ?? null;
+  const decisionOutcome = (candidate as { decision_outcome?: string | null }).decision_outcome ?? null;
+  const decisionMadeAt = (candidate as { decision_made_at?: string | null }).decision_made_at ?? null;
+  const decisionNote = (candidate as { decision_note?: string | null }).decision_note ?? null;
+
   return (
     <div className="space-y-6">
       <BackLink href="/candidate" label="Back" history />
@@ -105,6 +123,39 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
             }}
           />
 
+          {decisionToldAt && decisionOutcome && (
+            <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+              <div className="font-medium text-foreground">The decision on your assessment</div>
+              <p className="mt-1">{decisionOutcome}</p>
+              {decisionMadeAt && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Decided on {new Date(decisionMadeAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                </p>
+              )}
+              {decisionNote && <p className="mt-2 text-muted-foreground">{decisionNote}</p>}
+              <p className="mt-2 text-xs text-muted-foreground">
+                The decision is made by the organisation you were assessed for. If you want to discuss it, use the
+                contact on your report, or raise it below.
+              </p>
+            </div>
+          )}
+
+          {reassessments.length > 0 && (
+            <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+              <div className="font-medium">Re-assessment</div>
+              {reassessments.map((r) => (
+                <p key={r.id as string} className="mt-1">
+                  {r.status === "scheduled" && r.scheduled_for
+                    ? `Arranged for ${new Date(r.scheduled_for as string).toLocaleString()}.`
+                    : r.status === "completed"
+                      ? "Completed."
+                      : "Being arranged. Someone will be in touch with a time."}{" "}
+                  <span className="text-xs">{r.reason as string}</span>
+                </p>
+              ))}
+            </div>
+          )}
+
           <Separator />
 
           <div className="flex flex-wrap gap-3">
@@ -131,6 +182,11 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
                 </Link>
               </>
             )}
+            {/* Available at every stage, not only after consent: the standard
+                expects a route before, during and after the centre (BPS 5.44). */}
+            <Link href={`/candidate/concerns/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
+              <Button variant="outline">Questions or concerns</Button>
+            </Link>
           </div>
         </CardContent>
       </Card>

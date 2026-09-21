@@ -14,6 +14,7 @@ import { TechnicalCertPanel } from "./_components/technical-cert-panel";
 import { CandidateFilterBar } from "./_components/candidate-filter-bar";
 import { CentreRulesPanel } from "./_components/centre-rules-panel";
 import { DeliveryLogPanel } from "./_components/delivery-log-panel";
+import { ParticipantRightsPanel } from "./_components/participant-rights-panel";
 import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
 import { ReadinessSetupPanel } from "./_components/readiness-setup-panel";
 import { computeAcObservedLens } from "@/lib/scoring/ac-observed-lens";
@@ -82,6 +83,23 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     .eq("engagement_id", id)
     .order("occurred_at", { ascending: false })
     .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
+  // What participants have raised, and any re-assessment arranged for them
+  // (BPS 5.44, 5.48, 5.50, 6.11). Tolerant of migration 00210 not being applied.
+  const [concerns, reassessments] = await Promise.all([
+    supabase
+      .from("ac_participant_concerns")
+      .select("id, candidate_id, kind, stage, body, status, response, raised_at, acknowledged_at, responded_by_name")
+      .eq("engagement_id", id)
+      .order("raised_at", { ascending: false })
+      .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
+    supabase
+      .from("ac_reassessment_requests")
+      .select("id, candidate_id, exercise_id, reason, status, scheduled_for, outcome_note, created_at")
+      .eq("engagement_id", id)
+      .order("created_at", { ascending: false })
+      .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
+  ]);
 
   const [assignments, integrationWorksheets] = await Promise.all([
     fetchAllPages<Record<string, unknown>>((from, to) =>
@@ -203,6 +221,13 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         otherMethodsNote={(engagement as { other_methods_note?: string | null }).other_methods_note ?? ""}
       />
       <DeliveryLogPanel engagementId={id} entries={deliveryLog} candidates={candidates} />
+      <ParticipantRightsPanel
+        engagementId={id}
+        candidates={candidates}
+        exercises={exercises}
+        concerns={concerns}
+        reassessments={reassessments}
+      />
       <ReadinessSetupPanel engagementId={id} setup={readinessSetup} />
       <CandidateFilterBar
         engagementId={id}

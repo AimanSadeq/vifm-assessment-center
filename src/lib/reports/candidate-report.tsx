@@ -678,6 +678,10 @@ function UsingThisReportPage({ d }: { d: ReportData }) {
           ? d.appealsNote
           : "A participant who wishes to query or challenge a result should raise it with that contact, who will "
             + "explain how the concern will be reviewed and by whom."}
+        {" "}
+        A concern or an appeal can also be raised from your own assessment portal, under &quot;Questions or
+        concerns&quot;. It is recorded with the assessment, answered in writing, and raising one does not
+        change your results.
       </Text>
 
       <Text style={[s.bodyText, { marginTop: 10, fontSize: 8.5, color: C.textMuted }]}>

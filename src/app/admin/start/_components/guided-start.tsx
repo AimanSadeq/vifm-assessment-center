@@ -19,6 +19,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { GOALS, CONTEXT_OPTIONS, resolveProcess } from "@/lib/start/resolver";
 import type { StartDepth, WizardAnswers, ProcessPlan } from "@/lib/start/types";
 import { createRequisitionAction } from "@/app/admin/prehire/actions";
+import { AC_PURPOSES, type AcPurpose } from "@/lib/constants/ac-purpose";
 import { createReflectEngagement } from "@/lib/reflect/actions";
 import { createEngagementAction } from "@/app/admin/engagements/new/actions";
 import { startAraAssessmentAction } from "../actions";
@@ -694,6 +695,9 @@ function AcEngagementInline({
   const [orgId, setOrgId] = useState("");
   const [name, setName] = useState(defaultName);
   const [targetRole, setTargetRole] = useState("");
+  const [purpose, setPurpose] = useState<AcPurpose>(
+    planKey === "ac_development" ? "development" : planKey === "ac_succession" ? "succession" : "selection"
+  );
   const [comps, setComps] = useState<Set<string>>(new Set());
   const [exos, setExos] = useState<Set<string>>(new Set());
   const [matrix, setMatrix] = useState<Set<string>>(new Set());
@@ -747,6 +751,7 @@ function AcEngagementInline({
       organizationId: orgId,
       name: name.trim(),
       targetRole: targetRole.trim() || undefined,
+      purpose,
       competencies: Array.from(comps).map((competencyId) => ({ competencyId, weight: null })),
       exercises: Array.from(exos),
       matrix: Array.from(matrix).map((k) => { const [exerciseId, competencyId] = k.split("|"); return { exerciseId, competencyId }; }),
@@ -777,6 +782,17 @@ function AcEngagementInline({
         <div className="space-y-2">
           <Label htmlFor="ac-role">{t("start.ac.targetRole")}</Label>
           <Input id="ac-role" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder={t("start.ac.targetRolePh")} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="ac-purpose">What is this centre for?</Label>
+          <select
+            id="ac-purpose"
+            className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value as AcPurpose)}
+          >
+            {AC_PURPOSES.map((p) => <option key={p.value} value={p.value}>{p.label} - {p.short}</option>)}
+          </select>
         </div>
       </div>
       <div className="space-y-2">

@@ -45,6 +45,8 @@ export type ReportData = {
   // Summary
   topStrengths: string[];
   topDevelopmentAreas: string[];
+  /** True when nothing scored 2 or below and these are simply the lowest rated, so the page can say so. */
+  developmentAreasAreLowest?: boolean;
   // OAR
   overallScore: number | null;
   recommendation: string | null;
@@ -55,6 +57,21 @@ export type ReportData = {
     recommendation: string;
     priority: string;
   }[];
+  // What the report must say about itself: permitted use, limitations,
+  // technical quality, who to contact and how to challenge a result
+  // (BPS 8.2, 8.9, 8.12, 8.20, 5.49). Optional so other builders need not set
+  // them; the section renders with standard wording when they are absent.
+  purpose?: string | null;
+  integrationMethod?: "weighted_average" | "consensus" | null;
+  computedScore?: number | null;
+  panelDisagrees?: boolean;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  appealsNote?: string | null;
+  /** Share of the behavioural content behind this report that a subject expert has approved. */
+  contentApproved?: { approved: number; total: number } | null;
+  checkedByName?: string | null;
+  checkedAt?: string | null;
   // Meta
   generatedAt: string;
   assessorNames: string[];

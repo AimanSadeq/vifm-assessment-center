@@ -17,9 +17,15 @@ export type SaveConsensusRatingValues = z.infer<typeof saveConsensusRatingSchema
 export const saveOarSchema = z.object({
   engagementId: uuidish(),
   candidateId: uuidish(),
-  overallScore: z.number().int().min(1).max(5),
+  // Optional because a selection centre computes its own score server-side
+  // (BPS 7.4); whatever the browser sends for those is ignored.
+  overallScore: z.number().int().min(1).max(5).optional(),
   recommendation: z.enum(["ready_now", "ready_with_development", "not_ready"]),
   summary: z.string().optional(),
+  // The panel may record that it disagrees with a computed rating. The computed
+  // rating still stands as the centre outcome (BPS 7.6).
+  panelDisagrees: z.boolean().optional(),
+  panelComment: z.string().optional(),
 });
 
 export type SaveOarValues = z.infer<typeof saveOarSchema>;

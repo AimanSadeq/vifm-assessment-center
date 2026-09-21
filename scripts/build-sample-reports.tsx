@@ -22,12 +22,15 @@
  *   Partnership → Chief Operating Officer at a sovereign fund, 8 competencies
  */
 
+import { config } from "dotenv";
 import React from "react";
 import { renderToFile } from "@react-pdf/renderer";
 import { resolve } from "node:path";
 import { mkdir } from "node:fs/promises";
 import { CandidateReport } from "../src/lib/reports/candidate-report";
 import type { ReportData, ReportCompetencyData } from "../src/lib/reports/report-types";
+
+config({ path: ".env.local", quiet: true });
 
 const ROOT = process.cwd();
 const OUT_DIR = resolve(ROOT, "public/samples");
@@ -73,7 +76,7 @@ const TIERS: Record<TierKey, TierConfig> = {
       { name: "Behavioural Interview",    type: "competency_interview", durationMinutes: 60 },
     ],
     overallScore: 3.5,
-    recommendation: "Ready with Development",
+    recommendation: "ready_with_development",
     assessorNames: ["Dr. Sarah Al Ameri (Lead)", "Khalid Al Nuaimi"],
   },
   programme: {
@@ -93,7 +96,7 @@ const TIERS: Record<TierKey, TierConfig> = {
       { name: "Behavioural Interview",    type: "competency_interview", durationMinutes: 60 },
     ],
     overallScore: 4.0,
-    recommendation: "Ready Now",
+    recommendation: "ready_now",
     assessorNames: ["Dr. Sarah Al Ameri (Lead)", "Mohammed Al Jaber", "Layla Al Shamsi"],
   },
   partnership: {
@@ -114,7 +117,7 @@ const TIERS: Record<TierKey, TierConfig> = {
       { name: "Behavioural Event Interview", type: "competency_interview",  durationMinutes: 90 },
     ],
     overallScore: 4.2,
-    recommendation: "Ready Now",
+    recommendation: "ready_now",
     assessorNames: ["Dr. Sarah Al Ameri (Lead, partnership)", "Mohammed Al Jaber", "Layla Al Shamsi", "Yousef Al Hamadi"],
   },
 };
@@ -194,15 +197,51 @@ function buildCompetencies(tier: TierKey, count: 4 | 6 | 8): ReportCompetencyDat
   });
 }
 
-function buildReport(tier: TierKey): ReportData {
+/**
+ * What the sample says about its own limits must be true of the real product,
+ * so the content-review figure is read from the live bank at generation time
+ * rather than written in. A prospect comparing the sample to a delivered report
+ * should find the same statement.
+ */
+async function liveContentApproval(): Promise<{ approved: number; total: number } | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return null;
+  try {
+    const res = await fetch(`${url}/rest/v1/behavioral_indicators?select=sme_status`, {
+      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    });
+    if (!res.ok) return null;
+    const rows = (await res.json()) as { sme_status?: string | null }[];
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    return { approved: rows.filter((r) => r.sme_status === "approved").length, total: rows.length };
+  } catch {
+    return null;
+  }
+}
+
+// Purpose varies by tier so the three samples show both wordings: a selection
+// centre states a calculated rating, a development centre states an agreed one.
+const TIER_PURPOSE: Record<TierKey, { purpose: string; method: "weighted_average" | "consensus" }> = {
+  single: { purpose: "selection", method: "weighted_average" },
+  programme: { purpose: "development", method: "consensus" },
+  partnership: { purpose: "succession", method: "consensus" },
+};
+
+function buildReport(tier: TierKey, contentApproved: { approved: number; total: number } | null): ReportData {
   const cfg = TIERS[tier];
   const competencies = buildCompetencies(tier, cfg.competencyCount);
   const strengths = competencies
     .filter((c) => (c.consensusScore ?? 0) >= 4)
     .map((c) => c.competencyName);
-  const developmentAreas = competencies
-    .filter((c) => (c.consensusScore ?? 0) < 4)
-    .map((c) => c.competencyName);
+  // Mirror the real report: development areas are scores of 2 or below, and
+  // where there are none, the lowest rated instead (flagged as such).
+  const low = competencies.filter((c) => (c.consensusScore ?? 0) > 0 && (c.consensusScore ?? 0) <= 2);
+  const developmentAreasAreLowest = low.length === 0;
+  const developmentAreas = (developmentAreasAreLowest
+    ? [...competencies].sort((a, b) => (a.consensusScore ?? 0) - (b.consensusScore ?? 0)).slice(0, 2)
+    : low
+  ).map((c) => c.competencyName);
   return {
     engagementName: cfg.engagementName,
     organizationName: cfg.organizationName,
@@ -214,13 +253,16 @@ function buildReport(tier: TierKey): ReportData {
     competencies,
     topStrengths: strengths.slice(0, 3),
     topDevelopmentAreas: developmentAreas.slice(0, 3),
+    developmentAreasAreLowest,
     overallScore: cfg.overallScore,
     recommendation: cfg.recommendation,
     executiveSummary:
       `Candidate demonstrated ${strengths.length} clear strengths across the ` +
       `${cfg.competencyCount}-competency profile and ${developmentAreas.length} ` +
-      `development priorities. The overall recommendation reflects the wash-up ` +
-      `consensus across ${cfg.assessorNames.length} assessors over ${cfg.exercisesUsed.length} exercises. ` +
+      `development priorities. ` +
+      (TIER_PURPOSE[tier].method === "weighted_average"
+        ? `The overall rating is calculated from the competency ratings agreed by ${cfg.assessorNames.length} assessors over ${cfg.exercisesUsed.length} exercises. `
+        : `The overall recommendation reflects the wash-up consensus across ${cfg.assessorNames.length} assessors over ${cfg.exercisesUsed.length} exercises. `) +
       `(This is a sample - illustrative narrative only.)`,
     developmentRecommendations: developmentAreas.slice(0, 3).map((name) => ({
       competencyName: name,
@@ -231,14 +273,28 @@ function buildReport(tier: TierKey): ReportData {
       day: "numeric", month: "long", year: "numeric",
     }),
     assessorNames: cfg.assessorNames,
+    hasAssessorData: true,
+    raterCount: cfg.assessorNames.length,
+    // What the report must disclose about itself (BPS 8.2, 8.9, 8.12, 8.20, 5.49).
+    purpose: TIER_PURPOSE[tier].purpose,
+    integrationMethod: TIER_PURPOSE[tier].method,
+    computedScore: TIER_PURPOSE[tier].method === "weighted_average" ? cfg.overallScore : null,
+    contactName: "your VIFM engagement lead",
+    contentApproved,
   };
 }
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
+  const contentApproved = await liveContentApproval();
+  console.log(
+    contentApproved
+      ? `Content review status from the live bank: ${contentApproved.approved} of ${contentApproved.total} approved.`
+      : "No database credentials, so the samples omit the content-review figure."
+  );
   for (const tier of Object.keys(TIERS) as TierKey[]) {
     const cfg = TIERS[tier];
-    const data = buildReport(tier);
+    const data = buildReport(tier, contentApproved);
     const out = resolve(OUT_DIR, cfg.fileName);
     process.stdout.write(`▶ ${cfg.fileName} … `);
     await renderToFile(<CandidateReport data={data} />, out);

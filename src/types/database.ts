@@ -84,6 +84,8 @@ export type Engagement = {
   organization_id: string;
   name: string;
   target_role: string | null;
+  /** What the centre is for; drives the integration rule and feedback duties. Null pre-dates migration 00204. */
+  purpose: "selection" | "development" | "succession" | null;
   status: "draft" | "active" | "completed" | "archived";
   start_date: string | null;
   end_date: string | null;

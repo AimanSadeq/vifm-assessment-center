@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { createEngagementAction } from "../actions";
+import { acPurposeLabel, type AcPurpose } from "@/lib/constants/ac-purpose";
 
 type Props = {
   organizations: Organization[];
@@ -56,6 +57,7 @@ export function StepReview({
       organizationId: state.organizationId,
       name: state.engagementName,
       targetRole: state.targetRole || undefined,
+      purpose: state.purpose as AcPurpose,
       startDate: state.startDate || undefined,
       endDate: state.endDate || undefined,
       competencies: state.selectedCompetencies.map((c) => ({
@@ -111,6 +113,8 @@ export function StepReview({
             <div>{state.engagementName}</div>
             <div className="text-muted-foreground">{t("adminWizard.step5.targetRole")}</div>
             <div>{state.targetRole || "-"}</div>
+            <div className="text-muted-foreground">Purpose</div>
+            <div>{acPurposeLabel(state.purpose)}</div>
             <div className="text-muted-foreground">{t("adminWizard.step5.dates")}</div>
             <div>
               {t("adminWizard.step5.datesRange", { start: state.startDate || "-", end: state.endDate || "-" })}

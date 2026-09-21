@@ -24,6 +24,7 @@ export type WizardState = {
   organizationId: string;
   engagementName: string;
   targetRole: string;
+  purpose: string;
   startDate: string;
   endDate: string;
   assessmentType: string;
@@ -191,6 +192,7 @@ const initialState: WizardState = {
   targetRole: "",
   startDate: "",
   endDate: "",
+  purpose: "",
   assessmentType: "",
   normGroup: "",
   selectedCompetencies: [],

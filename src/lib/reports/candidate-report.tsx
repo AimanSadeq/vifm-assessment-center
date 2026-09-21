@@ -1,5 +1,11 @@
 import React from "react";
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Font, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+
+// Keep email addresses and links whole. React-PDF hyphenates by default, which
+// broke the participant contact across a line as "asadeq@viftrain- ing.com" -
+// unreadable, and worse, uncopyable for someone trying to raise a concern.
+// Ordinary words keep wrapping normally.
+Font.registerHyphenationCallback((word) => (/[@/]/.test(word) ? [word] : word.split("­")));
 import type { ReportData } from "./report-types";
 import { getCompetencyGap, GAP_TONES, type GapBadgeData } from "@/lib/scoring/competency-gap";
 
@@ -195,7 +201,11 @@ function StatTile({ label, value, suffix, accent }: { label: string; value: stri
   return (
     <View style={style}>
       <Text style={s.statTileLabel}>{label}</Text>
-      <Text style={s.statTileValue}>{value}</Text>
+      {/* Long values ("Ready with Development") overflow the tile at the headline
+          size, so step the size down as the text grows rather than clip it. */}
+      <Text style={[s.statTileValue, value.length > 18 ? { fontSize: 12 } : value.length > 10 ? { fontSize: 15 } : {}]}>
+        {value}
+      </Text>
       {suffix && <Text style={s.statTileSuffix}>{suffix}</Text>}
     </View>
   );
@@ -313,7 +323,16 @@ function SummaryPage({ d }: { d: ReportData }) {
         <StatTile
           label="Recommendation"
           value={d.recommendation ? (OAR_LABELS[d.recommendation] ?? "-") : "-"}
-          suffix={d.recommendation ? "Per assessor consensus" : "Pending wash-up"}
+          suffix={
+            // Say how this figure was reached. A selection centre calculates it
+            // (BPS 7.4), so calling it a consensus would contradict the closing
+            // page and misdescribe the method.
+            !d.recommendation
+              ? "Pending wash-up"
+              : d.integrationMethod === "weighted_average"
+                ? "Calculated from competency ratings"
+                : "Per assessor consensus"
+          }
           accent={
             d.recommendation === "ready_now" ? C.positive :
             d.recommendation === "ready_with_development" ? C.bar2 :
@@ -396,7 +415,14 @@ function SummaryPage({ d }: { d: ReportData }) {
       )}
       {d.topDevelopmentAreas.length > 0 && (
         <>
-          <Text style={[s.subSection, { color: C.warning }]}>Key Development Areas</Text>
+          <Text style={[s.subSection, { color: C.warning }]}>
+            {d.developmentAreasAreLowest ? "Lowest Rated Competencies" : "Key Development Areas"}
+          </Text>
+          {d.developmentAreasAreLowest && (
+            <Text style={[s.bodyText, { marginTop: -2, marginBottom: 4, fontSize: 8.5, color: C.textMuted }]}>
+              No competency was rated 2 or below. These are the lowest rated, shown as the natural place to focus.
+            </Text>
+          )}
           <View style={s.summaryRow}>
             {d.topDevelopmentAreas.map((name) => (
               <View key={name} style={[s.summaryBadge, { backgroundColor: C.warningBg, borderColor: C.warning }]}>
@@ -574,6 +600,96 @@ function DevRecsPage({ d }: { d: ReportData }) {
   );
 }
 
+/**
+ * What this report may be used for, what it cannot carry, and who to ask.
+ *
+ * The standard requires every report to explain permitted use, its limitations
+ * and its technical qualities (8.12), to state the risks of deciding on the data
+ * (8.9), to say that decisions belong to the client (8.2), to give a contact for
+ * questions (8.20) and to tell the participant how to challenge a result (5.49).
+ * None of it is boilerplate: the wording changes with how this centre actually
+ * reached its rating and how much of its content has been expert-reviewed.
+ */
+function UsingThisReportPage({ d }: { d: ReportData }) {
+  const computed = d.integrationMethod === "weighted_average";
+  const contentPending =
+    d.contentApproved && d.contentApproved.total > 0 && d.contentApproved.approved < d.contentApproved.total;
+  const contact = d.contactName
+    ? `${d.contactName}${d.contactEmail ? ` (${d.contactEmail})` : ""}`
+    : "the VIFM consultant who arranged this assessment";
+
+  return (
+    <Page size="A4" style={s.page}>
+      <SectionHeader eyebrow="Use and limitations" title="Using This Report" />
+
+      <Text style={s.subSection}>What this report is for</Text>
+      <Text style={s.bodyText}>
+        This report describes how {d.candidateName} performed against the competencies assessed at this centre. It is
+        evidence for a decision, not the decision itself: any decision that follows, and its consequences, rests with
+        the client organisation. It should be read alongside other information about the person, never on its own.
+      </Text>
+
+      <Text style={s.subSection}>How the overall rating was reached</Text>
+      <Text style={s.bodyText}>
+        {computed
+          ? "This centre supports a selection decision, so the overall rating is calculated from the agreed competency "
+            + "ratings using weights fixed when the centre was designed. It is not a figure the assessor panel agreed "
+            + "in discussion."
+          : "Assessors reached the overall rating by discussing the evidence recorded against each competency and "
+            + "agreeing a view."}
+        {computed && d.computedScore != null ? ` The calculated rating is ${d.computedScore.toFixed(2)}.` : ""}
+        {d.panelDisagrees
+          ? " The panel recorded that it disagrees with the calculated rating; that disagreement is held with the "
+            + "assessment record and is available on request."
+          : ""}
+      </Text>
+
+      <Text style={s.subSection}>What it cannot tell you</Text>
+      <Text style={s.bodyText}>
+        An assessment centre samples behaviour in simulated situations over a short period. It cannot account for
+        performance in a real job over time, for circumstances on the day, or for growth since the assessment. Ratings
+        carry measurement error, and small differences between people, or between one competency and another, should
+        not be treated as meaningful.
+        {d.raterCount === 1
+          ? " Only one assessor rated this participant, so there is no second view to check these ratings against."
+          : ""}
+        {d.hasAssessorData === false
+          ? " No assessor observations underpin these scores, so they should be treated as provisional."
+          : ""}
+      </Text>
+
+      <Text style={s.subSection}>Technical quality</Text>
+      <Text style={s.bodyText}>
+        {contentPending
+          ? `The behavioural content used at this centre is under expert review: ${d.contentApproved?.approved} of `
+            + `${d.contentApproved?.total} indicators have been approved by a subject-matter expert so far. Until that `
+            + "review is complete, treat these results as indicative and do not use them as the sole basis for a "
+            + "hiring, promotion or termination decision."
+          : "The behavioural content used at this centre has been reviewed and approved by subject-matter experts. "
+            + "VIFM continues to collect evidence on the reliability and validity of these assessments, and that "
+            + "evidence is available to clients on request."}
+      </Text>
+
+      <Text style={s.subSection}>Questions and challenges</Text>
+      <Text style={s.bodyText}>
+        Questions about this report, or about how the assessment was run, should go to {contact}.
+        {" "}
+        {d.appealsNote
+          ? d.appealsNote
+          : "A participant who wishes to query or challenge a result should raise it with that contact, who will "
+            + "explain how the concern will be reviewed and by whom."}
+      </Text>
+
+      <Text style={[s.bodyText, { marginTop: 10, fontSize: 8.5, color: C.textMuted }]}>
+        Report generated {d.generatedAt}
+        {d.checkedByName ? ` · Checked before release by ${d.checkedByName}` : ""}
+        {" · Held for 24 months from the assessment date, then deleted."}
+      </Text>
+      <Footer name={d.candidateName} />
+    </Page>
+  );
+}
+
 export function CandidateReport({ data }: { data: ReportData }) {
   return (
     <Document title={`Assessment Report - ${data.candidateName}`} author="VIFM Assessment Center" subject={data.engagementName}>
@@ -582,6 +698,7 @@ export function CandidateReport({ data }: { data: ReportData }) {
       <SummaryPage d={data} />
       <CompetencyPages d={data} />
       <DevRecsPage d={data} />
+      <UsingThisReportPage d={data} />
     </Document>
   );
 }

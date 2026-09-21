@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { uuidish } from "@/lib/validations/ids";
+import { AC_PURPOSE_VALUES } from "@/lib/constants/ac-purpose";
 
 // organizationId / competencyId / exerciseId use uuidish (permissive UUID-shape),
 // NOT z.string().uuid(): the seed competencies + role profiles + (some) orgs carry
@@ -9,6 +10,9 @@ export const basicInfoSchema = z.object({
   organizationId: uuidish("Organization is required"),
   name: z.string().min(1, "Engagement name is required").max(200),
   targetRole: z.string().optional(),
+  // What the centre is for. Required for new engagements: it decides how the
+  // overall rating is reached and what the participant is owed (BPS 3.7, 7.4).
+  purpose: z.enum(AC_PURPOSE_VALUES, { message: "Select what this centre is for" }),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 }).refine((data) => {
@@ -42,6 +46,7 @@ export const createEngagementSchema = z.object({
   organizationId: uuidish(),
   name: z.string().min(1),
   targetRole: z.string().optional(),
+  purpose: z.enum(AC_PURPOSE_VALUES, { message: "Select what this centre is for" }),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   competencies: z

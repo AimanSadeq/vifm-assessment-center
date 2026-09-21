@@ -33,6 +33,7 @@ import {
   OAR_RECOMMENDATION_COLORS,
 } from "@/lib/validations/washup";
 import { saveConsensusRatingAction, saveOarAction } from "../../actions";
+import { canComputeOverallRating, computeOverallRating, integrationMethodFor } from "@/lib/scoring/overall-rating";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -43,9 +44,18 @@ type Competency = {
   weight: number | null;
 };
 
+type EngagementRule = {
+  purpose: string | null;
+  integration_method: string | null;
+  weights_confirmed_at: string | null;
+  other_methods_rule?: string | null;
+  other_methods_note?: string | null;
+};
+
 type Props = {
   engagementId: string;
   engagementName: string;
+  engagement?: EngagementRule;
   candidateId: string;
   candidateName: string;
   competencies: Competency[];
@@ -57,6 +67,7 @@ type Props = {
 export function WashupForm({
   engagementId,
   engagementName,
+  engagement,
   candidateId,
   candidateName,
   competencies,
@@ -66,6 +77,37 @@ export function WashupForm({
 }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
+
+  // A selection centre reaches its overall rating by calculation, not by the
+  // panel picking a number (BPS 7.4). The server recomputes on save; this is the
+  // same arithmetic shown live so the room can see where it is heading.
+  const rule = engagement ?? { purpose: null, integration_method: null, weights_confirmed_at: null };
+  // What a test, questionnaire or 360 result may do to a rating was decided when
+  // the centre was designed, so assessors are not left to judge it per candidate.
+  const otherMethods =
+    rule.other_methods_rule === "context_only"
+      ? "Results from tests, questionnaires, interviews and 360s are context only on this centre. A competency rating comes from exercise evidence."
+      : rule.other_methods_rule === "documented_conversion"
+        ? `Results from other methods convert onto this scale by the agreed rule: ${rule.other_methods_note ?? "see the engagement record"}`
+        : null;
+  const isComputed = integrationMethodFor(rule) === "weighted_average";
+  const computeGate = canComputeOverallRating(rule);
+  const liveComputed = () =>
+    computeOverallRating(
+      competencies.map((comp) => ({
+        competencyId: comp.id,
+        name: comp.name,
+        weight: comp.weight,
+        score: consensus[comp.id]?.score ? consensus[comp.id].score : null,
+      }))
+    );
+
+  const [panelDisagrees, setPanelDisagrees] = useState(
+    Boolean((existingOar as { panel_disagrees?: boolean } | null)?.panel_disagrees)
+  );
+  const [panelComment, setPanelComment] = useState(
+    ((existingOar as { panel_comment?: string } | null)?.panel_comment as string) ?? ""
+  );
 
   // Consensus ratings state
   const [consensus, setConsensus] = useState<
@@ -223,7 +265,9 @@ export function WashupForm({
     const result = await saveOarAction({
       engagementId,
       candidateId,
-      overallScore: oarScore,
+      overallScore: isComputed ? undefined : oarScore,
+      panelDisagrees: isComputed ? panelDisagrees : undefined,
+      panelComment: isComputed && panelDisagrees ? panelComment : undefined,
       recommendation: oarRec as "ready_now" | "ready_with_development" | "not_ready",
       summary: oarSummary || undefined,
     });
@@ -562,7 +606,21 @@ export function WashupForm({
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
+          {otherMethods && (
+            <p className="rounded border bg-muted/40 p-2 text-xs text-muted-foreground">{otherMethods}</p>
+          )}
           {/* Overall Score */}
+          {isComputed ? (
+            <ComputedOverallRating
+              result={liveComputed()}
+              allowed={computeGate.allowed}
+              reason={computeGate.reason}
+              panelDisagrees={panelDisagrees}
+              setPanelDisagrees={setPanelDisagrees}
+              panelComment={panelComment}
+              setPanelComment={setPanelComment}
+            />
+          ) : (
           <div>
             <Label className="text-sm font-medium">{t("assessorWashup.form.overallScore")}</Label>
             <div className="flex gap-1 mt-2">
@@ -582,6 +640,7 @@ export function WashupForm({
               {oarScore > 0 ? t(`ratings.bars.${oarScore}`) : t("assessorWashup.form.selectOverallScore")}
             </p>
           </div>
+          )}
 
           {/* Recommendation */}
           <div className="space-y-2">
@@ -631,6 +690,108 @@ export function WashupForm({
           </Button>
         </CardContent>
       </Card>
+    </div>
+  );
+}
+
+/**
+ * The overall rating for a selection centre: calculated from the agreed
+ * competency ratings and the weights fixed at design time (BPS 7.4), shown with
+ * its working so the room can see how it was reached. The panel can record that
+ * it disagrees; the calculation still stands as the centre outcome (BPS 7.6).
+ */
+function ComputedOverallRating({
+  result,
+  allowed,
+  reason,
+  panelDisagrees,
+  setPanelDisagrees,
+  panelComment,
+  setPanelComment,
+}: {
+  result: ReturnType<typeof computeOverallRating>;
+  allowed: boolean;
+  reason?: string;
+  panelDisagrees: boolean;
+  setPanelDisagrees: (v: boolean) => void;
+  panelComment: string;
+  setPanelComment: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border bg-muted/40 p-4">
+        <div className="flex items-baseline justify-between">
+          <Label className="text-sm font-medium">Overall rating (calculated)</Label>
+          <div className="text-right">
+            <div className="text-3xl font-semibold text-primary">
+              {result.score != null ? result.score.toFixed(2) : "-"}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {result.band != null ? `Bands to ${result.band} on the 1 to 5 scale` : "Not yet calculable"}
+            </div>
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          This centre is for selection, so the overall rating is the weighted average of the agreed competency
+          ratings. It is not entered by hand.
+        </p>
+
+        {!allowed && (
+          <p className="mt-3 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">{reason}</p>
+        )}
+
+        {result.problems.map((p) => (
+          <p key={p} className="mt-2 text-xs text-amber-800">
+            {p}
+          </p>
+        ))}
+
+        {result.breakdown.length > 0 && (
+          <table className="mt-3 w-full text-xs">
+            <thead className="text-muted-foreground">
+              <tr>
+                <th className="text-start font-normal">Competency</th>
+                <th className="w-16 text-end font-normal">Weight</th>
+                <th className="w-16 text-end font-normal">Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {result.breakdown.map((b) => (
+                <tr key={b.competencyId}>
+                  <td className="py-0.5">{b.name ?? b.competencyId}</td>
+                  <td className="py-0.5 text-end tabular-nums">{b.weight}</td>
+                  <td className="py-0.5 text-end tabular-nums">{b.score}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <label className="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            className="mt-1"
+            checked={panelDisagrees}
+            onChange={(e) => setPanelDisagrees(e.target.checked)}
+          />
+          <span>
+            The panel disagrees with this rating
+            <span className="block text-xs text-muted-foreground">
+              Recorded with the result. The calculated rating remains the centre outcome.
+            </span>
+          </span>
+        </label>
+        {panelDisagrees && (
+          <Textarea
+            value={panelComment}
+            onChange={(e) => setPanelComment(e.target.value)}
+            placeholder="What does the panel believe the evidence shows, and why does it differ?"
+            rows={3}
+          />
+        )}
+      </div>
     </div>
   );
 }

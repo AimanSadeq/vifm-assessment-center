@@ -12,6 +12,8 @@ import {
 import { getEngagementTechProgram } from "@/lib/competencies/engagement-tech-program";
 import { TechnicalCertPanel } from "./_components/technical-cert-panel";
 import { CandidateFilterBar } from "./_components/candidate-filter-bar";
+import { CentreRulesPanel } from "./_components/centre-rules-panel";
+import { DeliveryLogPanel } from "./_components/delivery-log-panel";
 import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
 import { ReadinessSetupPanel } from "./_components/readiness-setup-panel";
 import { computeAcObservedLens } from "@/lib/scoring/ac-observed-lens";
@@ -64,6 +66,23 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
   // (candidates x competencies x assessors) both scale past 1000 on a large
   // engagement, so they are paginated - an unpaginated read caps at 1000 and
   // would truncate the assignment grid + undercount integration progress.
+  // Declared conflicts of interest (BPS 5.36); tolerant of migration 00206 not
+  // being applied, so the page still renders on an older database.
+  const conflicts = await supabase
+    .from("ac_assessor_conflicts")
+    .select("id, assessor_id, candidate_id, reason")
+    .eq("engagement_id", id)
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
+  // What happened during delivery (BPS 6.10); tolerant of migration 00208 not
+  // being applied yet.
+  const deliveryLog = await supabase
+    .from("ac_delivery_log")
+    .select("id, kind, summary, action_taken, occurred_at, candidate_id, affects_assessment, logged_by_name")
+    .eq("engagement_id", id)
+    .order("occurred_at", { ascending: false })
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
   const [assignments, integrationWorksheets] = await Promise.all([
     fetchAllPages<Record<string, unknown>>((from, to) =>
       supabase
@@ -170,6 +189,20 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         priorOarMap={priorOarMap}
         currentOarMap={currentOarMap}
       />
+      <CentreRulesPanel
+        engagementId={id}
+        candidates={candidates}
+        assignments={assignments}
+        assessors={assessors}
+        conflicts={conflicts}
+        overrideReason={(engagement as { staffing_override_reason?: string | null }).staffing_override_reason ?? null}
+        contactName={(engagement as { participant_contact_name?: string | null }).participant_contact_name ?? ""}
+        contactEmail={(engagement as { participant_contact_email?: string | null }).participant_contact_email ?? ""}
+        appealsNote={(engagement as { appeals_note?: string | null }).appeals_note ?? ""}
+        otherMethodsRule={(engagement as { other_methods_rule?: string | null }).other_methods_rule ?? ""}
+        otherMethodsNote={(engagement as { other_methods_note?: string | null }).other_methods_note ?? ""}
+      />
+      <DeliveryLogPanel engagementId={id} entries={deliveryLog} candidates={candidates} />
       <ReadinessSetupPanel engagementId={id} setup={readinessSetup} />
       <CandidateFilterBar
         engagementId={id}

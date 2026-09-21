@@ -12,6 +12,7 @@ import {
 import { publishNotification, publishToAllAdmins } from "@/lib/notifications/publish";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
+import { reviewStaffing } from "@/lib/ac/staffing";
 import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
 import { sendEmail } from "@/lib/integrations/email";
 
@@ -120,6 +121,26 @@ export async function createAssignmentAction(values: CreateAssignmentValues) {
   if (!parsed.success) return { error: parsed.error.flatten().fieldErrors };
 
   const supabase = await createClient();
+
+  // An assessor who knows the participant must not assess them (BPS 5.36). The
+  // conflict is declared once per pair and enforced here, so it cannot be
+  // forgotten when the grid is filled in.
+  const { data: conflict } = await createServiceClient()
+    .from("ac_assessor_conflicts")
+    .select("reason")
+    .eq("engagement_id", parsed.data.engagementId)
+    .eq("assessor_id", parsed.data.assessorId)
+    .eq("candidate_id", parsed.data.candidateId)
+    .maybeSingle();
+  if (conflict) {
+    return {
+      error:
+        "A conflict of interest is recorded for this assessor and participant"
+        + (conflict.reason ? `: ${conflict.reason}.` : ".")
+        + " Assign a different assessor.",
+    };
+  }
+
   const { data, error } = await supabase
     .from("assessor_assignments")
     .insert({
@@ -314,6 +335,34 @@ export async function updateEngagementStatusAction(engagementId: string, status:
           "This engagement has no competencies or exercises yet. Add at least one competency and one exercise before activating it.",
       };
     }
+
+    // Staffing floors: more than one assessor per participant, and at least one
+    // assessor per three (BPS 5.18, 5.21). A centre may still be activated with
+    // a recorded reason, but never by default and never silently.
+    const svc = createServiceClient();
+    const [{ data: cands }, { data: asgs }, { data: engRow }] = await Promise.all([
+      svc.from("candidates").select("id, full_name").eq("engagement_id", engagementId),
+      svc.from("assessor_assignments").select("assessor_id, candidate_id").eq("engagement_id", engagementId),
+      svc.from("engagements").select("staffing_override_reason").eq("id", engagementId).maybeSingle(),
+    ]);
+    const staffing = reviewStaffing({
+      candidateIds: (cands ?? []).map((c) => c.id as string),
+      candidateNames: Object.fromEntries((cands ?? []).map((c) => [c.id as string, c.full_name as string])),
+      assignments: (asgs ?? []).map((a) => ({
+        assessorId: a.assessor_id as string,
+        candidateId: a.candidate_id as string,
+      })),
+    });
+    const overridden = Boolean((engRow as { staffing_override_reason?: string | null } | null)?.staffing_override_reason);
+    if (!staffing.meetsFloors && !overridden) {
+      return {
+        error:
+          "This centre does not meet the assessor staffing rules: "
+          + staffing.blocking.join(" ")
+          + " Fix the assignments, or record a reason for proceeding anyway.",
+        staffing: staffing.blocking,
+      };
+    }
   }
 
   const { error } = await supabase
@@ -343,10 +392,27 @@ async function releaseReportsFor(engagementId: string, candidateIds: string[]): 
   const sb = createServiceClient();
   const nowIso = new Date().toISOString();
   let released = 0;
+
+  // Releasing IS the accuracy check the standard requires before a
+  // computer-generated report reaches anyone (BPS 8.10), so record who did it.
+  // Without a name against it, "the report was checked" cannot be evidenced.
+  let checkedBy: string | null = null;
+  let checkedByName: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    checkedBy = caller.isDev ? null : caller.uid;
+    if (checkedBy) {
+      const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", checkedBy).maybeSingle();
+      checkedByName = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+    }
+  } catch {
+    /* gated by the calling action; leave the check unattributed rather than fail the release */
+  }
+  const check = { checked_by: checkedBy, checked_by_name: checkedByName, checked_at: nowIso };
   for (const candidateId of candidateIds) {
     const { data: updated } = await sb
       .from("candidate_reports")
-      .update({ status: "released", released_at: nowIso })
+      .update({ status: "released", released_at: nowIso, ...check })
       .eq("engagement_id", engagementId)
       .eq("candidate_id", candidateId)
       .select("id");
@@ -355,7 +421,7 @@ async function releaseReportsFor(engagementId: string, candidateIds: string[]): 
     } else {
       const { error: insErr } = await sb
         .from("candidate_reports")
-        .insert({ engagement_id: engagementId, candidate_id: candidateId, status: "released", released_at: nowIso });
+        .insert({ engagement_id: engagementId, candidate_id: candidateId, status: "released", released_at: nowIso, ...check });
       if (!insErr) released += 1;
     }
     // Best-effort: notify the candidate their report is available.
@@ -585,6 +651,240 @@ const ASSESSMENT_MODES = ["standalone", "combined"] as const;
 type AssessmentMode = (typeof ASSESSMENT_MODES)[number];
 
 /** Flip an engagement between standalone (360 self) and combined (Persona self). */
+/**
+ * Confirm the competency weights for an engagement.
+ *
+ * A selection centre reaches its overall rating by weighted average, so the
+ * weights decide the answer. The JD extractor only PROPOSES them; the BPS
+ * standard requires weighting to come from the job analysis and be agreed with
+ * the client (clause 7.3). Until someone confirms them here, the wash-up refuses
+ * to calculate an overall rating.
+ */
+export async function confirmEngagementWeightsAction(engagementId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+
+  // Partial weighting is ambiguous, so refuse it rather than average around it.
+  const { data: comps, error: readErr } = await sb
+    .from("engagement_competencies")
+    .select("competency_id, weight")
+    .eq("engagement_id", engagementId);
+  if (readErr) return { error: readErr.message };
+  if (!comps || comps.length === 0) return { error: "This engagement has no competencies to weight." };
+  const weighted = comps.filter((c) => c.weight != null && Number(c.weight) > 0);
+  if (weighted.length > 0 && weighted.length < comps.length) {
+    return {
+      error: `${weighted.length} of ${comps.length} competencies carry a weight. Weight all of them, or none, before confirming.`,
+    };
+  }
+
+  let confirmedBy: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    confirmedBy = caller.isDev ? null : caller.uid;
+  } catch {
+    confirmedBy = null;
+  }
+
+  const { error } = await sb
+    .from("engagements")
+    .update({ weights_confirmed_at: new Date().toISOString(), weights_confirmed_by: confirmedBy })
+    .eq("id", engagementId);
+  if (error) return { error: error.message };
+  return { ok: true, equalWeighted: weighted.length === 0 };
+}
+
+/**
+ * Record that an assessor must not assess a particular participant (BPS 5.36).
+ * Existing assignments for the pair are removed, otherwise declaring a conflict
+ * would leave the very assignment it forbids in place.
+ */
+export async function declareAssessorConflictAction(values: {
+  engagementId: string;
+  assessorId: string;
+  candidateId: string;
+  reason?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+
+  let declaredBy: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    declaredBy = caller.isDev ? null : caller.uid;
+  } catch {
+    declaredBy = null;
+  }
+
+  const { error } = await sb.from("ac_assessor_conflicts").upsert(
+    {
+      engagement_id: values.engagementId,
+      assessor_id: values.assessorId,
+      candidate_id: values.candidateId,
+      reason: values.reason || null,
+      declared_by: declaredBy,
+    },
+    { onConflict: "engagement_id,assessor_id,candidate_id" }
+  );
+  if (error) return { error: error.message };
+
+  const { count } = await sb
+    .from("assessor_assignments")
+    .delete({ count: "exact" })
+    .eq("engagement_id", values.engagementId)
+    .eq("assessor_id", values.assessorId)
+    .eq("candidate_id", values.candidateId);
+  return { ok: true, assignmentsRemoved: count ?? 0 };
+}
+
+export async function removeAssessorConflictAction(conflictId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb.from("ac_assessor_conflicts").delete().eq("id", conflictId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Activate a centre that does not meet the staffing floors, with the reason
+ * recorded. The standard expects the floors to be met; where a client insists on
+ * proceeding, the deviation belongs in the record rather than nowhere.
+ */
+export async function recordStaffingOverrideAction(engagementId: string, reason: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  if (!reason || reason.trim().length < 10) {
+    return { error: "Give a reason of at least a few words. It is kept with the engagement record." };
+  }
+  const sb = createServiceClient();
+
+  let by: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    by = caller.isDev ? null : caller.uid;
+  } catch {
+    by = null;
+  }
+
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      staffing_override_reason: reason.trim(),
+      staffing_override_at: new Date().toISOString(),
+      staffing_override_by: by,
+    })
+    .eq("id", engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * The person a participant contacts about their assessment, and how a result may
+ * be challenged. Both are printed on the report (BPS 5.43, 8.20, 5.49); without
+ * them the report falls back to generic wording that names nobody.
+ */
+export async function setParticipantContactAction(values: {
+  engagementId: string;
+  contactName?: string;
+  contactEmail?: string;
+  appealsNote?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const email = (values.contactEmail ?? "").trim();
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return { error: "That does not look like an email address." };
+  }
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      participant_contact_name: (values.contactName ?? "").trim() || null,
+      participant_contact_email: email || null,
+      appeals_note: (values.appealsNote ?? "").trim() || null,
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Record something that happened during delivery, and what was done about it
+ * (BPS 6.7, 6.8, 6.10, 6.13). Entries cannot be edited: a correction is another
+ * entry, so the record cannot be tidied up after the fact.
+ */
+export async function addDeliveryLogEntryAction(values: {
+  engagementId: string;
+  kind: "incident" | "deviation" | "staff" | "other";
+  summary: string;
+  actionTaken?: string;
+  candidateId?: string | null;
+  affectsAssessment?: boolean;
+  occurredAt?: string;
+}) {
+  // Assessors are the people in the room, so they may log too, not just admins.
+  let logged_by: string | null = null;
+  let logged_by_name: string | null = null;
+  try {
+    const caller = await requireRole(["admin", "lead_assessor", "associate_assessor"]);
+    logged_by = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  if (!values.summary || values.summary.trim().length < 5) {
+    return { error: "Describe what happened in a few words." };
+  }
+
+  const sb = createServiceClient();
+  if (logged_by) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", logged_by).maybeSingle();
+    logged_by_name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const { error } = await sb.from("ac_delivery_log").insert({
+    engagement_id: values.engagementId,
+    candidate_id: values.candidateId || null,
+    kind: values.kind,
+    summary: values.summary.trim(),
+    action_taken: (values.actionTaken ?? "").trim() || null,
+    affects_assessment: values.affectsAssessment ?? false,
+    occurred_at: values.occurredAt || new Date().toISOString(),
+    logged_by,
+    logged_by_name,
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * What a result from a test, questionnaire, interview or 360 may do to a
+ * competency rating (BPS 4.32). Recorded per centre and shown to assessors at
+ * the wash-up, so the answer is the same for every participant.
+ */
+export async function setOtherMethodsRuleAction(values: {
+  engagementId: string;
+  rule: "context_only" | "documented_conversion";
+  note?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const note = (values.note ?? "").trim();
+  if (values.rule === "documented_conversion" && note.length < 15) {
+    return { error: "Write the conversion rule itself. 'Converted by a stated rule' with no rule stated is not one." };
+  }
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({ other_methods_rule: values.rule, other_methods_note: note || null })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
 export async function setAssessmentModeAction(engagementId: string, mode: AssessmentMode) {
   const denied = await requireAdmin();
   if (denied) return denied;

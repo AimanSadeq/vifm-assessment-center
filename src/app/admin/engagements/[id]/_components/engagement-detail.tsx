@@ -7,6 +7,7 @@ import { copyToClipboard } from "@/lib/utils/clipboard";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { acPurpose, acPurposeLabel } from "@/lib/constants/ac-purpose";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +35,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction, inviteCandidateToPortalAction, releaseReportAction, releaseAllReportsAction } from "../actions";
+import { addCandidateAction, createAssignmentAction, addDemoAssessorAction, updateEngagementStatusAction, removeCandidateAction, deleteAssignmentAction, setCandidateRoleProfileAction, createReengagementAction, inviteCandidateToPortalAction, releaseReportAction, releaseAllReportsAction, confirmEngagementWeightsAction } from "../actions";
 import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Grid3x3, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,6 +46,7 @@ type RoleProfileOption = {
   name_en: string;
   name_ar: string | null;
   target_role: string | null;
+  purpose?: string | null;
 };
 
 type Props = {
@@ -120,6 +122,27 @@ export function EngagementDetail({
   // Status confirmation dialog
   const [statusConfirm, setStatusConfirm] = useState<{ open: boolean; status: string; label: string }>({ open: false, status: "", label: "" });
   const [statusUpdating, setStatusUpdating] = useState(false);
+  // A selection centre calculates its overall rating from these weights, so they
+  // have to be confirmed by a person before any rating is produced (BPS 7.3).
+  const [confirmingWeights, setConfirmingWeights] = useState(false);
+  const weightsConfirmedAt = engagement.weights_confirmed_at as string | null | undefined;
+  const isSelectionCentre = (engagement.purpose as string | null) === "selection";
+
+  const handleConfirmWeights = async () => {
+    setConfirmingWeights(true);
+    const res = await confirmEngagementWeightsAction(engagement.id as string);
+    setConfirmingWeights(false);
+    if ("error" in res && res.error) {
+      toast.error(typeof res.error === "string" ? res.error : "Could not confirm the weights.");
+      return;
+    }
+    toast.success(
+      "ok" in res && res.equalWeighted
+        ? "Weights confirmed. No competency is weighted, so all count equally."
+        : "Weights confirmed."
+    );
+    router.refresh();
+  };
 
   // G7 - re-engagement dialog
   const [reengageOpen, setReengageOpen] = useState(false);
@@ -333,6 +356,24 @@ export function EngagementDetail({
           <span>{orgName}</span>
           <Badge variant="secondary">{t(`adminEngagements.status.${engagement.status as string}`)}</Badge>
           {engagement.target_role ? <span>{t("adminEngagements.detail.targetPrefix")} {engagement.target_role as string}</span> : null}
+          {/* What the centre is for: it decides how the overall rating is reached (BPS 3.7, 7.4). */}
+          <span title={acPurpose(engagement.purpose as string | null)?.description ?? "No purpose was recorded for this centre"}>
+            Purpose: {acPurposeLabel(engagement.purpose as string | null)}
+          </span>
+          {isSelectionCentre ? (
+            weightsConfirmedAt ? (
+              <span className="text-green-700">
+                Weights confirmed {new Date(weightsConfirmedAt).toLocaleDateString()}
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 text-amber-800">
+                Weights not confirmed - no overall rating can be calculated
+                <Button size="sm" variant="outline" onClick={handleConfirmWeights} disabled={confirmingWeights}>
+                  {confirmingWeights ? "Confirming..." : "Confirm weights"}
+                </Button>
+              </span>
+            )
+          ) : null}
           {priorEngagementId && (
             <Link
               href={`/admin/engagements/${priorEngagementId}`}

@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { createOrganizationAction } from "../actions";
+import { AC_PURPOSES, acPurpose } from "@/lib/constants/ac-purpose";
 
 type Props = {
   organizations: Organization[];
@@ -184,6 +185,33 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
             }
             placeholder={t("adminWizard.step1.targetRolePlaceholder")}
           />
+        </div>
+
+        {/* What the centre is for. Required: it decides how the overall rating
+            is reached and what the participant is owed (BPS 3.7 and 7.4). */}
+        <div className="space-y-2">
+          <Label>What is this centre for?</Label>
+          <Select
+            value={state.purpose}
+            onValueChange={(value) =>
+              dispatch({ type: "SET_BASIC_INFO", field: "purpose", value })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select the purpose" />
+            </SelectTrigger>
+            <SelectContent>
+              {AC_PURPOSES.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label} - {p.short}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            {acPurpose(state.purpose)?.description
+              ?? "Selection centres reach the overall rating by calculation; development centres reach it by assessor discussion and owe the participant feedback."}
+          </p>
         </div>
 
         {/* Assessment Type & Norm Group */}

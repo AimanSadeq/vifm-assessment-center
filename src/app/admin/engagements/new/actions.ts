@@ -243,6 +243,7 @@ export async function createEngagementAction(payload: CreateEngagementPayload) {
     p_organization_id: data.organizationId,
     p_name: data.name,
     p_target_role: data.targetRole || null,
+    p_purpose: data.purpose,
     p_status: "draft",
     p_start_date: data.startDate || null,
     p_end_date: data.endDate || null,

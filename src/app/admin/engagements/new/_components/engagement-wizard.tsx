@@ -38,7 +38,7 @@ function WizardInner({ organizations, competencyTree, exercises, roleProfiles }:
   const canGoNext = () => {
     switch (state.currentStep) {
       case 1:
-        return state.organizationId !== "" && state.engagementName !== "";
+        return state.organizationId !== "" && state.engagementName !== "" && state.purpose !== "";
       case 2:
         return state.selectedCompetencies.length >= 4 && state.selectedCompetencies.length <= 15;
       case 3:

@@ -38,11 +38,11 @@ export async function fetchReportData(
 
   const [engResult, candResult, compResult, consensusResult, oarResult, ratingsResult, devRecResult, assessorResult, exercisesResult, indicatorsResult] =
     await Promise.all([
-      supabase.from("engagements").select("name, target_role, start_date, end_date, organizations(name)").eq("id", engagementId).single(),
+      supabase.from("engagements").select("name, target_role, start_date, end_date, purpose, integration_method, participant_contact_name, participant_contact_email, appeals_note, organizations(name)").eq("id", engagementId).single(),
       supabase.from("candidates").select("full_name, email").eq("id", candidateId).single(),
       supabase.from("engagement_competencies").select("competency_id, weight, competencies(id, name, competency_clusters(name, competency_domains(name)))").eq("engagement_id", engagementId),
       supabase.from("consensus_ratings").select("competency_id, final_score, discussion_notes").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
-      supabase.from("overall_assessment_ratings").select("overall_score, recommendation, summary").eq("engagement_id", engagementId).eq("candidate_id", candidateId).maybeSingle(),
+      supabase.from("overall_assessment_ratings").select("overall_score, recommendation, summary, computed_score, method, panel_disagrees").eq("engagement_id", engagementId).eq("candidate_id", candidateId).maybeSingle(),
       supabase.from("ratings").select("competency_id, score, assessor_assignments!inner(engagement_id, candidate_id, exercises(name))").eq("assessor_assignments.engagement_id", engagementId).eq("assessor_assignments.candidate_id", candidateId),
       supabase.from("development_recommendations").select("competency_id, recommendation, priority, competencies(name)").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
       supabase.from("assessor_assignments").select("profiles(full_name)").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
@@ -59,6 +59,34 @@ export async function fetchReportData(
 
   const observations = await observationsPromise;
   const eng = engResult.data;
+
+  // How much of the behavioural content behind this report a subject expert has
+  // approved, and who checked the report before release. Both are read
+  // best-effort: on a database without migrations 00203/00207 the section simply
+  // says less rather than the report failing to build.
+  const compIds = (compResult.data ?? []).map((c) => c.competency_id as string);
+  const contentApproved = await supabase
+    .from("behavioral_indicators")
+    .select("sme_status")
+    .in("competency_id", compIds.length > 0 ? compIds : ["00000000-0000-0000-0000-000000000000"])
+    .then(
+      (r) => {
+        const rows = (r.data ?? []) as { sme_status?: string | null }[];
+        if (r.error || rows.length === 0) return null;
+        return { approved: rows.filter((x) => x.sme_status === "approved").length, total: rows.length };
+      },
+      () => null
+    );
+  const reportRow = await supabase
+    .from("candidate_reports")
+    .select("checked_by_name, checked_at")
+    .eq("engagement_id", engagementId)
+    .eq("candidate_id", candidateId)
+    .maybeSingle()
+    .then(
+      (r) => (r.data ?? null) as { checked_by_name?: string | null; checked_at?: string | null } | null,
+      () => null
+    );
   const cand = candResult.data;
   const orgName = eng.organizations && typeof eng.organizations === "object" && "name" in eng.organizations
     ? (eng.organizations as { name: string }).name : "Unknown";
@@ -149,7 +177,10 @@ export async function fetchReportData(
   const topStrengths = sorted.filter((c) => (c.consensusScore ?? 0) >= 4).slice(0, 3).map((c) => c.competencyName);
   const topDevelopmentAreas = sorted.filter((c) => (c.consensusScore ?? 0) > 0 && (c.consensusScore ?? 0) <= 2)
     .map((c) => c.competencyName);
-  // If no low scores, take bottom 2
+  // If no low scores, take bottom 2. Flagged, because "0 development needs" in
+  // the stat strip beside two named development areas reads as a contradiction
+  // unless the page says these are simply the lowest rated.
+  const developmentAreasAreLowest = topDevelopmentAreas.length === 0;
   if (topDevelopmentAreas.length === 0) {
     const bottom = [...sorted].reverse().slice(0, 2);
     topDevelopmentAreas.push(...bottom.map((c) => c.competencyName));
@@ -283,10 +314,25 @@ export async function fetchReportData(
     competencies,
     topStrengths,
     topDevelopmentAreas,
+    developmentAreasAreLowest,
     overallScore: oarResult.data?.overall_score ?? null,
     recommendation: oarResult.data?.recommendation ?? null,
     executiveSummary: oarResult.data?.summary ?? null,
     developmentRecommendations,
+    // What the report must disclose about itself (BPS 8.2, 8.9, 8.12, 8.20, 5.49).
+    purpose: (eng as { purpose?: string | null }).purpose ?? null,
+    integrationMethod: ((eng as { integration_method?: string | null }).integration_method ?? null) as
+      | "weighted_average"
+      | "consensus"
+      | null,
+    computedScore: (oarResult.data as { computed_score?: number | null } | null)?.computed_score ?? null,
+    panelDisagrees: Boolean((oarResult.data as { panel_disagrees?: boolean } | null)?.panel_disagrees),
+    contactName: (eng as { participant_contact_name?: string | null }).participant_contact_name ?? null,
+    contactEmail: (eng as { participant_contact_email?: string | null }).participant_contact_email ?? null,
+    appealsNote: (eng as { appeals_note?: string | null }).appeals_note ?? null,
+    contentApproved,
+    checkedByName: reportRow?.checked_by_name ?? null,
+    checkedAt: reportRow?.checked_at ?? null,
     generatedAt: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
     assessorNames: Array.from(assessorNameSet),
     // Data-quality signals (drive the report caveat banner). hasAssessorData is

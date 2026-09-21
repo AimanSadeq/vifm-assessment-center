@@ -35,31 +35,43 @@ export async function ensureDemoOrg(): Promise<DemoOrgIds> {
   return { organizationId: res.organizationId, araOrganizationId: res.araOrganizationId };
 }
 
-/** Reuse an existing assessor profile if one exists, else create a demo one
- *  (auth user + profile, sentinel email so purge can find it). */
-async function ensureDemoAssessor(sb: Sb): Promise<string> {
-  const existing = await sb
-    .from("profiles")
-    .select("id")
-    .in("role", ["lead_assessor", "associate_assessor"])
-    .limit(1)
-    .maybeSingle();
-  if (existing.data?.id) return existing.data.id as string;
+/** Provision one demo assessor (auth user + profile, sentinel email so purge can
+ *  find it). Reuses the profile when the email already exists. */
+async function ensureDemoAssessor(sb: Sb, slug: string, fullName: string, role: string): Promise<string> {
+  const email = `${slug}@${DEMO_EMAIL_DOMAIN}`;
+  const found = await sb.from("profiles").select("id").eq("email", email).maybeSingle();
+  if (found.data?.id) return found.data.id as string;
 
-  const email = `assessor@${DEMO_EMAIL_DOMAIN}`;
   const created = await sb.auth.admin.createUser({
     email,
     email_confirm: true,
-    user_metadata: { full_name: "Dr. Sara Al Otaibi" },
+    user_metadata: { full_name: fullName },
   });
   let id = created.data?.user?.id;
   if (!id) {
-    const found = await sb.from("profiles").select("id").eq("email", email).maybeSingle();
-    id = found.data?.id as string | undefined;
+    const again = await sb.from("profiles").select("id").eq("email", email).maybeSingle();
+    id = again.data?.id as string | undefined;
   }
-  if (!id) throw new Error("Could not provision the demo assessor.");
-  await sb.from("profiles").upsert({ id, role: "lead_assessor", full_name: "Dr. Sara Al Otaibi", email });
+  if (!id) throw new Error(`Could not provision the demo assessor ${fullName}.`);
+  await sb.from("profiles").upsert({ id, role, full_name: fullName, email });
   return id;
+}
+
+/**
+ * The demo panel.
+ *
+ * A single assessor covering every participant fails the staffing rules the
+ * platform now enforces (more than one assessor per participant, BPS 5.18; at
+ * least one per three, BPS 5.21), so a live demonstration would open on a red
+ * warning. Three assessors for three participants clears both floors and shows
+ * the panel the way a real centre runs.
+ */
+async function ensureDemoPanel(sb: Sb): Promise<string[]> {
+  return Promise.all([
+    ensureDemoAssessor(sb, "assessor", "Dr. Sara Al Otaibi", "lead_assessor"),
+    ensureDemoAssessor(sb, "assessor2", "Khalid Al Mutairi", "associate_assessor"),
+    ensureDemoAssessor(sb, "assessor3", "Mariam Al Balushi", "associate_assessor"),
+  ]);
 }
 
 // ───────────────────────────── Assessment Center ─────────────────────────────
@@ -115,9 +127,20 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
   const candidates = candRes.data as { id: string }[];
   const c0 = candidates[0].id;
 
-  const assessorId = await ensureDemoAssessor(sb);
+  const panel = await ensureDemoPanel(sb);
   const assignments: { engagement_id: string; assessor_id: string; candidate_id: string; exercise_id: string }[] = [];
-  for (const c of candidates) for (const ex of exercises) assignments.push({ engagement_id: engId, assessor_id: assessorId, candidate_id: c.id, exercise_id: ex.id });
+  // Rotate the panel across exercises so each participant is seen by more than
+  // one assessor and the load is spread (BPS 5.18, 5.20, 5.21).
+  candidates.forEach((c, ci) => {
+    exercises.forEach((ex, ei) => {
+      assignments.push({
+        engagement_id: engId,
+        assessor_id: panel[(ci + ei) % panel.length],
+        candidate_id: c.id,
+        exercise_id: ex.id,
+      });
+    });
+  });
   const asgRes = await sb.from("assessor_assignments").insert(assignments).select("id, candidate_id, exercise_id");
   if (asgRes.error || !asgRes.data) throw new Error(`AC assignments: ${asgRes.error?.message}`);
   const a0 = (asgRes.data as { id: string; candidate_id: string; exercise_id: string }[]).filter((a) => a.candidate_id === c0);

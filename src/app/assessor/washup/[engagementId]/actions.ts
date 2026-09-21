@@ -14,6 +14,11 @@ import {
   saveOarSchema,
   type SaveOarValues,
 } from "@/lib/validations/washup";
+import {
+  canComputeOverallRating,
+  computeOverallRating,
+  integrationMethodFor,
+} from "@/lib/scoring/overall-rating";
 
 // Wash-up writes go through the service client, which BYPASSES RLS - so the
 // header comment that once claimed "RLS only permits the owning assessor" was
@@ -99,6 +104,65 @@ export async function saveOarAction(values: SaveOarValues) {
     return { error: "Record at least one competency consensus rating before saving the overall rating." };
   }
 
+  // How this centre reaches its overall rating was fixed when it was designed.
+  // A selection centre computes it (BPS 7.4); the figure the browser sends is
+  // ignored, so the rule cannot be talked around in the room. A development
+  // centre keeps the panel's number.
+  const { data: eng } = await supabase
+    .from("engagements")
+    .select("purpose, integration_method, weights_confirmed_at")
+    .eq("id", parsed.data.engagementId)
+    .maybeSingle();
+  const engagement = (eng ?? {}) as {
+    purpose?: string | null;
+    integration_method?: string | null;
+    weights_confirmed_at?: string | null;
+  };
+
+  let overallScore = parsed.data.overallScore ?? null;
+  let computedScore: number | null = null;
+  let computation: unknown = null;
+  const method = integrationMethodFor(engagement);
+
+  if (method === "weighted_average") {
+    const gateComputed = canComputeOverallRating(engagement);
+    if (!gateComputed.allowed) return { error: gateComputed.reason ?? "Cannot compute the overall rating." };
+
+    const [{ data: weights }, { data: agreed }] = await Promise.all([
+      supabase
+        .from("engagement_competencies")
+        .select("competency_id, weight, competencies(name)")
+        .eq("engagement_id", parsed.data.engagementId),
+      supabase
+        .from("consensus_ratings")
+        .select("competency_id, final_score")
+        .eq("engagement_id", parsed.data.engagementId)
+        .eq("candidate_id", parsed.data.candidateId),
+    ]);
+    const scoreOf = new Map((agreed ?? []).map((r) => [r.competency_id as string, r.final_score as number]));
+    const result = computeOverallRating(
+      (weights ?? []).map((w) => {
+        const comp = w.competencies as { name?: string } | { name?: string }[] | null;
+        return {
+          competencyId: w.competency_id as string,
+          name: Array.isArray(comp) ? comp[0]?.name : comp?.name,
+          weight: w.weight as number | null,
+          score: scoreOf.get(w.competency_id as string) ?? null,
+        };
+      })
+    );
+    if (result.score == null || result.band == null) {
+      return { error: result.problems[0] ?? "There is nothing to compute an overall rating from yet." };
+    }
+    computedScore = result.score;
+    overallScore = result.band;
+    computation = { method, computedAt: new Date().toISOString(), ...result };
+  }
+
+  if (overallScore == null) {
+    return { error: "An overall rating is required." };
+  }
+
   // Upsert: one OAR per (engagement, candidate)
   const { data, error } = await supabase
     .from("overall_assessment_ratings")
@@ -106,7 +170,12 @@ export async function saveOarAction(values: SaveOarValues) {
       {
         engagement_id: parsed.data.engagementId,
         candidate_id: parsed.data.candidateId,
-        overall_score: parsed.data.overallScore,
+        overall_score: overallScore,
+        computed_score: computedScore,
+        method,
+        computation,
+        panel_disagrees: parsed.data.panelDisagrees ?? false,
+        panel_comment: parsed.data.panelComment || null,
         recommendation: parsed.data.recommendation,
         summary: parsed.data.summary || null,
       },

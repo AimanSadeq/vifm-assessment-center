@@ -15,7 +15,7 @@ export default async function WashupCandidatePage({ params }: Props) {
 
   const [engResult, candResult, compResult, worksheetsResult, consensusResult, oarResult] =
     await Promise.all([
-      supabase.from("engagements").select("id, name").eq("id", engagementId).single(),
+      supabase.from("engagements").select("id, name, purpose, integration_method, weights_confirmed_at, other_methods_rule, other_methods_note").eq("id", engagementId).single(),
       supabase.from("candidates").select("id, full_name").eq("id", candidateId).single(),
       supabase
         .from("engagement_competencies")
@@ -85,6 +85,13 @@ export default async function WashupCandidatePage({ params }: Props) {
       <WashupForm
         engagementId={engagementId}
         engagementName={engResult.data.name}
+        engagement={{
+          purpose: (engResult.data as { purpose?: string | null }).purpose ?? null,
+          integration_method: (engResult.data as { integration_method?: string | null }).integration_method ?? null,
+          weights_confirmed_at: (engResult.data as { weights_confirmed_at?: string | null }).weights_confirmed_at ?? null,
+          other_methods_rule: (engResult.data as { other_methods_rule?: string | null }).other_methods_rule ?? null,
+          other_methods_note: (engResult.data as { other_methods_note?: string | null }).other_methods_note ?? null,
+        }}
         candidateId={candidateId}
         candidateName={candResult.data.full_name}
         competencies={competencies}

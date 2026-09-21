@@ -62,6 +62,20 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
       (r) => (r.data ?? []) as Record<string, unknown>[],
       () => [] as Record<string, unknown>[]
     );
+  // The joining pack comes before consent (BPS 3.17, 5.39): a participant sent
+  // straight to a consent form has not been given what they need to consent.
+  const { data: packEng } = await supabase
+    .from("engagements")
+    .select("pack_published_at")
+    .eq("id", eng.id)
+    .maybeSingle()
+    .then((r) => r, () => ({ data: null }));
+  const packPublished = Boolean((packEng as { pack_published_at?: string | null } | null)?.pack_published_at);
+  const packAcked = Boolean((candidate as { pack_ack_at?: string | null }).pack_ack_at);
+  const consentHref = packPublished && !packAcked
+    ? `/candidate/pack/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`
+    : `/candidate/consent/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`;
+
   const decisionToldAt = (candidate as { decision_communicated_at?: string | null }).decision_communicated_at ?? null;
   const decisionOutcome = (candidate as { decision_outcome?: string | null }).decision_outcome ?? null;
   const decisionMadeAt = (candidate as { decision_made_at?: string | null }).decision_made_at ?? null;
@@ -161,8 +175,10 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
 
           <div className="flex flex-wrap gap-3">
             {!hasConsented ? (
-              <Link href={`/candidate/consent/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
-                <Button>{t("candidateWelcome.proceedToConsent")}</Button>
+              <Link href={consentHref}>
+                <Button>
+                  {packPublished && !packAcked ? "Read this before you take part" : t("candidateWelcome.proceedToConsent")}
+                </Button>
               </Link>
             ) : (
               <>
@@ -182,6 +198,11 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
                   <Button variant="outline">{t("candidateWelcome.viewReport")}</Button>
                 </Link>
               </>
+            )}
+            {packPublished && (
+              <Link href={`/candidate/pack/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`}>
+                <Button variant="outline">Before you take part</Button>
+              </Link>
             )}
             {/* Available at every stage, not only after consent: the standard
                 expects a route before, during and after the centre (BPS 5.44). */}

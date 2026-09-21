@@ -15,6 +15,8 @@ import { CandidateFilterBar } from "./_components/candidate-filter-bar";
 import { CentreRulesPanel } from "./_components/centre-rules-panel";
 import { DeliveryLogPanel } from "./_components/delivery-log-panel";
 import { ParticipantRightsPanel } from "./_components/participant-rights-panel";
+import { JoiningPackPanel } from "./_components/joining-pack-panel";
+import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
 import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
 import { ReadinessSetupPanel } from "./_components/readiness-setup-panel";
 import { computeAcObservedLens } from "@/lib/scoring/ac-observed-lens";
@@ -186,6 +188,11 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? await computeAcObservedLens(id, focusedCandidate.id as string)
     : null;
 
+  // What the joining pack still lacks (BPS 5.41). Computed from the same
+  // builder the participant's copy uses, so the checklist and the pack can
+  // never disagree about what is missing.
+  const packMissing = buildJoiningPack(engagement as PackEngagement, exercises as unknown as PackExercise[]).missing;
+
   // Technical certification program for this engagement (paid org layer).
   const techProgram = await getEngagementTechProgram(id, await getServerLocale());
 
@@ -219,6 +226,12 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         appealsNote={(engagement as { appeals_note?: string | null }).appeals_note ?? ""}
         otherMethodsRule={(engagement as { other_methods_rule?: string | null }).other_methods_rule ?? ""}
         otherMethodsNote={(engagement as { other_methods_note?: string | null }).other_methods_note ?? ""}
+      />
+      <JoiningPackPanel
+        engagementId={id}
+        engagement={engagement}
+        candidates={candidates}
+        missing={packMissing}
       />
       <DeliveryLogPanel engagementId={id} entries={deliveryLog} candidates={candidates} />
       <ParticipantRightsPanel

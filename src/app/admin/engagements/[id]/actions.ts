@@ -13,6 +13,7 @@ import { publishNotification, publishToAllAdmins } from "@/lib/notifications/pub
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
 import { reviewStaffing } from "@/lib/ac/staffing";
+import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
 import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
 import { sendEmail } from "@/lib/integrations/email";
 
@@ -1184,4 +1185,160 @@ export async function notifyCandidateOfDecisionAction(candidateId: string) {
   // A participant with no portal account cannot be told in the app, so say so
   // rather than let the stamp imply they were.
   return { ok: true, inApp: Boolean(cand.profile_id) };
+}
+
+/**
+ * The joining pack (BPS 5.38-5.41).
+ *
+ * Saving is free-form; publishing is not. A pack that does not say how long
+ * results are kept, or who sees them, cannot support informed consent, so
+ * publication is refused until every clause item has an answer.
+ */
+export async function saveJoiningPackAction(values: {
+  engagementId: string;
+  purposeStatement?: string;
+  location?: string;
+  preparation?: string;
+  resultsUse?: string;
+  decisions?: string;
+  decisionTiming?: string;
+  reportRecipients?: string;
+  feedbackOffer?: "written_report" | "verbal_debrief" | "both" | "none" | "";
+  feedbackWhen?: string;
+  retentionMonths?: number;
+  researchUse?: boolean;
+  adjustmentsNote?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const months = values.retentionMonths ?? 24;
+  if (!Number.isInteger(months) || months < 1 || months > 120) {
+    return { error: "Retention has to be a whole number of months, between 1 and 120." };
+  }
+
+  const text = (v?: string) => (v ?? "").trim() || null;
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      pack_purpose_statement: text(values.purposeStatement),
+      pack_location: text(values.location),
+      pack_preparation: text(values.preparation),
+      pack_results_use: text(values.resultsUse),
+      pack_decisions: text(values.decisions),
+      pack_decision_timing: text(values.decisionTiming),
+      pack_report_recipients: text(values.reportRecipients),
+      pack_feedback_offer: values.feedbackOffer || null,
+      pack_feedback_when: text(values.feedbackWhen),
+      retention_months: months,
+      research_use: values.researchUse ?? false,
+      pack_adjustments_note: text(values.adjustmentsNote),
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+export async function publishJoiningPackAction(engagementId: string) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+
+  const sb = createServiceClient();
+  const [{ data: eng }, { data: exRows }] = await Promise.all([
+    sb.from("engagements").select("*, organizations(name)").eq("id", engagementId).maybeSingle(),
+    sb
+      .from("engagement_exercises")
+      .select("exercises(name, exercise_type, duration_minutes)")
+      .eq("engagement_id", engagementId),
+  ]);
+  if (!eng) return { error: "Engagement not found." };
+
+  const exercises = (exRows ?? [])
+    .map((r) => r.exercises as unknown as PackExercise | null)
+    .filter(Boolean) as PackExercise[];
+  const pack = buildJoiningPack(eng as PackEngagement, exercises);
+  if (pack.missing.length > 0) {
+    return {
+      error:
+        "The pack is not complete yet: " +
+        pack.missing.map((m) => `${m.label} (${m.clause})`).join("; ") +
+        ". A participant cannot give informed consent against a pack that leaves these out.",
+    };
+  }
+
+  const { error } = await sb
+    .from("engagements")
+    .update({ pack_published_at: new Date().toISOString(), pack_published_by: uid })
+    .eq("id", engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Reasonable adjustments (BPS 5.45-5.47). The decision and what was actually
+ * put in place both belong on the record: an adjustment agreed and not
+ * delivered is worse than one refused.
+ */
+export async function decideAdjustmentAction(values: {
+  candidateId: string;
+  status: "agreed" | "declined";
+  agreed?: string;
+  extraMinutes?: number | null;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const agreed = (values.agreed ?? "").trim();
+  if (agreed.length < 5) {
+    return {
+      error:
+        values.status === "agreed"
+          ? "Write what will actually be put in place, so the people running the centre can deliver it."
+          : "Record why the adjustment was not made. A refusal with no reason is the one that gets challenged.",
+    };
+  }
+  if (values.extraMinutes != null && (!Number.isInteger(values.extraMinutes) || values.extraMinutes < 0 || values.extraMinutes > 240)) {
+    return { error: "Extra time has to be a whole number of minutes, up to 240." };
+  }
+
+  const sb = createServiceClient();
+  const { data: row, error } = await sb
+    .from("candidates")
+    .update({
+      adjustment_status: values.status,
+      adjustment_agreed: agreed,
+      adjustment_extra_minutes: values.status === "agreed" ? values.extraMinutes ?? null : null,
+      adjustment_decided_at: new Date().toISOString(),
+      adjustment_decided_by: uid,
+    })
+    .eq("id", values.candidateId)
+    .select("profile_id")
+    .single();
+  if (error) return { error: error.message };
+
+  if (row?.profile_id) {
+    await publishNotification({
+      profileId: row.profile_id as string,
+      kind: "adjustment_decided",
+      title:
+        values.status === "agreed"
+          ? "Your adjustment request has been agreed"
+          : "Your adjustment request has been answered",
+      body: agreed.slice(0, 180),
+      link: `/candidate/pack/${values.candidateId}`,
+    });
+  }
+  return { ok: true };
 }

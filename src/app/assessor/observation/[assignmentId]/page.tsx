@@ -14,7 +14,7 @@ export default async function ObservationPage({ params }: Props) {
   // Fetch the assignment with related data
   const { data: assignment, error: assignError } = await supabase
     .from("assessor_assignments")
-    .select("*, candidates(id, full_name), exercises(id, name, exercise_type, duration_minutes, prep_minutes, meeting_minutes, scenario_context, assessor_notes), profiles(id, full_name)")
+    .select("*, candidates(id, full_name, adjustment_status, adjustment_agreed, adjustment_extra_minutes), exercises(id, name, exercise_type, duration_minutes, prep_minutes, meeting_minutes, scenario_context, assessor_notes), profiles(id, full_name)")
     .eq("id", assignmentId)
     .single();
 
@@ -52,7 +52,13 @@ export default async function ObservationPage({ params }: Props) {
     .select("*")
     .eq("assessor_assignment_id", assignmentId);
 
-  const candidate = assignment.candidates as unknown as { id: string; full_name: string };
+  const candidate = assignment.candidates as unknown as {
+    id: string;
+    full_name: string;
+    adjustment_status?: string | null;
+    adjustment_agreed?: string | null;
+    adjustment_extra_minutes?: number | null;
+  };
   const exercise = assignment.exercises as unknown as {
     id: string; name: string; exercise_type: string; duration_minutes: number | null;
     prep_minutes: number | null; meeting_minutes: number | null;
@@ -62,6 +68,24 @@ export default async function ObservationPage({ params }: Props) {
   return (
     <div>
       <BackLink href="/assessor" label="Back" history />
+      {/* An agreed adjustment has to reach the person doing the observing
+          (BPS 5.47), or it was not made. Shown before the form so it is read
+          before the exercise, not after the rating. */}
+      {candidate.adjustment_status === "agreed" && candidate.adjustment_agreed && (
+        <div className="mb-4 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+          <div className="font-medium">Agreed adjustment for {candidate.full_name}</div>
+          <p className="mt-1 whitespace-pre-wrap">{candidate.adjustment_agreed}</p>
+          {candidate.adjustment_extra_minutes ? (
+            <p className="mt-1">
+              Extra time: {candidate.adjustment_extra_minutes} minutes on each timed activity.
+            </p>
+          ) : null}
+          <p className="mt-2 text-xs">
+            Rate what they demonstrate, not how long it took. The adjustment is not evidence and does not belong in
+            your notes.
+          </p>
+        </div>
+      )}
       <ObservationForm
         assignmentId={assignmentId}
         engagementId={assignment.engagement_id}

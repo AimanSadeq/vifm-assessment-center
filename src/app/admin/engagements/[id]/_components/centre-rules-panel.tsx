@@ -103,6 +103,13 @@ export function CentreRulesPanel({
   };
 
   const nameOf = (r: Row) => (r.full_name as string) ?? (r.name as string) ?? (r.id as string);
+  // Two accounts can carry the same display name, and picking the wrong one when
+  // declaring a conflict would leave the real conflict unenforced. Show the
+  // email alongside so the choice is unambiguous.
+  const assessorLabel = (r: Row) => {
+    const email = r.email as string | undefined;
+    return email ? `${nameOf(r)} (${email})` : nameOf(r);
+  };
 
   const report = reviewStaffing({
     candidateIds: candidates.map((c) => c.id as string),
@@ -361,7 +368,7 @@ export function CentreRulesPanel({
               <option value="">Assessor...</option>
               {assessors.map((a) => (
                 <option key={a.id as string} value={a.id as string}>
-                  {nameOf(a)}
+                  {assessorLabel(a)}
                 </option>
               ))}
             </select>

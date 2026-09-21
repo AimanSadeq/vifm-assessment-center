@@ -96,6 +96,16 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
     status: "active",
     start_date: "2026-06-15",
     end_date: "2026-06-17",
+    // A demo should show the platform as a client would run it: a selection
+    // centre with a calculated overall rating, on weights someone confirmed.
+    // Without these the demo reads "Purpose: Not recorded" and falls back to a
+    // consensus rating, which is the behaviour we changed.
+    purpose: "selection",
+    integration_method: "weighted_average",
+    weights_confirmed_at: new Date().toISOString(),
+    participant_contact_name: "Demo Engagement Lead",
+    participant_contact_email: `lead@${DEMO_EMAIL_DOMAIN}`,
+    other_methods_rule: "context_only",
   }).select("id").single();
   if (eng.error || !eng.data) throw new Error(`AC engagement: ${eng.error?.message}`);
   const engId = eng.data.id as string;

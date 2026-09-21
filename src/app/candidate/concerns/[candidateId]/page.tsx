@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BackLink } from "@/components/shared/back-link";
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { RaiseConcernForm } from "./_components/raise-concern-form";
+import { LocalDate } from "@/components/shared/local-date";
 import { loadEngagementContact } from "./actions";
 
 type Props = {
@@ -121,7 +122,7 @@ export default async function CandidateConcernsPage({ params, searchParams }: Pr
                   </span>
                   <span className="text-xs text-muted-foreground">
                     {STAGE_LABEL[r.stage as string] ?? (r.stage as string)} ·{" "}
-                    {new Date(r.raised_at as string).toLocaleDateString()}
+                    <LocalDate value={r.raised_at as string} withTime />
                   </span>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap">{r.body as string}</p>

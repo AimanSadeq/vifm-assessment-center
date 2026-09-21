@@ -10,6 +10,7 @@ import { CandidateDemographicsForm } from "./_components/candidate-demographics-
 import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
+import { LocalDate } from "@/components/shared/local-date";
 
 type Props = {
   params: { candidateId: string };
@@ -129,7 +130,7 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
               <p className="mt-1">{decisionOutcome}</p>
               {decisionMadeAt && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Decided on {new Date(decisionMadeAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                  Decided on <LocalDate value={decisionMadeAt} dateOnly />
                 </p>
               )}
               {decisionNote && <p className="mt-2 text-muted-foreground">{decisionNote}</p>}
@@ -146,7 +147,7 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
               {reassessments.map((r) => (
                 <p key={r.id as string} className="mt-1">
                   {r.status === "scheduled" && r.scheduled_for
-                    ? `Arranged for ${new Date(r.scheduled_for as string).toLocaleString()}.`
+                    ? <>Arranged for <LocalDate value={r.scheduled_for as string} withTime />.</>
                     : r.status === "completed"
                       ? "Completed."
                       : "Being arranged. Someone will be in touch with a time."}{" "}

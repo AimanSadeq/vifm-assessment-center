@@ -52,7 +52,7 @@ export function RaiseConcernForm({ candidateId }: { candidateId: string }) {
               size="sm"
               variant={kind === k.value ? "default" : "outline"}
               onClick={() => setKind(k.value)}
-              title={k.hint}
+              aria-pressed={kind === k.value}
             >
               {k.label}
             </Button>
@@ -67,6 +67,7 @@ export function RaiseConcernForm({ candidateId }: { candidateId: string }) {
               size="sm"
               variant={stage === s.value ? "secondary" : "outline"}
               onClick={() => setStage(s.value)}
+              aria-pressed={stage === s.value}
             >
               {s.label}
             </Button>

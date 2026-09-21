@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { formatLocalDate } from "@/components/shared/local-date";
 import {
   respondToConcernAction,
   requestReassessmentAction,
@@ -47,7 +48,12 @@ const STAGE_LABEL: Record<string, string> = {
   after: "after the centre",
 };
 
-const dateOf = (v: unknown) => (v ? new Date(v as string).toLocaleDateString() : null);
+// One rendering of a timestamp across every surface: the participant's page is
+// a server component and would otherwise print the UTC date while this client
+// panel printed the local one, so the same appeal showed two different days.
+const dateOf = (v: unknown) => formatLocalDate(v as string | null);
+const dateTimeOf = (v: unknown) => formatLocalDate(v as string | null, { withTime: true });
+const plainDateOf = (v: unknown) => formatLocalDate(v as string | null, { dateOnly: true });
 
 export function ParticipantRightsPanel({
   engagementId,
@@ -131,7 +137,7 @@ export function ParticipantRightsPanel({
                     {c.status as string}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {STAGE_LABEL[c.stage as string] ?? (c.stage as string)} · {dateOf(c.raised_at)}
+                    {STAGE_LABEL[c.stage as string] ?? (c.stage as string)} · {dateTimeOf(c.raised_at)}
                   </span>
                 </div>
                 <p className="mt-2 whitespace-pre-wrap">{c.body as string}</p>
@@ -278,7 +284,7 @@ export function ParticipantRightsPanel({
                   </span>
                   {r.scheduled_for ? (
                     <span className="text-xs text-muted-foreground">
-                      for {new Date(r.scheduled_for as string).toLocaleString()}
+                      for {dateTimeOf(r.scheduled_for)}
                     </span>
                   ) : null}
                 </div>
@@ -319,7 +325,7 @@ export function ParticipantRightsPanel({
                       <span className="font-medium">{c.full_name as string}</span>
                       <span className="ms-2 text-xs text-muted-foreground">
                         {out
-                          ? `${out}${dateOf(c.decision_made_at) ? ` · decided ${dateOf(c.decision_made_at)}` : ""}`
+                          ? `${out}${plainDateOf(c.decision_made_at) ? ` · decided ${plainDateOf(c.decision_made_at)}` : ""}`
                           : "No decision recorded"}
                       </span>
                       {told ? (

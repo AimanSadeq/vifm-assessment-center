@@ -16,6 +16,7 @@ import {
   type DemoSeedOutcome,
 } from "./constants";
 import { DEMO_SERVICE_MODULES } from "./services";
+import { computeOverallRating } from "@/lib/scoring/overall-rating";
 
 type Sb = ReturnType<typeof createServiceClient>;
 
@@ -83,6 +84,83 @@ const AC_COMPETENCIES = [
   "a0000001-0000-0000-0000-000000000024",
   "a0000001-0000-0000-0000-000000000017",
 ];
+/** Design weights. Also the denominator of the calculated overall rating. */
+const AC_WEIGHTS = [2, 1.5, 2, 1.5, 1.5, 1];
+/** Which competencies each exercise observes, as indices into AC_COMPETENCIES.
+ *  Used for both the exercise-competency matrix and the assessors' integration
+ *  worksheets, so the demo's evidence trail is internally consistent. */
+const AC_EXERCISE_COMPETENCIES = [
+  [0, 1, 2, 3],
+  [3, 4, 5, 2],
+  [0, 1, 3, 4, 5],
+];
+
+/** Each participant's assessed profile, as the panel sees it before the wash-up. */
+const AC_PRELIMINARY_PROFILE = [
+  [4, 3, 4, 4, 3, 4],
+  [3, 4, 3, 4, 4, 3],
+  [5, 4, 4, 3, 4, 4],
+];
+/** For each competency, the exercise whose assessor rates it one point above the
+ *  rest. A wash-up with no divergence demonstrates nothing, but assessors two
+ *  points apart on every competency would say the exercises are not measuring
+ *  the same thing. One point, one dissenting view, a different assessor each
+ *  time. Each entry must name an exercise that actually observes the competency
+ *  (see AC_EXERCISE_COMPETENCIES). */
+const AC_HIGHER_VIEW_EXERCISE = [2, 0, 1, 0, 2, 1];
+const AC_WORKSHEET_NOTES = [
+  "Consolidated across the exercises I observed: framing, prioritisation and the link back to the strategy.",
+  "Judged on the quality of the reasoning behind each call, not on whether I would have made the same one.",
+  "Looked at follow-through: what was actually committed to, and what was left open.",
+  "Rated on clarity and on how the message landed with the other person, in writing and in the room.",
+  "Assessed on how far the development conversation went past the symptom.",
+  "Watched composure when the exercise pushed back, and what was done with the pressure.",
+];
+
+/**
+ * The assessors' integration worksheets for every participant.
+ *
+ * An assessor writes one per competency they observed, which the exercise to
+ * competency matrix decides: each exercise is assigned to a different assessor,
+ * so a competency seen in two exercises gets two independent views of it.
+ */
+async function seedIntegrationWorksheets(
+  sb: Sb,
+  engId: string,
+  candidates: { id: string }[],
+  panel: string[]
+): Promise<void> {
+  const clamp = (n: number) => Math.min(5, Math.max(1, n));
+  const rows: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+  candidates.forEach((c, ci) => {
+    AC_EXERCISE_COMPETENCIES.forEach((ks, ei) => {
+      const assessorId = panel[(ci + ei) % panel.length];
+      for (const k of ks) {
+        const key = `${c.id}:${assessorId}:${k}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        const rating = clamp(AC_PRELIMINARY_PROFILE[ci][k] + (AC_HIGHER_VIEW_EXERCISE[k] === ei ? 1 : 0));
+        const evidence =
+          rating >= 4
+            ? "Evidence was consistent across what I saw."
+            : rating <= 2
+              ? "Evidence was thin outside the in-basket."
+              : "Evidence was mixed across what I saw.";
+        rows.push({
+          engagement_id: engId,
+          assessor_id: assessorId,
+          candidate_id: c.id,
+          competency_id: AC_COMPETENCIES[k],
+          preliminary_rating: rating,
+          notes: `${AC_WORKSHEET_NOTES[k]} ${evidence}`,
+        });
+      }
+    });
+  });
+  const res = await sb.from("integration_worksheets").insert(rows);
+  if (res.error) throw new Error(`AC integration worksheets: ${res.error.message}`);
+}
 
 async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutcome> {
   const label = "Assessment Center";
@@ -119,14 +197,14 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
   const exercises = exRes.data as { id: string }[];
 
   await sb.from("engagement_competencies").insert(
-    AC_COMPETENCIES.map((cid, i) => ({ engagement_id: engId, competency_id: cid, weight: [2, 1.5, 2, 1.5, 1.5, 1][i] }))
+    AC_COMPETENCIES.map((cid, i) => ({ engagement_id: engId, competency_id: cid, weight: AC_WEIGHTS[i] }))
   );
   await sb.from("engagement_exercises").insert(exercises.map((ex) => ({ engagement_id: engId, exercise_id: ex.id })));
-  await sb.from("exercise_competency_matrix").insert([
-    ...[0, 1, 2, 3].map((k) => ({ engagement_id: engId, exercise_id: exercises[0].id, competency_id: AC_COMPETENCIES[k] })),
-    ...[3, 4, 5, 2].map((k) => ({ engagement_id: engId, exercise_id: exercises[1].id, competency_id: AC_COMPETENCIES[k] })),
-    ...[0, 1, 3, 4, 5].map((k) => ({ engagement_id: engId, exercise_id: exercises[2].id, competency_id: AC_COMPETENCIES[k] })),
-  ]);
+  await sb.from("exercise_competency_matrix").insert(
+    AC_EXERCISE_COMPETENCIES.flatMap((ks, ei) =>
+      ks.map((k) => ({ engagement_id: engId, exercise_id: exercises[ei].id, competency_id: AC_COMPETENCIES[k] }))
+    )
+  );
 
   const candRes = await sb.from("candidates").insert([
     { engagement_id: engId, full_name: "Abdullah Al Qahtani", email: `abdullah@${DEMO_EMAIL_DOMAIN}`, status: "completed" },
@@ -154,6 +232,14 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
   const asgRes = await sb.from("assessor_assignments").insert(assignments).select("id, candidate_id, exercise_id");
   if (asgRes.error || !asgRes.data) throw new Error(`AC assignments: ${asgRes.error?.message}`);
   const a0 = (asgRes.data as { id: string; candidate_id: string; exercise_id: string }[]).filter((a) => a.candidate_id === c0);
+
+  // Integration worksheets: each assessor's own consolidated rating per
+  // competency, written before the wash-up. The wash-up screen exists to
+  // reconcile these, so without them it opens on an empty state and a demo
+  // cannot reach the consensus grid or the calculated overall rating.
+  // Assessors deliberately differ on some cells: divergence is what the
+  // discussion is for (BPS 7.13).
+  await seedIntegrationWorksheets(sb, engId, candidates, panel);
 
   await sb.from("observations").insert([
     { assessor_assignment_id: a0[0].id, competency_id: AC_COMPETENCIES[0], behavior_observed: "Prioritized the strategic merger item over operational urgencies and explained the rationale.", is_positive: true },
@@ -187,8 +273,27 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
     await sb.from("consensus_ratings").insert(
       AC_COMPETENCIES.map((cid, i) => ({ engagement_id: engId, candidate_id: c0, competency_id: cid, final_score: consensus[i], discussion_notes: cnotes[i] }))
     );
+    // This is a selection centre, so the overall rating is calculated from the
+    // agreed ratings and the confirmed weights rather than typed in (BPS 7.4).
+    // Computed with the same function the wash-up uses, and stored with its
+    // working, so the demo shows a figure that can be reconstructed.
+    const names = await sb.from("competencies").select("id, name").in("id", AC_COMPETENCIES);
+    const nameOf = new Map(((names.data ?? []) as { id: string; name: string }[]).map((r) => [r.id, r.name]));
+    const computed = computeOverallRating(
+      AC_COMPETENCIES.map((cid, i) => ({
+        competencyId: cid,
+        name: nameOf.get(cid),
+        weight: AC_WEIGHTS[i],
+        score: consensus[i],
+      }))
+    );
     await sb.from("overall_assessment_ratings").insert({
-      engagement_id: engId, candidate_id: c0, overall_score: 4, recommendation: "ready_with_development",
+      engagement_id: engId, candidate_id: c0,
+      overall_score: computed.band ?? 4,
+      computed_score: computed.score,
+      method: "weighted_average",
+      computation: { method: "weighted_average", computedAt: new Date().toISOString(), ...computed },
+      recommendation: "ready_with_development",
       summary: "Strong leadership potential with standout communication and execution. Development focus: scenario-based thinking and deeper talent-development conversations. Well suited to the Senior Manager role with targeted coaching.",
     });
     await sb.from("candidate_reports").insert({ engagement_id: engId, candidate_id: c0, status: "released", released_at: daysAgo(1) });

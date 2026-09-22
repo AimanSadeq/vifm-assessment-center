@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError, type AraCaller } from "@/lib/ara/auth-guards";
-import { draftAiItemsToBank, backfillBankArabic } from "@/lib/competencies/technical-item-bank";
+import { draftAiItemsToBank, backfillBankArabic, questionRepeatsScenario } from "@/lib/competencies/technical-item-bank";
 import { techDomainByKey, type TechDomainKey } from "@/lib/competencies/technical-framework";
 import type { BankItemStatus, BankItemType } from "@/lib/competencies/technical-item-bank";
 import { setTimerMinutes } from "@/lib/assessment-timers";
@@ -177,6 +177,20 @@ export async function updateItemAction(itemId: string, fields: EditItemFields) {
         current = (legacy.data as (Record<string, unknown> & { status?: string }) | null) ?? null;
       } else {
         current = (full.data as (Record<string, unknown> & { status?: string }) | null) ?? null;
+      }
+    }
+    // Refuse to write back the defect the SME review found: a question that is a
+    // verbatim copy of its own scenario. The editor posts the whole field set, but
+    // a partial save is possible, so the check is on the effective value - what the
+    // row will hold after this patch - not on what was submitted.
+    {
+      const effective = (col: string) =>
+        String(((col in patch ? patch[col] : current?.[col]) ?? ""));
+      if (questionRepeatsScenario(effective("question_en"), effective("scenario_en"))) {
+        return { error: "the question repeats the scenario word for word - write the question the candidate has to answer" };
+      }
+      if (questionRepeatsScenario(effective("question_ar"), effective("scenario_ar"))) {
+        return { error: "the Arabic question repeats the Arabic scenario word for word - write the question the candidate has to answer, or leave the Arabic empty and let the item serve in English" };
       }
     }
     if (current && (current.status === "approved" || current.status === "retired")) {

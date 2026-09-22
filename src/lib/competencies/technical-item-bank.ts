@@ -668,7 +668,28 @@ export function validateBankDraft(
   if (!Number.isInteger(ci) || ci < 0 || ci >= 4) return null;
   const scEn = type === "scenario" && typeof raw.scenario_en === "string" && raw.scenario_en.trim() ? raw.scenario_en.trim() : null;
   const scAr = scEn && typeof raw.scenario_ar === "string" && raw.scenario_ar.trim() ? raw.scenario_ar.trim() : null;
-  return { ...common, question_type: scEn ? "scenario" : "single", scenario_en: scEn, scenario_ar: scAr, correct_index: ci, correct_indices: null };
+  // An English item whose question is its own scenario is unanswerable and has
+  // no fallback, so it does not enter the bank at all.
+  if (questionRepeatsScenario(common.question_en, scEn)) return null;
+  // In Arabic it does have a fallback: assembly serves English per item when the
+  // Arabic is incomplete (see the useAr test), so drop the Arabic question rather
+  // than the whole item. The SME console then shows it as missing Arabic and the
+  // backfill can write a real one.
+  const qAr = questionRepeatsScenario(common.question_ar, scAr) ? null : common.question_ar;
+  return { ...common, question_ar: qAr, question_type: scEn ? "scenario" : "single", scenario_en: scEn, scenario_ar: scAr, correct_index: ci, correct_indices: null };
+}
+
+/** A question that repeats its own scenario verbatim asks the candidate nothing:
+ *  they read the case twice and are never asked anything. Five items were found
+ *  in exactly this state (Arabic) during the SME review, all AI-drafted, so the
+ *  generator and the editor both check it rather than trusting the author. */
+export function questionRepeatsScenario(
+  question: string | null | undefined,
+  scenario: string | null | undefined,
+): boolean {
+  const q = (question ?? "").trim();
+  const s = (scenario ?? "").trim();
+  return q.length > 0 && q === s;
 }
 
 /** Best-effort bilingual repair: fill missing Arabic on 4-option items (single /

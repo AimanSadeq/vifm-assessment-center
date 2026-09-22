@@ -9,7 +9,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
-  Sparkles, Plus, Check, Archive, Trash2, Pencil, X, RotateCcw, Ban, Languages, Boxes,
+  Sparkles, Plus, Check, Archive, Trash2, Pencil, X, RotateCcw, Ban, Languages, Boxes, AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -189,6 +189,22 @@ function ItemRow({ item }: { item: BankItem }) {
               : <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-500"><Languages className="h-3 w-3" /> AR pending</span>)}
             {item.kind === "likert" && item.reverse_keyed && <span className="text-[10px] uppercase text-violet-500">reverse</span>}
             <span className="text-[10px] text-slate-400">{item.source}</span>
+            {/* An item served repeatedly that nobody has ever answered right is
+                far more likely mis-keyed than that hard: even a very hard
+                4-option item collects lucky guesses. Advisory - check the key. */}
+            {item.suspectKey && (
+              <span
+                className="inline-flex items-center gap-0.5 rounded bg-rose-50 px-1 text-[10px] font-medium text-rose-700"
+                title={`Served ${item.administered} times, never answered correctly. Check the key before approving.`}
+              >
+                <AlertTriangle className="h-3 w-3" /> check the key
+              </span>
+            )}
+            {!item.suspectKey && item.administered > 0 && (
+              <span className="text-[10px] text-slate-400">
+                {item.correctCount}/{item.administered} correct
+              </span>
+            )}
           </div>
           {editing ? (
             <div className="mt-1.5 space-y-1.5">

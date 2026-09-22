@@ -55,7 +55,23 @@ export type BankItem = {
   rationale: string | null;
   status: PsyItemStatus;
   source: string;
+  /** How many logged answers it has, and how many were right. */
+  administered: number;
+  correctCount: number;
+  /**
+   * The key looks wrong.
+   *
+   * An item several people have answered and NOBODY has ever got right is far
+   * more likely to be mis-keyed than to be that hard - even a brutal 4-option
+   * item collects lucky guesses. Computed from the response log, which is the
+   * record that actually exists. Advisory only: it asks a human to look at the
+   * key, and never changes one.
+   */
+  suspectKey: boolean;
 };
+
+/** Answered by at least this many people, all wrong, before we say anything. */
+export const SUSPECT_KEY_MIN_ADMINISTERED = 3;
 
 export type ScaleReadiness = {
   instrumentKind: PsyKind;
@@ -106,6 +122,8 @@ type ItemRow = {
   rationale: string | null;
   status: string;
   source: string | null;
+  times_administered?: number | null;
+  times_correct?: number | null;
 };
 type RespRow = { result_id: string; item_ref: string | null; scale_key: string | null; response: number | null; correct: boolean | null };
 
@@ -178,10 +196,13 @@ export async function loadPsyBank(): Promise<PsyBankView> {
   // items
   const itemsByScaleId = new Map<string, BankItem[]>();
   const bankItemIds = new Map<string, { reverse: boolean }>();
+  // Same BankItem objects as itemsByScaleId holds, keyed by id so the response
+  // log can fill in their statistics in one pass.
+  const itemStatsById = new Map<string, BankItem>();
   try {
     const { data: items } = await svc
       .from("psy_items")
-      .select("id, scale_id, kind, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, ar_reviewed, rationale, status, source");
+      .select("id, scale_id, kind, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, ar_reviewed, rationale, status, source, times_administered, times_correct");
     for (const it of (items ?? []) as ItemRow[]) {
       const loc = scaleById.get(it.scale_id);
       if (!loc) continue;
@@ -201,11 +222,19 @@ export async function loadPsyBank(): Promise<PsyBankView> {
         rationale: it.rationale ?? null,
         status: PSY_STATUSES.includes(it.status as never) ? (it.status as PsyItemStatus) : "draft",
         source: it.source ?? "seed",
+        // Filled from the response log below, not from times_administered /
+        // times_correct: those counters are maintained going forward but were
+        // never written historically, so every item reads zero correct however
+        // it actually performed. The response log is the record that exists.
+        administered: 0,
+        correctCount: 0,
+        suspectKey: false,
       };
       const arr = itemsByScaleId.get(it.scale_id) ?? [];
       arr.push(bi);
       itemsByScaleId.set(it.scale_id, arr);
       bankItemIds.set(it.id, { reverse: bi.reverse_keyed });
+      itemStatsById.set(it.id, bi);
     }
   } catch {
     tablesReady = false;
@@ -236,6 +265,32 @@ export async function loadPsyBank(): Promise<PsyBankView> {
     }
   } catch {
     /* response log unavailable - α stays null */
+  }
+
+  // Per-item answer statistics, from the responses actually logged.
+  //
+  // An item answered by several people that NOBODY has ever got right is far
+  // more likely to be mis-keyed than to be that hard: even a brutal 4-option
+  // item collects lucky guesses. It is advisory - it asks a human to look at
+  // the key, and never changes one. This is the check that would have caught a
+  // tap-rate item keyed to 13.5 litres instead of 15, which three people sat
+  // and all three answered correctly and were marked wrong.
+  for (const rows of Array.from(respByScaleKind.values())) {
+    for (const r of rows) {
+      const it = itemStatsById.get(r.item_ref as string);
+      if (!it) continue;
+      // A skipped item is not a wrong answer. Counting blanks would make any
+      // item people ran out of time on look mis-keyed.
+      if (r.response === null || r.response === undefined) continue;
+      it.administered += 1;
+      if (r.correct === true) it.correctCount += 1;
+    }
+  }
+  for (const it of Array.from(itemStatsById.values())) {
+    it.suspectKey =
+      it.kind !== "likert"
+      && it.administered >= SUSPECT_KEY_MIN_ADMINISTERED
+      && it.correctCount === 0;
   }
 
   // norms (per kind+scale)

@@ -77,10 +77,10 @@ export const COGNITIVE_SEED_V1: CognitiveSeedItem[] = [
   {
     subtest: "numerical", facet: "num_ratio", difficulty: "hard",
     stem_en: "A tap fills a container at a steady rate, pouring 9 litres every 6 minutes. How many litres does it pour in 10 minutes?",
-    options_en: ["13.5 litres", "15 litres", "16 litres", "12 litres"], correct_index: 0,
+    options_en: ["13.5 litres", "15 litres", "16 litres", "12 litres"], correct_index: 1,
     stem_ar: "يملأ صنبور وعاءً بمعدل ثابت، فيصب 9 لترات كل 6 دقائق. فكم لترًا يصب في 10 دقائق؟",
     options_ar: ["13.5 لتر", "15 لتر", "16 لتر", "12 لتر"],
-    rationale_en: "The rate is 9 / 6 = 1.5 litres per minute, so 10 minutes gives 1.5 x 10 = 13.5 litres (key, index 0). 15 litres (index 1) rounds the answer up to a whole number. 16 litres (index 2) overestimates the rate. 12 litres (index 3) uses 8 minutes or a rate of 1.2 by mistake.",
+    rationale_en: "The rate is 9 / 6 = 1.5 litres per minute, so 10 minutes gives 1.5 x 10 = 15 litres (key, index 1). 13.5 litres (index 0) multiplies the rate by 9, the litres, instead of by 10, the minutes. 16 litres (index 2) overestimates the rate. 12 litres (index 3) uses 8 minutes, or a rate of 1.2 by mistake.",
   },
   {
     subtest: "numerical", facet: "num_ratio", difficulty: "hard",

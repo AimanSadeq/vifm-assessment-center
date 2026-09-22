@@ -17,6 +17,10 @@ export const dynamic = "force-dynamic";
 // never rejected.
 const TIMER_GRACE_MS = 1000 * 60 * 2;
 
+// A bank item id is a uuid; the static and AI decks use ids like "cog-3", which
+// no psy_items row will ever match.
+const BANK_ITEM_ID_RE = /^[0-9a-f-]{36}$/i;
+
 /**
  * Psychometrics runner API (Tier 1 indicative). Mirrors the Fluent/Technical
  * secure model: the full keyed test is held in psy_sessions (never sent to the
@@ -319,6 +323,34 @@ export async function POST(req: Request) {
         };
       });
       await svc.from("psy_item_responses").insert(rows);
+
+      // Item statistics. times_administered was already bumped when the test
+      // was served, but times_correct was never written by anything, so every
+      // bank item read 0 correct however well it performed - the p-value
+      // substrate the review console advertises was empty, and an item nobody
+      // could answer looked exactly like an item nobody had tried. Technical
+      // has always maintained both (technical-item-bank.ts); this brings
+      // psychometrics into line. Best-effort, per item, never blocks scoring.
+      const correctBankIds = rows
+        .filter((r) => r.correct === true && BANK_ITEM_ID_RE.test(r.item_ref))
+        .map((r) => r.item_ref);
+      for (const id of correctBankIds) {
+        try {
+          const { data: cur } = await svc
+            .from("psy_items")
+            .select("times_correct")
+            .eq("id", id)
+            .maybeSingle();
+          if (cur) {
+            await svc
+              .from("psy_items")
+              .update({ times_correct: Number(cur.times_correct ?? 0) + 1 })
+              .eq("id", id);
+          }
+        } catch {
+          /* counters are advisory; a failure here must not affect a result */
+        }
+      }
     }
 
     // Voucher delegate flow: stamp the result with the client org + the

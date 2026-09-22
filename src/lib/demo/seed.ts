@@ -113,7 +113,7 @@ const AC_WORKSHEET_NOTES = [
   "Judged on the quality of the reasoning behind each call, not on whether I would have made the same one.",
   "Looked at follow-through: what was actually committed to, and what was left open.",
   "Rated on clarity and on how the message landed with the other person, in writing and in the room.",
-  "Assessed on how far the development conversation went past the symptom.",
+  "Assessed on how far the thinking went past the symptom to what was causing it.",
   "Watched composure when the exercise pushed back, and what was done with the pressure.",
 ];
 
@@ -190,7 +190,11 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
 
   const exRes = await sb.from("exercises").insert([
     { name: `${DEMO_TAG} Strategic In-Basket`, exercise_type: "in_basket", duration_minutes: 75, description: "Digital inbox of 20 items requiring prioritization and delegation." },
-    { name: `${DEMO_TAG} Leadership Role Play`, exercise_type: "role_play", duration_minutes: 30, description: "One-on-one with a direct report facing a performance issue." },
+    // Deliberately NOT a role play. A role play needs a trained person playing
+    // the counterpart and VIFM does not staff role-players today (confirmed
+    // 2026-09-22), so demonstrating one would show a prospect a capability we
+    // cannot deliver - and the design record would flag it as unbriefed.
+    { name: `${DEMO_TAG} Written Case Analysis`, exercise_type: "case_study", duration_minutes: 45, description: "A written recommendation on a struggling corporate client relationship." },
     { name: `${DEMO_TAG} Business Case Presentation`, exercise_type: "oral_presentation", duration_minutes: 20, description: "Present a market-expansion recommendation." },
   ]).select("id");
   if (exRes.error || !exRes.data) throw new Error(`AC exercises: ${exRes.error?.message}`);
@@ -244,14 +248,14 @@ async function seedAssessmentCenter(sb: Sb, orgId: string): Promise<DemoSeedOutc
   await sb.from("observations").insert([
     { assessor_assignment_id: a0[0].id, competency_id: AC_COMPETENCIES[0], behavior_observed: "Prioritized the strategic merger item over operational urgencies and explained the rationale.", is_positive: true },
     { assessor_assignment_id: a0[0].id, competency_id: AC_COMPETENCIES[1], behavior_observed: "Made well-reasoned decisions on 15 of 20 items with appropriate delegation.", is_positive: true },
-    { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[3], behavior_observed: "Opened with empathy and active listening before moving to solutions.", is_positive: true },
-    { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[4], behavior_observed: "Did not probe the root cause of the performance decline deeply enough.", is_positive: false },
+    { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[3], behavior_observed: "Set out the client's position fairly before arguing a course of action, and named what he was unsure of.", is_positive: true },
+    { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[4], behavior_observed: "Did not work back to why the relationship had deteriorated, so the remedy addressed the symptom.", is_positive: false },
     { assessor_assignment_id: a0[2].id, competency_id: AC_COMPETENCIES[0], behavior_observed: "Presented a clear three-year roadmap linking market analysis to capabilities.", is_positive: true },
   ]);
   await sb.from("ratings").insert([
     { assessor_assignment_id: a0[0].id, competency_id: AC_COMPETENCIES[0], score: 4, justification: "Strong strategic prioritization." },
     { assessor_assignment_id: a0[0].id, competency_id: AC_COMPETENCIES[1], score: 4, justification: "Clear, well-reasoned decisions." },
-    { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[3], score: 4, justification: "Strong interpersonal communication." },
+    { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[3], score: 4, justification: "Clear, well-structured written argument." },
     { assessor_assignment_id: a0[1].id, competency_id: AC_COMPETENCIES[4], score: 3, justification: "Competent; room to grow on root-cause analysis." },
     { assessor_assignment_id: a0[2].id, competency_id: AC_COMPETENCIES[0], score: 5, justification: "Outstanding strategic presentation." },
   ]);

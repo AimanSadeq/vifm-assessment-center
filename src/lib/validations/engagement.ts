@@ -54,6 +54,11 @@ export const createEngagementSchema = z.object({
       z.object({
         competencyId: uuidish(),
         weight: z.number().nullable(),
+        // Why this criterion is assessed here (BPS 4.4). Optional, because a
+        // centre built by hand may not have one yet - the design record then
+        // reports it as missing rather than inventing one.
+        rationale: z.string().nullable().optional(),
+        source: z.enum(["jd_extractor", "role_profile", "manual"]).nullable().optional(),
       })
     )
     .min(4, "Select at least 4 competencies")

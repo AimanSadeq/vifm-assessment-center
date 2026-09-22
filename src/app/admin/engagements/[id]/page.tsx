@@ -17,6 +17,8 @@ import { DeliveryLogPanel } from "./_components/delivery-log-panel";
 import { ParticipantRightsPanel } from "./_components/participant-rights-panel";
 import { JoiningPackPanel } from "./_components/joining-pack-panel";
 import { CentreRolesPanel } from "./_components/centre-roles-panel";
+import { DesignRecordPanel } from "./_components/design-record-panel";
+import { reviewDesignRecord } from "@/lib/ac/design-record";
 import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
 import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
@@ -223,6 +225,52 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? await computeAcObservedLens(id, focusedCandidate.id as string)
     : null;
 
+  // The design record (BPS section 4): why these criteria, why these exercises.
+  // Indicator counts drive the 4.20 check - a criterion with nothing concrete
+  // behind it is one assessors cannot rate consistently.
+  const engCompetencies = await supabase
+    .from("engagement_competencies")
+    .select("competency_id, weight, rationale, source, competencies(name)")
+    .eq("engagement_id", id)
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
+  const competencyIds = engCompetencies.map((c) => c.competency_id as string);
+  const indicatorCounts = new Map<string, number>();
+  if (competencyIds.length > 0) {
+    const inds = await supabase
+      .from("behavioral_indicators")
+      .select("competency_id")
+      .in("competency_id", competencyIds)
+      .then((r) => (r.data ?? []) as { competency_id: string }[], () => [] as { competency_id: string }[]);
+    for (const i of inds) indicatorCounts.set(i.competency_id, (indicatorCounts.get(i.competency_id) ?? 0) + 1);
+  }
+
+  const designCompetencies = engCompetencies.map((c) => {
+    const comp = c.competencies as unknown as { name?: string } | { name?: string }[] | null;
+    return {
+      competencyId: c.competency_id as string,
+      name: (Array.isArray(comp) ? comp[0]?.name : comp?.name) ?? "Unnamed criterion",
+      rationale: (c.rationale as string | null) ?? null,
+      source: (c.source as string | null) ?? null,
+      indicatorCount: indicatorCounts.get(c.competency_id as string) ?? 0,
+    };
+  });
+
+  const designReview = reviewDesignRecord({
+    engagement: engagement as Record<string, string | null>,
+    competencies: designCompetencies,
+    exercises: exercises.map((x) => ({
+      id: x.id as string,
+      name: x.name as string,
+      exerciseType: (x.exercise_type as string | null) ?? null,
+      durationMinutes: (x.duration_minutes as number | null) ?? null,
+    })),
+    matrix: matrix.map((m) => ({
+      exerciseId: m.exercise_id as string,
+      competencyId: m.competency_id as string,
+    })),
+  });
+
   // What the joining pack still lacks (BPS 5.41). Computed from the same
   // builder the participant's copy uses, so the checklist and the pack can
   // never disagree about what is missing.
@@ -295,6 +343,16 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         externalEvidenceRule={(engagement as { external_evidence_rule?: string | null }).external_evidence_rule ?? ""}
         externalEvidenceFramework={(engagement as { external_evidence_framework?: string | null }).external_evidence_framework ?? ""}
         groupingRationale={(engagement as { grouping_rationale?: string | null }).grouping_rationale ?? ""}
+      />
+      <DesignRecordPanel
+        engagementId={id}
+        engagement={engagement}
+        review={designReview}
+        competencies={designCompetencies.map((c) => ({
+          competencyId: c.competencyId,
+          name: c.name,
+          rationale: c.rationale,
+        }))}
       />
       <CentreRolesPanel
         engagementId={id}

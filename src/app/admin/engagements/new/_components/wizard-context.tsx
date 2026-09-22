@@ -11,6 +11,14 @@ import {
 export type CompetencySelection = {
   competencyId: string;
   weight: number | null;
+  /**
+   * Why this criterion is assessed, linked to performance in the target role
+   * (BPS 4.4). The JD extractor and the role profiles both produce exactly this
+   * sentence and it used to be dropped on the way into the engagement, so every
+   * centre started life unable to say why it assessed what it assessed.
+   */
+  rationale?: string | null;
+  source?: "jd_extractor" | "role_profile" | "manual" | null;
 };
 
 export type MatrixEntry = {

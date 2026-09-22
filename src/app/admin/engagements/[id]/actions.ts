@@ -1676,3 +1676,100 @@ export async function setGroupingRationaleAction(values: { engagementId: string;
   if (error) return { error: error.message };
   return { ok: true };
 }
+
+/**
+ * The design record (BPS section 4) and the plan sign-off (3.26).
+ *
+ * These are the reasons behind decisions Caliber already makes. Recording them
+ * is what turns a matrix into an argument a centre can be defended with.
+ */
+export async function saveDesignRecordAction(values: {
+  engagementId: string;
+  designRationale?: string;
+  alternativesConsidered?: string;
+  jobAnalysisMethod?: string;
+  jobAnalysisNote?: string;
+  workContext?: string;
+  smeReviewNote?: string;
+  exerciseIndependenceNote?: string;
+  existingExercisesNote?: string;
+  criteriaLoadAck?: string;
+  facilitiesNote?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const text = (v?: string) => (v ?? "").trim() || null;
+  const method = values.jobAnalysisMethod || null;
+  const allowed = ["jd_extraction", "role_profile", "interviews", "observation", "workshop", "other"];
+  if (method && !allowed.includes(method)) return { error: "That is not a job-analysis method." };
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      design_rationale: text(values.designRationale),
+      alternatives_considered: text(values.alternativesConsidered),
+      job_analysis_method: method,
+      job_analysis_note: text(values.jobAnalysisNote),
+      work_context: text(values.workContext),
+      sme_review_note: text(values.smeReviewNote),
+      exercise_independence_note: text(values.exerciseIndependenceNote),
+      existing_exercises_note: text(values.existingExercisesNote),
+      criteria_load_ack: text(values.criteriaLoadAck),
+      facilities_note: text(values.facilitiesNote),
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/** Why a single criterion is assessed here (BPS 4.4). */
+export async function setCompetencyRationaleAction(values: {
+  engagementId: string;
+  competencyId: string;
+  rationale: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagement_competencies")
+    .update({ rationale: (values.rationale ?? "").trim() || null, source: "manual" })
+    .eq("engagement_id", values.engagementId)
+    .eq("competency_id", values.competencyId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Agreeing the plan with the client (BPS 3.26).
+ *
+ * The clause says the plan is agreed WITH the client, so this asks who at the
+ * client agreed it. An internal tick would record that we approved our own
+ * plan, which is not what was asked for.
+ */
+export async function approveCentrePlanAction(values: { engagementId: string; clientName: string }) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const clientName = (values.clientName ?? "").trim();
+  if (clientName.length < 2) {
+    return { error: "Name who at the client agreed this plan. The standard asks for agreement with them, not just by us." };
+  }
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      plan_approved_at: new Date().toISOString(),
+      plan_approved_by: uid,
+      plan_approved_client_name: clientName,
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

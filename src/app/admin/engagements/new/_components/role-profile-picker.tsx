@@ -55,6 +55,9 @@ export function RoleProfilePicker({ profiles }: Props) {
       competencies: comps.map((c) => ({
         competencyId: c.competency_id,
         weight: c.weight,
+        // Role profiles carry the same job link the extractor produces (4.4).
+        rationale: c.reasoning || null,
+        source: "role_profile" as const,
       })),
     });
     toast.success(t("adminWizard.roleProfile.loadedToast", { name: p.name_en, count: comps.length }));

@@ -153,7 +153,13 @@ export function JdExtractor({ onApply, triggerLabel }: JdExtractorProps = {}) {
       toast.error(t("adminWizard.jd.maxExceededToast", { count: selectedFull.length }));
       return;
     }
-    const compact = selectedFull.map((r) => ({ competencyId: r.competencyId, weight: r.weight }));
+    const compact = selectedFull.map((r) => ({
+      competencyId: r.competencyId,
+      weight: r.weight,
+      // The one-sentence link back to the job requirement (BPS 4.4).
+      rationale: r.reasoning || null,
+      source: "jd_extractor" as const,
+    }));
     dispatch({ type: "SET_COMPETENCIES", competencies: compact });
     toast.success(t("adminWizard.jd.appliedToEngagementToast", { count: selectedFull.length }));
     setOpen(false);

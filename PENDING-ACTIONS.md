@@ -2,7 +2,7 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-07-21.
+> Last updated: 2026-09-22.
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 
@@ -183,6 +183,31 @@ can be relaxed for Gmail-class recipients.
 - [ ] **Optional content hardening** (deliverability polish, not a fix): app emails are
       plain-text with a single bare link - sending multipart HTML + a `List-Unsubscribe` header
       would further improve placement. Low priority now that auth passes and mail inboxes.
+
+## J. SME question-bank review - defects found in returned workbooks (2026-09-22)
+
+First workbook back (Yassin, Technical / Accounting, 15 items). Two things came out of it:
+
+- [ ] **Arabic question duplicates the Arabic scenario on 5 technical items.** `question_ar`
+  holds a verbatim copy of `scenario_ar`, so an Arabic candidate reads the case twice and is
+  never asked the question. Found by Yassin in review, not by us. All 5 are `status='in_review'`,
+  so none has ever been served in a certified test. Fix is to author the missing Arabic question
+  in `/admin/tech-assessment/items` (Arabic is SME-reviewed content, so it is not a code change):
+  - `189c1536-8bd7-472f-bad7-4bb1e4a8402f` accounting / Consolidation
+  - `40eaaa31-89b7-4184-aad4-a3d149416127` accounting / Management Accounting
+  - `2f93dba2-3e81-4f55-82bd-b83c201833bc` accounting / Revenue Recognition
+  - `90133e9f-b137-45da-adec-098af2bb6af0` real_estate / Development Feasibility
+  - `e31fe444-67e2-4534-b3f0-b60119d9e871` real_estate / Property Valuation
+  A guard is worth adding to the item console so a save that leaves the two fields identical is
+  refused, rather than relying on a reviewer to catch it again.
+- [x] **Workbook instructions did not say that a difficulty-only disagreement is still Approve.**
+  Three sound accounting items came back Revise with no fix written purely because the reviewer
+  would have relabelled the difficulty; the importer holds those, so Accounting stayed 3 items
+  short of the 8-item certification floor. The seven pack generators in `.tmp/_build_*.py` now
+  spell out what each verdict means, that a difficulty quibble belongs in `Difficulty agree?` +
+  Comments, and that a Revise with an empty `Suggested fix` leaves nobody anything to act on.
+  Packs already issued still carry the old wording, so the point was made in the reply instead of
+  reissuing workbooks people have started filling.
 
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)

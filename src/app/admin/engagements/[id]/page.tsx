@@ -19,6 +19,8 @@ import { JoiningPackPanel } from "./_components/joining-pack-panel";
 import { CentreRolesPanel } from "./_components/centre-roles-panel";
 import { DesignRecordPanel } from "./_components/design-record-panel";
 import { CentreManualPanel } from "./_components/centre-manual-panel";
+import { FeedbackPanel } from "./_components/feedback-panel";
+import { reviewFeedback } from "@/lib/ac/feedback";
 import { reviewDesignRecord } from "@/lib/ac/design-record";
 import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
@@ -226,6 +228,14 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? await computeAcObservedLens(id, focusedCandidate.id as string)
     : null;
 
+  // What each participant was told, and by whom (BPS 8.14-8.24). Tolerant of 00219.
+  const feedbackRows = await supabase
+    .from("ac_feedback_records")
+    .select("id, candidate_id, form, delivered_at, delivered_by_name, deliverer_trained, summary, acknowledged_at")
+    .eq("engagement_id", id)
+    .order("delivered_at", { ascending: false })
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
   // Who holds a copy of the centre manual (BPS 4.41). Tolerant of 00218.
   const manualIssues = await supabase
     .from("ac_manual_issues")
@@ -305,6 +315,36 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
   // Succession Readiness setup (combined-mode wiring + per-candidate status).
   const readinessSetup = await loadReadinessSetup(id);
 
+  // Feedback is owed once a participant has a finalised result, so the review
+  // needs to know who has one. Read here rather than reusing currentOarMap,
+  // which is only populated for a re-engagement.
+  const ratedIds = await supabase
+    .from("overall_assessment_ratings")
+    .select("candidate_id")
+    .eq("engagement_id", id)
+    .then(
+      (r) => new Set(((r.data ?? []) as { candidate_id: string }[]).map((x) => x.candidate_id)),
+      () => new Set<string>()
+    );
+  const feedbackReview = reviewFeedback({
+    purpose: (engagement as { purpose?: string | null }).purpose ?? null,
+    centreEndDate: (engagement as { end_date?: string | null }).end_date ?? null,
+    participants: candidates.map((c) => ({
+      candidateId: c.id as string,
+      name: c.full_name as string,
+      rated: ratedIds.has(c.id as string),
+    })),
+    records: feedbackRows.map((f) => ({
+      candidateId: f.candidate_id as string,
+      form: f.form as "written_report" | "oral" | "both",
+      deliveredAt: f.delivered_at as string,
+      deliveredByName: f.delivered_by_name as string,
+      delivererTrained: Boolean(f.deliverer_trained),
+      hasSummary: Boolean(f.summary),
+      acknowledgedAt: (f.acknowledged_at as string | null) ?? null,
+    })),
+  });
+
   // Psychometric instruments in play mean a Test User is required (5.17); a
   // role-play means a role-player. Both are read from the design rather than
   // asked, so the requirement cannot be forgotten.
@@ -376,6 +416,12 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
           name: c.name,
           rationale: c.rationale,
         }))}
+      />
+      <FeedbackPanel
+        engagementId={id}
+        candidates={candidates}
+        records={feedbackRows}
+        review={feedbackReview}
       />
       <CentreManualPanel
         engagementId={id}

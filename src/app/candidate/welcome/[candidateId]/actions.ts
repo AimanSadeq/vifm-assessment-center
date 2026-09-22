@@ -42,3 +42,19 @@ export async function decideDisclosureAction(values: {
   });
   return { ok: true };
 }
+
+/**
+ * The participant confirming they received their feedback (BPS 8.3).
+ *
+ * Their word, not ours. Through the ordinary client so row level security
+ * decides ownership, and the database trigger allows exactly this field.
+ */
+export async function acknowledgeFeedbackAction(feedbackId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("ac_feedback_records")
+    .update({ acknowledged_at: new Date().toISOString() })
+    .eq("id", feedbackId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

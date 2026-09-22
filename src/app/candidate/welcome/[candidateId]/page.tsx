@@ -12,6 +12,7 @@ import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { LocalDate } from "@/components/shared/local-date";
 import { DisclosureDecisions } from "./_components/disclosure-decisions";
+import { FeedbackReceived } from "./_components/feedback-received";
 
 type Props = {
   params: { candidateId: string };
@@ -76,6 +77,18 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
   const consentHref = packPublished && !packAcked
     ? `/candidate/pack/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`
     : `/candidate/consent/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`;
+
+  // What they were told about their results, and the written record of it
+  // (BPS 8.21). Tolerant of migration 00219 not being applied.
+  const feedbackRows = await supabase
+    .from("ac_feedback_records")
+    .select("id, form, delivered_at, delivered_by_name, summary, acknowledged_at")
+    .eq("candidate_id", candidateId)
+    .order("delivered_at", { ascending: false })
+    .then(
+      (r) => (r.data ?? []) as Record<string, unknown>[],
+      () => [] as Record<string, unknown>[]
+    );
 
   // Requests from anyone outside the recipients named in the joining pack
   // (BPS 8.13). Tolerant of migration 00212 not being applied.
@@ -167,6 +180,8 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
               </p>
             </div>
           )}
+
+          <FeedbackReceived rows={feedbackRows} />
 
           <DisclosureDecisions rows={disclosures} />
 

@@ -15,7 +15,7 @@ import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
 import { reviewStaffing } from "@/lib/ac/staffing";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
 import { CENTRE_ROLE_MAP } from "@/lib/ac/centre-roles";
-import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
+import { reviewCentreRoles, competenceIsCurrent } from "@/lib/ac/centre-roles-review";
 import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
 import { sendEmail } from "@/lib/integrations/email";
 
@@ -1901,4 +1901,102 @@ export async function confirmCentreReadinessAction(values: { engagementId: strin
     .eq("id", values.engagementId);
   if (error) return { error: error.message };
   return { ok: true };
+}
+
+/**
+ * Recording that a participant was actually told their results (BPS 8.3, 8.14
+ * to 8.24).
+ *
+ * Deliberately NOT blocked when the person giving feedback has no recorded
+ * training (8.17). Refusing would withhold from the participant the most
+ * useful thing the centre produces in order to protect a paperwork state -
+ * harming the person the clause exists for. Instead the record carries whether
+ * the deliverer was trained AT THE TIME, and the engagement reports it.
+ */
+export async function recordFeedbackAction(values: {
+  engagementId: string;
+  candidateId: string;
+  form: "written_report" | "oral" | "both";
+  deliveredByProfileId?: string | null;
+  deliveredByName?: string;
+  summary?: string;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin", "lead_assessor", "associate_assessor"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+
+  const summary = (values.summary ?? "").trim();
+  // 8.21: an oral session the participant cannot refer back to is not a record.
+  if ((values.form === "oral" || values.form === "both") && summary.length < 20) {
+    return {
+      error:
+        "Write what was discussed. The participant is entitled to a written record of an oral session, and a "
+        + "conversation nobody wrote down is one they cannot refer back to or challenge.",
+    };
+  }
+
+  const sb = createServiceClient();
+  const deliveredBy = values.deliveredByProfileId || uid;
+  let name = (values.deliveredByName ?? "").trim();
+  if (!name && deliveredBy) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", deliveredBy).maybeSingle();
+    name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? "";
+  }
+  if (!name) return { error: "Record who gave the feedback." };
+
+  // Whether they were feedback-trained at this moment (8.17). Stored, not
+  // derived later: competence records change, and this is a statement about
+  // the session that happened.
+  let trained = false;
+  if (deliveredBy) {
+    const { data: comp } = await sb
+      .from("ac_role_competence")
+      .select("status, expires_on")
+      .eq("profile_id", deliveredBy)
+      .eq("role_key", "feedback_generator")
+      .maybeSingle()
+      .then((r) => r, () => ({ data: null }));
+    trained = competenceIsCurrent(
+      comp
+        ? {
+            profile_id: deliveredBy,
+            role_key: "feedback_generator",
+            status: comp.status as string,
+            expires_on: (comp.expires_on as string | null) ?? null,
+          }
+        : undefined
+    );
+  }
+
+  const { error } = await sb.from("ac_feedback_records").insert({
+    engagement_id: values.engagementId,
+    candidate_id: values.candidateId,
+    form: values.form,
+    delivered_by: deliveredBy,
+    delivered_by_name: name,
+    summary: summary || null,
+    deliverer_trained: trained,
+  });
+  if (error) return { error: error.message };
+
+  const { data: cand } = await sb
+    .from("candidates")
+    .select("profile_id")
+    .eq("id", values.candidateId)
+    .maybeSingle();
+  if (cand?.profile_id) {
+    await publishNotification({
+      profileId: cand.profile_id as string,
+      kind: "feedback_recorded",
+      title: "Your assessment feedback has been recorded",
+      body: summary ? summary.slice(0, 180) : "A written report has been provided.",
+      link: `/candidate/welcome/${values.candidateId}`,
+    });
+  }
+  return { ok: true, trained };
 }

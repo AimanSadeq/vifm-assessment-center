@@ -14,6 +14,8 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
 import { reviewStaffing } from "@/lib/ac/staffing";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
+import { CENTRE_ROLE_MAP } from "@/lib/ac/centre-roles";
+import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
 import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
 import { sendEmail } from "@/lib/integrations/email";
 
@@ -362,6 +364,60 @@ export async function updateEngagementStatusAction(engagementId: string, status:
           + staffing.blocking.join(" ")
           + " Fix the assignments, or record a reason for proceeding anyway.",
         staffing: staffing.blocking,
+      };
+    }
+
+    // Centre roles and competence (BPS 5.16, 5.17, 5.22, 6.2). Only staff
+    // deemed competent may be used, and that has to be confirmed BEFORE the
+    // centre starts - which is exactly here. The same recorded-reason override
+    // applies: a centre can proceed, but never silently.
+    const [{ data: roleRows }, { data: engRoleCtx }, { data: exRows }] = await Promise.all([
+      svc
+        .from("ac_engagement_roles")
+        .select("role_key, profile_id, is_external, profiles(full_name, email)")
+        .eq("engagement_id", engagementId)
+        .then((r) => r, () => ({ data: null })),
+      svc.from("engagements").select("purpose").eq("id", engagementId).maybeSingle(),
+      svc
+        .from("engagement_exercises")
+        .select("exercises(exercise_type)")
+        .eq("engagement_id", engagementId),
+    ]);
+
+    // Only ask the competence table about the people actually assigned.
+    const roleAssignments = (roleRows ?? []) as unknown as {
+      role_key: string;
+      profile_id: string;
+      is_external: boolean | null;
+      profiles: { full_name?: string | null; email?: string | null } | null;
+    }[];
+    let competence: { profile_id: string; role_key: string; status: string; expires_on: string | null }[] = [];
+    if (roleAssignments.length > 0) {
+      const { data: comp } = await svc
+        .from("ac_role_competence")
+        .select("profile_id, role_key, status, expires_on")
+        .in("profile_id", Array.from(new Set(roleAssignments.map((r) => r.profile_id))))
+        .then((r) => r, () => ({ data: null }));
+      competence = (comp ?? []) as typeof competence;
+    }
+
+    const exerciseTypes = (exRows ?? [])
+      .map((r) => (r.exercises as unknown as { exercise_type?: string } | null)?.exercise_type)
+      .filter(Boolean) as string[];
+    const roles = reviewCentreRoles({
+      purpose: (engRoleCtx as { purpose?: string | null } | null)?.purpose ?? null,
+      usesRolePlay: exerciseTypes.includes("role_play"),
+      usesFactFind: exerciseTypes.includes("case_study"),
+      assignments: roleAssignments,
+      competence,
+    });
+    if (roles.blocking.length > 0 && !overridden) {
+      return {
+        error:
+          "This centre is not staffed to the standard yet: "
+          + roles.blocking.join(" ")
+          + " Assign the missing roles and confirm competence, or record a reason for proceeding anyway.",
+        staffing: roles.blocking,
       };
     }
   }
@@ -1437,6 +1493,119 @@ export async function markDisclosureReleasedAction(disclosureId: string) {
     .from("ac_report_disclosures")
     .update({ released_at: new Date().toISOString() })
     .eq("id", disclosureId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Who works this centre (BPS 4.42, 5.14, 5.16, 5.17, 6.1).
+ *
+ * Assigning is not the same as confirming competence: the assignment is a plan,
+ * the competence record is the evidence behind it, and the activation gate
+ * checks both. Someone from outside VIFM can hold a role - 3.12 still makes us
+ * responsible for specifying what they have to be able to do.
+ */
+export async function assignCentreRoleAction(values: {
+  engagementId: string;
+  roleKey: string;
+  profileId: string;
+  isExternal?: boolean;
+  externalNote?: string;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  if (!CENTRE_ROLE_MAP[values.roleKey]) return { error: "That is not a centre role." };
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("ac_engagement_roles").insert({
+    engagement_id: values.engagementId,
+    role_key: values.roleKey,
+    profile_id: values.profileId,
+    is_external: values.isExternal ?? false,
+    external_note: (values.externalNote ?? "").trim() || null,
+    assigned_by: uid,
+  });
+  // The unique constraint means "already in that role", which is not an error
+  // worth showing anyone.
+  if (error && !/duplicate key/i.test(error.message)) return { error: error.message };
+  return { ok: true };
+}
+
+export async function removeCentreRoleAction(rowId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb.from("ac_engagement_roles").delete().eq("id", rowId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Confirming that someone has DEMONSTRATED competence for a role (BPS 5.22).
+ *
+ * The evidence field is required for a confirmation because 5.22 asks us to
+ * confirm competence was demonstrated, and "we sent them on a course" is not
+ * that. Withdrawing competence needs a reason for the same reason.
+ */
+export async function setRoleCompetenceAction(values: {
+  profileId: string;
+  roleKey: string;
+  status: "in_training" | "competent" | "withdrawn";
+  evidence?: string;
+  trainedOn?: string | null;
+  expiresOn?: string | null;
+  notes?: string;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  if (!CENTRE_ROLE_MAP[values.roleKey]) return { error: "That is not a centre role." };
+
+  const evidence = (values.evidence ?? "").trim();
+  if (values.status === "competent" && evidence.length < 10) {
+    return {
+      error:
+        "Record what was actually seen. The standard asks us to confirm competence was demonstrated, "
+        + "so an entry with no evidence behind it is not a confirmation.",
+    };
+  }
+  if (values.status === "withdrawn" && evidence.length < 5) {
+    return { error: "Say why competence is being withdrawn." };
+  }
+
+  const sb = createServiceClient();
+  let confirmed_by_name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    confirmed_by_name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const { error } = await sb.from("ac_role_competence").upsert(
+    {
+      profile_id: values.profileId,
+      role_key: values.roleKey,
+      status: values.status,
+      evidence: evidence || null,
+      trained_on: values.trainedOn || null,
+      expires_on: values.expiresOn || null,
+      notes: (values.notes ?? "").trim() || null,
+      confirmed_by: uid,
+      confirmed_by_name,
+      confirmed_at: values.status === "competent" ? new Date().toISOString() : null,
+    },
+    { onConflict: "profile_id,role_key" }
+  );
   if (error) return { error: error.message };
   return { ok: true };
 }

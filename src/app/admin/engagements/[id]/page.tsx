@@ -16,6 +16,8 @@ import { CentreRulesPanel } from "./_components/centre-rules-panel";
 import { DeliveryLogPanel } from "./_components/delivery-log-panel";
 import { ParticipantRightsPanel } from "./_components/participant-rights-panel";
 import { JoiningPackPanel } from "./_components/joining-pack-panel";
+import { CentreRolesPanel } from "./_components/centre-roles-panel";
+import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
 import { loadReadinessSetup } from "@/lib/scoring/readiness-setup";
 import { ReadinessSetupPanel } from "./_components/readiness-setup-panel";
@@ -110,6 +112,30 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     .select("id, candidate_id, recipient_name, recipient_role, reason, status, participant_note, decided_at, released_at")
     .eq("engagement_id", id)
     .order("requested_at", { ascending: false })
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
+  // Who holds which centre role, and whether they are competent for it
+  // (BPS 4.42, 5.16, 5.17, 5.22, 6.2). Tolerant of migration 00213.
+  const centreRoleRows = await supabase
+    .from("ac_engagement_roles")
+    .select("id, role_key, profile_id, is_external, external_note")
+    .eq("engagement_id", id)
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+  const competenceRows = centreRoleRows.length
+    ? await supabase
+        .from("ac_role_competence")
+        .select("profile_id, role_key, status, evidence, trained_on, expires_on")
+        .in("profile_id", Array.from(new Set(centreRoleRows.map((r) => r.profile_id as string))))
+        .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[])
+    : [];
+  // Anyone with a platform account can hold a centre role - an administrator is
+  // not an assessor, and restricting the picker to assessors was how the
+  // platform came to believe a centre was only ever staffed by assessors.
+  const staffDirectory = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role")
+    .not("role", "in", "(candidate,client)")
+    .order("full_name")
     .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
 
   const [assignments, integrationWorksheets] = await Promise.all([
@@ -208,6 +234,37 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
   // Succession Readiness setup (combined-mode wiring + per-candidate status).
   const readinessSetup = await loadReadinessSetup(id);
 
+  // Psychometric instruments in play mean a Test User is required (5.17); a
+  // role-play means a role-player. Both are read from the design rather than
+  // asked, so the requirement cannot be forgotten.
+  const exerciseTypes = exercises
+    .map((x) => (x as { exercise_type?: string }).exercise_type)
+    .filter(Boolean) as string[];
+  const centreRolesReview = reviewCentreRoles({
+    purpose: (engagement as { purpose?: string | null }).purpose ?? null,
+    usesRolePlay: exerciseTypes.includes("role_play"),
+    usesFactFind: exerciseTypes.includes("case_study"),
+    // Combined mode runs Persona (a self-report questionnaire) and a technical
+    // programme runs knowledge tests: either makes a Test User necessary.
+    usesPsychometrics: readinessSetup.mode === "combined" || Boolean(techProgram),
+    assignments: centreRoleRows.map((r) => ({
+      role_key: r.role_key as string,
+      profile_id: r.profile_id as string,
+      is_external: r.is_external as boolean | null,
+      profiles: (() => {
+        const p = staffDirectory.find((x) => x.id === r.profile_id);
+        return p ? { full_name: p.full_name as string | null, email: p.email as string | null } : null;
+      })(),
+    })),
+    competence: competenceRows.map((c) => ({
+      profile_id: c.profile_id as string,
+      role_key: c.role_key as string,
+      status: c.status as string,
+      expires_on: (c.expires_on as string | null) ?? null,
+    })),
+  });
+
+
   return (
     <div className="space-y-6">
       <BackLink href="/admin/engagements" label={t("adminEngagements.detail.backToProjects")} />
@@ -235,6 +292,15 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         appealsNote={(engagement as { appeals_note?: string | null }).appeals_note ?? ""}
         otherMethodsRule={(engagement as { other_methods_rule?: string | null }).other_methods_rule ?? ""}
         otherMethodsNote={(engagement as { other_methods_note?: string | null }).other_methods_note ?? ""}
+      />
+      <CentreRolesPanel
+        engagementId={id}
+        people={staffDirectory}
+        assignments={centreRoleRows}
+        competence={competenceRows}
+        required={centreRolesReview.required.map((r) => ({ key: r.key, name: r.name, clause: r.clause }))}
+        blocking={centreRolesReview.blocking}
+        cautions={centreRolesReview.cautions}
       />
       <JoiningPackPanel
         engagementId={id}

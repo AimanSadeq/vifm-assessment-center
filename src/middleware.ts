@@ -218,8 +218,14 @@ const isSampleRoute = (pathname: string) =>
 const isProposalClientRoute = (pathname: string) =>
   pathname.startsWith("/proposals/") || pathname.startsWith("/api/proposals/");
 
+// Which commit is running. Deploys are manual, so this is the only way to tell
+// a deployed commit from a pending one without the Render dashboard. Returns a
+// short sha and branch, nothing else.
+const isVersionRoute = (pathname: string) => pathname === "/api/version";
+
 export async function middleware(request: NextRequest) {
   if (
+    isVersionRoute(request.nextUrl.pathname) ||
     isProctorApiRoute(request.nextUrl.pathname) ||
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isAraRedeemRoute(request.nextUrl.pathname) ||

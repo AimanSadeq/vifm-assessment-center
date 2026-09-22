@@ -21,6 +21,8 @@ import { DesignRecordPanel } from "./_components/design-record-panel";
 import { CentreManualPanel } from "./_components/centre-manual-panel";
 import { FeedbackPanel } from "./_components/feedback-panel";
 import { TimetablePanel } from "./_components/timetable-panel";
+import { PostCentreReviewPanel } from "./_components/post-centre-review-panel";
+import { reviewSeriesConsistency, type SeriesCentre } from "@/lib/ac/series-consistency";
 import { reviewTimetable } from "@/lib/ac/timetable";
 import { reviewFeedback } from "@/lib/ac/feedback";
 import { reviewDesignRecord } from "@/lib/ac/design-record";
@@ -230,6 +232,22 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? await computeAcObservedLens(id, focusedCandidate.id as string)
     : null;
 
+  // The post-centre review and what people said about the centre (BPS 9.1-9.4).
+  // Tolerant of migration 00221.
+  const [centreReview, centreFeedback] = await Promise.all([
+    supabase
+      .from("ac_centre_reviews")
+      .select("*")
+      .eq("engagement_id", id)
+      .maybeSingle()
+      .then((r) => (r.data ?? null) as Record<string, unknown> | null, () => null),
+    supabase
+      .from("ac_centre_feedback")
+      .select("id, source, author_name, went_well, could_improve, rating, submitted_at")
+      .eq("engagement_id", id)
+      .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
+  ]);
+
   // The centre timetable (BPS 5.35). Tolerant of migration 00220.
   const slotRows = await supabase
     .from("ac_schedule_slots")
@@ -324,6 +342,64 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
 
   // Succession Readiness setup (combined-mode wiring + per-candidate status).
   const readinessSetup = await loadReadinessSetup(id);
+
+  // Consistency across a declared series (BPS 5.19). Only runs when this centre
+  // has been put in one, because comparing centres never meant to match would
+  // be worse than not comparing at all.
+  const seriesName = (engagement as { series_name?: string | null }).series_name ?? null;
+  let seriesConsistency: ReturnType<typeof reviewSeriesConsistency> | null = null;
+  if (seriesName) {
+    const siblings = await supabase
+      .from("engagements")
+      .select("id, name, start_date, purpose, integration_method, other_methods_rule, external_evidence_rule")
+      .eq("series_name", seriesName)
+      .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+    const ids = siblings.map((x) => x.id as string);
+    const [sibComps, sibExercises, sibReviews] = await Promise.all([
+      supabase
+        .from("engagement_competencies")
+        .select("engagement_id, weight, competency_id, competencies(name)")
+        .in("engagement_id", ids)
+        .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
+      supabase
+        .from("engagement_exercises")
+        .select("engagement_id, exercise_id, exercises(name)")
+        .in("engagement_id", ids)
+        .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
+      supabase
+        .from("ac_centre_reviews")
+        .select("engagement_id")
+        .in("engagement_id", ids)
+        .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
+    ]);
+    const reviewed = new Set(sibReviews.map((r) => r.engagement_id as string));
+    const centres: SeriesCentre[] = siblings.map((e) => {
+      const comps = sibComps.filter((c) => c.engagement_id === e.id);
+      const exs = sibExercises.filter((x) => x.engagement_id === e.id);
+      const nameOf = (row: unknown) => {
+        const c = row as { name?: string } | { name?: string }[] | null;
+        return (Array.isArray(c) ? c[0]?.name : c?.name) ?? "Unnamed";
+      };
+      return {
+        engagementId: e.id as string,
+        name: e.name as string,
+        startDate: (e.start_date as string | null) ?? null,
+        purpose: (e.purpose as string | null) ?? null,
+        integrationMethod: (e.integration_method as string | null) ?? null,
+        otherMethodsRule: (e.other_methods_rule as string | null) ?? null,
+        externalEvidenceRule: (e.external_evidence_rule as string | null) ?? null,
+        competencies: comps.map((c) => ({
+          id: c.competency_id as string,
+          name: nameOf(c.competencies),
+          weight: (c.weight as number | null) ?? null,
+        })),
+        exerciseIds: exs.map((x) => x.exercise_id as string),
+        exerciseNames: exs.map((x) => nameOf(x.exercises)),
+        hasReview: reviewed.has(e.id as string),
+      };
+    });
+    seriesConsistency = reviewSeriesConsistency(centres);
+  }
 
   // 5.35.5 is the clause worth checking: a person in two rooms at once, or a
   // participant running for hours with no break, is what a hand-built
@@ -457,6 +533,14 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
           name: c.name,
           rationale: c.rationale,
         }))}
+      />
+      <PostCentreReviewPanel
+        engagementId={id}
+        review={centreReview}
+        feedback={centreFeedback}
+        seriesName={seriesName ?? ""}
+        seriesNote={(engagement as { series_note?: string | null }).series_note ?? ""}
+        consistency={seriesConsistency}
       />
       <TimetablePanel
         engagementId={id}

@@ -2121,3 +2121,136 @@ export async function generateTimetableDraftAction(values: {
   if (error) return { error: error.message };
   return { ok: true, created: rows.length };
 }
+
+/**
+ * The post-centre review (BPS 9.1 to 9.4, 9.12, 9.13).
+ *
+ * What went well and what did not are separate fields on purpose: given one
+ * box, a review becomes a list of things that went well. And recommendations
+ * sit beside what was actually changed, because 9.13 requires them to inform
+ * the design rather than be filed.
+ */
+export async function saveCentreReviewAction(values: {
+  engagementId: string;
+  wentWell?: string;
+  didNot?: string;
+  participantPerceptions?: string;
+  itReview?: string;
+  recommendations?: string;
+  designChanges?: string;
+  complete?: boolean;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const text = (v?: string) => (v ?? "").trim() || null;
+
+  // 9.1 asks for both sides. Marking a review complete with only the good half
+  // is the failure this guards against.
+  if (values.complete && (!text(values.wentWell) || !text(values.didNot))) {
+    return {
+      error:
+        "A review needs both halves: what went well and what did not. A centre where nothing went wrong is a "
+        + "centre nobody looked at closely.",
+    };
+  }
+
+  const sb = createServiceClient();
+  let name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const { error } = await sb.from("ac_centre_reviews").upsert(
+    {
+      engagement_id: values.engagementId,
+      went_well: text(values.wentWell),
+      did_not: text(values.didNot),
+      participant_perceptions: text(values.participantPerceptions),
+      it_review: text(values.itReview),
+      recommendations: text(values.recommendations),
+      design_changes: text(values.designChanges),
+      completed_at: values.complete ? new Date().toISOString() : null,
+      completed_by: values.complete ? uid : null,
+      completed_by_name: values.complete ? name : null,
+    },
+    { onConflict: "engagement_id" }
+  );
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Feedback on the centre itself from the people who worked it (9.2) or took
+ * part in it (9.3) - which is a different question from the assessment of any
+ * individual, and is kept separate from it.
+ */
+export async function addCentreFeedbackAction(values: {
+  engagementId: string;
+  source: "staff" | "participant";
+  candidateId?: string | null;
+  authorName?: string;
+  roleKey?: string;
+  wentWell?: string;
+  couldImprove?: string;
+  rating?: number | null;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin", "lead_assessor", "associate_assessor"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const wentWell = (values.wentWell ?? "").trim();
+  const couldImprove = (values.couldImprove ?? "").trim();
+  if (!wentWell && !couldImprove) return { error: "Write something in at least one of the two boxes." };
+  if (values.rating != null && (values.rating < 1 || values.rating > 5)) {
+    return { error: "A rating is 1 to 5." };
+  }
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("ac_centre_feedback").insert({
+    engagement_id: values.engagementId,
+    source: values.source,
+    profile_id: values.source === "staff" ? uid : null,
+    candidate_id: values.source === "participant" ? values.candidateId || null : null,
+    author_name: (values.authorName ?? "").trim() || null,
+    role_key: values.roleKey || null,
+    went_well: wentWell || null,
+    could_improve: couldImprove || null,
+    rating: values.rating ?? null,
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Naming a series (BPS 5.19). Declared rather than inferred: comparing centres
+ * that were never meant to match would be worse than not comparing at all.
+ */
+export async function setEngagementSeriesAction(values: {
+  engagementId: string;
+  seriesName: string;
+  seriesNote?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      series_name: (values.seriesName ?? "").trim() || null,
+      series_note: (values.seriesNote ?? "").trim() || null,
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

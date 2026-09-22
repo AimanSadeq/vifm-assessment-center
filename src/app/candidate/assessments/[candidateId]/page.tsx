@@ -75,6 +75,40 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
   }
   const exercises = Array.from(exerciseMap.values());
 
+  // Their own timetable (BPS 5.35.4): what they are doing, where and when.
+  // Cohort-wide slots - the briefing, lunch - are theirs too. Tolerant of
+  // migration 00220 not being applied.
+  const mySlots = await supabase
+    .from("ac_schedule_slots")
+    .select("id, kind, exercise_id, candidate_id, starts_at, ends_at, room, note")
+    .eq("engagement_id", candidate.engagement_id)
+    .order("starts_at")
+    .then(
+      (r) =>
+        ((r.data ?? []) as Record<string, unknown>[]).filter(
+          (x) => x.candidate_id === candidateId || (!x.candidate_id && x.kind !== "exercise")
+        ),
+      () => [] as Record<string, unknown>[]
+    );
+  const exerciseNameById = new Map<string, string>();
+  for (const a of assignments) {
+    const ex = a.exercises as unknown as { name?: string } | null;
+    if (ex?.name) exerciseNameById.set(a.exercise_id as string, ex.name);
+  }
+  const SLOT_LABELS: Record<string, string> = {
+    briefing: "Briefing",
+    break: "Break",
+    lunch: "Lunch",
+    washup: "Assessor discussion",
+    feedback: "Feedback",
+    other: "Other",
+    exercise: "Exercise",
+  };
+  const slotTime = (iso: string) =>
+    new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const slotDay = (iso: string) =>
+    new Date(iso).toLocaleDateString([], { weekday: "short", day: "numeric", month: "short" });
+
   return (
     <div className="space-y-6">
       {asAdmin && (
@@ -91,6 +125,33 @@ export default async function CandidateAssessmentsPage({ params, searchParams }:
           {eng.name} - {eng.start_date ?? t("candidateWelcome.tbd")} to {eng.end_date ?? t("candidateWelcome.tbd")}
         </p>
       </div>
+
+      {mySlots.length > 0 && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Your timetable</CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm">
+            <ul className="space-y-1">
+              {mySlots.map((sl) => (
+                <li key={sl.id as string} className="flex flex-wrap gap-x-3 border-b py-1 last:border-0">
+                  <span className="tabular-nums text-muted-foreground">
+                    {slotDay(sl.starts_at as string)} {slotTime(sl.starts_at as string)}-
+                    {slotTime(sl.ends_at as string)}
+                  </span>
+                  <span className="font-medium">
+                    {exerciseNameById.get(sl.exercise_id as string) ??
+                      SLOT_LABELS[sl.kind as string] ??
+                      (sl.kind as string)}
+                  </span>
+                  {sl.room ? <span className="text-muted-foreground">{sl.room as string}</span> : null}
+                  {sl.note ? <span className="text-muted-foreground">{sl.note as string}</span> : null}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Assessment Journey Tiles */}
       <div>

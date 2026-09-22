@@ -2000,3 +2000,124 @@ export async function recordFeedbackAction(values: {
   }
   return { ok: true, trained };
 }
+
+/**
+ * A slot on the centre timetable (BPS 5.35).
+ *
+ * Breaks and briefings are slots, not gaps between them: 5.35.5 asks whether
+ * the timetable compromises anyone's performance, and that cannot be checked
+ * against breaks nobody wrote down.
+ */
+export async function addScheduleSlotAction(values: {
+  engagementId: string;
+  kind: "exercise" | "briefing" | "break" | "lunch" | "washup" | "feedback" | "other";
+  exerciseId?: string | null;
+  candidateId?: string | null;
+  assessorId?: string | null;
+  startsAt: string;
+  endsAt: string;
+  room?: string;
+  note?: string;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  if (!values.startsAt || !values.endsAt) return { error: "A slot needs a start and an end." };
+  if (new Date(values.endsAt) <= new Date(values.startsAt)) {
+    return { error: "A slot has to end after it starts." };
+  }
+
+  const sb = createServiceClient();
+  const { error } = await sb.from("ac_schedule_slots").insert({
+    engagement_id: values.engagementId,
+    kind: values.kind,
+    exercise_id: values.exerciseId || null,
+    candidate_id: values.candidateId || null,
+    assessor_id: values.assessorId || null,
+    starts_at: values.startsAt,
+    ends_at: values.endsAt,
+    room: (values.room ?? "").trim() || null,
+    note: (values.note ?? "").trim() || null,
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+export async function removeScheduleSlotAction(slotId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb.from("ac_schedule_slots").delete().eq("id", slotId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Lay out every assessor assignment as slots, back to back, from a start time.
+ *
+ * The assignments already say who assesses whom in which exercise - the matrix
+ * 5.35.2 asks for - so the tedious half of a timetable is derivable. What it
+ * cannot know is rooms and real-world constraints, which is why this produces a
+ * starting point the clash checks then argue with, rather than a finished
+ * timetable.
+ */
+export async function generateTimetableDraftAction(values: {
+  engagementId: string;
+  dayStart: string;
+  gapMinutes?: number;
+}) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const start = new Date(values.dayStart);
+  if (Number.isNaN(start.getTime())) return { error: "That start time is not a date." };
+
+  const sb = createServiceClient();
+  const [{ data: assignments }, { data: existing }] = await Promise.all([
+    sb
+      .from("assessor_assignments")
+      .select("candidate_id, assessor_id, exercise_id, exercises(duration_minutes)")
+      .eq("engagement_id", values.engagementId),
+    sb.from("ac_schedule_slots").select("id").eq("engagement_id", values.engagementId).limit(1),
+  ]);
+  if (existing && existing.length > 0) {
+    return { error: "This centre already has a timetable. Clear it first, or add slots by hand." };
+  }
+  if (!assignments || assignments.length === 0) {
+    return { error: "No assessor assignments yet, so there is nothing to lay out." };
+  }
+
+  // One track per participant: their exercises run in sequence. Assessors are
+  // taken from the assignment, so two participants sharing an assessor will
+  // collide - deliberately, because that is a real conflict for a person to
+  // resolve rather than something to paper over silently.
+  const gap = values.gapMinutes ?? 15;
+  const byCandidate = new Map<string, typeof assignments>();
+  for (const a of assignments) {
+    const arr = byCandidate.get(a.candidate_id as string) ?? [];
+    arr.push(a);
+    byCandidate.set(a.candidate_id as string, arr);
+  }
+
+  const rows: Record<string, unknown>[] = [];
+  for (const [candidateId, list] of Array.from(byCandidate.entries())) {
+    let cursor = new Date(start);
+    for (const a of list) {
+      const ex = a.exercises as unknown as { duration_minutes?: number | null } | null;
+      const minutes = ex?.duration_minutes ?? 60;
+      const ends = new Date(cursor.getTime() + minutes * 60000);
+      rows.push({
+        engagement_id: values.engagementId,
+        kind: "exercise",
+        exercise_id: a.exercise_id,
+        candidate_id: candidateId,
+        assessor_id: a.assessor_id,
+        starts_at: cursor.toISOString(),
+        ends_at: ends.toISOString(),
+      });
+      cursor = new Date(ends.getTime() + gap * 60000);
+    }
+  }
+
+  const { error } = await sb.from("ac_schedule_slots").insert(rows);
+  if (error) return { error: error.message };
+  return { ok: true, created: rows.length };
+}

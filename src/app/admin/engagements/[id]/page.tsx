@@ -20,6 +20,8 @@ import { CentreRolesPanel } from "./_components/centre-roles-panel";
 import { DesignRecordPanel } from "./_components/design-record-panel";
 import { CentreManualPanel } from "./_components/centre-manual-panel";
 import { FeedbackPanel } from "./_components/feedback-panel";
+import { TimetablePanel } from "./_components/timetable-panel";
+import { reviewTimetable } from "@/lib/ac/timetable";
 import { reviewFeedback } from "@/lib/ac/feedback";
 import { reviewDesignRecord } from "@/lib/ac/design-record";
 import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
@@ -228,6 +230,14 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? await computeAcObservedLens(id, focusedCandidate.id as string)
     : null;
 
+  // The centre timetable (BPS 5.35). Tolerant of migration 00220.
+  const slotRows = await supabase
+    .from("ac_schedule_slots")
+    .select("id, kind, exercise_id, candidate_id, assessor_id, starts_at, ends_at, room, note")
+    .eq("engagement_id", id)
+    .order("starts_at")
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
   // What each participant was told, and by whom (BPS 8.14-8.24). Tolerant of 00219.
   const feedbackRows = await supabase
     .from("ac_feedback_records")
@@ -314,6 +324,37 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
 
   // Succession Readiness setup (combined-mode wiring + per-candidate status).
   const readinessSetup = await loadReadinessSetup(id);
+
+  // 5.35.5 is the clause worth checking: a person in two rooms at once, or a
+  // participant running for hours with no break, is what a hand-built
+  // timetable gets wrong.
+  const timetableReview = reviewTimetable({
+    slots: slotRows.map((s) => ({
+      id: s.id as string,
+      kind: s.kind as "exercise" | "briefing" | "break" | "lunch" | "washup" | "feedback" | "other",
+      exerciseId: (s.exercise_id as string | null) ?? null,
+      exerciseName:
+        (exercises.find((x) => x.id === s.exercise_id)?.name as string | undefined) ?? null,
+      candidateId: (s.candidate_id as string | null) ?? null,
+      candidateName:
+        (candidates.find((c) => c.id === s.candidate_id)?.full_name as string | undefined) ?? null,
+      assessorId: (s.assessor_id as string | null) ?? null,
+      assessorName: (() => {
+        const p = staffDirectory.find((x) => x.id === s.assessor_id);
+        return (p?.full_name as string) ?? (p?.email as string) ?? null;
+      })(),
+      startsAt: s.starts_at as string,
+      endsAt: s.ends_at as string,
+      room: (s.room as string | null) ?? null,
+      note: (s.note as string | null) ?? null,
+    })),
+    participants: candidates.map((c) => ({ id: c.id as string, name: c.full_name as string })),
+    assessors: assessors.map((a) => ({
+      id: a.id as string,
+      name: (a.full_name as string) ?? (a.email as string) ?? "Unnamed",
+    })),
+    designExercises: exercises.map((x) => ({ id: x.id as string, name: x.name as string })),
+  });
 
   // Feedback is owed once a participant has a finalised result, so the review
   // needs to know who has one. Read here rather than reusing currentOarMap,
@@ -416,6 +457,14 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
           name: c.name,
           rationale: c.rationale,
         }))}
+      />
+      <TimetablePanel
+        engagementId={id}
+        slots={slotRows}
+        review={timetableReview}
+        candidates={candidates}
+        assessors={assessors}
+        exercises={exercises}
       />
       <FeedbackPanel
         engagementId={id}

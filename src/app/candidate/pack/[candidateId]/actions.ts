@@ -65,3 +65,30 @@ export async function setAdjustmentNeedAction(values: {
   }
   return { ok: true };
 }
+
+/**
+ * Voluntary self-identification for fairness monitoring (BPS 3.19).
+ *
+ * The timestamp is stamped even when every answer is "prefer not to say":
+ * "asked and declined" and "never asked" are different facts, and only the
+ * second one is a gap in our monitoring.
+ */
+export async function setVoluntaryDemographicsAction(values: {
+  candidateId: string;
+  gender: string | null;
+  ageBand: string | null;
+  nationalityGroup: string | null;
+}) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("candidates")
+    .update({
+      gender: values.gender,
+      age_band: values.ageBand,
+      nationality_group: values.nationalityGroup,
+      demographics_submitted_at: new Date().toISOString(),
+    })
+    .eq("id", values.candidateId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

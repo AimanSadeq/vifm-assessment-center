@@ -11,6 +11,7 @@ import { LocalDate } from "@/components/shared/local-date";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
 import { PackAcknowledgement } from "./_components/pack-acknowledgement";
 import { AdjustmentRequest } from "./_components/adjustment-request";
+import { VoluntaryDemographics } from "./_components/voluntary-demographics";
 
 type Props = {
   params: { candidateId: string };
@@ -24,7 +25,7 @@ export default async function JoiningPackPage({ params, searchParams }: Props) {
 
   const { data: candidate, error } = await supabase
     .from("candidates")
-    .select("id, full_name, email, engagement_id, pack_ack_at, adjustment_status, adjustment_request, adjustment_agreed, adjustment_extra_minutes")
+    .select("id, full_name, email, engagement_id, pack_ack_at, adjustment_status, adjustment_request, adjustment_agreed, adjustment_extra_minutes, gender, age_band, nationality_group, demographics_submitted_at")
     .eq("id", candidateId)
     .maybeSingle();
   if (error || !candidate) return notFound();
@@ -98,6 +99,14 @@ export default async function JoiningPackPage({ params, searchParams }: Props) {
         request={(candidate.adjustment_request as string) ?? ""}
         agreed={(candidate.adjustment_agreed as string) ?? ""}
         extraMinutes={(candidate.adjustment_extra_minutes as number) ?? null}
+      />
+
+      <VoluntaryDemographics
+        candidateId={candidateId}
+        gender={(candidate.gender as string) ?? ""}
+        ageBand={(candidate.age_band as string) ?? ""}
+        nationalityGroup={(candidate.nationality_group as string) ?? ""}
+        submittedAt={(candidate.demographics_submitted_at as string) ?? null}
       />
 
       <Card>

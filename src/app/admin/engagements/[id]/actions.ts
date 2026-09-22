@@ -1658,3 +1658,21 @@ export async function setExternalEvidenceRuleAction(values: {
   if (error) return { error: error.message };
   return { ok: true };
 }
+
+/**
+ * How participants were allocated to this centre and to groups within it, and
+ * why (BPS 5.37). The clause says the rationale "should be documented", so it
+ * is prose on the design rather than a checkbox - group composition affects
+ * what a participant gets the chance to show, particularly in a group exercise.
+ */
+export async function setGroupingRationaleAction(values: { engagementId: string; rationale: string }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({ grouping_rationale: (values.rationale ?? "").trim() || null })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

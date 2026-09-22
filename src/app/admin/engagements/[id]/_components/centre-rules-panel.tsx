@@ -26,6 +26,7 @@ import {
   setParticipantContactAction,
   setOtherMethodsRuleAction,
   setExternalEvidenceRuleAction,
+  setGroupingRationaleAction,
 } from "../actions";
 
 type Row = Record<string, unknown>;
@@ -44,6 +45,7 @@ export function CentreRulesPanel({
   otherMethodsNote = "",
   externalEvidenceRule = "",
   externalEvidenceFramework = "",
+  groupingRationale = "",
 }: {
   engagementId: string;
   candidates: Row[];
@@ -58,6 +60,7 @@ export function CentreRulesPanel({
   otherMethodsNote?: string;
   externalEvidenceRule?: string;
   externalEvidenceFramework?: string;
+  groupingRationale?: string;
 }) {
   const router = useRouter();
   const [conflictAssessor, setConflictAssessor] = useState("");
@@ -72,8 +75,21 @@ export function CentreRulesPanel({
   // What a test or questionnaire result may do to a competency rating (BPS 4.32).
   const [methodsRule, setMethodsRule] = useState(otherMethodsRule);
   const [extRule, setExtRule] = useState(externalEvidenceRule);
+  const [grouping, setGrouping] = useState(groupingRationale);
   const [extFramework, setExtFramework] = useState(externalEvidenceFramework);
   const [methodsNote, setMethodsNote] = useState(otherMethodsNote);
+
+  const saveGrouping = async () => {
+    setBusy(true);
+    const res = await setGroupingRationaleAction({ engagementId, rationale: grouping });
+    setBusy(false);
+    if ("error" in res && res.error) {
+      toast.error(typeof res.error === "string" ? res.error : "That did not save.");
+      return;
+    }
+    toast.success("Recorded.");
+    router.refresh();
+  };
 
   const saveExternal = async (rule: "not_permitted" | "permitted") => {
     setBusy(true);
@@ -413,6 +429,26 @@ export function CentreRulesPanel({
                 rating.
               </p>
             )}
+          </div>
+        </div>
+
+        <div className="border-t pt-3">
+          <p className="font-medium">Who was allocated here, and why</p>
+          <p className="text-xs text-muted-foreground">
+            Group composition changes what a participant gets the chance to show, particularly in a group exercise.
+            The standard asks that diversity be taken into account when allocating people to centres and to groups,
+            and that the reasoning be written down (5.37).
+          </p>
+          <div className="mt-2 space-y-2">
+            <Textarea
+              rows={2}
+              value={grouping}
+              onChange={(e) => setGrouping(e.target.value)}
+              placeholder="For example: participants split across two centres by availability, with each group mixed by function and seniority so no group exercise is dominated by one department."
+            />
+            <Button size="sm" variant="outline" onClick={saveGrouping} disabled={busy}>
+              Save
+            </Button>
           </div>
         </div>
 

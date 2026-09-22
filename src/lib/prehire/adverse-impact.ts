@@ -182,6 +182,46 @@ function analyzeDimension(
   };
 }
 
+/**
+ * The same analysis, for a pool somebody else has already classified.
+ *
+ * Pre-Hire decides who is "in the pool" and who was "selected" from its own
+ * decision and recommendation vocabulary. The Assessment Center means something
+ * different by both - its outcome is an overall recommendation, and a
+ * development centre selects nobody at all - so rather than bend those values
+ * into Pre-Hire's, a caller can classify its own rows and reuse the arithmetic,
+ * the 4/5ths threshold, the reference-group choice and the small-sample
+ * caveats. The statistics are the part worth sharing; the semantics are not.
+ */
+export function computeAdverseImpactForPool(
+  rows: Array<{
+    gender: PrehireGender | null;
+    age_band: PrehireAgeBand | null;
+    nationality_group: PrehireNationalityGroup | null;
+    selected: boolean;
+  }>,
+  basis: SelectionBasis = "decision"
+): AdverseImpactReport {
+  const pool = rows.map((r) => ({
+    c: {
+      gender: r.gender,
+      age_band: r.age_band,
+      nationality_group: r.nationality_group,
+      decision: null,
+      recommendation: null,
+    } as AdverseImpactCandidate,
+    selected: r.selected,
+  }));
+  const dimensions: ImpactDimension[] = ["gender", "age_band", "nationality_group"];
+  return {
+    basis,
+    poolSize: pool.length,
+    selectedTotal: pool.filter((p) => p.selected).length,
+    dimensions: dimensions.map((d) => analyzeDimension(pool, d)),
+    generatedAt: new Date().toISOString(),
+  };
+}
+
 export function computeAdverseImpact(
   candidates: AdverseImpactCandidate[],
   basisOverride?: SelectionBasis

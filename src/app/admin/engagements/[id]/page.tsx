@@ -294,6 +294,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         otherMethodsNote={(engagement as { other_methods_note?: string | null }).other_methods_note ?? ""}
         externalEvidenceRule={(engagement as { external_evidence_rule?: string | null }).external_evidence_rule ?? ""}
         externalEvidenceFramework={(engagement as { external_evidence_framework?: string | null }).external_evidence_framework ?? ""}
+        groupingRationale={(engagement as { grouping_rationale?: string | null }).grouping_rationale ?? ""}
       />
       <CentreRolesPanel
         engagementId={id}
@@ -311,6 +312,17 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         missing={packMissing}
       />
       <DeliveryLogPanel engagementId={id} entries={deliveryLog} candidates={candidates} />
+      <div className="text-sm">
+        <a
+          href={`/admin/engagements/${id}/fairness`}
+          className="inline-flex items-center gap-1 text-accent hover:underline"
+        >
+          Fairness monitoring for this centre
+        </a>
+        <span className="ms-2 text-xs text-muted-foreground">
+          Whether outcomes fell differently on any group (BPS 3.19, 4.22).
+        </span>
+      </div>
       <ParticipantRightsPanel
         engagementId={id}
         candidates={candidates}

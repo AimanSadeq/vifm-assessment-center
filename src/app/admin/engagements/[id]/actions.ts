@@ -1773,3 +1773,132 @@ export async function approveCentrePlanAction(values: { engagementId: string; cl
   if (error) return { error: error.message };
   return { ok: true };
 }
+
+/**
+ * Recording that a manual went to somebody (BPS 4.41, 5.33, 6.9).
+ *
+ * The PDF is generated on demand, so this does not store a document - it
+ * stores the distribution. Secure distribution with no record of who holds a
+ * copy is not secure, it is only quiet, and a manual carries the exercise
+ * material the centre depends on being unseen.
+ */
+export async function recordManualIssueAction(values: {
+  engagementId: string;
+  variant: string;
+  issuedToProfileId?: string | null;
+  issuedToName: string;
+  issuedToEmail?: string | null;
+  confidential?: boolean;
+  note?: string;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const name = (values.issuedToName ?? "").trim();
+  if (name.length < 2) return { error: "Record who the manual was given to." };
+  if (values.variant !== "full" && !CENTRE_ROLE_MAP[values.variant]) {
+    return { error: "That is not a manual variant." };
+  }
+
+  const sb = createServiceClient();
+  const { data: eng } = await sb
+    .from("engagements")
+    .select("manual_version")
+    .eq("id", values.engagementId)
+    .maybeSingle();
+
+  let issued_by_name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    issued_by_name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const { error } = await sb.from("ac_manual_issues").insert({
+    engagement_id: values.engagementId,
+    variant: values.variant,
+    version: (eng?.manual_version as number) ?? 1,
+    issued_to: values.issuedToProfileId || null,
+    issued_to_name: name,
+    issued_to_email: (values.issuedToEmail ?? "").trim() || null,
+    confidential: values.confidential ?? true,
+    issued_by: uid,
+    issued_by_name,
+    note: (values.note ?? "").trim() || null,
+  });
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/** A copy confirmed returned or destroyed after the centre (BPS 6.9). */
+export async function markManualReturnedAction(issueId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ac_manual_issues")
+    .update({ returned_at: new Date().toISOString() })
+    .eq("id", issueId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}
+
+/**
+ * The design changed after manuals went out (BPS 4.41).
+ *
+ * Bumping the version does not recall anything - it makes the discrepancy
+ * visible, so the holder of an older cut can be found and re-issued. A silent
+ * change is how someone ends up running yesterday's exercise.
+ */
+export async function bumpManualVersionAction(engagementId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const sb = createServiceClient();
+  const { data: eng } = await sb
+    .from("engagements")
+    .select("manual_version")
+    .eq("id", engagementId)
+    .maybeSingle();
+  const next = ((eng?.manual_version as number) ?? 1) + 1;
+  const { error } = await sb.from("engagements").update({ manual_version: next }).eq("id", engagementId);
+  if (error) return { error: error.message };
+  return { ok: true, version: next };
+}
+
+/**
+ * The Centre Manager confirming the centre is ready to run (BPS 6.3): venue,
+ * equipment and documentation. Deliberately a person's confirmation rather
+ * than a derived flag - the clause asks someone to have checked, and no query
+ * can tell whether the room has a working clock in it.
+ */
+export async function confirmCentreReadinessAction(values: { engagementId: string; note?: string }) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const sb = createServiceClient();
+  let name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      readiness_confirmed_at: new Date().toISOString(),
+      readiness_confirmed_by: uid,
+      readiness_confirmed_name: name,
+      readiness_note: (values.note ?? "").trim() || null,
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

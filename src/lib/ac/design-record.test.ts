@@ -13,7 +13,15 @@ const comp = (id: string, name: string, extra: Record<string, unknown> = {}) => 
   indicatorCount: 6,
   ...extra,
 });
-const ex = (id: string, name: string, type: string) => ({ id, name, exerciseType: type, durationMinutes: 60 });
+// A role play needs a briefed role-player to count as a complete design, so
+// the fixture gives one - otherwise "complete" would be a design nobody can run.
+const ex = (id: string, name: string, type: string) => ({
+  id,
+  name,
+  exerciseType: type,
+  durationMinutes: 60,
+  rolePlayerPromptCount: type === "role_play" ? 3 : 0,
+});
 
 const FULL_ENGAGEMENT = {
   design_rationale: "Two-day centre matching the role's split between analysis and stakeholder work.",
@@ -133,4 +141,26 @@ test("approval is reported from the plan sign-off", () => {
     }).approved,
     true
   );
+});
+
+test("a role play with no role-player brief is flagged at design time", () => {
+  const r = reviewDesignRecord({
+    ...baseline,
+    exercises: [
+      { id: "e1", name: "In-basket", exerciseType: "in_basket", durationMinutes: 60 },
+      { id: "e2", name: "Role play", exerciseType: "role_play", durationMinutes: 30, rolePlayerPromptCount: 0 },
+    ],
+  });
+  assert.ok(r.cautions.some((c) => /no role-player brief written/.test(c)));
+});
+
+test("a briefed role play is not flagged", () => {
+  const r = reviewDesignRecord({
+    ...baseline,
+    exercises: [
+      { id: "e1", name: "In-basket", exerciseType: "in_basket", durationMinutes: 60 },
+      { id: "e2", name: "Role play", exerciseType: "role_play", durationMinutes: 30, rolePlayerPromptCount: 4 },
+    ],
+  });
+  assert.equal(r.cautions.some((c) => /role-player brief/.test(c)), false);
 });

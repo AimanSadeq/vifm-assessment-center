@@ -18,6 +18,7 @@ import { ParticipantRightsPanel } from "./_components/participant-rights-panel";
 import { JoiningPackPanel } from "./_components/joining-pack-panel";
 import { CentreRolesPanel } from "./_components/centre-roles-panel";
 import { DesignRecordPanel } from "./_components/design-record-panel";
+import { CentreManualPanel } from "./_components/centre-manual-panel";
 import { reviewDesignRecord } from "@/lib/ac/design-record";
 import { reviewCentreRoles } from "@/lib/ac/centre-roles-review";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
@@ -225,6 +226,14 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     ? await computeAcObservedLens(id, focusedCandidate.id as string)
     : null;
 
+  // Who holds a copy of the centre manual (BPS 4.41). Tolerant of 00218.
+  const manualIssues = await supabase
+    .from("ac_manual_issues")
+    .select("id, variant, version, issued_to_name, issued_at, returned_at, confidential")
+    .eq("engagement_id", id)
+    .order("issued_at", { ascending: false })
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
   // The design record (BPS section 4): why these criteria, why these exercises.
   // Indicator counts drive the 4.20 check - a criterion with nothing concrete
   // behind it is one assessors cannot rate consistently.
@@ -256,6 +265,19 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     };
   });
 
+  // Role-player briefs live in role_player_prompts, one row per prompt - not on
+  // the exercise. A role play with none is an exercise nobody can run.
+  const exerciseIdList = exercises.map((x) => x.id as string);
+  const promptCounts = new Map<string, number>();
+  if (exerciseIdList.length > 0) {
+    const prompts = await supabase
+      .from("role_player_prompts")
+      .select("exercise_id")
+      .in("exercise_id", exerciseIdList)
+      .then((r) => (r.data ?? []) as { exercise_id: string }[], () => [] as { exercise_id: string }[]);
+    for (const p of prompts) promptCounts.set(p.exercise_id, (promptCounts.get(p.exercise_id) ?? 0) + 1);
+  }
+
   const designReview = reviewDesignRecord({
     engagement: engagement as Record<string, string | null>,
     competencies: designCompetencies,
@@ -264,6 +286,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       name: x.name as string,
       exerciseType: (x.exercise_type as string | null) ?? null,
       durationMinutes: (x.duration_minutes as number | null) ?? null,
+      rolePlayerPromptCount: promptCounts.get(x.id as string) ?? 0,
     })),
     matrix: matrix.map((m) => ({
       exerciseId: m.exercise_id as string,
@@ -353,6 +376,20 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
           name: c.name,
           rationale: c.rationale,
         }))}
+      />
+      <CentreManualPanel
+        engagementId={id}
+        engagement={engagement}
+        issues={manualIssues}
+        staffedRoles={centreRoleRows.map((r) => {
+          const p = staffDirectory.find((x) => x.id === r.profile_id);
+          return {
+            roleKey: r.role_key as string,
+            profileId: r.profile_id as string,
+            name: (p?.full_name as string) ?? (p?.email as string) ?? "Unnamed",
+            email: (p?.email as string) ?? null,
+          };
+        })}
       />
       <CentreRolesPanel
         engagementId={id}

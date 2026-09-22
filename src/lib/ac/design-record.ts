@@ -58,6 +58,8 @@ export type DesignExercise = {
   name: string;
   exerciseType?: string | null;
   durationMinutes?: number | null;
+  /** Role-player prompts written for it (role_player_prompts). */
+  rolePlayerPromptCount?: number;
 };
 
 export type DesignMatrixEntry = { exerciseId: string; competencyId: string };
@@ -168,6 +170,19 @@ export function reviewDesignRecord(input: {
   if (withoutRationale.length > 0) {
     cautions.push(
       `${withoutRationale.length} of ${competencies.length} criteria have no recorded link to the job (4.4): ${withoutRationale.map((c) => c.name).join(", ")}.`
+    );
+  }
+
+  // A role-play needs a person to play the counterpart, and that person needs a
+  // brief. VIFM does not currently staff role-players, so a design that
+  // schedules one is promising something nobody can deliver - and B6 will block
+  // the centre at activation for want of a competent Role-player. Say it here,
+  // at design time, where it is still cheap to change.
+  const rolePlays = exercises.filter((x) => x.exerciseType === "role_play");
+  const unbriefed = rolePlays.filter((x) => (x.rolePlayerPromptCount ?? 0) === 0);
+  if (unbriefed.length > 0) {
+    cautions.push(
+      `${unbriefed.map((x) => x.name).join(", ")} ${unbriefed.length === 1 ? "is a role play with" : "are role plays with"} no role-player brief written. A role play needs a trained person playing the counterpart, briefed well enough to behave the same way for every participant (4.42, 5.33) - without that the exercise is not standardised and the centre cannot be activated.`
     );
   }
 

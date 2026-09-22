@@ -11,6 +11,7 @@ import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { LocalDate } from "@/components/shared/local-date";
+import { DisclosureDecisions } from "./_components/disclosure-decisions";
 
 type Props = {
   params: { candidateId: string };
@@ -75,6 +76,18 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
   const consentHref = packPublished && !packAcked
     ? `/candidate/pack/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`
     : `/candidate/consent/${candidateId}${asAdmin ? "?asAdmin=1" : ""}`;
+
+  // Requests from anyone outside the recipients named in the joining pack
+  // (BPS 8.13). Tolerant of migration 00212 not being applied.
+  const disclosures = await supabase
+    .from("ac_report_disclosures")
+    .select("id, recipient_name, recipient_role, reason, status, decided_at, released_at")
+    .eq("candidate_id", candidateId)
+    .order("requested_at", { ascending: false })
+    .then(
+      (r) => (r.data ?? []) as Record<string, unknown>[],
+      () => [] as Record<string, unknown>[]
+    );
 
   const decisionToldAt = (candidate as { decision_communicated_at?: string | null }).decision_communicated_at ?? null;
   const decisionOutcome = (candidate as { decision_outcome?: string | null }).decision_outcome ?? null;
@@ -154,6 +167,8 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
               </p>
             </div>
           )}
+
+          <DisclosureDecisions rows={disclosures} />
 
           {reassessments.length > 0 && (
             <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">

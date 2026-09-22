@@ -1342,3 +1342,101 @@ export async function decideAdjustmentAction(values: {
   }
   return { ok: true };
 }
+
+/**
+ * Asking a participant to let someone else see their report (BPS 8.13).
+ *
+ * The joining pack names who receives reports and the participant agreed to
+ * that list before attending (5.13). Anyone outside it is a fresh decision that
+ * belongs to the participant, not to us, so this only ever creates a question.
+ */
+export async function requestReportDisclosureAction(values: {
+  engagementId: string;
+  candidateId: string;
+  recipientName: string;
+  recipientRole?: string;
+  reason: string;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  const recipient = (values.recipientName ?? "").trim();
+  const reason = (values.reason ?? "").trim();
+  if (recipient.length < 2) return { error: "Name who wants the report." };
+  if (reason.length < 10) {
+    return { error: "Say why they want it. The participant is being asked to decide and is owed the reason." };
+  }
+
+  const sb = createServiceClient();
+  let requested_by_name: string | null = null;
+  if (uid) {
+    const { data: who } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle();
+    requested_by_name = (who?.full_name as string | null) ?? (who?.email as string | null) ?? null;
+  }
+
+  const { error } = await sb.from("ac_report_disclosures").insert({
+    engagement_id: values.engagementId,
+    candidate_id: values.candidateId,
+    recipient_name: recipient,
+    recipient_role: (values.recipientRole ?? "").trim() || null,
+    reason,
+    requested_by: uid,
+    requested_by_name,
+  });
+  if (error) return { error: error.message };
+
+  const { data: cand } = await sb
+    .from("candidates")
+    .select("profile_id")
+    .eq("id", values.candidateId)
+    .maybeSingle();
+  if (cand?.profile_id) {
+    await publishNotification({
+      profileId: cand.profile_id as string,
+      kind: "disclosure_requested",
+      title: "Someone has asked to see your assessment report",
+      body: `${recipient} has asked for your report. You decide whether they get it.`,
+      link: `/candidate/welcome/${values.candidateId}`,
+    });
+  }
+  return { ok: true };
+}
+
+/**
+ * Handing the report over, once permission exists. Refused stays refused: the
+ * database will not let a refusal be overwritten with a grant, and this will
+ * not let a report go out without one.
+ */
+export async function markDisclosureReleasedAction(disclosureId: string) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
+  const sb = createServiceClient();
+  const { data: row, error: readErr } = await sb
+    .from("ac_report_disclosures")
+    .select("status, released_at, recipient_name")
+    .eq("id", disclosureId)
+    .maybeSingle();
+  if (readErr) return { error: readErr.message };
+  if (!row) return { error: "Request not found." };
+  if (row.status !== "granted") {
+    return {
+      error:
+        "The participant has not given permission for this, so the report cannot be shared. "
+        + "A refusal is not an obstacle to work around.",
+    };
+  }
+  if (row.released_at) return { error: "Already recorded as handed over." };
+
+  const { error } = await sb
+    .from("ac_report_disclosures")
+    .update({ released_at: new Date().toISOString() })
+    .eq("id", disclosureId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

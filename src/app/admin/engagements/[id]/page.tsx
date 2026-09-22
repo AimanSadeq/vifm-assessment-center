@@ -103,6 +103,15 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
   ]);
 
+  // Requests to share a report outside the agreed recipients (BPS 8.13).
+  // Tolerant of migration 00212 not being applied.
+  const disclosures = await supabase
+    .from("ac_report_disclosures")
+    .select("id, candidate_id, recipient_name, recipient_role, reason, status, participant_note, decided_at, released_at")
+    .eq("engagement_id", id)
+    .order("requested_at", { ascending: false })
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
   const [assignments, integrationWorksheets] = await Promise.all([
     fetchAllPages<Record<string, unknown>>((from, to) =>
       supabase
@@ -240,6 +249,8 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         exercises={exercises}
         concerns={concerns}
         reassessments={reassessments}
+        disclosures={disclosures}
+        agreedRecipients={(engagement as { pack_report_recipients?: string | null }).pack_report_recipients ?? null}
       />
       <ReadinessSetupPanel engagementId={id} setup={readinessSetup} />
       <CandidateFilterBar

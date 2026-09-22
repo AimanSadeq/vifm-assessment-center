@@ -27,6 +27,8 @@ import {
   updateReassessmentAction,
   recordCandidateDecisionAction,
   notifyCandidateOfDecisionAction,
+  requestReportDisclosureAction,
+  markDisclosureReleasedAction,
 } from "../actions";
 
 type Row = Record<string, unknown>;
@@ -40,6 +42,9 @@ const STATUS_TONE: Record<string, string> = {
   scheduled: "bg-sky-100 text-sky-900",
   completed: "bg-emerald-100 text-emerald-900",
   declined: "bg-muted text-muted-foreground",
+  pending: "bg-amber-100 text-amber-900",
+  granted: "bg-emerald-100 text-emerald-900",
+  refused: "bg-muted text-muted-foreground",
 };
 
 const STAGE_LABEL: Record<string, string> = {
@@ -61,12 +66,16 @@ export function ParticipantRightsPanel({
   exercises = [],
   concerns = [],
   reassessments = [],
+  disclosures = [],
+  agreedRecipients = null,
 }: {
   engagementId: string;
   candidates?: Row[];
   exercises?: Row[];
   concerns?: Row[];
   reassessments?: Row[];
+  disclosures?: Row[];
+  agreedRecipients?: string | null;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
@@ -79,6 +88,8 @@ export function ParticipantRightsPanel({
   const [outcome, setOutcome] = useState("");
   const [decidedOn, setDecidedOn] = useState("");
   const [decisionNote, setDecisionNote] = useState("");
+  const [discOpen, setDiscOpen] = useState(false);
+  const [disc, setDisc] = useState({ candidateId: "", name: "", role: "", reason: "" });
 
   const nameOf = (id: unknown) =>
     (candidates.find((c) => c.id === id)?.full_name as string | undefined) ?? "Unknown participant";
@@ -299,6 +310,126 @@ export function ParticipantRightsPanel({
                     onRun={(fn, msg) => run(r.id as string, fn, () => msg)}
                   />
                 ) : null}
+              </div>
+            ))
+          )}
+        </section>
+
+        {/* ── Report disclosures ───────────────────────────────────────────── */}
+        <section className="space-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Sharing a report with someone else
+            </h3>
+            <Button size="sm" variant="outline" onClick={() => setDiscOpen((v) => !v)}>
+              {discOpen ? "Cancel" : "Ask permission"}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {agreedRecipients
+              ? `Participants agreed their report goes to: ${agreedRecipients}. Anyone else needs their express permission.`
+              : "The joining pack does not name who receives reports yet, so there is no agreed list to measure a request against."}
+          </p>
+
+          {discOpen && (
+            <div className="space-y-2 rounded border p-3">
+              <select
+                className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                value={disc.candidateId}
+                onChange={(e) => setDisc((d) => ({ ...d, candidateId: e.target.value }))}
+              >
+                <option value="">Whose report...</option>
+                {candidates.map((c) => (
+                  <option key={c.id as string} value={c.id as string}>
+                    {c.full_name as string}
+                  </option>
+                ))}
+              </select>
+              <div className="flex flex-wrap gap-2">
+                <Input
+                  className="max-w-xs"
+                  value={disc.name}
+                  onChange={(e) => setDisc((d) => ({ ...d, name: e.target.value }))}
+                  placeholder="Who wants it"
+                />
+                <Input
+                  className="max-w-xs"
+                  value={disc.role}
+                  onChange={(e) => setDisc((d) => ({ ...d, role: e.target.value }))}
+                  placeholder="Their role. Optional."
+                />
+              </div>
+              <Textarea
+                rows={2}
+                value={disc.reason}
+                onChange={(e) => setDisc((d) => ({ ...d, reason: e.target.value }))}
+                placeholder="Why they want it. The participant reads this before deciding."
+              />
+              <Button
+                size="sm"
+                disabled={busy === "disc" || !disc.candidateId || disc.name.trim().length < 2 || disc.reason.trim().length < 10}
+                onClick={async () => {
+                  const ok = await run(
+                    "disc",
+                    () =>
+                      requestReportDisclosureAction({
+                        engagementId,
+                        candidateId: disc.candidateId,
+                        recipientName: disc.name,
+                        recipientRole: disc.role,
+                        reason: disc.reason,
+                      }),
+                    () => "Asked. The participant decides."
+                  );
+                  if (ok) {
+                    setDiscOpen(false);
+                    setDisc({ candidateId: "", name: "", role: "", reason: "" });
+                  }
+                }}
+              >
+                Ask the participant
+              </Button>
+            </div>
+          )}
+
+          {disclosures.length === 0 ? (
+            <p className="text-muted-foreground">No one outside the agreed list has asked.</p>
+          ) : (
+            disclosures.map((d) => (
+              <div key={d.id as string} className="rounded border p-3">
+                <div className="flex flex-wrap items-baseline gap-2">
+                  <span className="font-medium">{nameOf(d.candidate_id)}</span>
+                  <span className="text-xs text-muted-foreground">to {d.recipient_name as string}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-xs ${STATUS_TONE[d.status as string] ?? "bg-muted"}`}>
+                    {d.status === "granted"
+                      ? "permission given"
+                      : d.status === "refused"
+                        ? "refused"
+                        : d.status === "withdrawn"
+                          ? "withdrawn"
+                          : "waiting on the participant"}
+                  </span>
+                  {d.released_at ? (
+                    <span className="text-xs text-muted-foreground">shared {dateOf(d.released_at)}</span>
+                  ) : null}
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">{d.reason as string}</p>
+                {d.participant_note ? (
+                  <p className="mt-1 text-xs">They added: {d.participant_note as string}</p>
+                ) : null}
+                {d.status === "granted" && !d.released_at && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="mt-2"
+                    disabled={busy === (d.id as string)}
+                    onClick={() =>
+                      run(d.id as string, () => markDisclosureReleasedAction(d.id as string), () => "Recorded as shared.")
+                    }
+                  >
+                    Record that the report was shared
+                  </Button>
+                )}
               </div>
             ))
           )}

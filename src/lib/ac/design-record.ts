@@ -60,6 +60,8 @@ export type DesignExercise = {
   durationMinutes?: number | null;
   /** Role-player prompts written for it (role_player_prompts). */
   rolePlayerPromptCount?: number;
+  /** How many of the eight 4.36 checks have been made on it. */
+  qualityChecksMade?: number;
 };
 
 export type DesignMatrixEntry = { exerciseId: string; competencyId: string };
@@ -170,6 +172,16 @@ export function reviewDesignRecord(input: {
   if (withoutRationale.length > 0) {
     cautions.push(
       `${withoutRationale.length} of ${competencies.length} criteria have no recorded link to the job (4.4): ${withoutRationale.map((c) => c.name).join(", ")}.`
+    );
+  }
+
+  // An exercise nobody has checked is one nobody has confirmed can produce the
+  // evidence it is mapped to (4.36). Surfaced here as well as on the exercise
+  // itself, because this is where someone decides to use it.
+  const unchecked = exercises.filter((x) => (x.qualityChecksMade ?? 0) === 0);
+  if (unchecked.length > 0) {
+    cautions.push(
+      `${unchecked.map((x) => x.name).join(", ")} ${unchecked.length === 1 ? "has" : "have"} had none of the eight exercise checks made (4.36): content and face validity, timings, complexity, rating benchmarks, instructions, materials, and whether the criteria can actually be evidenced.`
     );
   }
 

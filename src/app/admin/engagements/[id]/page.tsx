@@ -307,6 +307,15 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
   // the exercise. A role play with none is an exercise nobody can run.
   const exerciseIdList = exercises.map((x) => x.id as string);
   const promptCounts = new Map<string, number>();
+  const checkCounts = new Map<string, number>();
+  if (exerciseIdList.length > 0) {
+    const checks = await supabase
+      .from("ac_exercise_checks")
+      .select("exercise_id")
+      .in("exercise_id", exerciseIdList)
+      .then((r) => (r.data ?? []) as { exercise_id: string }[], () => [] as { exercise_id: string }[]);
+    for (const c of checks) checkCounts.set(c.exercise_id, (checkCounts.get(c.exercise_id) ?? 0) + 1);
+  }
   if (exerciseIdList.length > 0) {
     const prompts = await supabase
       .from("role_player_prompts")
@@ -325,6 +334,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       exerciseType: (x.exercise_type as string | null) ?? null,
       durationMinutes: (x.duration_minutes as number | null) ?? null,
       rolePlayerPromptCount: promptCounts.get(x.id as string) ?? 0,
+      qualityChecksMade: checkCounts.get(x.id as string) ?? 0,
     })),
     matrix: matrix.map((m) => ({
       exerciseId: m.exercise_id as string,

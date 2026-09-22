@@ -21,6 +21,8 @@ const ex = (id: string, name: string, type: string) => ({
   exerciseType: type,
   durationMinutes: 60,
   rolePlayerPromptCount: type === "role_play" ? 3 : 0,
+  // A complete design uses exercises somebody has checked (4.36).
+  qualityChecksMade: 8,
 });
 
 const FULL_ENGAGEMENT = {
@@ -163,4 +165,18 @@ test("a briefed role play is not flagged", () => {
     ],
   });
   assert.equal(r.cautions.some((c) => /role-player brief/.test(c)), false);
+});
+
+test("an exercise with no quality checks is flagged where it is chosen (4.36)", () => {
+  const r = reviewDesignRecord({
+    ...baseline,
+    exercises: [
+      { id: "e1", name: "In-basket", exerciseType: "in_basket", durationMinutes: 60, qualityChecksMade: 8 },
+      { id: "e2", name: "Role play", exerciseType: "role_play", durationMinutes: 30, rolePlayerPromptCount: 3, qualityChecksMade: 0 },
+    ],
+  });
+  const caution = r.cautions.find((c) => /eight exercise checks/.test(c));
+  assert.ok(caution);
+  assert.match(caution!, /Role play/);
+  assert.equal(/In-basket/.test(caution!), false);
 });

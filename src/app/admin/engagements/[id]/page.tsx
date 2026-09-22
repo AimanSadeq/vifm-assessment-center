@@ -292,6 +292,8 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         appealsNote={(engagement as { appeals_note?: string | null }).appeals_note ?? ""}
         otherMethodsRule={(engagement as { other_methods_rule?: string | null }).other_methods_rule ?? ""}
         otherMethodsNote={(engagement as { other_methods_note?: string | null }).other_methods_note ?? ""}
+        externalEvidenceRule={(engagement as { external_evidence_rule?: string | null }).external_evidence_rule ?? ""}
+        externalEvidenceFramework={(engagement as { external_evidence_framework?: string | null }).external_evidence_framework ?? ""}
       />
       <CentreRolesPanel
         engagementId={id}

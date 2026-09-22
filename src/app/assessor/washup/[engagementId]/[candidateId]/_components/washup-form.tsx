@@ -50,6 +50,8 @@ type EngagementRule = {
   weights_confirmed_at: string | null;
   other_methods_rule?: string | null;
   other_methods_note?: string | null;
+  external_evidence_rule?: string | null;
+  external_evidence_framework?: string | null;
 };
 
 type Props = {
@@ -62,6 +64,8 @@ type Props = {
   worksheets: Record<string, unknown>[];
   existingConsensus: Record<string, unknown>[];
   existingOar: Record<string, unknown> | null;
+  /** Who could chair the integration meeting (BPS 7.10). */
+  chairCandidates?: { id: string; name: string; isNamedChair?: boolean }[];
 };
 
 export function WashupForm({
@@ -74,6 +78,7 @@ export function WashupForm({
   worksheets,
   existingConsensus,
   existingOar,
+  chairCandidates = [],
 }: Props) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -105,6 +110,14 @@ export function WashupForm({
   const [panelDisagrees, setPanelDisagrees] = useState(
     Boolean((existingOar as { panel_disagrees?: boolean } | null)?.panel_disagrees)
   );
+  // Who chaired, and the per-assessor confirmation (BPS 7.10, 7.11).
+  const [chairId, setChairId] = useState<string>((existingOar?.chair_id as string) ?? "");
+  const [heard, setHeard] = useState<Record<string, boolean>>(() => {
+    const prior = (existingOar?.evidence_heard as { assessor_id: string; heard: boolean }[] | null) ?? [];
+    return Object.fromEntries(prior.map((p) => [p.assessor_id, p.heard]));
+  });
+  const [externalUsed, setExternalUsed] = useState(Boolean(existingOar?.external_evidence_used));
+  const [externalNote, setExternalNote] = useState((existingOar?.external_evidence_note as string) ?? "");
   const [panelComment, setPanelComment] = useState(
     ((existingOar as { panel_comment?: string } | null)?.panel_comment as string) ?? ""
   );
@@ -270,6 +283,14 @@ export function WashupForm({
       panelComment: isComputed && panelDisagrees ? panelComment : undefined,
       recommendation: oarRec as "ready_now" | "ready_with_development" | "not_ready",
       summary: oarSummary || undefined,
+      chairId: chairId || undefined,
+      evidenceHeard: contributingAssessors.map((a) => ({
+        assessorId: a.id,
+        name: a.name,
+        heard: Boolean(heard[a.id]),
+      })),
+      externalEvidenceUsed: externalUsed,
+      externalEvidenceNote: externalUsed ? externalNote : undefined,
     });
     setSavingOar(false);
     if ("error" in result && result.error) {
@@ -281,6 +302,19 @@ export function WashupForm({
   };
 
   const completedCount = Object.values(consensus).filter((c) => c.score > 0).length;
+
+  // Every assessor who submitted a worksheet for this participant. The server
+  // rebuilds this list independently, so the form cannot shorten it.
+  const contributingAssessors = Array.from(
+    new Map(
+      worksheets.map((w) => {
+        const p = w.profiles as { full_name?: string | null } | null;
+        return [w.assessor_id as string, { id: w.assessor_id as string, name: p?.full_name ?? "Assessor" }];
+      })
+    ).values()
+  );
+  const allHeard = contributingAssessors.every((a) => heard[a.id]);
+  const oarReady = Boolean(chairId) && allHeard && (!externalUsed || externalNote.trim().length >= 10);
 
   return (
     <div className="space-y-6">
@@ -676,9 +710,97 @@ export function WashupForm({
             />
           </div>
 
+          {/* Who chaired, and whether every assessor was heard (BPS 7.10, 7.11).
+              A list of names rather than one tick: "all assessors were heard"
+              asserted in a single checkbox is the claim nobody can check
+              afterwards, and an assessor whose evidence was skipped is exactly
+              what leaves no trace today. */}
+          <div className="space-y-2 rounded-lg border bg-muted/40 p-4">
+            <Label className="text-sm font-medium">Who chaired this discussion</Label>
+            <select
+              className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"
+              value={chairId}
+              onChange={(e) => setChairId(e.target.value)}
+            >
+              <option value="">Choose...</option>
+              {chairCandidates.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                  {c.isNamedChair ? " (named chair for this centre)" : ""}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              The chair is answerable for the discussion following the agreed design, for every assessor being
+              heard, and for the outcome resting on evidence from this centre.
+            </p>
+
+            {contributingAssessors.length > 0 && (
+              <div className="pt-2">
+                <Label className="text-sm font-medium">Evidence heard from</Label>
+                <div className="mt-1 space-y-1">
+                  {contributingAssessors.map((a) => (
+                    <label key={a.id} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(heard[a.id])}
+                        onChange={(e) => setHeard((prev) => ({ ...prev, [a.id]: e.target.checked }))}
+                      />
+                      {a.name}
+                    </label>
+                  ))}
+                </div>
+                {!allHeard && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    Every assessor who submitted a worksheet is heard before the rating is set. Where they differ,
+                    that is the discussion worth having.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Evidence from outside the centre (BPS 7.14 to 7.17). Whether it
+                may count at all was settled at design time. */}
+            {engagement?.external_evidence_rule === "permitted" ? (
+              <div className="pt-2">
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={externalUsed}
+                    onChange={(e) => setExternalUsed(e.target.checked)}
+                  />
+                  <span>
+                    Evidence from outside the centre was presented
+                    {engagement.external_evidence_framework ? (
+                      <span className="block text-xs text-muted-foreground">
+                        Agreed framework: {engagement.external_evidence_framework}
+                      </span>
+                    ) : null}
+                  </span>
+                </label>
+                {externalUsed && (
+                  <Textarea
+                    className="mt-2"
+                    rows={2}
+                    value={externalNote}
+                    onChange={(e) => setExternalNote(e.target.value)}
+                    placeholder="What was presented, and why it is relevant to the criteria. The centre manager agrees this before it is presented."
+                  />
+                )}
+              </div>
+            ) : (
+              <p className="pt-2 text-xs text-muted-foreground">
+                {engagement?.external_evidence_rule === "not_permitted"
+                  ? "Evidence from outside the centre does not count towards a rating here. Ratings come from what was observed."
+                  : "This centre has not recorded whether evidence from outside it may be used, so it may not be used."}
+              </p>
+            )}
+          </div>
+
           <Button
             onClick={handleSaveOar}
-            disabled={!oarScore || !oarRec || savingOar}
+            disabled={!oarScore || !oarRec || savingOar || !oarReady}
             className="w-full"
             size="lg"
           >

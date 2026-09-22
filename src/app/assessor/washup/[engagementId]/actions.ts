@@ -163,6 +163,77 @@ export async function saveOarAction(values: SaveOarValues) {
     return { error: "An overall rating is required." };
   }
 
+  // Who chaired, and whether every assessor was heard (BPS 7.10, 7.11).
+  //
+  // The list of assessors is rebuilt HERE from the worksheets rather than
+  // trusted from the browser: a client that quietly omitted an assessor would
+  // otherwise produce a clean "everyone was heard" record with that assessor
+  // missing from it, which is precisely the failure 7.11 is about.
+  const { data: wsRows } = await supabase
+    .from("integration_worksheets")
+    .select("assessor_id, profiles:assessor_id(full_name, email)")
+    .eq("engagement_id", parsed.data.engagementId)
+    .eq("candidate_id", parsed.data.candidateId);
+  const assessorIds = Array.from(new Set((wsRows ?? []).map((w) => w.assessor_id as string)));
+  const nameById = new Map<string, string>();
+  for (const w of wsRows ?? []) {
+    const p = w.profiles as unknown as { full_name?: string | null; email?: string | null } | null;
+    nameById.set(w.assessor_id as string, p?.full_name ?? p?.email ?? "Assessor");
+  }
+
+  if (assessorIds.length > 0) {
+    if (!parsed.data.chairId) {
+      return { error: "Name who chaired this discussion before the overall rating is set." };
+    }
+    const heardBy = new Map((parsed.data.evidenceHeard ?? []).map((e) => [e.assessorId, e.heard]));
+    const notHeard = assessorIds.filter((id) => heardBy.get(id) !== true);
+    if (notHeard.length > 0) {
+      return {
+        error:
+          "Evidence has not been heard from every assessor: "
+          + notHeard.map((id) => nameById.get(id) ?? "an assessor").join(", ")
+          + ". The chair confirms each one before the rating is set.",
+      };
+    }
+  }
+
+  // Evidence from outside the centre (BPS 7.14, 7.17). Whether it may be used
+  // at all was decided when the centre was designed, so the room cannot decide
+  // it now.
+  if (parsed.data.externalEvidenceUsed) {
+    const { data: extRow } = await supabase
+      .from("engagements")
+      .select("external_evidence_rule")
+      .eq("id", parsed.data.engagementId)
+      .maybeSingle();
+    const rule = (extRow as { external_evidence_rule?: string | null } | null)?.external_evidence_rule ?? null;
+    if (rule !== "permitted") {
+      return {
+        error:
+          rule === "not_permitted"
+            ? "This centre's design does not permit evidence from outside the centre to count towards a rating."
+            : "This centre has not decided whether evidence from outside the centre may be used. That is a design decision, not one for the wash-up.",
+      };
+    }
+    if ((parsed.data.externalEvidenceNote ?? "").trim().length < 10) {
+      return { error: "Record what external evidence was presented and why it is relevant." };
+    }
+  }
+
+  const chairName = parsed.data.chairId
+    ? await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", parsed.data.chairId)
+        .maybeSingle()
+        .then((r) => (r.data?.full_name as string | null) ?? (r.data?.email as string | null) ?? null)
+    : null;
+  const evidenceHeard = assessorIds.map((id) => ({
+    assessor_id: id,
+    name: nameById.get(id) ?? "Assessor",
+    heard: true,
+  }));
+
   // Upsert: one OAR per (engagement, candidate)
   const { data, error } = await supabase
     .from("overall_assessment_ratings")
@@ -176,6 +247,12 @@ export async function saveOarAction(values: SaveOarValues) {
         computation,
         panel_disagrees: parsed.data.panelDisagrees ?? false,
         panel_comment: parsed.data.panelComment || null,
+        chair_id: parsed.data.chairId ?? null,
+        chair_name: chairName,
+        evidence_heard: evidenceHeard.length > 0 ? evidenceHeard : null,
+        evidence_heard_at: evidenceHeard.length > 0 ? new Date().toISOString() : null,
+        external_evidence_used: parsed.data.externalEvidenceUsed ?? false,
+        external_evidence_note: (parsed.data.externalEvidenceNote ?? "").trim() || null,
         recommendation: parsed.data.recommendation,
         summary: parsed.data.summary || null,
       },

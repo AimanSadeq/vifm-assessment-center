@@ -1609,3 +1609,52 @@ export async function setRoleCompetenceAction(values: {
   if (error) return { error: error.message };
   return { ok: true };
 }
+
+/**
+ * Whether evidence from outside the centre may count towards a rating
+ * (BPS 7.14 to 7.16).
+ *
+ * "Not at all" is a complete answer to 7.14 and the safer one: what the clause
+ * forbids is silence, because then assessors decide in the room, case by case,
+ * differently for different participants. Permitting it requires the framework
+ * for integrating it to be written down at design time (7.16), and that the
+ * three conditions in 7.15 have been considered - relevant data for EVERY
+ * participant, mappable to the criteria, collected with care.
+ */
+export async function setExternalEvidenceRuleAction(values: {
+  engagementId: string;
+  rule: "not_permitted" | "permitted";
+  framework?: string;
+}) {
+  let uid: string | null = null;
+  try {
+    const caller = await requireRole(["admin"]);
+    uid = caller.isDev ? null : caller.uid;
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+
+  const framework = (values.framework ?? "").trim();
+  if (values.rule === "permitted" && framework.length < 30) {
+    return {
+      error:
+        "Write the framework for integrating it: which evidence, how it maps onto the assessment criteria, and "
+        + "what it may do to a rating. It must also exist for every participant, or it cannot count towards any "
+        + "of them.",
+    };
+  }
+
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("engagements")
+    .update({
+      external_evidence_rule: values.rule,
+      external_evidence_framework: values.rule === "permitted" ? framework : null,
+      external_evidence_confirmed_at: new Date().toISOString(),
+      external_evidence_confirmed_by: uid,
+    })
+    .eq("id", values.engagementId);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

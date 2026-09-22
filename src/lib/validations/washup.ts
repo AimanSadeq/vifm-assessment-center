@@ -26,6 +26,17 @@ export const saveOarSchema = z.object({
   // rating still stands as the centre outcome (BPS 7.6).
   panelDisagrees: z.boolean().optional(),
   panelComment: z.string().optional(),
+  // Who chaired the integration meeting, and the record that every assessor's
+  // evidence was heard (BPS 7.10, 7.11). A list rather than one tick: "all
+  // assessors were heard" asserted in a single checkbox is the claim nobody
+  // can check afterwards.
+  chairId: uuidish().optional(),
+  evidenceHeard: z
+    .array(z.object({ assessorId: uuidish(), name: z.string(), heard: z.boolean() }))
+    .optional(),
+  // Evidence from outside the centre, and what was agreed about it (7.17).
+  externalEvidenceUsed: z.boolean().optional(),
+  externalEvidenceNote: z.string().optional(),
 });
 
 export type SaveOarValues = z.infer<typeof saveOarSchema>;

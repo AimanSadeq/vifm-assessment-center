@@ -15,7 +15,7 @@ export default async function WashupCandidatePage({ params }: Props) {
 
   const [engResult, candResult, compResult, worksheetsResult, consensusResult, oarResult] =
     await Promise.all([
-      supabase.from("engagements").select("id, name, purpose, integration_method, weights_confirmed_at, other_methods_rule, other_methods_note").eq("id", engagementId).single(),
+      supabase.from("engagements").select("id, name, purpose, integration_method, weights_confirmed_at, other_methods_rule, other_methods_note, external_evidence_rule, external_evidence_framework").eq("id", engagementId).single(),
       supabase.from("candidates").select("id, full_name").eq("id", candidateId).single(),
       supabase
         .from("engagement_competencies")
@@ -79,6 +79,34 @@ export default async function WashupCandidatePage({ params }: Props) {
     );
   }
 
+  // Who can chair (BPS 7.10). Anyone named Feedback Generation Meeting Chair or
+  // Centre Manager for this centre comes first, because those are the people
+  // the design made answerable; the rest of the centre's staff follow, so a
+  // centre that has not filled those roles yet can still run its wash-up.
+  const namedChairIds = new Set<string>();
+  const chairRoleRows = await supabase
+    .from("ac_engagement_roles")
+    .select("profile_id, role_key")
+    .eq("engagement_id", engagementId)
+    .in("role_key", ["feedback_meeting_chair", "centre_manager"])
+    .then((r) => (r.data ?? []) as { profile_id: string; role_key: string }[], () => []);
+  for (const r of chairRoleRows) namedChairIds.add(r.profile_id);
+
+  const staff = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role")
+    .not("role", "in", "(candidate,client)")
+    .order("full_name")
+    .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]);
+
+  const chairCandidates = staff
+    .map((p) => ({
+      id: p.id as string,
+      name: (p.full_name as string) ?? (p.email as string) ?? "Unnamed",
+      isNamedChair: namedChairIds.has(p.id as string),
+    }))
+    .sort((a, b) => Number(b.isNamedChair) - Number(a.isNamedChair) || a.name.localeCompare(b.name));
+
   return (
     <div>
       <BackLink href="/assessor" label="Back" history />
@@ -91,7 +119,10 @@ export default async function WashupCandidatePage({ params }: Props) {
           weights_confirmed_at: (engResult.data as { weights_confirmed_at?: string | null }).weights_confirmed_at ?? null,
           other_methods_rule: (engResult.data as { other_methods_rule?: string | null }).other_methods_rule ?? null,
           other_methods_note: (engResult.data as { other_methods_note?: string | null }).other_methods_note ?? null,
+          external_evidence_rule: (engResult.data as { external_evidence_rule?: string | null }).external_evidence_rule ?? null,
+          external_evidence_framework: (engResult.data as { external_evidence_framework?: string | null }).external_evidence_framework ?? null,
         }}
+        chairCandidates={chairCandidates}
         candidateId={candidateId}
         candidateName={candResult.data.full_name}
         competencies={competencies}

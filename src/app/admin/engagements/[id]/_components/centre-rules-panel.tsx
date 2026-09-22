@@ -25,6 +25,7 @@ import {
   recordStaffingOverrideAction,
   setParticipantContactAction,
   setOtherMethodsRuleAction,
+  setExternalEvidenceRuleAction,
 } from "../actions";
 
 type Row = Record<string, unknown>;
@@ -41,6 +42,8 @@ export function CentreRulesPanel({
   appealsNote = "",
   otherMethodsRule = "",
   otherMethodsNote = "",
+  externalEvidenceRule = "",
+  externalEvidenceFramework = "",
 }: {
   engagementId: string;
   candidates: Row[];
@@ -53,6 +56,8 @@ export function CentreRulesPanel({
   appealsNote?: string;
   otherMethodsRule?: string;
   otherMethodsNote?: string;
+  externalEvidenceRule?: string;
+  externalEvidenceFramework?: string;
 }) {
   const router = useRouter();
   const [conflictAssessor, setConflictAssessor] = useState("");
@@ -66,7 +71,30 @@ export function CentreRulesPanel({
   const [appeals, setAppeals] = useState(appealsNote);
   // What a test or questionnaire result may do to a competency rating (BPS 4.32).
   const [methodsRule, setMethodsRule] = useState(otherMethodsRule);
+  const [extRule, setExtRule] = useState(externalEvidenceRule);
+  const [extFramework, setExtFramework] = useState(externalEvidenceFramework);
   const [methodsNote, setMethodsNote] = useState(otherMethodsNote);
+
+  const saveExternal = async (rule: "not_permitted" | "permitted") => {
+    setBusy(true);
+    const res = await setExternalEvidenceRuleAction({
+      engagementId,
+      rule,
+      framework: rule === "permitted" ? extFramework : undefined,
+    });
+    setBusy(false);
+    if ("error" in res && res.error) {
+      toast.error(typeof res.error === "string" ? res.error : "That did not save.", { duration: 9000 });
+      return;
+    }
+    setExtRule(rule);
+    toast.success(
+      rule === "permitted"
+        ? "Recorded. Assessors will see the framework at the wash-up."
+        : "Recorded. Ratings come from centre evidence alone."
+    );
+    router.refresh();
+  };
 
   const saveMethods = async (rule: string) => {
     setMethodsRule(rule);
@@ -323,6 +351,66 @@ export function CentreRulesPanel({
               <p className="text-xs text-amber-800">
                 Not decided for this centre. Until it is, assessors see other results with no guidance on what to do
                 with them.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Evidence from outside the centre entirely - a previous appraisal, a
+            manager's view, an earlier centre. 7.14 requires clear guidance on
+            whether it may count AT ALL; silence means assessors decide case by
+            case, differently for different participants. */}
+        <div className="border-t pt-3">
+          <p className="font-medium">Evidence from outside the centre</p>
+          <p className="text-xs text-muted-foreground">
+            A previous appraisal, a manager&apos;s opinion, an earlier assessment. Say whether any of it may count
+            towards a rating here.
+          </p>
+          <div className="mt-2 space-y-2">
+            {[
+              {
+                value: "not_permitted" as const,
+                label: "It may not",
+                hint: "Ratings come from what was observed at this centre. The safer answer, and a complete one.",
+              },
+              {
+                value: "permitted" as const,
+                label: "It may, under an agreed framework",
+                hint: "Only if it exists for every participant, maps onto the criteria, and was collected with care.",
+              },
+            ].map((opt) => (
+              <label key={opt.value} className="flex items-start gap-2">
+                <input
+                  type="radio"
+                  className="mt-1"
+                  name="external-evidence-rule"
+                  checked={extRule === opt.value}
+                  onChange={() => (opt.value === "permitted" ? setExtRule("permitted") : saveExternal("not_permitted"))}
+                  disabled={busy}
+                />
+                <span>
+                  {opt.label}
+                  <span className="block text-xs text-muted-foreground">{opt.hint}</span>
+                </span>
+              </label>
+            ))}
+            {extRule === "permitted" && (
+              <div className="space-y-2">
+                <Textarea
+                  rows={3}
+                  value={extFramework}
+                  onChange={(e) => setExtFramework(e.target.value)}
+                  placeholder="Which evidence, how it maps onto the assessment criteria, and what it may do to a rating. For example: the last two performance reviews, mapped to Outcome Ownership only, may support but never raise a rating."
+                />
+                <Button size="sm" variant="outline" onClick={() => saveExternal("permitted")} disabled={busy}>
+                  Save the framework
+                </Button>
+              </div>
+            )}
+            {!extRule && (
+              <p className="text-xs text-amber-800">
+                Not decided for this centre. Until it is, the wash-up will not let outside evidence count towards a
+                rating.
               </p>
             )}
           </div>

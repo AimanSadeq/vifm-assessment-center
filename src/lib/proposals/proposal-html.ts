@@ -882,7 +882,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   ${secBody("Psychometric foundations", `<p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
   foundations rather than ad-hoc question sets:</p>
   <ul>
-    <li><b>A common competency spine</b> - behavioural measurement maps to the VIFM 41-competency framework (4 domains, 9 clusters), so results from different instruments describe people in one shared language.</li>
+    <li><b>A common competency spine</b> - behavioural measurement maps to the VIFM behavioural framework, four domains (Thinking, Results, People and Self) with a defined competency set under each, so results from different instruments describe people in one shared language.</li>
     <li><b>Recognised scales</b> - behavioural ratings use defined anchor scales; English placement is aligned to the CEFR (A1-C2); cognitive and technical results are reported as banded levels with their basis stated.</li>
     <li><b>Curated item banks</b> - items are drafted, SME-reviewed and versioned; option order is re-randomised per administration to protect item integrity.</li>
     <li><b>Response-quality safeguards</b> - where the construct warrants it, instruments carry distortion and consistency checks (e.g. social-desirability signals on self-report measures) that are surfaced to the reviewing consultant rather than silently auto-scored.</li>

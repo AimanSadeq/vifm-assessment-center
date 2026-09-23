@@ -27,7 +27,7 @@ export const PROPOSAL_BLURB: Record<ProposalServiceKey, string> = {
   logica:
     "Indicative cognitive reasoning aptitude across numerical, verbal, inductive and deductive reasoning. The full keyed test is held server-side and graded there, with option order re-randomised per administration to protect result validity.",
   persona:
-    "Behavioural competency self-assessment mapped to the VIFM 41-competency framework, with optional decision-rights (DARE) and emotional-intelligence lenses on the same sitting. Produces a development-grade profile and, where a target role is set, a role-fit view.",
+    "Behavioural competency self-assessment mapped to the VIFM behavioural framework across its four domains (Thinking, Results, People and Self), with optional decision-rights (DARE) and emotional-intelligence lenses on the same sitting. Produces a development-grade profile and, where a target role is set, a role-fit view.",
   techno:
     "Function-specific technical proficiency drawn from an SME-reviewed item bank. Delivers an indicative 1-5 band per domain, or a certified, publicly verifiable credential when the score clears the documented cut-score. Secure delivery with a server-held answer key.",
   prehire:
@@ -55,7 +55,7 @@ export const PROPOSAL_DELIVERABLES: Record<ProposalServiceKey, string[]> = {
     "Administration integrity signals surfaced to the programme owner",
   ],
   persona: [
-    "Individual behavioural profile across the VIFM 41-competency framework",
+    "Individual behavioural profile across the VIFM behavioural framework (Thinking, Results, People and Self)",
     "Optional decision-rights (DARE) and emotional-intelligence report lenses",
     "Role-fit view where a target role profile is set",
     "Cohort intelligence sheet for the sponsoring organization",

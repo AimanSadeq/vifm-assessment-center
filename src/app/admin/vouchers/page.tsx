@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ArrowRight, ListChecks } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
@@ -183,7 +185,17 @@ export default async function VouchersHubPage({
 
   return (
     <div className="space-y-6">
-      <BackLink href="/admin" label="Back" history />
+      <div className="flex items-center justify-between gap-4">
+        <BackLink href="/admin" label="Back" history />
+        <Link
+          href="/admin/vouchers/register"
+          className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium text-[#010131] hover:border-[#5391D5] hover:text-[#5391D5]"
+        >
+          <ListChecks className="h-4 w-4" />
+          Voucher register
+          <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
       <VoucherHub services={services} initialTab={initialTab} />
     </div>
   );

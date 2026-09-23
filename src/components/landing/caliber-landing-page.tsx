@@ -30,7 +30,7 @@ const PRODUCTS: Product[] = [
   { icon: Sparkles, category: 'AR COMPASS® diagnostic', name: 'AI Readiness', desc: 'An eight-pillar organisational AI-readiness diagnostic, calibrated for the GCC, with bilingual board-ready reports and a complimentary personal snapshot.', families: ['selection', 'development'], diagram: 'compass' },
   { icon: Wrench, category: 'Technical proficiency', name: 'Techno®', desc: 'Performance-based, function-specific assessment: candidates do real work in live sandboxes, graded against master answers and banded Basic / Intermediate / Advanced.', families: ['selection', 'development'], diagram: 'bands' },
   { icon: Brain, category: 'Reasoning aptitude', name: 'Logica®', desc: 'Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.', families: ['selection', 'development'], diagram: 'sequence' },
-  { icon: UserCircle, category: 'Behavioural self-assessment', name: 'Persona®', desc: 'Self-ratings across the 41 competencies - the same framework as the 360, and the "self" view that feeds Succession Readiness.', families: ['selection', 'development'], diagram: 'radar' },
+  { icon: UserCircle, category: 'Behavioural self-assessment', name: 'Persona®', desc: 'Self-ratings across the VIFM behavioural framework - the same framework as the 360, and the "self" view that feeds Succession Readiness.', families: ['selection', 'development'], diagram: 'radar' },
   { icon: Languages, category: 'AI English placement', name: 'Fluent®', desc: 'A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level in minutes.', families: ['selection', 'development'], diagram: 'cefr' },
   { icon: UserSearch, category: 'Pre-employment screening', name: 'Pre-Hire®', desc: 'A configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail.', families: ['selection'], diagram: 'funnel' },
   { icon: RefreshCw, category: 'Leadership feedback', name: 'Reflect 360®', desc: '360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide culture view.', families: ['development'], diagram: 'threesixty' },
@@ -272,7 +272,7 @@ export function CaliberLandingPage() {
         <section id="suite" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 sm:px-6">
           <p className="text-sm font-semibold uppercase tracking-wider text-[#c4b5fd]">The suite</p>
           <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Ten services, one talent platform</h2>
-          <p className="mt-4 max-w-2xl text-lg text-white/65">Each diagnosis flows into development - assessments and learning that share the same 41-competency framework.</p>
+          <p className="mt-4 max-w-2xl text-lg text-white/65">Each diagnosis flows into development - assessments and learning that share one behavioural framework across four domains: Thinking, Results, People and Self.</p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PRODUCTS.map((p, i) => (
               <div key={i} className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-all hover:-translate-y-0.5 hover:border-[#a78bfa]/40 hover:bg-white/[0.05]">

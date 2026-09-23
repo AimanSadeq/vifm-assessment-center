@@ -14,7 +14,7 @@ export async function createPrehireVoucherBatchAction(input: {
   contactTitle?: string | null;
   contactEmail?: string | null;
 }): Promise<{ ok: true; created: number; codes: string[] } | { ok: false; error: string }> {
-  await requireRole(["admin"]);
+  const g = await requireRole(["admin"]);
   try {
     if (!input.requisitionId) return { ok: false, error: "Pick a requisition first." };
     const rows = await generatePrehireVoucherBatch({
@@ -27,6 +27,9 @@ export async function createPrehireVoucherBatchAction(input: {
       contactName: input.contactName ?? null,
       contactTitle: input.contactTitle ?? null,
       contactEmail: input.contactEmail ?? null,
+      // Every Pre-Hire code issued before this line showed "Not recorded" in the
+      // voucher register: the role was checked and the caller thrown away.
+      createdBy: g.isDev ? null : g.uid,
     });
     return { ok: true, created: rows.length, codes: rows.map((r) => r.code) };
   } catch (e) {

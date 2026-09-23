@@ -87,6 +87,9 @@ export async function clientIssueRoleVouchersAction(input: {
   return createRoleReadinessVouchers({
     roleConfigId: input.roleConfigId,
     organizationId: orgId,
+    // A code issued from the client portal is attributed to the client manager
+    // who issued it, so the register can tell VIFM-issued from client-issued.
+    createdBy: access.uid,
     mode: input.mode,
     emails: input.emails,
     delegates: input.delegates,

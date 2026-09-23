@@ -269,10 +269,14 @@ export async function issueRoleVouchersAction(input: {
   contactTitle?: string;
   contactEmail?: string;
 }): Promise<{ ok: true; vouchers: IssuedVoucher[] } | { error: string }> {
-  if (!(await requireAdmin())) return { error: "Not authorized." };
+  const g = await requireAdmin();
+  if (!g) return { error: "Not authorized." };
   return createRoleReadinessVouchers({
     roleConfigId: input.roleId,
     organizationId: input.organizationId ?? null,
+    // The voucher register showed every Role Readiness code as "Not recorded":
+    // the caller was checked for role and then dropped.
+    createdBy: g.isDev ? null : g.uid,
     mode: input.mode,
     emails: input.emails,
     delegates: input.delegates,

@@ -116,6 +116,11 @@ export async function createVoucherBatchAction(formData: FormData) {
   if (parsed.data.engagementStage !== "individual" && orgPillars.length === 0) {
     return { ok: false as const, error: "Select at least one pillar for an org assessment voucher." };
   }
+  // Cohort flags (00223). Read as literal "1" rather than through z.coerce.boolean,
+  // which would turn the string "false" into true. Org stages only.
+  const isOrgStage = parsed.data.engagementStage !== "individual";
+  const poolRespondents = isOrgStage && formData.get("poolRespondents") === "1";
+  const includeIndividualLayer = isOrgStage && formData.get("includeIndividualLayer") === "1";
 
   const caller = await requireRole(["admin"]).catch(() => null);
 
@@ -151,6 +156,8 @@ export async function createVoucherBatchAction(formData: FormData) {
     engagementStage: parsed.data.engagementStage,
     pillarsInScope: parsed.data.engagementStage !== "individual" ? orgPillars : null,
     questionsPerPillar: parsed.data.engagementStage !== "individual" ? (parsed.data.questionsPerPillar ?? null) : null,
+    poolRespondents,
+    includeIndividualLayer,
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
     contactName: parsed.data.contactName?.trim() || null,

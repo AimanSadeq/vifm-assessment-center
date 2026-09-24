@@ -63,6 +63,13 @@ export type CreateBatchInput = {
    *  (00201). Captured at issue so departments sold months apart can be
    *  grouped into a division rollup later without guesswork. */
   parentUnitLabel?: string | null;
+  /** Cohort code (migration 00223): every redemption of THIS code joins ONE
+   *  assessment instead of provisioning its own. The first redeemer creates it,
+   *  the rest become respondents on it. Org stages only. */
+  poolRespondents?: boolean;
+  /** Org vouchers: also serve the four-factor personal layer, so each respondent
+   *  gets a personal report and the org report gains the workforce rollup. */
+  includeIndividualLayer?: boolean;
   contactName?: string | null;
   contactTitle?: string | null;
   contactEmail?: string | null;
@@ -109,6 +116,10 @@ export async function createVoucherBatch(
           questions_per_pillar: input.questionsPerPillar ?? null,
           unit_label: input.unitLabel?.trim() || null,
           parent_unit_label: input.parentUnitLabel?.trim() || null,
+          // Cohort flags (00223): only written when set, so a plain org voucher
+          // still inserts on a DB where 00223 hasn't been applied.
+          ...(input.poolRespondents ? { pool_respondents: true } : {}),
+          ...(input.includeIndividualLayer ? { include_individual_layer: true } : {}),
         }
       : {}),
   }));
@@ -278,6 +289,33 @@ export async function redeemVoucher(
     }
   }
 
+  // Cohort flags (migration 00223), read separately so a DB without 00223 keeps
+  // its org-design read above intact: this select failing must not demote an
+  // org voucher to a personal one.
+  const pool = { enabled: false, individualLayer: false, assessmentId: null as string | null, createdBy: null as string | null, label: null as string | null };
+  if (orgStage) {
+    try {
+      const { data: crow } = await sb
+        .from("ara_vouchers")
+        .select("pool_respondents, include_individual_layer, pooled_assessment_id, created_by, label")
+        .eq("id", voucher.id)
+        .maybeSingle<{
+          pool_respondents: boolean | null;
+          include_individual_layer: boolean | null;
+          pooled_assessment_id: string | null;
+          created_by: string | null;
+          label: string | null;
+        }>();
+      pool.enabled = crow?.pool_respondents === true;
+      pool.individualLayer = crow?.include_individual_layer === true;
+      pool.assessmentId = crow?.pooled_assessment_id ?? null;
+      pool.createdBy = crow?.created_by ?? null;
+      pool.label = crow?.label?.trim() || null;
+    } catch {
+      /* pre-00223: per-person org voucher, no personal layer */
+    }
+  }
+
   // 2. Org: the voucher's tagged client org, else the shared practice org.
   let orgId: string | null = voucher.organization_id ?? null;
   if (!orgId) {
@@ -307,48 +345,104 @@ export async function redeemVoucher(
     .maybeSingle<{ id: string }>();
   if (!activeBank) return fail("The assessment isn't available right now. Please contact VIFM.");
 
-  // 4. Provision the run (sandbox/practice). Personal vouchers provision the
-  // individual 4-factor ARC (unchanged); org-design vouchers (migration 00199)
-  // provision an org pillar assessment carrying the voucher's designed scope -
-  // pillars_in_scope + questions_per_pillar (custom-scope levers 00029/00198).
-  const { data: assessment, error: assessErr } = await sb
-    .from("ara_assessments")
-    .insert({
-      organization_id: orgId,
-      consultant_id: null,
-      region,
-      sector: "general",
-      default_language: language,
-      is_sandbox: voucher.is_practice !== false,
-      engagement_stage: orgStage ?? "individual",
-      assessment_tier: tier,
-      include_individual_layer: false,
-      ...(orgStage
-        ? {
-            ...(orgPillars ? { pillars_in_scope: orgPillars } : {}),
-            ...(orgQpp != null ? { questions_per_pillar: orgQpp } : {}),
-          }
-        : itemsPerFactor != null
-          ? { items_per_factor: itemsPerFactor }
-          : {}),
-      // A voucher that names its unit wins: a division rollup has to list
-      // "Compensation", not "Sara Ali · Acme Bank". The redeemer/company
-      // fallback stays for personal and unnamed practice vouchers.
-      scope_label: orgUnitLabel ?? `${input.redeemerName.trim()} · ${input.companyName.trim()}`,
-      ...(orgParentUnitLabel ? { parent_unit_label: orgParentUnitLabel } : {}),
-      question_bank_version_id: activeBank.id,
-      status: "active",
-      phase: "phase1",
-    })
-    .select("id")
-    .single<{ id: string }>();
-  if (assessErr || !assessment) return fail("Could not start your assessment. Please try again.");
+  // 4. Provision the run. Personal vouchers provision the individual 4-factor
+  // ARC (unchanged); org-design vouchers (migration 00199) provision an org
+  // pillar assessment carrying the voucher's designed scope. A COHORT voucher
+  // (00223) provisions that assessment once: the first redeemer creates it and
+  // the voucher records which; everyone after joins it as a respondent, so a
+  // fifteen-seat code yields one fifteen-person assessment rather than fifteen
+  // one-person ones that nothing pools.
+  const pooled = !!orgStage && pool.enabled;
+  let assessmentId: string | null = null;
+  let createdHere = false;
+
+  if (pooled && pool.assessmentId) {
+    // Join the assessment this code already provisioned, if it still exists
+    // (ON DELETE SET NULL on the pointer means a removed one falls through to
+    // a fresh create rather than a dead end).
+    const { data: existing } = await sb
+      .from("ara_assessments")
+      .select("id")
+      .eq("id", pool.assessmentId)
+      .maybeSingle<{ id: string }>();
+    if (existing?.id) assessmentId = existing.id;
+  }
+
+  if (!assessmentId) {
+    const { data: assessment, error: assessErr } = await sb
+      .from("ara_assessments")
+      .insert({
+        organization_id: orgId,
+        // A cohort assessment belongs to whoever issued the code, so it shows on
+        // their dashboard and they can freeze it and send the report. Per-person
+        // voucher assessments keep no owner, as before.
+        consultant_id: pooled ? pool.createdBy : null,
+        region,
+        sector: "general",
+        default_language: language,
+        is_sandbox: voucher.is_practice !== false,
+        engagement_stage: orgStage ?? "individual",
+        assessment_tier: tier,
+        // Departmental-plus-personal when the org voucher asks for it: every
+        // respondent also answers the four personal factors.
+        include_individual_layer: !!orgStage && pool.individualLayer,
+        ...(orgStage
+          ? {
+              ...(orgPillars ? { pillars_in_scope: orgPillars } : {}),
+              ...(orgQpp != null ? { questions_per_pillar: orgQpp } : {}),
+            }
+          : itemsPerFactor != null
+            ? { items_per_factor: itemsPerFactor }
+            : {}),
+        // A voucher that names its unit wins: a division rollup has to list
+        // "Compensation", not "Sara Ali · Acme Bank". A cohort assessment is
+        // named for the cohort (the code's label or the company), never for
+        // whoever happened to redeem first. The redeemer/company fallback stays
+        // for personal and unnamed per-person vouchers.
+        scope_label:
+          orgUnitLabel ??
+          (pooled ? pool.label ?? input.companyName.trim() : `${input.redeemerName.trim()} · ${input.companyName.trim()}`),
+        ...(orgParentUnitLabel ? { parent_unit_label: orgParentUnitLabel } : {}),
+        question_bank_version_id: activeBank.id,
+        status: "active",
+        phase: "phase1",
+      })
+      .select("id")
+      .single<{ id: string }>();
+    if (assessErr || !assessment) return fail("Could not start your assessment. Please try again.");
+    assessmentId = assessment.id;
+    createdHere = true;
+
+    if (pooled) {
+      // Claim the pointer atomically. Two first redemptions can race here; only
+      // the UPDATE that finds the pointer still NULL wins. The loser discards
+      // the assessment it just made and joins the winner's.
+      const { data: won } = await sb
+        .from("ara_vouchers")
+        .update({ pooled_assessment_id: assessmentId })
+        .eq("id", voucher.id)
+        .is("pooled_assessment_id", null)
+        .select("id");
+      if (!won || won.length === 0) {
+        const { data: v2 } = await sb
+          .from("ara_vouchers")
+          .select("pooled_assessment_id")
+          .eq("id", voucher.id)
+          .maybeSingle<{ pooled_assessment_id: string | null }>();
+        if (v2?.pooled_assessment_id && v2.pooled_assessment_id !== assessmentId) {
+          await sb.from("ara_assessments").delete().eq("id", assessmentId);
+          assessmentId = v2.pooled_assessment_id;
+          createdHere = false;
+        }
+      }
+    }
+  }
 
   // 5. Respondent (carries the access token).
   const { data: respondent, error: respErr } = await sb
     .from("ara_respondents")
     .insert({
-      assessment_id: assessment.id,
+      assessment_id: assessmentId,
       name: input.redeemerName.trim(),
       email: input.redeemerEmail.trim(),
       language_preference: language,
@@ -356,7 +450,9 @@ export async function redeemVoucher(
     .select("id, access_token")
     .single<{ id: string; access_token: string }>();
   if (respErr || !respondent) {
-    await sb.from("ara_assessments").delete().eq("id", assessment.id);
+    // Only unwind an assessment this redemption created. A shared cohort
+    // assessment with other people's answers on it is never deleted here.
+    if (createdHere) await sb.from("ara_assessments").delete().eq("id", assessmentId);
     return fail("Could not start your assessment. Please try again.");
   }
 
@@ -366,7 +462,7 @@ export async function redeemVoucher(
     redeemer_name: input.redeemerName.trim(),
     redeemer_email: input.redeemerEmail.trim(),
     company_name: input.companyName.trim(),
-    ara_assessment_id: assessment.id,
+    ara_assessment_id: assessmentId,
     ara_respondent_id: respondent.id,
     ip: input.ip ?? null,
     user_agent: input.userAgent ?? null,

@@ -70,6 +70,11 @@ export function VouchersClient({
   const [assessmentKind, setAssessmentKind] = useState<"personal" | "department" | "division" | "enterprise">("personal");
   const [orgPillars, setOrgPillars] = useState<Set<string>>(new Set(ARA_PILLARS.map((pl) => pl.id)));
   const [orgQpp, setOrgQpp] = useState("");
+  // Cohort code (migration 00223): one code, one assessment, everyone who
+  // redeems joins it - the shape a "assess my department" sale actually has.
+  // Off by default so existing per-person org vouchers behave as before.
+  const [poolRespondents, setPoolRespondents] = useState(false);
+  const [includeIndividualLayer, setIncludeIndividualLayer] = useState(false);
   // Picking a stage presets the STANDARD design (the stage's default pillars +
   // the full question set - 49 / 71 / 99 questions) which the admin may then
   // customize. Enterprise always covers all 8 pillars (the runtime ignores
@@ -141,6 +146,8 @@ export function VouchersClient({
       fd.set("engagementStage", assessmentKind);
       for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
       if (orgQpp) fd.set("questionsPerPillar", orgQpp);
+      if (poolRespondents) fd.set("poolRespondents", "1");
+      if (includeIndividualLayer) fd.set("includeIndividualLayer", "1");
     }
     if (selectedOrg) fd.set("organizationId", selectedOrg);
     if (expiresAt) fd.set("expiresAt", expiresAt);
@@ -241,6 +248,8 @@ export function VouchersClient({
       fd.set("engagementStage", assessmentKind);
       for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
       if (orgQpp) fd.set("questionsPerPillar", orgQpp);
+      if (poolRespondents) fd.set("poolRespondents", "1");
+      if (includeIndividualLayer) fd.set("includeIndividualLayer", "1");
     }
     if (expiresAt) fd.set("expiresAt", expiresAt);
     fd.set("contactName", contactName);
@@ -497,6 +506,44 @@ export function VouchersClient({
                   );
                 })()}
               </div>
+
+              {assessmentKind !== "personal" && (
+                <div className="space-y-2 rounded-lg border border-[#5391D5]/40 bg-[#5391D5]/5 p-3">
+                  <Label className="text-xs">How the seats on this code relate to each other</Label>
+                  <label className="flex items-start gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={poolRespondents}
+                      onChange={(e) => setPoolRespondents(e.target.checked)}
+                      className="mt-0.5 h-3.5 w-3.5 accent-[#5391D5]"
+                    />
+                    <span>
+                      <span className="font-medium">One cohort, one assessment.</span>{" "}
+                      Everyone who redeems this code joins the same {assessmentKind} assessment, so the organisational report covers
+                      all of them. Leave off and each redemption gets its own single-person assessment.
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-2 text-xs">
+                    <input
+                      type="checkbox"
+                      checked={includeIndividualLayer}
+                      onChange={(e) => setIncludeIndividualLayer(e.target.checked)}
+                      className="mt-0.5 h-3.5 w-3.5 accent-[#5391D5]"
+                    />
+                    <span>
+                      <span className="font-medium">Add the personal layer.</span>{" "}
+                      Each respondent also answers the four personal AI-readiness factors and gets their own report; the
+                      organisational report gains the workforce readiness rollup.
+                    </span>
+                  </label>
+                  {poolRespondents && includeIndividualLayer && (
+                    <p className="text-[11px] text-muted-foreground">
+                      This is the departmental-plus-personal design: individual standing for each person and one report over the
+                      cohort. Set the number of seats to the cohort size.
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end">
                 <Button onClick={() => setStep(2)} disabled={!selectedOrg && !engagementLabel.trim()} className="gap-1.5">

@@ -29,6 +29,13 @@ type VoucherRow = {
   created_at: string;
 };
 type OrgOption = { id: string; name: string; region: string };
+export type RollupOption = {
+  id: string;
+  organization_id: string | null;
+  scope_label: string | null;
+  engagement_stage: "division" | "enterprise";
+  status: string;
+};
 type CompanyRollup = {
   company: string;
   delegates: number;
@@ -49,6 +56,7 @@ export function VouchersClient({
   orgs,
   companies,
   pillarAvailability,
+  rollups = [],
 }: {
   vouchers: VoucherRow[];
   orgs: OrgOption[];
@@ -56,6 +64,8 @@ export function VouchersClient({
    *  (region isolation applied; voucher runs are sector='general'). */
   pillarAvailability?: Record<"uae" | "saudi", Record<string, number>>;
   companies: CompanyRollup[];
+  /** Division / enterprise assessments a cohort code may be created under (00224). */
+  rollups?: RollupOption[];
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +85,11 @@ export function VouchersClient({
   // Off by default so existing per-person org vouchers behave as before.
   const [poolRespondents, setPoolRespondents] = useState(false);
   const [includeIndividualLayer, setIncludeIndividualLayer] = useState(false);
+  // Rollup the cohort assessment is created under (00224): "" = none, an
+  // assessment id = existing rollup, "new" = create one at issue time.
+  const [rollupChoice, setRollupChoice] = useState("");
+  const [newRollupName, setNewRollupName] = useState("");
+  const [newRollupStage, setNewRollupStage] = useState<"division" | "enterprise">("division");
   // Picking a stage presets the STANDARD design (the stage's default pillars +
   // the full question set - 49 / 71 / 99 questions) which the admin may then
   // customize. Enterprise always covers all 8 pillars (the runtime ignores
@@ -148,6 +163,12 @@ export function VouchersClient({
       if (orgQpp) fd.set("questionsPerPillar", orgQpp);
       if (poolRespondents) fd.set("poolRespondents", "1");
       if (includeIndividualLayer) fd.set("includeIndividualLayer", "1");
+      if (poolRespondents && rollupChoice === "new" && newRollupName.trim()) {
+        fd.set("newRollupName", newRollupName.trim());
+        fd.set("newRollupStage", newRollupStage);
+      } else if (poolRespondents && rollupChoice && rollupChoice !== "new") {
+        fd.set("parentAssessmentId", rollupChoice);
+      }
     }
     if (selectedOrg) fd.set("organizationId", selectedOrg);
     if (expiresAt) fd.set("expiresAt", expiresAt);
@@ -250,6 +271,12 @@ export function VouchersClient({
       if (orgQpp) fd.set("questionsPerPillar", orgQpp);
       if (poolRespondents) fd.set("poolRespondents", "1");
       if (includeIndividualLayer) fd.set("includeIndividualLayer", "1");
+      if (poolRespondents && rollupChoice === "new" && newRollupName.trim()) {
+        fd.set("newRollupName", newRollupName.trim());
+        fd.set("newRollupStage", newRollupStage);
+      } else if (poolRespondents && rollupChoice && rollupChoice !== "new") {
+        fd.set("parentAssessmentId", rollupChoice);
+      }
     }
     if (expiresAt) fd.set("expiresAt", expiresAt);
     fd.set("contactName", contactName);
@@ -542,6 +569,48 @@ export function VouchersClient({
                       cohort. Set the number of seats to the cohort size.
                     </p>
                   )}
+                  {poolRespondents && assessmentKind !== "enterprise" && (() => {
+                    const orgRollups = rollups.filter(
+                      (r) => r.organization_id === selectedOrg && (assessmentKind === "department" || r.engagement_stage === "enterprise"),
+                    );
+                    return (
+                      <div className="space-y-1.5 border-t border-[#5391D5]/30 pt-2">
+                        <Label className="text-xs">Roll this cohort up under</Label>
+                        {!selectedOrg ? (
+                          <p className="text-[11px] text-amber-700">Tag a client above first - a rollup lives inside a client organisation.</p>
+                        ) : (
+                          <>
+                            <select className={selectClass} value={rollupChoice} onChange={(e) => setRollupChoice(e.target.value)}>
+                              <option value="">Nothing - a standalone {assessmentKind} report</option>
+                              {orgRollups.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.scope_label?.trim() || `${r.engagement_stage} rollup`} ({r.engagement_stage})
+                                </option>
+                              ))}
+                              <option value="new">Create a new rollup for this client...</option>
+                            </select>
+                            {rollupChoice === "new" && (
+                              <div className="grid gap-1.5 sm:grid-cols-[1fr_170px]">
+                                <Input
+                                  value={newRollupName}
+                                  onChange={(e) => setNewRollupName(e.target.value)}
+                                  placeholder={assessmentKind === "department" ? "e.g. Corporate Services (division)" : "e.g. Whole organisation"}
+                                />
+                                <select className={selectClass} value={newRollupStage} onChange={(e) => setNewRollupStage(e.target.value as "division" | "enterprise")}>
+                                  {assessmentKind === "department" && <option value="division">Division</option>}
+                                  <option value="enterprise">Enterprise</option>
+                                </select>
+                              </div>
+                            )}
+                            <p className="text-[11px] text-muted-foreground">
+                              Issue one code per {assessmentKind} under the same rollup and the consolidated report assembles itself
+                              as people redeem. Nothing to link afterwards.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 

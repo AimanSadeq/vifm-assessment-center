@@ -102,6 +102,24 @@ export default async function VouchersAdminPage() {
     /* best-effort - the panel falls back to countless labels */
   }
 
+  // Rollup candidates for cohort codes (00224): division / enterprise
+  // assessments a pooled department code may be created under. Keyed by org on
+  // the client so the picker only offers the selected client's rollups.
+  // Tolerant: without 00200 the select still works (parent link is 00224's).
+  let rollups: RollupOption[] = [];
+  try {
+    const { data } = await sb
+      .from("ara_assessments")
+      .select("id, organization_id, scope_label, engagement_stage, status")
+      .in("engagement_stage", ["division", "enterprise"])
+      .neq("status", "archived")
+      .order("created_at", { ascending: false })
+      .limit(500);
+    rollups = ((data ?? []) as RollupOption[]).filter((r) => r.organization_id);
+  } catch {
+    /* best-effort - the picker simply offers "create new" only */
+  }
+
   return (
     <div className="mx-auto max-w-5xl px-6 py-8">
       <div className="mb-4">
@@ -115,7 +133,16 @@ export default async function VouchersAdminPage() {
         orgs={(orgs ?? []) as OrgOption[]}
         companies={companies}
         pillarAvailability={pillarAvailability}
+        rollups={rollups}
       />
     </div>
   );
 }
+
+type RollupOption = {
+  id: string;
+  organization_id: string | null;
+  scope_label: string | null;
+  engagement_stage: "division" | "enterprise";
+  status: string;
+};

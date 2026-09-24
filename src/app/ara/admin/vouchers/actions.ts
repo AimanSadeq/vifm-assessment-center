@@ -124,6 +124,84 @@ export async function createVoucherBatchAction(formData: FormData) {
 
   const caller = await requireRole(["admin"]).catch(() => null);
 
+  // Rollup the cohort assessment is created under (00224). Pooled codes only,
+  // tagged to a client org only, and the rollup must sit ABOVE the code's stage
+  // in the same org: a department rolls into a division or enterprise, a
+  // division into an enterprise. Either an existing rollup id, or a name +
+  // stage to create one now so five department codes can share it.
+  let parentAssessmentId: string | null = null;
+  const stageRank = { department: 1, division: 2, enterprise: 3 } as const;
+  const existingParent = String(formData.get("parentAssessmentId") ?? "").trim();
+  const newRollupName = String(formData.get("newRollupName") ?? "").trim();
+  const newRollupStageRaw = String(formData.get("newRollupStage") ?? "").trim();
+  if (poolRespondents && (existingParent || newRollupName)) {
+    if (!parsed.data.organizationId) {
+      return { ok: false as const, error: "Tag a client organisation before rolling a cohort up - a rollup lives inside a client." };
+    }
+    // The code's label becomes the unit's name in the consolidated report. Two
+    // unlabelled department codes under one rollup both fall back to the
+    // company name and become indistinguishable - the dry run showed exactly
+    // that - so a code under a rollup must say which unit it is.
+    if (!parsed.data.label?.trim()) {
+      return { ok: false as const, error: "Give this code a label naming the unit it assesses (e.g. Finance) - that is how it appears in the consolidated report." };
+    }
+    if (parsed.data.engagementStage === "enterprise") {
+      return { ok: false as const, error: "An enterprise assessment is the top of the tree; it cannot roll up into anything." };
+    }
+    const childRank = stageRank[parsed.data.engagementStage as keyof typeof stageRank];
+    const sb = createServiceClient();
+    if (existingParent) {
+      const { data: parent } = await sb
+        .from("ara_assessments")
+        .select("id, organization_id, engagement_stage")
+        .eq("id", existingParent)
+        .maybeSingle<{ id: string; organization_id: string | null; engagement_stage: string }>();
+      if (!parent) return { ok: false as const, error: "That rollup no longer exists." };
+      if (parent.organization_id !== parsed.data.organizationId) {
+        return { ok: false as const, error: "That rollup belongs to a different client organisation." };
+      }
+      const parentRank = stageRank[parent.engagement_stage as keyof typeof stageRank] ?? 0;
+      if (parentRank <= childRank) {
+        return { ok: false as const, error: `A ${parsed.data.engagementStage} code can only roll up into a division or enterprise above it.` };
+      }
+      parentAssessmentId = parent.id;
+    } else {
+      const newStage = newRollupStageRaw === "enterprise" ? "enterprise" : "division";
+      if (stageRank[newStage] <= childRank) {
+        return { ok: false as const, error: "A division code needs an enterprise rollup above it." };
+      }
+      const [{ data: org }, { data: bank }] = await Promise.all([
+        sb.from("ara_organizations").select("region, sector").eq("id", parsed.data.organizationId).maybeSingle<{ region: string; sector: string }>(),
+        sb.from("ara_question_bank_versions").select("id").eq("is_active", true).maybeSingle<{ id: string }>(),
+      ]);
+      if (!org || !bank) return { ok: false as const, error: "Could not create the rollup: client or question bank not found." };
+      // A rollup IS an assessment (00200): same org, its own report, owned by the
+      // issuer so it shows on their dashboard. It scores nothing itself; it pools
+      // the units created under it as the codes are redeemed.
+      const { data: created, error: createErr } = await sb
+        .from("ara_assessments")
+        .insert({
+          organization_id: parsed.data.organizationId,
+          consultant_id: caller?.uid ?? null,
+          region: org.region === "saudi" ? "saudi" : "uae",
+          sector: org.sector,
+          default_language: parsed.data.language,
+          is_sandbox: false,
+          engagement_stage: newStage,
+          assessment_tier: "deep_dive",
+          include_individual_layer: includeIndividualLayer,
+          scope_label: newRollupName,
+          question_bank_version_id: bank.id,
+          status: "active",
+          phase: "phase1",
+        })
+        .select("id")
+        .single<{ id: string }>();
+      if (createErr || !created) return { ok: false as const, error: `Could not create the rollup: ${createErr?.message ?? "unknown error"}` };
+      parentAssessmentId = created.id;
+    }
+  }
+
   // Region (and client_name) are inherited from the tagged client org when one
   // is selected - the client's own fields are authoritative. The form region is
   // only used when no client is tagged.
@@ -158,6 +236,7 @@ export async function createVoucherBatchAction(formData: FormData) {
     questionsPerPillar: parsed.data.engagementStage !== "individual" ? (parsed.data.questionsPerPillar ?? null) : null,
     poolRespondents,
     includeIndividualLayer,
+    parentAssessmentId,
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
     contactName: parsed.data.contactName?.trim() || null,

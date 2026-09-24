@@ -70,6 +70,9 @@ export type CreateBatchInput = {
   /** Org vouchers: also serve the four-factor personal layer, so each respondent
    *  gets a personal report and the org report gains the workforce rollup. */
   includeIndividualLayer?: boolean;
+  /** Rollup (division / enterprise assessment, same org) the pooled assessment
+   *  is created under (00224), so the consolidated report assembles itself. */
+  parentAssessmentId?: string | null;
   contactName?: string | null;
   contactTitle?: string | null;
   contactEmail?: string | null;
@@ -120,6 +123,7 @@ export async function createVoucherBatch(
           // still inserts on a DB where 00223 hasn't been applied.
           ...(input.poolRespondents ? { pool_respondents: true } : {}),
           ...(input.includeIndividualLayer ? { include_individual_layer: true } : {}),
+          ...(input.poolRespondents && input.parentAssessmentId ? { parent_assessment_id: input.parentAssessmentId } : {}),
         }
       : {}),
   }));
@@ -292,7 +296,14 @@ export async function redeemVoucher(
   // Cohort flags (migration 00223), read separately so a DB without 00223 keeps
   // its org-design read above intact: this select failing must not demote an
   // org voucher to a personal one.
-  const pool = { enabled: false, individualLayer: false, assessmentId: null as string | null, createdBy: null as string | null, label: null as string | null };
+  const pool = {
+    enabled: false,
+    individualLayer: false,
+    assessmentId: null as string | null,
+    createdBy: null as string | null,
+    label: null as string | null,
+    parentAssessmentId: null as string | null,
+  };
   if (orgStage) {
     try {
       const { data: crow } = await sb
@@ -313,6 +324,21 @@ export async function redeemVoucher(
       pool.label = crow?.label?.trim() || null;
     } catch {
       /* pre-00223: per-person org voucher, no personal layer */
+    }
+    // Rollup pointer (00224), read on its own so a DB with 00223 but not 00224
+    // still pools. Honoured only when the rollup is in the SAME org as the
+    // assessment about to be created; anything else degrades to unlinked.
+    if (pool.enabled) {
+      try {
+        const { data: prow } = await sb
+          .from("ara_vouchers")
+          .select("parent_assessment_id")
+          .eq("id", voucher.id)
+          .maybeSingle<{ parent_assessment_id: string | null }>();
+        pool.parentAssessmentId = prow?.parent_assessment_id ?? null;
+      } catch {
+        /* pre-00224: no rollup link */
+      }
     }
   }
 
@@ -368,10 +394,28 @@ export async function redeemVoucher(
     if (existing?.id) assessmentId = existing.id;
   }
 
+  // Resolve the rollup this cohort is born under (00224). Same org, and above
+  // this stage, or it is ignored - a wrong tree is worse than no tree.
+  let parentForInsert: string | null = null;
+  if (pooled && !assessmentId && pool.parentAssessmentId) {
+    const { data: parent } = await sb
+      .from("ara_assessments")
+      .select("id, organization_id, engagement_stage")
+      .eq("id", pool.parentAssessmentId)
+      .maybeSingle<{ id: string; organization_id: string | null; engagement_stage: string }>();
+    const rank: Record<string, number> = { department: 1, division: 2, enterprise: 3 };
+    if (parent && parent.organization_id === orgId && (rank[parent.engagement_stage] ?? 0) > (rank[orgStage ?? ""] ?? 0)) {
+      parentForInsert = parent.id;
+    } else {
+      console.error("[redeemVoucher] rollup pointer ignored: missing, cross-org, or not above this stage", { voucher: voucher.id, parent: pool.parentAssessmentId });
+    }
+  }
+
   if (!assessmentId) {
     const { data: assessment, error: assessErr } = await sb
       .from("ara_assessments")
       .insert({
+        ...(parentForInsert ? { parent_assessment_id: parentForInsert } : {}),
         organization_id: orgId,
         // A cohort assessment belongs to whoever issued the code, so it shows on
         // their dashboard and they can freeze it and send the report. Per-person

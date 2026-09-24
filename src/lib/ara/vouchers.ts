@@ -238,8 +238,31 @@ export async function redeemVoucher(
   };
 
   const tier = voucher.tier === "deep_dive" ? "deep_dive" : "snapshot";
-  const region = voucher.region === "saudi" ? "saudi" : "uae";
   const language = voucher.default_language === "ar" ? "ar" : "en";
+
+  // Region AND sector come from the client organisation when the voucher is
+  // tagged to one - the same source of truth the consultant wizard uses. They
+  // decide which regulatory frameworks the compliance section shows and which
+  // sector-specific questions are served. This path used to take region from
+  // the voucher and hard-code sector "general", which gave every Saudi
+  // government and banking client a general-sector assessment: right country,
+  // wrong frameworks. Untagged (practice) vouchers keep the voucher's region
+  // and a general sector, as before.
+  let region: "uae" | "saudi" = voucher.region === "saudi" ? "saudi" : "uae";
+  let sector = "general";
+  if (voucher.organization_id) {
+    try {
+      const { data: org } = await sb
+        .from("ara_organizations")
+        .select("region, sector")
+        .eq("id", voucher.organization_id)
+        .maybeSingle<{ region: string | null; sector: string | null }>();
+      if (org?.region === "saudi" || org?.region === "uae") region = org.region;
+      if (org?.sector) sector = org.sector;
+    } catch {
+      /* fall back to the voucher's region and a general sector */
+    }
+  }
 
   // Per-client length cap (migration 00143) + org design (migration 00199). The
   // claim RPC doesn't return them, so fetch by id; tolerant of the columns not
@@ -422,7 +445,7 @@ export async function redeemVoucher(
         // voucher assessments keep no owner, as before.
         consultant_id: pooled ? pool.createdBy : null,
         region,
-        sector: "general",
+        sector,
         default_language: language,
         is_sandbox: voucher.is_practice !== false,
         engagement_stage: orgStage ?? "individual",

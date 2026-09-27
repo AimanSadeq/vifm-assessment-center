@@ -457,6 +457,9 @@ export async function redeemVoucher(
           ? {
               ...(orgPillars ? { pillars_in_scope: orgPillars } : {}),
               ...(orgQpp != null ? { questions_per_pillar: orgQpp } : {}),
+              // The personal layer on an org code takes the same length choice
+              // as a Personal ARC (24 / 36 / 48 / full 60); no cap = full.
+              ...(pool.individualLayer && itemsPerFactor != null ? { items_per_factor: itemsPerFactor } : {}),
             }
           : itemsPerFactor != null
             ? { items_per_factor: itemsPerFactor }

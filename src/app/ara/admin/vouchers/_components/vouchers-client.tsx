@@ -156,7 +156,8 @@ export function VouchersClient({
     setEmailingDelegates(true);
     const fd = new FormData();
     fd.set("emails", delegateEmails);
-    fd.set("itemsPerFactor", itemsPerFactor);
+    // Length applies to the Personal ARC, or to the personal layer of an org code.
+    if (assessmentKind === "personal" || includeIndividualLayer) fd.set("itemsPerFactor", itemsPerFactor);
     if (assessmentKind !== "personal") {
       fd.set("engagementStage", assessmentKind);
       for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
@@ -264,7 +265,8 @@ export function VouchersClient({
     fd.set("label", engagementLabel);
     fd.set("region", batchRegion);
     fd.set("language", language);
-    fd.set("itemsPerFactor", itemsPerFactor);
+    // Length applies to the Personal ARC, or to the personal layer of an org code.
+    if (assessmentKind === "personal" || includeIndividualLayer) fd.set("itemsPerFactor", itemsPerFactor);
     if (assessmentKind !== "personal") {
       fd.set("engagementStage", assessmentKind);
       for (const pl of orgPillars) fd.append("pillars_in_scope", pl);
@@ -563,6 +565,18 @@ export function VouchersClient({
                       organisational report gains the workforce readiness rollup.
                     </span>
                   </label>
+                  {includeIndividualLayer && (
+                    <div className="w-72 space-y-1.5 pl-5">
+                      <Label className="text-xs">Personal layer length</Label>
+                      <select value={itemsPerFactor} onChange={(e) => setItemsPerFactor(e.target.value)} className={selectClass} aria-label="Personal layer length">
+                        <option value="">Full ARC - 60 questions</option>
+                        <option value="12">48 questions (12 per factor)</option>
+                        <option value="9">36 questions (9 per factor)</option>
+                        <option value="6">24 questions (6 per factor)</option>
+                      </select>
+                      <p className="text-[11px] text-muted-foreground">Added on top of the pillar questions above.</p>
+                    </div>
+                  )}
                   {poolRespondents && includeIndividualLayer && (
                     <p className="text-[11px] text-muted-foreground">
                       This is the departmental-plus-personal design: individual standing for each person and one report over the

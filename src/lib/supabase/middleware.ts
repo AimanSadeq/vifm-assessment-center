@@ -115,8 +115,12 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith("/update-password") &&
     !request.nextUrl.pathname.startsWith("/auth")
   ) {
+    // Remember where the person was going, so signing in lands them on the
+    // link they opened (a shared report URL) instead of the home launcher.
     const url = request.nextUrl.clone();
+    const target = request.nextUrl.pathname + request.nextUrl.search;
     url.pathname = "/login";
+    url.search = target && target !== "/" ? `?next=${encodeURIComponent(target)}` : "";
     return NextResponse.redirect(url);
   }
 

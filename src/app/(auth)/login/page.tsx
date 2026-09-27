@@ -33,6 +33,17 @@ const DEMO_ROLES = [
   { id: "Client", labelKey: "authPublic.login.roleClient", email: "client@viftraining.com", password: "admin123", redirect: "/client" },
 ] as const;
 
+// The page the person was trying to open before they were sent here (the
+// middleware passes it as ?next=). Same-origin paths only, so a crafted link
+// cannot bounce a fresh session to another site.
+function safeNext(): string | null {
+  if (typeof window === "undefined") return null;
+  const next = new URLSearchParams(window.location.search).get("next");
+  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
+  if (next.startsWith("/login")) return null;
+  return next;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -47,8 +58,18 @@ export default function LoginPage() {
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash.includes("type=recovery")) {
       window.location.replace(`/update-password${window.location.hash}`);
+      return;
     }
-  }, []);
+    // A magic link returns here already signed in: carry on to the page the
+    // person originally opened.
+    const next = safeNext();
+    if (!next) return;
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        if (data.user) router.replace(next);
+      });
+  }, [router]);
 
   const quickLogin = async (targetEmail: string, targetPassword: string, redirect: string) => {
     setLoading(true);
@@ -79,6 +100,12 @@ export default function LoginPage() {
 
     if (authError) {
       setError(authError.message);
+      return;
+    }
+
+    const next = safeNext();
+    if (next) {
+      router.push(next);
       return;
     }
 
@@ -113,7 +140,11 @@ export default function LoginPage() {
     const supabase = createClient();
     const { error: authError } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/login` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/login${
+          safeNext() ? `?next=${encodeURIComponent(safeNext() as string)}` : ""
+        }`,
+      },
     });
 
     setLoading(false);

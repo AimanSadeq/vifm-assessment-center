@@ -17,7 +17,7 @@ const LOGO = '/images/vifm-logo-light.png'
 
 const STATS = [
   { value: '10', label: 'Assessment services' },
-  { value: '41', label: 'Competencies measured' },
+  { value: '4', label: 'Competency domains' },
   { value: '100+', label: 'Training programmes' },
 ]
 

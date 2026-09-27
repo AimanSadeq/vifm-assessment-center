@@ -294,6 +294,45 @@ export async function updateDomainMetaAction(input: { domainKey: string; nameEn:
   return { ok: true };
 }
 
+/** The candidate profile reads the technical bridge from construct_competency_links
+ *  (00064) whenever that table has technical rows, and only falls back to
+ *  technical_domain_competencies (00054). This editor lists and edits the 00054
+ *  rows, so every change is mirrored onto the 00064 row too - otherwise edits here
+ *  were silently ignored by the profile. Best-effort: a missing 00064 table is
+ *  fine (the profile then reads 00054). */
+async function mirrorBridge(
+  sb: ReturnType<typeof createServiceClient>,
+  op: { kind: "upsert"; domainKey: string; competencyId: string; weight: number } | { kind: "delete"; domainKey: string; competencyId: string },
+): Promise<string | null> {
+  try {
+    if (op.kind === "upsert") {
+      const { error } = await sb.from("construct_competency_links").upsert(
+        {
+          source_kind: "technical",
+          source_key: op.domainKey,
+          competency_id: op.competencyId,
+          relation: "enables",
+          layer: "attainments",
+          weight: op.weight,
+        },
+        { onConflict: "source_kind,source_key,competency_id" },
+      );
+      if (error && error.code !== "42P01") return error.message;
+    } else {
+      const { error } = await sb
+        .from("construct_competency_links")
+        .delete()
+        .eq("source_kind", "technical")
+        .eq("source_key", op.domainKey)
+        .eq("competency_id", op.competencyId);
+      if (error && error.code !== "42P01") return error.message;
+    }
+  } catch {
+    /* 00064 not applied - the profile reads 00054 */
+  }
+  return null;
+}
+
 /** Map a behavioural competency to a domain (the domain ENABLES it). Idempotent
  *  on (domain_key, competency_id) - re-adding just updates the weight. */
 export async function addBridgeAction(input: { domainKey: string; competencyId: string; weight: number }) {
@@ -310,6 +349,8 @@ export async function addBridgeAction(input: { domainKey: string; competencyId: 
       { onConflict: "domain_key,competency_id" }
     );
     if (error) return { error: error.message };
+    const mErr = await mirrorBridge(sb, { kind: "upsert", domainKey: input.domainKey, competencyId: input.competencyId, weight });
+    if (mErr) return { error: mErr };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };
   }
@@ -326,8 +367,17 @@ export async function setBridgeWeightAction(input: { id: string; weight: number 
 
   try {
     const sb = createServiceClient();
-    const { error } = await sb.from("technical_domain_competencies").update({ weight }).eq("id", input.id);
+    const { data: row, error } = await sb
+      .from("technical_domain_competencies")
+      .update({ weight })
+      .eq("id", input.id)
+      .select("domain_key, competency_id")
+      .maybeSingle<{ domain_key: string; competency_id: string }>();
     if (error) return { error: error.message };
+    if (row) {
+      const mErr = await mirrorBridge(sb, { kind: "upsert", domainKey: row.domain_key, competencyId: row.competency_id, weight });
+      if (mErr) return { error: mErr };
+    }
   } catch (e) {
     return { error: e instanceof Error ? e.message : "save failed" };
   }
@@ -343,8 +393,17 @@ export async function removeBridgeAction(input: { id: string }) {
 
   try {
     const sb = createServiceClient();
-    const { error } = await sb.from("technical_domain_competencies").delete().eq("id", input.id);
+    const { data: row, error } = await sb
+      .from("technical_domain_competencies")
+      .delete()
+      .eq("id", input.id)
+      .select("domain_key, competency_id")
+      .maybeSingle<{ domain_key: string; competency_id: string }>();
     if (error) return { error: error.message };
+    if (row) {
+      const mErr = await mirrorBridge(sb, { kind: "delete", domainKey: row.domain_key, competencyId: row.competency_id });
+      if (mErr) return { error: mErr };
+    }
   } catch (e) {
     return { error: e instanceof Error ? e.message : "delete failed" };
   }

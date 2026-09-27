@@ -76,13 +76,14 @@ async function ensureDemoPanel(sb: Sb): Promise<string[]> {
 }
 
 // ───────────────────────────── Assessment Center ─────────────────────────────
+// Framework v2 (21 competencies) ids - the demo seeds on the active framework.
 const AC_COMPETENCIES = [
-  "a0000001-0000-0000-0000-000000000001",
-  "a0000001-0000-0000-0000-000000000005",
-  "a0000001-0000-0000-0000-000000000011",
-  "a0000001-0000-0000-0000-000000000019",
-  "a0000001-0000-0000-0000-000000000024",
-  "a0000001-0000-0000-0000-000000000017",
+  "a0000002-0000-0000-0000-000000000002", // Strategic & Commercial Insight
+  "a0000002-0000-0000-0000-000000000001", // Critical Analysis & Judgement
+  "a0000002-0000-0000-0000-000000000004", // Delivery & Accountability
+  "a0000002-0000-0000-0000-000000000007", // Clear & Adaptive Communication
+  "a0000001-0000-0000-0000-000000000024", // Coaching & Talent Growth (carried over)
+  "a0000002-0000-0000-0000-000000000011", // Resilience & Composure
 ];
 /** Design weights. Also the denominator of the calculated overall rating. */
 const AC_WEIGHTS = [2, 1.5, 2, 1.5, 1.5, 1];

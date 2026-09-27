@@ -23,16 +23,16 @@ const LABEL = "Persona";
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
 
-// Six seed competencies (a0000001-…-0000000000NN exist from the framework seed),
-// each paired with two normative item keys. Reverse items flip 6 - raw, so a
+// Six competencies from the active framework (v2), each paired with two
+// normative item keys. Reverse items flip 6 - raw, so a
 // high raw on a reverse item still reads as a high self-rating.
 const COMPETENCIES = [
-  "a0000001-0000-0000-0000-000000000001",
-  "a0000001-0000-0000-0000-000000000005",
-  "a0000001-0000-0000-0000-000000000011",
-  "a0000001-0000-0000-0000-000000000017",
-  "a0000001-0000-0000-0000-000000000019",
-  "a0000001-0000-0000-0000-000000000024",
+  "a0000002-0000-0000-0000-000000000002", // Strategic & Commercial Insight
+  "a0000002-0000-0000-0000-000000000001", // Critical Analysis & Judgement
+  "a0000002-0000-0000-0000-000000000004", // Delivery & Accountability
+  "a0000002-0000-0000-0000-000000000011", // Resilience & Composure
+  "a0000002-0000-0000-0000-000000000007", // Clear & Adaptive Communication
+  "a0000001-0000-0000-0000-000000000024", // Coaching & Talent Growth (carried over)
 ];
 
 type DemoTaker = {

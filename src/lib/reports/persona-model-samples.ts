@@ -4,7 +4,7 @@
 // sitting. Reuses the REAL scoring path (compute*Profile); only the raw
 // per-competency self-scores are fabricated. Fictional throughout.
 
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { computeLeadershipProfile } from "@/lib/reports/persona-leadership-dimensions";
 import { computeDareProfile, DARE_ROLES, type DareRole } from "@/lib/reports/persona-dare-dimensions";
 import { computeEqProfile, type EqQuadrant } from "@/lib/reports/persona-eq-dimensions";
@@ -21,12 +21,12 @@ const GENERIC_TIPS = [
   "Seek a stretch task that forces this competency into daily practice, and ask a trusted peer for candid feedback.",
 ];
 
-/** Synthetic per-competency self-scores across all 41 - varied (2.8-4.7) so the
+/** Synthetic per-competency self-scores across the active framework - varied (2.8-4.7) so the
  *  profiles have real spread. Deterministic (index-driven; no randomness). */
 function sampleScoreById(): { scoreById: Map<string, number>; nameById: Map<string, string> } {
   const scoreById = new Map<string, number>();
   const nameById = new Map<string, string>();
-  BEHAVIORAL_COMPETENCIES.forEach((c, i) => {
+  ACTIVE_BEHAVIORAL_COMPETENCIES.forEach((c, i) => {
     const score = Math.round((2.8 + ((i * 7) % 20) / 10) * 100) / 100; // 2.80 .. 4.70
     scoreById.set(c.acCompetencyId, score);
     nameById.set(c.acCompetencyId, c.nameEn);

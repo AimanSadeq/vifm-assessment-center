@@ -24,13 +24,10 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 export function sampleHipoPdfData(generatedAt: string, completedAtIso: string): HipoPdfData {
   const aspirationMarkers = [
     { name: "Proactive Initiative", score: 4.5 },
-    { name: "Continuous Self-Development", score: 4.4 },
-    { name: "Outcome Ownership", score: 4.3 },
-    { name: "Adaptive Learning Capacity", score: 4.2 },
-    { name: "Accountability for Commitments", score: 4.0 },
-    { name: "Learning by Doing", score: 3.9 },
+    { name: "Learning Agility", score: 4.3 },
+    { name: "Delivery & Accountability", score: 4.1 },
     { name: "Mobilising Around Purpose", score: 3.8 },
-    { name: "Principled Courage", score: 3.7 },
+    { name: "Integrity & Principled Courage", score: 3.7 },
   ];
   const aspiration = r2(aspirationMarkers.reduce((a, m) => a + m.score, 0) / aspirationMarkers.length);
 

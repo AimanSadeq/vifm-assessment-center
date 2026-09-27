@@ -30,23 +30,23 @@ const LABEL = "Succession Readiness";
 const ENG_NAME = `${DEMO_TAG} Najm Capital - Director Succession Pool`;
 const TARGET_ROLE = "Senior Government Manager";
 
-// Seeded global role profile (migration 00015) - 9 competencies across all 4
-// VIFM domains, default target proficiency 4. Best fit for a GCC government pool.
+// Seeded global role profile (migration 00015) - 8 competencies across all 4
+// VIFM domains on framework v2 (migration 00226 merged its Persuasion and
+// Conflict competencies), default target proficiency 4.
 const ROLE_PROFILE_ID = "00000001-aaaa-0000-0000-000000000005";
 
 // Role competencies (subset of the seeded role profile) with their VIFM domain so
 // the self-scores below land sensible 9-box quadrants. Target = 4 (role default).
 // Integrity is the high-priority knockout competency in the seeded profile.
 const ROLE_COMPS: { id: string; name: string; axis: "perf" | "pot"; knockout?: boolean }[] = [
-  { id: "a0000001-0000-0000-0000-000000000001", name: "Strategic Mindset", axis: "pot" },
-  { id: "a0000001-0000-0000-0000-000000000005", name: "Decision Quality", axis: "pot" },
-  { id: "a0000001-0000-0000-0000-000000000018", name: "Drives Vision and Purpose", axis: "perf" },
-  { id: "a0000001-0000-0000-0000-000000000019", name: "Communicates Effectively", axis: "perf" },
-  { id: "a0000001-0000-0000-0000-000000000024", name: "Develops Talent", axis: "perf" },
-  { id: "a0000001-0000-0000-0000-000000000020", name: "Persuades", axis: "perf" },
-  { id: "a0000001-0000-0000-0000-000000000021", name: "Manages Conflict", axis: "perf" },
-  { id: "a0000001-0000-0000-0000-000000000032", name: "Integrity", axis: "pot", knockout: true },
-  { id: "a0000001-0000-0000-0000-000000000033", name: "Cultural Sensitivity", axis: "pot" },
+  { id: "a0000002-0000-0000-0000-000000000002", name: "Strategic & Commercial Insight", axis: "pot" },
+  { id: "a0000002-0000-0000-0000-000000000001", name: "Critical Analysis & Judgement", axis: "pot" },
+  { id: "a0000002-0000-0000-0000-000000000013", name: "Mobilising Around Purpose", axis: "perf" },
+  { id: "a0000002-0000-0000-0000-000000000007", name: "Clear & Adaptive Communication", axis: "perf" },
+  { id: "a0000001-0000-0000-0000-000000000024", name: "Coaching & Talent Growth", axis: "perf" },
+  { id: "a0000002-0000-0000-0000-000000000008", name: "Influence & Agreement", axis: "perf" },
+  { id: "a0000002-0000-0000-0000-000000000010", name: "Integrity & Principled Courage", axis: "pot", knockout: true },
+  { id: "a0000001-0000-0000-0000-000000000033", name: "Cultural & Inclusive Sensitivity", axis: "pot" },
 ];
 
 const TARGET = 4; // role_profiles.default_target_proficiency for this profile
@@ -68,16 +68,16 @@ const CANDIDATES: {
     name: "Hessa Al Mutairi",
     email: `hessa.almutairi@${DEMO_EMAIL_DOMAIN}`,
     status: "completed",
-    //          SM  DQ  DV  CE  DT  PE  MC  IN  CS
-    selfByComp: [4, 4, 5, 4, 4, 4, 4, 5, 4],
+    //          SC  CA  MP  CC  CT  IA  IP  CI
+    selfByComp: [4, 4, 5, 4, 4, 4, 5, 4],
   },
   {
     // Moderate gaps to the bar → Developing.
     name: "Saeed Al Ghamdi",
     email: `saeed.alghamdi@${DEMO_EMAIL_DOMAIN}`,
     status: "completed",
-    //          SM  DQ  DV  CE  DT  PE  MC  IN  CS
-    selfByComp: [3, 3, 4, 3, 3, 3, 3, 4, 3],
+    //          SC  CA  MP  CC  CT  IA  IP  CI
+    selfByComp: [3, 3, 4, 3, 3, 3, 4, 3],
   },
   {
     // Substantial gaps AND a knockout miss on Integrity (high priority, ≥1.0 below
@@ -85,8 +85,8 @@ const CANDIDATES: {
     name: "Mona Al Harthi",
     email: `mona.alharthi@${DEMO_EMAIL_DOMAIN}`,
     status: "completed",
-    //          SM  DQ  DV  CE  DT  PE  MC  IN  CS
-    selfByComp: [3, 2, 3, 3, 2, 2, 2, 2, 3],
+    //          SC  CA  MP  CC  CT  IA  IP  CI
+    selfByComp: [3, 2, 3, 3, 2, 2, 2, 3],
   },
 ];
 

@@ -1,6 +1,7 @@
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
 import { Circle } from "lucide-react";
 import { getServerT } from "@/lib/i18n/server";
+import { COMPLIANCE_STATUS_COLORS } from "./report-encodings";
 
 const TOKENS = {
   navy: "#010131",
@@ -8,10 +9,8 @@ const TOKENS = {
   ink2: "#374151",
   line: "#e5e7eb",
   bgSoft: "#fafbfc",
-  emerald: "#34D399",
-  amber: "#FBBF24",
-  rose: "#FB7185",
-  muteGrey: "#9ca3af",
+  // Status colours are shared with the legend through report-encodings.
+  ...COMPLIANCE_STATUS_COLORS,
 };
 
 const percentColor = (percent: number | null) => {

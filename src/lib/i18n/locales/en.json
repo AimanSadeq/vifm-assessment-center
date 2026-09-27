@@ -3296,10 +3296,10 @@
     "compliance_requirement_count_other": "{{count}} requirements",
     "compliance_compliant": "Requirements covered",
     "compliance_met": "Met",
-    "compliance_partial": "Partial",
-    "compliance_action": "Action",
+    "compliance_partial": "Partially met",
+    "compliance_action": "Action required",
     "compliance_not_evaluated": "Not yet evaluated - run the compliance calculation to score this framework.",
-    "compliance_unknown": "Unknown"
+    "compliance_unknown": "Not evaluated"
   },
   "reflectConsultant": {
     "backToReflect": "Reflect 360®",

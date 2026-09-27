@@ -1,6 +1,8 @@
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
+import { DELTA_COLORS, USE_CASE_RISK_COLORS, USE_CASE_STAGE_COLORS } from "./report-encodings";
+import { ReportLegend } from "./report-legend";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
@@ -428,6 +430,16 @@ export function BilingualReport(p: BilingualReportProps) {
         </div>
       </section>
 
+      {/* ─── Legend - one key for every colour and symbol, EN left / AR right ─── */}
+      <section className="report-page-bilingual">
+        <div className="col-en">
+          <ReportLegend lang="en" />
+        </div>
+        <div className="col-ar" dir="rtl">
+          <ReportLegend lang="ar" />
+        </div>
+      </section>
+
       {/* ─── Organization Profile + Respondents ─── *
        * Mirrors the EN portrait report's profile page so bilingual
        * readers see methodology + who answered. Always emitted, even
@@ -851,7 +863,7 @@ export function BilingualReport(p: BilingualReportProps) {
                     </thead>
                     <tbody>
                       {yoy.pillars.map((pi) => {
-                        const dColor = pi.delta == null ? "#6b7280" : pi.delta > 0 ? "#34D399" : pi.delta < 0 ? "#FB7185" : "#6b7280";
+                        const dColor = pi.delta == null ? DELTA_COLORS.flat : pi.delta > 0 ? DELTA_COLORS.up : pi.delta < 0 ? DELTA_COLORS.down : DELTA_COLORS.flat;
                         const dLabel = pi.delta == null ? "-" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
                         const name = ARA_PILLARS.find((x) => x.id === pi.pillar_id)?.name_en ?? pi.pillar_id;
                         return (
@@ -868,7 +880,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   {overallDelta != null && (
                     <p className="report-body" style={{ marginTop: "8pt" }}>
                       <strong>{tr("en", "yoy_overall_delta")}:</strong>{" "}
-                      <span style={{ color: overallDelta > 0 ? "#34D399" : overallDelta < 0 ? "#FB7185" : "#6b7280", fontWeight: 600 }}>
+                      <span style={{ color: overallDelta > 0 ? DELTA_COLORS.up : overallDelta < 0 ? DELTA_COLORS.down : DELTA_COLORS.flat, fontWeight: 600 }}>
                         {overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)}
                       </span>
                     </p>
@@ -898,7 +910,7 @@ export function BilingualReport(p: BilingualReportProps) {
                     </thead>
                     <tbody>
                       {yoy.pillars.map((pi) => {
-                        const dColor = pi.delta == null ? "#6b7280" : pi.delta > 0 ? "#34D399" : pi.delta < 0 ? "#FB7185" : "#6b7280";
+                        const dColor = pi.delta == null ? DELTA_COLORS.flat : pi.delta > 0 ? DELTA_COLORS.up : pi.delta < 0 ? DELTA_COLORS.down : DELTA_COLORS.flat;
                         const dLabel = pi.delta == null ? "-" : pi.delta > 0 ? `+${pi.delta.toFixed(2)}` : pi.delta.toFixed(2);
                         const name = ARA_PILLARS.find((x) => x.id === pi.pillar_id)?.name_ar ?? pi.pillar_id;
                         return (
@@ -915,7 +927,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   {overallDelta != null && (
                     <p className="report-body" style={{ marginTop: "8pt" }}>
                       <strong>{tr("ar", "yoy_overall_delta")}:</strong>{" "}
-                      <span style={{ color: overallDelta > 0 ? "#34D399" : overallDelta < 0 ? "#FB7185" : "#6b7280", fontWeight: 600 }}>
+                      <span style={{ color: overallDelta > 0 ? DELTA_COLORS.up : overallDelta < 0 ? DELTA_COLORS.down : DELTA_COLORS.flat, fontWeight: 600 }}>
                         {overallDelta > 0 ? `+${overallDelta.toFixed(2)}` : overallDelta.toFixed(2)}
                       </span>
                     </p>
@@ -971,12 +983,7 @@ export function BilingualReport(p: BilingualReportProps) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "6pt", marginBottom: "8pt" }}>
               {(["ideation", "piloting", "production", "retired"] as const).map((stg) => {
                 const count = p.useCases.filter((u) => u.stage === stg).length;
-                const colors = {
-                  ideation: "#9ca3af",
-                  piloting: "#FDBA74",
-                  production: "#34D399",
-                  retired: "#6b7280",
-                };
+                const colors = USE_CASE_STAGE_COLORS;
                 return (
                   <div key={stg} style={{ padding: "6pt", background: "#f9fafb", borderRadius: "4pt", textAlign: "center" }}>
                     <p style={{ fontSize: "18pt", fontWeight: 600, color: colors[stg], margin: 0 }}>{count}</p>
@@ -999,9 +1006,7 @@ export function BilingualReport(p: BilingualReportProps) {
               </thead>
               <tbody>
                 {p.useCases.map((u) => {
-                  const riskColor: Record<string, string> = {
-                    low: "#34D399", medium: "#FBBF24", high: "#FDBA74", critical: "#FB7185",
-                  };
+                  const riskColor: Record<string, string> = USE_CASE_RISK_COLORS;
                   return (
                     <tr key={u.id} style={{ borderTop: "1px solid #e5e7eb" }}>
                       <td style={ucCell}><strong>{u.name}</strong></td>

@@ -1,5 +1,6 @@
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { getServerT } from "@/lib/i18n/server";
+import { MATRIX_QUADRANT_FILL, MATRIX_QUADRANT_INK } from "./report-encodings";
 import type { AraPillarId } from "@/types/ara";
 
 /**
@@ -123,13 +124,8 @@ export async function InvestmentMatrix({
   const midX = PAD + plotW / 2;
   const midY = PAD + plotH / 2;
 
-  // Brand palette for quadrant fills
-  const Q = {
-    quickWins:    "#ccfbf1", // teal-100
-    strategicBets:"#fef3c7", // amber-100
-    fillIns:      "#f3f4f6", // slate-100
-    reconsider:   "#ffe4e6", // rose-100
-  };
+  // Quadrant fills - shared with the legend through report-encodings.
+  const Q = MATRIX_QUADRANT_FILL;
 
   return (
     <>
@@ -148,19 +144,19 @@ export async function InvestmentMatrix({
 
       {/* Quadrant labels - clean uppercase, no emoji */}
       <text x={PAD + plotW / 4} y={PAD + 18} textAnchor="middle" fontSize="10" fontWeight="700"
-        fill="#115e59" letterSpacing="0.08em">
+        fill={MATRIX_QUADRANT_INK.quickWins} letterSpacing="0.08em">
         {t("araReport.matrix_quick_wins")}
       </text>
       <text x={midX + plotW / 4} y={PAD + 18} textAnchor="middle" fontSize="10" fontWeight="700"
-        fill="#92400e" letterSpacing="0.08em">
+        fill={MATRIX_QUADRANT_INK.strategicBets} letterSpacing="0.08em">
         {t("araReport.matrix_strategic_bets")}
       </text>
       <text x={PAD + plotW / 4} y={H - PAD - 10} textAnchor="middle" fontSize="10" fontWeight="700"
-        fill="#4b5563" letterSpacing="0.08em">
+        fill={MATRIX_QUADRANT_INK.fillIns} letterSpacing="0.08em">
         {t("araReport.matrix_fill_ins")}
       </text>
       <text x={midX + plotW / 4} y={H - PAD - 10} textAnchor="middle" fontSize="10" fontWeight="700"
-        fill="#9f1239" letterSpacing="0.08em">
+        fill={MATRIX_QUADRANT_INK.reconsider} letterSpacing="0.08em">
         {t("araReport.matrix_reconsider")}
       </text>
 

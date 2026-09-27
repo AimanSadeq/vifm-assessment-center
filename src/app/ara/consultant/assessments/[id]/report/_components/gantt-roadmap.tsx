@@ -1,4 +1,5 @@
 import { getServerT } from "@/lib/i18n/server";
+import { GANTT_HORIZONS } from "./report-encodings";
 
 /**
  * Gantt-style 12-month roadmap across three horizons.
@@ -19,9 +20,9 @@ export async function GanttRoadmap({
   const t = await getServerT();
   const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
   const horizonSpec = {
-    quick: { start: 1, end: 3, color: "#00b4ff", label: t("araReport.gantt_quick_wins"), labelColor: "#075985" },
-    build: { start: 4, end: 9, color: "#5391D5", label: t("araReport.gantt_build"), labelColor: "#1e3a8a" },
-    transform: { start: 10, end: 12, color: "#010131", label: t("araReport.gantt_transform"), labelColor: "white" },
+    quick: { ...GANTT_HORIZONS.quick, label: t("araReport.gantt_quick_wins") },
+    build: { ...GANTT_HORIZONS.build, label: t("araReport.gantt_build") },
+    transform: { ...GANTT_HORIZONS.transform, label: t("araReport.gantt_transform") },
   } as const;
 
   if (initiatives.length === 0) {

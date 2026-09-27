@@ -1,4 +1,5 @@
 import { ARA_PILLARS, ARA_MATURITY_LEVELS } from "@/lib/constants/ara-pillars";
+import { HEATMAP_LEVEL_TINT, HEATMAP_SHARE_STEPS } from "./report-encodings";
 import type { AraPillarId } from "@/types/ara";
 
 /**
@@ -34,14 +35,9 @@ export function GapHeatmap({
   const levels = ARA_MATURITY_LEVELS;
 
   // Shade by share-of-cohort within the pillar row, in the level's own colour
-  // family, so the eye lands on where people actually cluster.
-  const LEVEL_TINT: Record<number, { base: string; strong: string }> = {
-    1: { base: "#fdeef0", strong: "#FB7185" },
-    2: { base: "#fef2e7", strong: "#FDBA74" },
-    3: { base: "#fef8e7", strong: "#FBBF24" },
-    4: { base: "#eaf7f0", strong: "#34D399" },
-    5: { base: "#e6f6ee", strong: "#12805c" },
-  };
+  // family, so the eye lands on where people actually cluster. Tints and the
+  // share thresholds live in report-encodings; the legend reads the same ones.
+  const LEVEL_TINT = HEATMAP_LEVEL_TINT;
 
   const cellStyle = (level: number, count: number, rowTotal: number) => {
     if (count === 0 || rowTotal === 0) {
@@ -50,8 +46,8 @@ export function GapHeatmap({
     const share = count / rowTotal;
     const tint = LEVEL_TINT[level] ?? LEVEL_TINT[3];
     // Three steps keeps it legible in print (no alpha gradients).
-    if (share >= 0.4) return { background: tint.strong, color: "white", border: "none" };
-    if (share >= 0.15) return { background: tint.base, color: "#374151", border: `1px solid ${tint.strong}` };
+    if (share >= HEATMAP_SHARE_STEPS.strong) return { background: tint.strong, color: "white", border: "none" };
+    if (share >= HEATMAP_SHARE_STEPS.tint) return { background: tint.base, color: "#374151", border: `1px solid ${tint.strong}` };
     return { background: "#ffffff", color: "#6b7280", border: "1px solid #e5e7eb" };
   };
 

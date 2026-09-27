@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller, isInternalAraRender } from "@/lib/ara/auth-guards";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
+import { ReportLegend } from "./_components/report-legend";
 import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import { summarizeComplianceByFramework } from "@/lib/ara/compliance";
 import { detectAraShadowAi } from "@/lib/ara/detectors";
@@ -745,13 +746,11 @@ export default async function AraReportPage({
             ))}
           </div>
 
-          <h3 className="report-h3">Compliance Status</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt", marginTop: "6pt" }}>
-            <StatusChip color="#34D399" label="Compliant" body="Fully meets the requirement." />
-            <StatusChip color="#FBBF24" label="Partially Compliant" body="Partial evidence; gaps remain." />
-            <StatusChip color="#FB7185" label="Action Required" body="Requirement not met." />
-            <StatusChip color="#9ca3af" label="Needs Verification" body="Evidence not yet provided." />
-          </div>
+        </section>
+
+        {/* ─── Legend - one key for every colour and symbol in the report ─── */}
+        <section className="report-page">
+          <ReportLegend lang={rtl ? "ar" : "en"} />
         </section>
 
 

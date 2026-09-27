@@ -74,6 +74,7 @@ export async function bulkExtractJdsAction(
   const { data: competencies, error: compErr } = await supabase
     .from("competencies")
     .select("id, name, description, sort_order, cluster_id, tags, qa_questions")
+    .is("superseded_by", null)
     .order("sort_order");
 
   if (compErr || !competencies || competencies.length === 0) {

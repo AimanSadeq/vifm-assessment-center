@@ -54,7 +54,7 @@ type ItemRow = {
 
 export async function loadCompetencyQuizBank(): Promise<QuizBankView> {
   const svc = createServiceClient();
-  const { data: comps } = await svc.from("competencies").select("id, name, sort_order").order("sort_order");
+  const { data: comps } = await svc.from("competencies").select("id, name, sort_order").is("superseded_by", null).order("sort_order");
   const competencyList = (comps ?? []) as { id: string; name: string; sort_order: number }[];
 
   let tableReady = true;

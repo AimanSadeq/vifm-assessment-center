@@ -6,6 +6,7 @@
 // competency whose rows were all SME-rejected/retired serves NONE - honouring
 // the reviewer's decision rather than silently resurrecting the pulled items.
 
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import {
@@ -58,7 +59,9 @@ export async function loadPersonaCompetencies(): Promise<BehavioralCompetency[]>
     }
   }
 
-  return BEHAVIORAL_COMPETENCIES.map((c) => {
+  // New sittings serve the ACTIVE framework only (00225); retired
+  // competencies stay in BEHAVIORAL_COMPETENCIES for report lookups.
+  return ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => {
     const dbItems = (byComp.get(c.acCompetencyId) ?? []).slice().sort((a, b) => a.ord - b.ord);
     if (dbItems.length > 0) {
       const items: BehavioralItem[] = dbItems.map((r) => ({

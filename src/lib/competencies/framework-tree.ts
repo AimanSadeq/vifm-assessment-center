@@ -14,6 +14,8 @@ type CompRow = {
   id: string;
   name: string;
   name_ar: string | null;
+  /** 00225: set when a newer framework version absorbed this competency. */
+  superseded_by?: string | null;
   description: string | null;
   description_ar: string | null;
   cluster_id: string;
@@ -61,13 +63,13 @@ const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, (c) => c.toUpp
 
 export async function loadFrameworkTree(): Promise<{ domains: DomainNode[]; counts: FrameworkCounts }> {
   const sb = createServiceClient();
-  const [domains, clusters, comps, indicators] = await Promise.all([
+  const [domains, clusters, allComps, indicators] = await Promise.all([
     fetchTolerant<DomainRow>(sb, "competency_domains", "id, name, name_ar, sort_order", "id, name, sort_order"),
     fetchTolerant<ClusterRow>(sb, "competency_clusters", "id, name, name_ar, domain_id, sort_order", "id, name, domain_id, sort_order"),
     fetchTolerant<CompRow>(
       sb,
       "competencies",
-      "id, name, name_ar, description, description_ar, cluster_id, sort_order",
+      "id, name, name_ar, description, description_ar, cluster_id, sort_order, superseded_by",
       "id, name, description, cluster_id, sort_order",
     ),
     (async (): Promise<IndicatorRow[]> => {
@@ -79,6 +81,11 @@ export async function loadFrameworkTree(): Promise<{ domains: DomainNode[]; coun
     })(),
   ]);
 
+  // The active framework only: a superseded competency (00225) is kept for
+  // history but is no longer part of the framework this document describes.
+  const comps = allComps.filter((k) => !k.superseded_by);
+  const activeIds = new Set(comps.map((k) => k.id));
+
   const posByComp = new Map<string, string[]>();
   const negByComp = new Map<string, string[]>();
   let indicatorCount = 0;
@@ -88,6 +95,7 @@ export async function loadFrameworkTree(): Promise<{ domains: DomainNode[]; coun
     // "[DEV TIP] ..." with indicator_type='positive'. They are coaching
     // suggestions, NOT positive/negative behavioural indicators, so exclude them.
     if (!desc || desc.startsWith("[DEV TIP]")) continue;
+    if (!activeIds.has(i.competency_id)) continue;
     indicatorCount += 1;
     const map = i.indicator_type === "negative" ? negByComp : posByComp;
     const arr = map.get(i.competency_id) ?? [];

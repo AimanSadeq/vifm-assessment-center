@@ -16,7 +16,7 @@ import {
 import { toast } from "sonner";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { composeBundleAction, updateBundleAction, archiveBundleAction, inviteBundleCandidateAction, createBundleVoucherAction, listBundleVouchersAction } from "../actions";
 import { ReportCoverageBadges } from "./report-coverage-badges";
 
@@ -25,13 +25,13 @@ type ExistingVoucher = { code: string; used: number; max: number; label: string 
 // Competency picker source: the 41, grouped by cluster (stable order).
 const COMPETENCY_CLUSTERS: { cluster: string; items: { id: string; name: string }[] }[] = (() => {
   const by = new Map<string, { id: string; name: string }[]>();
-  for (const c of BEHAVIORAL_COMPETENCIES) {
+  for (const c of ACTIVE_BEHAVIORAL_COMPETENCIES) {
     if (!by.has(c.clusterNameEn)) by.set(c.clusterNameEn, []);
     by.get(c.clusterNameEn)!.push({ id: c.acCompetencyId, name: c.nameEn });
   }
   return [...by.entries()].map(([cluster, items]) => ({ cluster, items }));
 })();
-const ALL_COMPETENCY_IDS = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+const ALL_COMPETENCY_IDS = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
 
 // Per-service icon (mirrors the landing page's icon choices).
 const SERVICE_ICON: Record<CaliberService, typeof Boxes> = {

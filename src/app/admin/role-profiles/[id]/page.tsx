@@ -11,7 +11,10 @@ import {
 } from "../_components/role-profile-editor";
 import { DeleteRoleProfileButton } from "./_components/delete-button";
 
-async function loadCompetencyTree(): Promise<CompetencyTree> {
+/** The picker offers the active framework (00225), plus any superseded
+ *  competency this profile still uses - hiding those would make a save drop
+ *  them silently. */
+async function loadCompetencyTree(keepIds: Set<string>): Promise<CompetencyTree> {
   const supabase = await createClient();
   const [domains, clusters, comps] = await Promise.all([
     supabase.from("competency_domains").select("*").order("sort_order"),
@@ -20,7 +23,9 @@ async function loadCompetencyTree(): Promise<CompetencyTree> {
   ]);
   const domainRows = domains.data ?? [];
   const clusterRows = clusters.data ?? [];
-  const compRows = comps.data ?? [];
+  const compRows = (comps.data ?? []).filter(
+    (cp) => !(cp as { superseded_by?: string | null }).superseded_by || keepIds.has(cp.id as string),
+  );
   return domainRows.map((domain) => ({
     domain,
     clusters: clusterRows
@@ -38,14 +43,16 @@ type Props = { params: { id: string } };
 
 export default async function RoleProfileDetailPage({ params }: Props) {
   const supabase = await createClient();
-  const [profileResult, compsResult, treeData] = await Promise.all([
+  const [profileResult, compsResult] = await Promise.all([
     supabase.from("role_profiles").select("*").eq("id", params.id).maybeSingle(),
     supabase
       .from("role_profile_competencies")
       .select("*")
       .eq("role_profile_id", params.id),
-    loadCompetencyTree(),
   ]);
+  const treeData = await loadCompetencyTree(
+    new Set((compsResult.data ?? []).map((r) => r.competency_id as string)),
+  );
 
   if (profileResult.error || !profileResult.data) return notFound();
   const p = profileResult.data;

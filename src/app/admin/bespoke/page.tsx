@@ -5,7 +5,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { loadBespokeServices, loadBundleUsageMap } from "@/lib/bespoke/services";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import type { CaliberService } from "@/lib/clients/portal-services";
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export default async function BespokeServicesPage({ searchParams }: { searchPara
 
   // Persisted bundles (kind='bundle', active) -> the composer's saved list.
   const nameByAcId = new Map(platformClients.filter((c) => c.acId).map((c) => [c.acId as string, c.name]));
-  const allCompetencyIds = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+  const allCompetencyIds = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
   const bundleRows = (await loadBespokeServices()).filter((s) => s.kind === "bundle");
   // Usage decides whether a design may still be edited (see updateBundleAction).
   const usage = await loadBundleUsageMap(bundleRows.map((b) => b.id));

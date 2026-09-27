@@ -24,6 +24,7 @@ async function fetchCompetencies(): Promise<CompetencyOption[]> {
   const { data } = await sb
     .from("competencies")
     .select("id, name, cluster_id")
+    .is("superseded_by", null)
     .order("sort_order");
   return (data ?? []) as CompetencyOption[];
 }

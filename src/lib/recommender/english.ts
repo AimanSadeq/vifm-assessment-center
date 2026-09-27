@@ -124,7 +124,7 @@ async function vifmCommunicationCourses(
   if (overallIdx >= TARGET_INDEX) return [];
   const gap = TARGET_INDEX - overallIdx; // 1..4 - bigger when further below proficiency
 
-  const { data: comps } = await sb.from("competencies").select("id, name");
+  const { data: comps } = await sb.from("competencies").select("id, name").is("superseded_by", null);
   const rows = (comps ?? []) as Array<{ id: string; name: string }>;
   const commIds = rows
     .filter((c) => COMM_KEYWORDS.some((k) => c.name.toLowerCase().includes(k)))

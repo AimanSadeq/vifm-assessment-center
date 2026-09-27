@@ -3,7 +3,7 @@
 // items, so an admin reviews + approves in the same shape the report uses.
 
 import { createServiceClient } from "@/lib/supabase/server";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { DOMAIN_ORDER, CLUSTER_TO_DOMAIN, type DomainName } from "@/lib/competencies/framework-definitions";
 
 export type PersonaBankItem = {
@@ -66,7 +66,7 @@ export async function loadPersonaBankAdmin(): Promise<PersonaBankView> {
       byComp.set(r.ac_competency_id, arr);
     }
 
-    const competencies: PersonaBankCompetency[] = BEHAVIORAL_COMPETENCIES.filter((c) => byComp.has(c.acCompetencyId)).map((c) => {
+    const competencies: PersonaBankCompetency[] = ACTIVE_BEHAVIORAL_COMPETENCIES.filter((c) => byComp.has(c.acCompetencyId)).map((c) => {
       const items = (byComp.get(c.acCompetencyId) ?? []).slice().sort((a, b) => a.ord - b.ord);
       return {
         acCompetencyId: c.acCompetencyId,

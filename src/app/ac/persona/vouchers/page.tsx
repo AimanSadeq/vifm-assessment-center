@@ -6,7 +6,7 @@ import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { personaResultCountsByClient, personaVoucherActivity } from "@/lib/scoring/persona-results";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient, type PersonaVoucherRow } from "./_components/vouchers-client";
@@ -42,7 +42,7 @@ export default async function PersonaVouchersPage() {
     name: r.name,
     competencyIds: r.comps.map((c) => c.competencyId),
   }));
-  const personaCompetencies = BEHAVIORAL_COMPETENCIES.map((c) => ({
+  const personaCompetencies = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => ({
     id: c.acCompetencyId,
     name: c.nameEn,
     clusterOrder: c.clusterOrder,

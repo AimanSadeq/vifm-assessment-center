@@ -47,7 +47,7 @@ export async function extractRoleFromJdAction(input: {
   if (jd.length < 30) return { error: "Paste a longer job description (at least a few lines)." };
 
   const sb = createServiceClient();
-  const { data: cat, error } = await sb.from("competencies").select("id, name, description, cluster_id");
+  const { data: cat, error } = await sb.from("competencies").select("id, name, description, cluster_id").is("superseded_by", null);
   if (error) return { error: "Could not load the competency framework." };
   const competencies = (cat ?? []) as Competency[];
 

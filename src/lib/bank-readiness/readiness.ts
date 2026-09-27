@@ -5,7 +5,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { PROMPT_MIN as FLUENT_PROMPT_MIN } from "@/lib/quiz-bank/fluent-constants";
@@ -220,10 +220,10 @@ async function arc(): Promise<BankReadiness> {
 
 // ── Persona: managed bank (persona_items, migration 00185); code fallback ──
 async function persona(): Promise<BankReadiness> {
-  const comps = BEHAVIORAL_COMPETENCIES.length;
+  const comps = ACTIVE_BEHAVIORAL_COMPETENCIES.length;
   const s = await loadPersonaBankStatus();
   if (!s.tableReady) {
-    const totalItems = BEHAVIORAL_COMPETENCIES.reduce((sum, c) => sum + ((c.items as unknown[])?.length ?? 0), 0);
+    const totalItems = ACTIVE_BEHAVIORAL_COMPETENCIES.reduce((sum, c) => sum + ((c.items as unknown[])?.length ?? 0), 0);
     return {
       key: "persona", label: "Persona (self-report)", tier: "indicative", servesLive: false, hasReviewGate: false,
       vetted: totalItems, total: totalItems, console: undefined,

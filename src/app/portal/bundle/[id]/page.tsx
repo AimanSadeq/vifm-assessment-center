@@ -9,6 +9,7 @@ import { getAllocationsForOrg } from "@/lib/clients/allocations";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { RUNNABLE_BUNDLE_STAGES, type BundleStage } from "@/lib/bespoke/candidates";
 import { allocationUsable } from "@/lib/clients/allocations";
 import { BackLink } from "@/components/shared/back-link";
@@ -74,7 +75,7 @@ export default async function PortalBundlePage({
   const logicaScoped = !!logicaScope && logicaScope.length > 0 && logicaScope.length < COGNITIVE_SUBTEST_KEYS.length;
   const personaNameById = new Map(BEHAVIORAL_COMPETENCIES.map((c) => [c.acCompetencyId, c.nameEn]));
   const personaScope = (bundleCfg.persona?.competencyIds ?? []).filter((id) => personaNameById.has(id));
-  const personaScoped = personaScope.length > 0 && personaScope.length < BEHAVIORAL_COMPETENCIES.length;
+  const personaScoped = personaScope.length > 0 && personaScope.length < ACTIVE_BEHAVIORAL_COMPETENCIES.length;
 
   // One-sitting candidates for this bundle (tolerant of 00172 not applied). Paged
   // (deterministic .order('id')) so a large bundle's roster + counts stay exact;
@@ -189,7 +190,7 @@ export default async function PortalBundlePage({
               {svc.id === "persona" && personaScoped && (
                 <div className="mt-3 rounded-lg border p-2.5" style={{ borderColor: `${svc.accent}55`, backgroundColor: `${svc.accent}0a` }}>
                   <p className="text-[11px] font-semibold" style={{ color: svc.accent }}>
-                    Scoped competencies · {personaScope.length} of {BEHAVIORAL_COMPETENCIES.length}
+                    Scoped competencies · {personaScope.length} of {ACTIVE_BEHAVIORAL_COMPETENCIES.length}
                   </p>
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     {personaScope.map((id) => (

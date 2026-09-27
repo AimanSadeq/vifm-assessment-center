@@ -4,7 +4,7 @@ import { FlaskConical, BookOpen, ArrowUpRight, ShieldCheck, FileDown } from "luc
 import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { EVIDENCE_INSTRUMENTS } from "@/lib/evidence/evidence-catalogue";
 import { METHODOLOGY_BRIEFS } from "@/lib/reports/methodology-briefs-registry";
 
@@ -26,7 +26,7 @@ async function loadCounts(): Promise<Record<string, number | null>> {
   const counts: Record<string, number | null> = {
     competencies: COMPETENCY_COUNT,
     ara_questions: null,
-    persona_competencies: BEHAVIORAL_COMPETENCIES.length,
+    persona_competencies: ACTIVE_BEHAVIORAL_COMPETENCIES.length,
     cognitive_items: null,
     fluent_items: null,
     technical_tasks: null,
@@ -49,7 +49,7 @@ async function loadCounts(): Promise<Record<string, number | null>> {
   };
 
   // Competencies (authoritative count from the DB; falls back to the constant).
-  counts.competencies = (await headCount("competencies")) ?? COMPETENCY_COUNT;
+  counts.competencies = (await headCount("competencies", (q) => (q as unknown as { is: (c: string, v: null) => unknown }).is("superseded_by", null))) ?? COMPETENCY_COUNT;
   counts.fluent_items = await headCount("eng_fluent_items");
   counts.technical_tasks = await headCount("technical_skill_blocks");
   counts.reflect_behaviors = await headCount("reflect_behaviors");

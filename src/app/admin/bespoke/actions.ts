@@ -6,7 +6,7 @@ import { createClientOrganization } from "@/lib/clients/registry";
 import { saveBundleService, archiveBundleService, updateBundleService, loadBundleService, loadBundleUsage } from "@/lib/bespoke/services";
 import { PORTAL_SERVICE_IDS, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 
 async function guard() {
   try {
@@ -85,7 +85,7 @@ function deriveDesign(input: DesignInput): { services: CaliberService[]; service
     if (picked.length < COGNITIVE_SUBTEST_KEYS.length) serviceConfig.logica = { subtests: picked };
   }
   if (services.includes("persona")) {
-    const known = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+    const known = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
     const picked = known.filter((id) => (input.personaCompetencyIds ?? known).includes(id));
     if (picked.length === 0) return { error: "Pick at least one Persona competency." };
     if (picked.length < known.length) serviceConfig.persona = { competencyIds: picked };

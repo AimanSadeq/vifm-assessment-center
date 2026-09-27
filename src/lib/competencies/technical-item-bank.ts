@@ -302,13 +302,14 @@ export async function listDomainBridge(domainKey: string): Promise<BridgeRow[]> 
 
 export type CompetencyLite = { id: string; name: string; domain: string };
 
-/** All 41 behavioural competencies (id + name + AC domain), for the bridge picker. */
+/** The active behavioural competencies (id + name + AC domain), for the bridge picker. */
 export async function listBehaviouralCompetencies(): Promise<CompetencyLite[]> {
   try {
     const sb = createServiceClient();
     const { data } = await sb
       .from("competencies")
-      .select("id, name, sort_order, competency_clusters(sort_order, competency_domains(name, sort_order))");
+      .select("id, name, sort_order, competency_clusters(sort_order, competency_domains(name, sort_order))")
+      .is("superseded_by", null);
     type Row = {
       id: string;
       name: string;

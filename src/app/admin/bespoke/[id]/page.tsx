@@ -7,7 +7,7 @@ import { loadBundleService, loadBundleUsage } from "@/lib/bespoke/services";
 import { loadBundleVouchers } from "@/lib/bespoke/bundle-vouchers";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
 import { ReportCoverageBadges } from "../_components/report-coverage-badges";
@@ -56,12 +56,12 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
 
   const cfg = bundle.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
   const logicaKeys = cfg.logica?.subtests && cfg.logica.subtests.length > 0 ? cfg.logica.subtests : [...COGNITIVE_SUBTEST_KEYS];
-  const allCompetencyIds = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+  const allCompetencyIds = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
   const personaIds = cfg.persona?.competencyIds && cfg.persona.competencyIds.length > 0 ? cfg.persona.competencyIds : allCompetencyIds;
   const personaSet = new Set(personaIds);
   const clusters = (() => {
     const by = new Map<string, Array<{ id: string; name: string; on: boolean }>>();
-    for (const c of BEHAVIORAL_COMPETENCIES) {
+    for (const c of ACTIVE_BEHAVIORAL_COMPETENCIES) {
       if (!by.has(c.clusterNameEn)) by.set(c.clusterNameEn, []);
       by.get(c.clusterNameEn)!.push({ id: c.acCompetencyId, name: c.nameEn, on: personaSet.has(c.acCompetencyId) });
     }

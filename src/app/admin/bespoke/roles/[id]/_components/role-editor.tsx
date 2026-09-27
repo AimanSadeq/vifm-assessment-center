@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { RrVoucherPanel } from "@/components/shared/rr-voucher-panel";
 import { CollapsibleCard } from "@/components/shared/collapsible-card";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import type { RoleReadinessConfig } from "@/lib/role-readiness/config";
 import {
   updateRoleAction, setCompetenciesAction, addAreaAction, removeAreaAction,
@@ -23,10 +23,10 @@ import {
 const TARGET_HELP =
   "Target proficiency on the VIFM BARS scale (1-5): 1 Significant Development Needed · 2 Development Needed · 3 Competent · 4 Strength · 5 Significant Strength. A candidate meets the competency when their Persona self-rating is at or above this target.";
 // Total distinct framework "building blocks" (clusters) the competencies group into.
-const TOTAL_BLOCKS = new Set(BEHAVIORAL_COMPETENCIES.map((c) => c.clusterNameEn)).size;
+const TOTAL_BLOCKS = new Set(ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => c.clusterNameEn)).size;
 // Sort by clusterOrder so the grid's section headers are correct even if the
 // (auto-generated) source array is ever reordered.
-const SORTED_COMPETENCIES = [...BEHAVIORAL_COMPETENCIES].sort((a, b) => a.clusterOrder - b.clusterOrder);
+const SORTED_COMPETENCIES = [...ACTIVE_BEHAVIORAL_COMPETENCIES].sort((a, b) => a.clusterOrder - b.clusterOrder);
 const priorityToTarget = (p: "high" | "medium" | "low") => (p === "high" ? 4 : p === "medium" ? 3 : 3);
 
 type JdRec = { competencyId: string; competencyName: string; priority: "high" | "medium" | "low"; reasoning: string };
@@ -62,7 +62,7 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
   };
   // Distinct framework "building blocks" (clusters) the currently-selected competencies cover.
   const blocksCovered = new Set(
-    BEHAVIORAL_COMPETENCIES.filter((c) => comps[c.acCompetencyId] != null).map((c) => c.clusterNameEn),
+    ACTIVE_BEHAVIORAL_COMPETENCIES.filter((c) => comps[c.acCompetencyId] != null).map((c) => c.clusterNameEn),
   ).size;
 
   const run = (fn: () => Promise<{ ok?: true; error?: string } | { error: string } | { ok: true }>, ok: string) =>
@@ -357,7 +357,7 @@ function JdMatchBox({ onMatched }: { onMatched: (recs: JdRec[]) => void }) {
         <Sparkles className="h-3.5 w-3.5 text-[#5391D5]" /> Match from a job description
       </div>
       <p className="mt-0.5 text-[11px] text-muted-foreground">
-        Paste or upload a JD - AI identifies the important competencies across the VIFM framework ({TOTAL_BLOCKS} building blocks · {BEHAVIORAL_COMPETENCIES.length} competencies) and pre-selects them below.
+        Paste or upload a JD - AI identifies the important competencies across the VIFM framework ({TOTAL_BLOCKS} building blocks · {ACTIVE_BEHAVIORAL_COMPETENCIES.length} competencies) and pre-selects them below.
       </p>
       <Textarea
         value={pdfBase64 ? "" : text}

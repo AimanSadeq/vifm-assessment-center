@@ -59,7 +59,8 @@ export default async function AcEvidencePage() {
     .from("competencies")
     .select(
       "id, name, name_ar, description, sort_order, validation_evidence, competency_clusters(name, name_ar, sort_order, competency_domains(name, name_ar, sort_order))"
-    );
+    )
+    .is("superseded_by", null);
 
   // Supabase types to-one embeds as arrays; at runtime they're single
   // objects (cluster_id / domain_id are many-to-one). Cast through unknown.

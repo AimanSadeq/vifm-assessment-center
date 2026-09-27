@@ -301,7 +301,7 @@ export async function matchCompetenciesFromJdAction(input: {
 }): Promise<{ ok: true; recommendations: ExtractedCompetencyRecommendation[] } | { error: string }> {
   if (!(await requireAdmin())) return { error: "Not authorized." };
   const sb = createServiceClient();
-  const { data } = await sb.from("competencies").select("id, name, description").order("sort_order");
+  const { data } = await sb.from("competencies").select("id, name, description").is("superseded_by", null).order("sort_order");
   const competencies = (data ?? []) as unknown as Competency[];
   if (competencies.length === 0) return { error: "No competency framework found." };
 

@@ -28,8 +28,10 @@ export const dynamic = "force-dynamic";
 // omitted here, consistent with the other token assessment runners.
 export default async function AraRespondPage({
   params,
+  searchParams,
 }: {
   params: { token: string };
+  searchParams?: { demo?: string };
 }) {
   const ctx = await loadRespondentByToken(params.token);
   if (!ctx) return notFound();
@@ -92,10 +94,12 @@ export default async function AraRespondPage({
 
   // The "Randomize answers" demo shortcut is for STAFF only - an admin demoing
   // to a client - never the candidate sitting the assessment (who opens the same
-  // token URL with no account). Shown on ANY run: Full-ARC voucher runs are real
-  // (not sandbox), so it can't be gated on the sandbox flag. The action confirms
-  // before overwriting and independently re-checks staff.
-  const canSimulate = await isStaffCaller();
+  // token URL with no account). It is also OPT-IN: it appears only when the link
+  // carries ?demo=1, so staff taking a real assessment while signed in never see
+  // it (a trial reviewer read it as "the questions are randomised"). The action
+  // confirms before overwriting and independently re-checks staff.
+  const isStaff = await isStaffCaller();
+  const canSimulate = isStaff && searchParams?.demo === "1";
 
   return (
     <div className="min-h-screen bg-background" dir={rtl ? "rtl" : "ltr"}>
@@ -120,7 +124,7 @@ export default async function AraRespondPage({
               an email link and have no safe screen to go "back" to - the page
               header comment above documents this deliberate omission. Staff
               (setup / demo) keep the affordance to return to the ARC landing. */}
-          {canSimulate && (
+          {isStaff && (
             <Link
               href={backHref}
               className="inline-flex items-center gap-1 text-xs text-white/70 hover:text-white mb-6"

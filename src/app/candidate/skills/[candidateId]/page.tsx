@@ -25,6 +25,7 @@ type Props = {
 type RoleProfileCompetencyRow = {
   competency_id: string;
   weight: number | null;
+  target_proficiency: number | null;
   priority: "high" | "medium" | "low" | null;
   competencies: {
     id: string;
@@ -174,19 +175,25 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
     );
   }
 
-  const target = profile.default_target_proficiency ?? 3;
+  // Each competency's own target (00097) when the role sets one, else the
+  // profile default. The page used to apply the default to every competency,
+  // so gaps disagreed with the role fit and readiness reports.
+  const defaultTarget = profile.default_target_proficiency ?? 3;
+  const targetFor = (row: RoleProfileCompetencyRow) =>
+    row.target_proficiency != null ? Number(row.target_proficiency) : defaultTarget;
 
   const [profileCompsResult, consensusResult] = await Promise.all([
     supabase
       .from("role_profile_competencies")
       .select(
-        "competency_id, weight, priority, competencies(id, name, name_ar, description, cluster_id, competency_clusters(id, name, name_ar, sort_order, domain_id, competency_domains(id, name, name_ar, sort_order)))"
+        "competency_id, weight, priority, target_proficiency, competencies(id, name, name_ar, description, cluster_id, competency_clusters(id, name, name_ar, sort_order, domain_id, competency_domains(id, name, name_ar, sort_order)))"
       )
       .eq("role_profile_id", profile.id),
     supabase
       .from("consensus_ratings")
       .select("competency_id, final_score")
-      .eq("candidate_id", candidateId),
+      .eq("candidate_id", candidateId)
+      .eq("engagement_id", candidate.engagement_id),
   ]);
 
   const profileComps = (profileCompsResult.data ?? []) as unknown as RoleProfileCompetencyRow[];
@@ -221,7 +228,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
       description: comp.description,
       clusterName: cluster.name,
       clusterName_ar: cluster.name_ar,
-      target,
+      target: targetFor(row),
       score: scoreById.get(comp.id) ?? null,
     });
   }
@@ -232,11 +239,13 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
 
   // Stats
   const total = profileComps.length;
-  const assessedScores = profileComps
-    .map((r) => (r.competencies ? scoreById.get(r.competencies.id) : undefined))
-    .filter((s): s is number => typeof s === "number");
+  const assessedRows = profileComps.flatMap((r) => {
+    const s = r.competencies ? scoreById.get(r.competencies.id) : undefined;
+    return typeof s === "number" ? [{ score: s, target: targetFor(r) }] : [];
+  });
+  const assessedScores = assessedRows.map((a) => a.score);
   const assessed = assessedScores.length;
-  const withGaps = assessedScores.filter((s) => s < target).length;
+  const withGaps = assessedRows.filter((a) => a.score < a.target).length;
   const average =
     assessed > 0
       ? Math.round((assessedScores.reduce((a, b) => a + b, 0) / assessed) * 10) /

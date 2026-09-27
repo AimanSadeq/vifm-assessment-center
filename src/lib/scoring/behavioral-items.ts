@@ -2,6 +2,13 @@
 // 41 competencies x 4 first-person Likert items (EN + AR), with reverse flags,
 // grouped by cluster. Source: docs/competency-self-report-*.md. Regenerate via
 // the Slice 4 build step; do not hand-edit. Arabic is best-effort pending review.
+//
+// Framework v2 (21 competencies): the 13 new competencies' items live in
+// behavioral-items-v2.ts and are appended below, so this list holds every
+// competency ever served - reports read it to render v1 AND v2 sittings. New
+// sittings read ACTIVE_BEHAVIORAL_COMPETENCIES (behavioral-framework.ts).
+
+import { V2_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items-v2";
 
 export type BehavioralItem = {
   itemKey: string;
@@ -10,6 +17,8 @@ export type BehavioralItem = {
   reverse: boolean;
   textEn: string;
   textAr: string;
+  /** Framework v2 pooled items only: the v1 item this statement came from. */
+  pooledFrom?: string;
 };
 export type BehavioralCompetency = {
   acCompetencyId: string;
@@ -1661,3 +1670,6 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
     ]
   }
 ];
+
+// Framework v2 competencies (see the header note).
+BEHAVIORAL_COMPETENCIES.push(...V2_BEHAVIORAL_COMPETENCIES);

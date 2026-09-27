@@ -200,21 +200,28 @@ export function GuidedDemo() {
   // ── Idle on a service route: the launcher pill ──
   const launchTrack = resolveTrackForPath(pathname);
   if (!launchTrack || launchTrack.steps.length === 0) return null;
+  // A small tab on the side edge, vertically centred. It used to sit in the
+  // bottom corner, which is exactly where forms put their Save button - the
+  // pill covered it and a click meant for Save launched the demo. The label
+  // opens out on hover / keyboard focus.
   return (
     <button
       type="button"
       onClick={() => launch(launchTrack.id)}
       title={`Start the guided ${launchTrack.label} walkthrough`}
-      className="no-print print:hidden fixed bottom-4 end-4 z-[70] inline-flex items-center gap-2 rounded-full border bg-[#010131] px-3.5 py-2 text-xs font-semibold text-white shadow-lg transition-transform hover:scale-105"
+      aria-label={`Start the guided ${launchTrack.label} walkthrough`}
+      className="group no-print print:hidden fixed end-0 top-1/2 z-[70] inline-flex -translate-y-1/2 items-center gap-2 rounded-s-full border border-e-0 bg-[#010131] py-2 pe-2 ps-2 text-xs font-semibold text-white shadow-lg transition-all hover:ps-3 focus-visible:ps-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       style={{ borderColor: launchTrack.accent }}
     >
       <span
-        className="inline-flex h-5 w-5 items-center justify-center rounded-full"
+        className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
         style={{ backgroundColor: launchTrack.accent }}
       >
         <Play className="h-3 w-3" />
       </span>
-      Guided demo
+      <span className="max-w-0 overflow-hidden whitespace-nowrap transition-all duration-200 group-hover:max-w-[8rem] group-focus-visible:max-w-[8rem]">
+        Guided demo
+      </span>
     </button>
   );
 }

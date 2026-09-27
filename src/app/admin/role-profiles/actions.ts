@@ -25,6 +25,10 @@ const competencySchema = z.object({
   weight: z.coerce.number().min(0.5).max(10).optional(),
   priority: z.enum(["high", "medium", "low"]).optional(),
   reasoning: z.string().max(500).optional(),
+  // Per-competency target (00097). This editor does not show it, but other
+  // surfaces set it (the Persona role designer, the Role Readiness designer,
+  // seeded profiles), so it is accepted when sent and preserved when not.
+  target_proficiency: z.coerce.number().min(1).max(5).optional(),
 });
 
 export async function createRoleProfileAction(input: {
@@ -59,6 +63,7 @@ export async function createRoleProfileAction(input: {
     weight: c.weight ?? null,
     priority: c.priority ?? null,
     reasoning: c.reasoning ?? null,
+    ...(c.target_proficiency != null ? { target_proficiency: c.target_proficiency } : {}),
   }));
 
   const { error: cErr } = await supabase.from("role_profile_competencies").insert(rows);
@@ -95,7 +100,27 @@ export async function updateRoleProfileAction(
     .eq("id", id);
   if (pErr) return { error: pErr.message };
 
-  await supabase.from("role_profile_competencies").delete().eq("role_profile_id", id);
+  // Read the current rows first. Saving used to delete and re-insert without
+  // target_proficiency, so every save through this editor wiped the targets
+  // the Persona / Role Readiness designers set (role fit and readiness verdicts
+  // then fell back to the profile default). Carry each kept competency's target
+  // over, and put the old rows back if the insert fails.
+  const { data: existing, error: readErr } = await supabase
+    .from("role_profile_competencies")
+    .select("competency_id, weight, priority, reasoning, target_proficiency")
+    .eq("role_profile_id", id)
+    .returns<Array<{
+      competency_id: string;
+      weight: number | null;
+      priority: string | null;
+      reasoning: string | null;
+      target_proficiency: number | null;
+    }>>();
+  if (readErr) return { error: `Competencies: ${readErr.message}` };
+  const priorTarget = new Map((existing ?? []).map((r) => [r.competency_id, r.target_proficiency]));
+
+  const { error: delErr } = await supabase.from("role_profile_competencies").delete().eq("role_profile_id", id);
+  if (delErr) return { error: `Competencies: ${delErr.message}` };
 
   const rows = compsParsed.data.map((c) => ({
     role_profile_id: id,
@@ -103,9 +128,17 @@ export async function updateRoleProfileAction(
     weight: c.weight ?? null,
     priority: c.priority ?? null,
     reasoning: c.reasoning ?? null,
+    target_proficiency: c.target_proficiency ?? priorTarget.get(c.competency_id) ?? null,
   }));
   const { error: cErr } = await supabase.from("role_profile_competencies").insert(rows);
-  if (cErr) return { error: `Competencies: ${cErr.message}` };
+  if (cErr) {
+    if (existing && existing.length > 0) {
+      await supabase
+        .from("role_profile_competencies")
+        .insert(existing.map((r) => ({ ...r, role_profile_id: id })));
+    }
+    return { error: `Competencies: ${cErr.message}` };
+  }
 
   revalidatePath("/admin/role-profiles");
   revalidatePath(`/admin/role-profiles/${id}`);

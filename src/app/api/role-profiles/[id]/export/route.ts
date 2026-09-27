@@ -38,7 +38,7 @@ export async function GET(
     supabase
       .from("role_profile_competencies")
       .select(
-        "competency_id, weight, priority, reasoning, competencies(name, cluster_id, competency_clusters(name, competency_domains(name)))"
+        "competency_id, weight, priority, reasoning, target_proficiency, competencies(name, cluster_id, competency_clusters(name, competency_domains(name)))"
       )
       .eq("role_profile_id", params.id),
   ]);
@@ -71,6 +71,7 @@ export async function GET(
       domain: c?.competency_clusters?.competency_domains?.name ?? null,
       weight: row.weight,
       priority: row.priority,
+      target_proficiency: row.target_proficiency ?? null,
       reasoning: row.reasoning,
     };
   });

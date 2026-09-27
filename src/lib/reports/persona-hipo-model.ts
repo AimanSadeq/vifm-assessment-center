@@ -22,8 +22,11 @@
 const PREFIX = "a0000001-0000-0000-0000-0000000000";
 const id = (suffix: string) => PREFIX + suffix;
 
-/** The eight Persona competencies that mark ASPIRATION - drive, initiative,
- *  growth appetite and the courage to step up. */
+/** The Persona competencies that mark ASPIRATION - drive, initiative,
+ *  growth appetite and the courage to step up. The first eight are framework
+ *  v1; the last five are their v2 successors (the eight collapse into five in
+ *  the 21-competency framework). A sitting only ever measures one framework,
+ *  so a report sees at most one of the two sets. */
 export const HIPO_ASPIRATION_IDS: string[] = [
   id("10"), // Proactive Initiative
   id("11"), // Outcome Ownership
@@ -33,6 +36,11 @@ export const HIPO_ASPIRATION_IDS: string[] = [
   id("31"), // Principled Courage
   id("34"), // Adaptive Learning Capacity
   id("35"), // Continuous Self-Development
+  // ── v2 ──
+  "a0000002-0000-0000-0000-000000000004", // Delivery & Accountability
+  "a0000002-0000-0000-0000-000000000010", // Integrity & Principled Courage
+  "a0000002-0000-0000-0000-000000000012", // Learning Agility
+  "a0000002-0000-0000-0000-000000000013", // Mobilising Around Purpose
 ];
 
 /** Stated blend for the Ability pillar. Behavioural evidence carries more

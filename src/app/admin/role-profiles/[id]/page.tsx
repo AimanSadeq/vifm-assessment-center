@@ -18,13 +18,13 @@ async function loadCompetencyTree(keepIds: Set<string>): Promise<CompetencyTree>
   const supabase = await createClient();
   const [domains, clusters, comps] = await Promise.all([
     supabase.from("competency_domains").select("*").order("sort_order"),
-    supabase.from("competency_clusters").select("*").order("sort_order"),
+    supabase.from("competency_clusters").select("*").is("retired_at", null).order("sort_order"),
     supabase.from("competencies").select("*").order("sort_order"),
   ]);
   const domainRows = domains.data ?? [];
   const clusterRows = clusters.data ?? [];
   const compRows = (comps.data ?? []).filter(
-    (cp) => !(cp as { superseded_by?: string | null }).superseded_by || keepIds.has(cp.id as string),
+    (cp) => !(cp as { retired_at?: string | null }).retired_at || keepIds.has(cp.id as string),
   );
   return domainRows.map((domain) => ({
     domain,

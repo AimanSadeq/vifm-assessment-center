@@ -57,17 +57,17 @@ export type LanguageSkillKey = "reading" | "listening" | "writing" | "speaking";
 export type LanguageSkillScore = { key: LanguageSkillKey; label: string; cefr: string; value: number };
 
 // Fluent's own framework + the cross-framework bridge: which behavioural
-// competencies each language skill enables. (Names match the seeded 41.)
+// competencies each language skill enables. (Names match the active framework, v2.)
 export const LANGUAGE_SKILLS: {
   key: LanguageSkillKey;
   label: string;
   column: string; // eng_fluent_results per-skill CEFR column
   enables: string[]; // behavioural competency names this skill contributes to
 }[] = [
-  { key: "reading", label: "Reading", column: "reading_cefr", enables: ["Critical Analysis", "Navigating Complexity"] },
-  { key: "listening", label: "Listening", column: "listening_cefr", enables: ["Clear & Adaptive Communication", "Cross-Functional Collaboration", "Emotional Regulation & Empathy"] },
+  { key: "reading", label: "Reading", column: "reading_cefr", enables: ["Critical Analysis & Judgement", "Navigating Complexity & Ambiguity"] },
+  { key: "listening", label: "Listening", column: "listening_cefr", enables: ["Clear & Adaptive Communication", "Networks & Collaboration", "Emotional Regulation & Empathy"] },
   { key: "writing", label: "Writing", column: "writing_cefr", enables: ["Clear & Adaptive Communication"] },
-  { key: "speaking", label: "Speaking", column: "speaking_cefr", enables: ["Clear & Adaptive Communication", "Persuasion & Buy-in"] },
+  { key: "speaking", label: "Speaking", column: "speaking_cefr", enables: ["Clear & Adaptive Communication", "Influence & Agreement"] },
 ];
 
 const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"];

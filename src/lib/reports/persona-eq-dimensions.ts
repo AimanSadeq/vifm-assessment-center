@@ -1,3 +1,4 @@
+import { extendMapToV2 } from "@/lib/competencies/framework-v2";
 // ─────────────────────────────────────────────────────────────
 // VIFM EQ Framework - dimension model (v1.0, locked 2026-07-03).
 //
@@ -44,6 +45,11 @@ export const EQ_QUADRANT: Record<string, EqQuadrant> = {
   [id("28")]: "relationship_management", // Interpersonal Adaptability
   [id("22")]: "relationship_management", // Principled Negotiation
 };
+
+// Framework v2: a merged competency is in the EI domain only when most of its
+// sources were; v1 entries stay for v1 sittings.
+extendMapToV2(EQ_QUADRANT, { requireMajority: true });
+
 
 export const EQ_QUADRANTS: EqQuadrant[] = ["self_awareness", "self_management", "social_awareness", "relationship_management"];
 

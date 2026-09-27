@@ -29,7 +29,7 @@ const SYSTEM_PROMPT =
   `Given a job description, you select which competencies from VIFM's framework should be assessed. ` +
   `You ONLY pick from the supplied list - do not invent competencies. ` +
   `You may receive English or Arabic job descriptions; respond in English regardless. ` +
-  `Aim for 6 to 10 competencies - never fewer than 4, never more than 12. ` +
+  `Aim for 4 to 8 competencies - never fewer than 4, never more than 12. ` +
   `Prioritise behaviours genuinely critical to success in the role over generic ones.`;
 
 function buildInstructions(

@@ -26,10 +26,10 @@ const SAMPLE_REPORT_HREF: Record<string, string> = {
 
 const MODEL_DETAIL: Record<string, { measures: string }> = {
   "persona-leadership": {
-    measures: "16 management + 25 leadership competencies from the VIFM 41, contrasted as two orientations with a balance read.",
+    measures: "The VIFM competencies split into management (transactional) and leadership (transformational), contrasted as two orientations with a balance read.",
   },
   "persona-dare": {
-    measures: "The 41 competencies mapped to Decide (8) / Advise (10) / Recommend (8) / Execute (15) decision roles.",
+    measures: "The VIFM competencies mapped to the Decide / Advise / Recommend / Execute decision roles.",
   },
   "persona-eq": {
     measures: "The Goleman four quadrants (Self-Awareness, Self-Management, Social Awareness, Relationship Management) read from mapped VIFM competencies.",

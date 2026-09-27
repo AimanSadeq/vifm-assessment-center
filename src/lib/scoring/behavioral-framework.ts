@@ -8,20 +8,24 @@
 // A competency is retired by adding it to BEHAVIORAL_SUPERSEDED_BY, pointing
 // at the competency that absorbed it - the code twin of
 // competencies.superseded_by (migration 00225). Both change together on the
-// day a new framework version goes live. Until then the map is empty and
-// every list below is exactly the 41 served today.
+// day a new framework version goes live. It now holds the v1 -> v2 mapping
+// (framework-v2.ts), so the active list is the 21.
 
 import { BEHAVIORAL_COMPETENCIES, type BehavioralCompetency } from "@/lib/scoring/behavioral-items";
+import { V1_TO_V2, V2_FRAMEWORK_VERSION, V2_RETIRED_WITHOUT_SUCCESSOR } from "@/lib/competencies/framework-v2";
 
 /** The framework version the code bank serves (competency_framework_versions.version). */
-export const BEHAVIORAL_FRAMEWORK_VERSION = 1;
+export const BEHAVIORAL_FRAMEWORK_VERSION = V2_FRAMEWORK_VERSION;
 
-/** Retired competency id -> the competency id that absorbed it. Empty until a switch. */
-export const BEHAVIORAL_SUPERSEDED_BY: Readonly<Record<string, string>> = {};
+/** Retired competency id -> the competency id that absorbed it (v1 -> v2). */
+export const BEHAVIORAL_SUPERSEDED_BY: Readonly<Record<string, string>> = V1_TO_V2;
 
-/** Competencies offered to new sittings and design pickers. */
+/** Retired with no behavioural successor (moved to the Technical pillar). */
+export const BEHAVIORAL_RETIRED_WITHOUT_SUCCESSOR: ReadonlySet<string> = new Set(V2_RETIRED_WITHOUT_SUCCESSOR);
+
+/** Competencies offered to new sittings and design pickers: the active framework. */
 export const ACTIVE_BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = BEHAVIORAL_COMPETENCIES.filter(
-  (c) => !(c.acCompetencyId in BEHAVIORAL_SUPERSEDED_BY),
+  (c) => !(c.acCompetencyId in BEHAVIORAL_SUPERSEDED_BY) && !BEHAVIORAL_RETIRED_WITHOUT_SUCCESSOR.has(c.acCompetencyId),
 );
 
 /** Follow the supersession chain to the competency that is live today. An id
@@ -49,6 +53,8 @@ export function translateCompetencyIds(
   const seen = new Set<string>();
   for (const id of ids) {
     const s = successorOf(id, map);
+    // A competency retired with no successor has left the framework: drop it.
+    if (map === BEHAVIORAL_SUPERSEDED_BY && BEHAVIORAL_RETIRED_WITHOUT_SUCCESSOR.has(s)) continue;
     if (!seen.has(s)) {
       seen.add(s);
       out.push(s);

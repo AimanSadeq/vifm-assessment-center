@@ -121,7 +121,7 @@ function DevBlock({ title, items }: { title: string; items: EqDevItem[] }) {
 }
 
 const FOOTER =
-  "An emotional-intelligence lens on a self-report sitting, built on the VIFM EQ Framework v1.0 (after Goleman's four-quadrant model; cf. ESCI). It re-reads 22 of the 41 VIFM competencies - it is NOT the ESCI, the MSCEIT, or a normed EI instrument. EI self-ratings famously diverge from others' experience: pair with a Reflect 360° before any conclusion. Indicative until a Persona norm sample exists. © VIFM.";
+  "An emotional-intelligence lens on a self-report sitting, built on the VIFM EQ Framework v1.0 (after Goleman's four-quadrant model; cf. ESCI). It re-reads the emotionally-loaded subset of the VIFM competencies - it is NOT the ESCI, the MSCEIT, or a normed EI instrument. EI self-ratings famously diverge from others' experience: pair with a Reflect 360° before any conclusion. Indicative until a Persona norm sample exists. © VIFM.";
 
 export function EqReportPdf({ data, provisional }: { data: EqPdfData; provisional?: boolean }) {
   const p = data.profile;
@@ -187,7 +187,7 @@ export function EqReportPdf({ data, provisional }: { data: EqPdfData; provisiona
         <Text style={s.h2}>3 · Quadrant-by-Quadrant Breakdown</Text>
         <Text style={[s.para, { marginBottom: 6 }]}>
           Every answered EI-domain competency with its self-rating (out of 5), grouped by Goleman quadrant (VIFM EQ
-          Framework v1.0 mapping) and ordered by score. The 19 cognitive, commercial, and executional competencies are
+          Framework v1.0 mapping) and ordered by score. The cognitive, commercial, and executional competencies are
           outside the EI domain and are not scored by this report.
         </Text>
         {EQ_QUADRANTS.map((q) => (

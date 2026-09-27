@@ -45,7 +45,7 @@ async function loadCompetenciesWithDomains(): Promise<
     .select(
       "id, cluster_id, name, description, sort_order, tags, qa_questions, competency_clusters(domain_id, competency_domains(id, name))"
     )
-    .is("superseded_by", null)
+    .is("retired_at", null)
     .order("sort_order");
 
   if (error) return { error: `Could not load competencies: ${error.message}` };

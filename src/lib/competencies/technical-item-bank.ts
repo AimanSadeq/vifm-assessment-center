@@ -309,7 +309,7 @@ export async function listBehaviouralCompetencies(): Promise<CompetencyLite[]> {
     const { data } = await sb
       .from("competencies")
       .select("id, name, sort_order, competency_clusters(sort_order, competency_domains(name, sort_order))")
-      .is("superseded_by", null);
+      .is("retired_at", null);
     type Row = {
       id: string;
       name: string;

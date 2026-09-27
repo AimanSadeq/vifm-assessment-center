@@ -1029,7 +1029,7 @@ export async function linkReflectEngagementAction(
   const fw = fws?.[0];
   if (fw) {
     const [{ data: acComps }, { data: rComps }] = await Promise.all([
-      sb.from("competencies").select("id, name").is("superseded_by", null),
+      sb.from("competencies").select("id, name").is("retired_at", null),
       sb.from("reflect_competencies").select("id, name_en, ac_competency_id").eq("framework_id", fw.id),
     ]);
     const acByName = new Map((acComps ?? []).map((c) => [norm(c.name), c.id as string]));

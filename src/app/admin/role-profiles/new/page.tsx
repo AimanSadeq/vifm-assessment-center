@@ -11,8 +11,8 @@ async function loadCompetencyTree(): Promise<CompetencyTree> {
   const supabase = await createClient();
   const [domains, clusters, comps] = await Promise.all([
     supabase.from("competency_domains").select("*").order("sort_order"),
-    supabase.from("competency_clusters").select("*").order("sort_order"),
-    supabase.from("competencies").select("*").is("superseded_by", null).order("sort_order"),
+    supabase.from("competency_clusters").select("*").is("retired_at", null).order("sort_order"),
+    supabase.from("competencies").select("*").is("retired_at", null).order("sort_order"),
   ]);
   const domainRows = domains.data ?? [];
   const clusterRows = clusters.data ?? [];

@@ -67,7 +67,7 @@ export function buildMatrix(metrics: EvidenceMetrics): MatrixRow[] {
       category: "Construct definition",
       blurb: "Each construct is explicitly defined before items are written.",
       cells: {
-        ac: d(`${COMPETENCY_COUNT} competencies + 249 indicators`),
+        ac: d(`${COMPETENCY_COUNT} competencies + 225 indicators`),
         arc_org: d("8 pillars - methodology brief §2"),
         arc_ind: d("4 factors - methodology brief §2"),
         fluent: d("CEFR descriptors"),

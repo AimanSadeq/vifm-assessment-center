@@ -213,7 +213,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
         <Text style={s.h2}>The VIFM High-Potential model</Text>
         <Text style={s.p}>
           High potential is read here through two measurable pillars. ASPIRATION - the drive, initiative and growth
-          appetite to rise into bigger roles - is measured from eight behavioural markers in the VIFM Persona®
+          appetite to rise into bigger roles - is measured from the drive and growth markers in the VIFM Persona®
           sitting. ABILITY - the capability to succeed once there - blends the remaining behavioural competencies
           with cognitive reasoning evidence from VIFM Logica®.{" "}
           {d.engagement
@@ -274,7 +274,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
 
       {/* ── Page 3: aspiration detail ── */}
       <Page size="A4" style={s.page}>
-        <Text style={s.h2}>Aspiration - the eight markers</Text>
+        <Text style={s.h2}>Aspiration - the drive and growth markers</Text>
         <Text style={s.pSoft}>
           Self-rated behavioural markers of drive, initiative and growth appetite from the Persona sitting.
           Self-report shows how the individual sees their own drive - triangulate with observed behaviour and,
@@ -413,9 +413,9 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
 
         <Text style={s.h2}>Methodology & honest limits</Text>
         <Text style={s.pSoft}>
-          Sources: VIFM Persona® behavioural self-assessment (41-competency framework; forced-choice and Likert items,
+          Sources: VIFM Persona® behavioural self-assessment (VIFM behavioural framework; forced-choice and Likert items,
           reverse-keyed) and VIFM Logica® reasoning (server-scored, keyed test held server-side). Aspiration is the mean
-          of eight drive/growth markers; behavioural ability is the mean of the remaining measured competencies; cognitive
+          of the drive/growth markers the sitting measured; behavioural ability is the mean of the remaining measured competencies; cognitive
           agility maps reasoning accuracy onto the shared 1-5 scale.{" "}
           {d.cognitive != null
             ? `Ability = ${Math.round(d.weights.behavioural * 100)}% behavioural + ${Math.round(d.weights.cognitive * 100)}% cognitive.`

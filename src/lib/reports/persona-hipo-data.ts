@@ -104,7 +104,7 @@ export async function buildHipoPdfData(input: {
     .map((cid) => ({ name: nameById.get(cid) ?? "(competency)", score: round2(scoreById.get(cid)!) }))
     .sort((a, b) => b.score - a.score);
   if (aspirationMarkers.length < 4) {
-    return { ok: false, status: 400, error: "The sitting did not cover enough aspiration markers - use the full Persona battery, or a scope that includes the drive/growth competencies (Proactive Initiative, Outcome Ownership, Accountability, Learning by Doing, Mobilising Around Purpose, Principled Courage, Adaptive Learning Capacity, Continuous Self-Development)" };
+    return { ok: false, status: 400, error: "The sitting did not cover enough aspiration markers - use the full Persona battery, or a scope that includes the drive/growth competencies (Proactive Initiative, Delivery & Accountability, Learning Agility, Mobilising Around Purpose, Integrity & Principled Courage)" };
   }
   const aspiration = round2(mean(aspirationMarkers.map((m) => m.score)));
 

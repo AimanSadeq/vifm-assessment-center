@@ -3,6 +3,7 @@
 // target, and flag which banks still generate items live at deal time ("scramble risk").
 // Every loader is tolerant of an empty or un-applied table so the page never 500s.
 
+import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 import { createServiceClient } from "@/lib/supabase/server";
 import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
@@ -244,7 +245,7 @@ async function acBehavioural(): Promise<BankReadiness> {
   const indicators = await selectRows("behavioral_indicators", "competency_id");
   const withIndicators = new Set(indicators.map((i) => String(i.competency_id)));
   const comps = await selectRows("competencies", "id");
-  const total = comps.length || 41;
+  const total = comps.length || COMPETENCY_COUNT;
   const covered = comps.filter((c) => withIndicators.has(String(c.id))).length;
   return {
     key: "ac", label: "AC behavioural", tier: "reviewed", servesLive: false, hasReviewGate: false,
@@ -260,7 +261,7 @@ async function reflect(): Promise<BankReadiness> {
   return {
     key: "reflect", label: "Reflect 360", tier: "reviewed", servesLive: false, hasReviewGate: true,
     vetted: templates, total: rows.length, console: "/reflect/admin/templates",
-    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s) - edit their competencies + behaviours in the template console (incl. the seeded 41-competency VIFM framework). Per-engagement frameworks are AI-decomposed, but a consultant must APPROVE the framework before an engagement can launch / raters are invited (gate); seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
+    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s) - edit their competencies + behaviours in the template console (incl. the seeded 21-competency VIFM framework v2). Per-engagement frameworks are AI-decomposed, but a consultant must APPROVE the framework before an engagement can launch / raters are invited (gate); seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
   };
 }
 
@@ -299,7 +300,7 @@ async function prehire(): Promise<BankReadiness> {
     perDomain.set(dn, pd);
   }
 
-  const TOTAL_COMPS = 41; // the VIFM behavioural framework
+  const TOTAL_COMPS = COMPETENCY_COUNT; // the active VIFM behavioural framework
   const perCompTarget = 8; // a rotatable pool for the ~2-item-per-competency draw
   const compsReady = Array.from(approvedByComp.values()).filter((n) => n >= perCompTarget).length;
   const vetted = Array.from(approvedByComp.values()).reduce((a, b) => a + b, 0);

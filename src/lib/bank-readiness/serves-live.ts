@@ -6,6 +6,7 @@
 // false (don't flag), so a legacy/un-migrated environment is never spuriously
 // flagged.
 
+import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 import { createServiceClient } from "@/lib/supabase/server";
 import { COGNITIVE_SUBTESTS } from "@/lib/psychometrics/framework";
 import { TECH_DOMAINS } from "@/lib/competencies/technical-framework";
@@ -14,7 +15,7 @@ const COGNITIVE_MIN = 8; // approved items per subtest before the bank serves
 const TECH_MIN = 8; // approved items per domain before it certifies
 const PREHIRE_MIN = 8; // approved items per competency
 const FLUENT_RAMP: Record<string, number> = { A1: 2, A2: 2, B1: 2, B2: 2, C1: 1, C2: 1 };
-const PREHIRE_TOTAL_COMPS = 41;
+const PREHIRE_TOTAL_COMPS = COMPETENCY_COUNT;
 
 /** Logica (cognitive): serves live-AI until every subtest has enough approved. */
 export async function logicaServesLive(): Promise<boolean> {

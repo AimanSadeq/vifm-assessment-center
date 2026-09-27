@@ -1,3 +1,4 @@
+import { extendMapToV2 } from "@/lib/competencies/framework-v2";
 // ─────────────────────────────────────────────────────────────
 // VIFM DARE Framework - dimension model (v1.0, locked 2026-07-03).
 //
@@ -67,6 +68,11 @@ export const DARE_ROLE: Record<string, DareRole> = {
   [id("37")]: "execute", // Sustainable Wellbeing
   [id("35")]: "execute", // Continuous Self-Development
 };
+
+// Framework v2 (21 competencies): each merged competency takes its sources'
+// majority role; v1 entries stay so v1 sittings still report.
+extendMapToV2(DARE_ROLE);
+
 
 export const DARE_ROLES: DareRole[] = ["decide", "advise", "recommend", "execute"];
 

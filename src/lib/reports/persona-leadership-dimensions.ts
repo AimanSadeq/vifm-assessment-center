@@ -1,3 +1,4 @@
+import { extendMapToV2 } from "@/lib/competencies/framework-v2";
 // ─────────────────────────────────────────────────────────────
 // Persona Leadership Report - dimension model.
 //
@@ -62,6 +63,11 @@ export const LEADERSHIP_DIMENSION: Record<string, LeadershipDimension> = {
   [id("23")]: "leadership", // Relationship Networks
   [id("33")]: "leadership", // Cultural & Inclusive Sensitivity
 };
+
+// Framework v2: each merged competency takes its sources' majority dimension;
+// v1 entries stay for v1 sittings.
+extendMapToV2(LEADERSHIP_DIMENSION);
+
 
 export const DIMENSION_LABEL: Record<LeadershipDimension, string> = {
   management: "Management (transactional)",

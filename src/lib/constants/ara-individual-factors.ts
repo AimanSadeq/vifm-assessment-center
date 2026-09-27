@@ -54,9 +54,8 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
       "تستبعده قبل تسليمه.",
     color: "#5391D5", // THINKING blue
     ac_competency_names: [
-      "Critical Analysis",
-      "Sound Judgement",
-      "Forward Strategy Setting",
+      "Critical Analysis & Judgement",
+      "Strategic & Commercial Insight",
     ],
   },
   {
@@ -77,8 +76,8 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     color: "#047857", // RESULTS emerald
     ac_competency_names: [
       "Proactive Initiative",
-      "Outcome Ownership",
-      "Planning & Prioritisation",
+      "Delivery & Accountability",
+      "Planning & Resourcing",
     ],
   },
   {
@@ -102,9 +101,9 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
     color: "#c2410c", // PEOPLE orange
     ac_competency_names: [
       "Clear & Adaptive Communication",
-      "Persuasion & Buy-in",
+      "Influence & Agreement",
       "Coaching & Talent Growth",
-      "Relationship Networks",
+      "Networks & Collaboration",
     ],
   },
   {
@@ -124,9 +123,9 @@ export const ARA_INDIVIDUAL_FACTORS: AraIndividualFactor[] = [
       "اختيار ما تُدخله إلى النظام.",
     color: "#6d28d9", // SELF violet
     ac_competency_names: [
-      "Continuous Self-Development",
-      "Resilience Under Pressure",
-      "Operating Through Uncertainty",
+      "Learning Agility",
+      "Resilience & Composure",
+      "Navigating Complexity & Ambiguity",
       "Self-Insight",
     ],
   },

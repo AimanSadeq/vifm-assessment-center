@@ -27,7 +27,7 @@ export default async function EditCoursePage({ params }: Props) {
       .eq("course_id", params.id),
     // The full AC competency menu so the panel can offer add-tag pickers.
     // RLS on competencies grants authenticated read; nothing fancy needed.
-    sb.from("competencies").select("id, name").is("superseded_by", null).order("name"),
+    sb.from("competencies").select("id, name").is("retired_at", null).order("name"),
   ]);
 
   if (courseRes.error || !courseRes.data) return notFound();

@@ -361,7 +361,7 @@ export async function recommendCoursesForReflectParticipant(args: {
   if (rawGaps.length === 0) return { recommendations: [], unmapped: [] };
 
   // 3. Pull the AC competency catalogue once.
-  const { data: acRows } = await sb.from("competencies").select("id, name").is("superseded_by", null);
+  const { data: acRows } = await sb.from("competencies").select("id, name").is("retired_at", null);
   const catalogue: AcCompetencyLite[] = ((acRows ?? []) as Array<{ id: string; name: string }>).map(
     (r) => {
       const n = normalizeName(r.name);
@@ -450,7 +450,7 @@ export async function recommendCoursesForReflectCohort(args: {
   }
   if (rawGaps.length === 0) return { recommendations: [], unmapped: [] };
 
-  const { data: acRows } = await sb.from("competencies").select("id, name").is("superseded_by", null);
+  const { data: acRows } = await sb.from("competencies").select("id, name").is("retired_at", null);
   const catalogue: AcCompetencyLite[] = ((acRows ?? []) as Array<{ id: string; name: string }>).map(
     (r) => {
       const n = normalizeName(r.name);
@@ -771,7 +771,7 @@ export async function recommendCoursesForIndividualSnapshot(args: {
     .from("competencies")
     .select("id, name")
     .in("name", allCompetencyNames)
-    .is("superseded_by", null);
+    .is("retired_at", null);
   const comps = (compsRes.data ?? []) as Array<{ id: string; name: string }>;
   const nameToId = new Map(comps.map((c) => [c.name, c.id]));
 

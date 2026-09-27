@@ -49,7 +49,7 @@ async function loadCounts(): Promise<Record<string, number | null>> {
   };
 
   // Competencies (authoritative count from the DB; falls back to the constant).
-  counts.competencies = (await headCount("competencies", (q) => (q as unknown as { is: (c: string, v: null) => unknown }).is("superseded_by", null))) ?? COMPETENCY_COUNT;
+  counts.competencies = (await headCount("competencies", (q) => (q as unknown as { is: (c: string, v: null) => unknown }).is("retired_at", null))) ?? COMPETENCY_COUNT;
   counts.fluent_items = await headCount("eng_fluent_items");
   counts.technical_tasks = await headCount("technical_skill_blocks");
   counts.reflect_behaviors = await headCount("reflect_behaviors");

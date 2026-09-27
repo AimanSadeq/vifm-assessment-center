@@ -322,7 +322,7 @@ export async function computeCandidateReadiness(
     }
     let acByName = new Map<string, string>();
     if (needNameFallback) {
-      const { data: allComps } = await sb.from("competencies").select("id, name").is("superseded_by", null);
+      const { data: allComps } = await sb.from("competencies").select("id, name").is("retired_at", null);
       acByName = new Map((allComps ?? []).map((c) => [String(c.name).trim().toLowerCase(), c.id as string]));
     }
     let unmappedReflect = 0;

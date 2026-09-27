@@ -44,7 +44,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     href: "/admin",
     itemTypes:
       "Behaviourally Anchored Rating Scales (BARS, 1-5 + No Evidence) applied by trained assessors to observed behaviour across multiple exercises, integrated in a consensus wash-up.",
-    construct: "The 41 VIFM behavioural competencies (4 domains, 9 clusters, 249 behavioural indicators).",
+    construct: "The 21 VIFM behavioural competencies (4 domains, 8 clusters, 225 behavioural indicators).",
     validity:
       "Content validity - competencies and indicators derived from the VIFM framework; each competency is observed in at least two exercises (the exercise-competency matrix), the design basis for content coverage.",
     reliability: "Inter-rater reliability via Intraclass Correlation (ICC) across assessors; ratings integrated to consensus.",

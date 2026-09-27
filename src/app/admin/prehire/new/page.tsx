@@ -27,7 +27,7 @@ export default async function NewRequisitionPage({
       .select(
         "id, name, sort_order, competency_clusters(domain_id, competency_domains(id, name, sort_order))"
       )
-      .is("superseded_by", null)
+      .is("retired_at", null)
       .order("sort_order"),
     // Positive behavioural indicators (the "sub-competencies") so the picker can
     // show what each selected competency actually assesses. Best-effort - a query

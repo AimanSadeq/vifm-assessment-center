@@ -67,7 +67,7 @@ export async function extractCoursesFromPdfsAction(
   const { data: comps, error: compErr } = await sb
     .from("competencies")
     .select("id, name, description")
-    .is("superseded_by", null)
+    .is("retired_at", null)
     .order("name");
   if (compErr) return { ok: false, error: `Couldn't load competencies: ${compErr.message}` };
   const competencies = (comps ?? []) as unknown as Competency[];

@@ -26,7 +26,7 @@ export default async function StartPage() {
     svc.from("reflect_frameworks").select("id, name_en").is("engagement_id", null).eq("is_template", true).order("name_en"),
     supabase.from("competency_domains").select("id, name, sort_order"),
     supabase.from("competency_clusters").select("id, domain_id"),
-    supabase.from("competencies").select("id, name, cluster_id, sort_order").is("superseded_by", null).order("sort_order"),
+    supabase.from("competencies").select("id, name, cluster_id, sort_order").is("retired_at", null).order("sort_order"),
     supabase.from("exercises").select("id, name, exercise_type").order("name"),
   ]);
 

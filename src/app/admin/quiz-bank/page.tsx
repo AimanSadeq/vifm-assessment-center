@@ -1,3 +1,4 @@
+import { COMPETENCY_COUNT } from "@/lib/competencies/framework-meta";
 import { redirect } from "next/navigation";
 import { ClipboardCheck } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
@@ -46,7 +47,7 @@ export default async function QuizBankPage() {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {metric(`${totals.approved}`, "Approved (servable) items", totals.approved > 0 ? "text-emerald-700" : undefined)}
         {metric(`${totals.inReview}`, "In review (awaiting SME sign-off)", totals.inReview > 0 ? "text-amber-600" : undefined)}
-        {metric(`${totals.competenciesReady}/41`, `Competencies at ${QUIZ_BANK_TARGET}+ approved`)}
+        {metric(`${totals.competenciesReady}/${COMPETENCY_COUNT}`, `Competencies at ${QUIZ_BANK_TARGET}+ approved`)}
         {metric(`${totals.total}`, "Total items in bank")}
       </div>
 

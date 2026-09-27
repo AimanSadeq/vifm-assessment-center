@@ -67,7 +67,7 @@ export function ObservedLensPanel({
           The wash-up consensus scores ({lens.ratedCount} of {lens.designCount} designed
           competencies scored) re-read through the VIFM DARE decision roles and the Goleman EQ
           quadrants. Observed evidence is the strongest tier of the measurement model - but an
-          Assessment Center covers a subset of the 41, so each group shows how many of its model
+          Assessment Center covers a subset of the framework, so each group shows how many of its model
           competencies this engagement was designed to observe.
         </p>
       </CardHeader>
@@ -94,7 +94,7 @@ export function ObservedLensPanel({
           ))}
           {lens.eq.length === 0 && (
             <p className="text-sm italic text-slate-400">
-              No EQ-mapped competencies in this engagement&apos;s design (EQ covers 22 of the 41).
+              No EQ-mapped competencies in this engagement&apos;s design (EQ covers part of the framework).
             </p>
           )}
         </div>

@@ -9,13 +9,13 @@ import { BARS_SCALE, CLUSTER_DEFINITIONS, resolveDomainVisual, type DomainVisual
 // on-screen reference and the downloadable PDF can never drift.
 
 type DomainRow = { id: string; name: string; name_ar: string | null; sort_order: number };
-type ClusterRow = { id: string; name: string; name_ar: string | null; domain_id: string; sort_order: number };
+type ClusterRow = { id: string; name: string; name_ar: string | null; domain_id: string; sort_order: number; retired_at?: string | null };
 type CompRow = {
   id: string;
   name: string;
   name_ar: string | null;
-  /** 00225: set when a newer framework version absorbed this competency. */
-  superseded_by?: string | null;
+  /** 00226: set when the competency left the active framework. */
+  retired_at?: string | null;
   description: string | null;
   description_ar: string | null;
   cluster_id: string;
@@ -63,13 +63,13 @@ const titleCase = (s: string) => s.toLowerCase().replace(/\b\w/g, (c) => c.toUpp
 
 export async function loadFrameworkTree(): Promise<{ domains: DomainNode[]; counts: FrameworkCounts }> {
   const sb = createServiceClient();
-  const [domains, clusters, allComps, indicators] = await Promise.all([
+  const [domains, allClusters, allComps, indicators] = await Promise.all([
     fetchTolerant<DomainRow>(sb, "competency_domains", "id, name, name_ar, sort_order", "id, name, sort_order"),
-    fetchTolerant<ClusterRow>(sb, "competency_clusters", "id, name, name_ar, domain_id, sort_order", "id, name, domain_id, sort_order"),
+    fetchTolerant<ClusterRow>(sb, "competency_clusters", "id, name, name_ar, domain_id, sort_order, retired_at", "id, name, domain_id, sort_order"),
     fetchTolerant<CompRow>(
       sb,
       "competencies",
-      "id, name, name_ar, description, description_ar, cluster_id, sort_order, superseded_by",
+      "id, name, name_ar, description, description_ar, cluster_id, sort_order, retired_at",
       "id, name, description, cluster_id, sort_order",
     ),
     (async (): Promise<IndicatorRow[]> => {
@@ -83,7 +83,8 @@ export async function loadFrameworkTree(): Promise<{ domains: DomainNode[]; coun
 
   // The active framework only: a superseded competency (00225) is kept for
   // history but is no longer part of the framework this document describes.
-  const comps = allComps.filter((k) => !k.superseded_by);
+  const comps = allComps.filter((k) => !k.retired_at);
+  const clusters = allClusters.filter((c) => !c.retired_at);
   const activeIds = new Set(comps.map((k) => k.id));
 
   const posByComp = new Map<string, string[]>();

@@ -17,8 +17,8 @@ async function fetchWizardData() {
     await Promise.all([
       supabase.from("organizations").select("*").order("name"),
       supabase.from("competency_domains").select("*").order("sort_order"),
-      supabase.from("competency_clusters").select("*").order("sort_order"),
-      supabase.from("competencies").select("*").is("superseded_by", null).order("sort_order"),
+      supabase.from("competency_clusters").select("*").is("retired_at", null).order("sort_order"),
+      supabase.from("competencies").select("*").is("retired_at", null).order("sort_order"),
       supabase.from("exercises").select("*").order("name"),
       supabase
         .from("role_profiles")

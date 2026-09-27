@@ -22,10 +22,12 @@ import { EQ_QUADRANT, EQ_QUADRANTS, EQ_META, type EqQuadrant } from "@/lib/repor
 const NAME_TO_ID = new Map(
   BEHAVIORAL_COMPETENCIES.map((c) => [c.nameEn.toLowerCase().replace(/\s+/g, " ").trim(), c.acCompetencyId])
 );
-// Legacy → current catalogue aliases (the 00034 Reflect template names, matched
-// to today's 41 by their 00034 descriptions).
+// Legacy → current catalogue aliases (the 00034 Reflect template names). Each
+// follows the competency's own row: 00070 renamed the catalogue in place by
+// id, and "Drives Vision and Purpose" is row 018, today Mobilising Around
+// Purpose (00070 re-points the Reflect template the same way).
 const LEGACY_ALIASES: Record<string, string> = {
-  "drives vision and purpose": "Forward Strategy Setting",
+  "drives vision and purpose": "Mobilising Around Purpose",
   "drives results": "Outcome Ownership",
   "builds effective teams": "Building Cohesive Teams",
   "communicates effectively": "Clear & Adaptive Communication",

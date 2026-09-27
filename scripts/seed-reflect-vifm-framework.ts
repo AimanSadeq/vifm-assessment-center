@@ -65,6 +65,9 @@ async function main() {
         name_en: c.name_en,
         name_ar: c.name_ar,
         display_order: c.display_order,
+        // The link to the AC catalogue. Without it the combined readiness view
+        // (Persona self + 360 others) could only match the two by name.
+        ac_competency_id: c.ac_competency_id,
       })
       .select("id")
       .single<{ id: string }>();

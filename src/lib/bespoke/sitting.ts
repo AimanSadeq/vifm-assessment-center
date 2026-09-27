@@ -7,8 +7,10 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES, translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import {
   createAnonymousBehavioralSession,
+  loadServedItemKeys,
   saveBehavioralAnswers,
   submitAnonymousBehavioral,
   type BehavioralAnswer,
@@ -28,14 +30,27 @@ export type BundlePersonaItem = { itemKey: string; competencyId: string; textEn:
 
 /** Persona items for this bundle - the full instrument, or the composed
  *  competency scope when the bundle pins one (service_config.persona). */
-function personaItemsForBundle(ctx: BundleCandidateContext): {
+function personaItemsForBundle(
+  ctx: BundleCandidateContext,
+  served: Set<string> | null = null,
+): {
   items: BundlePersonaItem[];
   meta: Map<string, { competencyId: string; reverse: boolean }>;
 } {
-  const scope = ctx.personaCompetencyIds ? new Set(ctx.personaCompetencyIds) : null;
+  // An open sitting keeps exactly the statements it was served (00225), even
+  // across a framework change; a new one serves the active framework.
+  const scope = ctx.personaCompetencyIds ? new Set(translateCompetencyIds(ctx.personaCompetencyIds)) : null;
   const items: BundlePersonaItem[] = [];
   const meta = new Map<string, { competencyId: string; reverse: boolean }>();
-  for (const comp of BEHAVIORAL_COMPETENCIES) {
+  for (const comp of served ? BEHAVIORAL_COMPETENCIES : ACTIVE_BEHAVIORAL_COMPETENCIES) {
+    if (served) {
+      for (const it of comp.items) {
+        if (!served.has(it.itemKey)) continue;
+        items.push({ itemKey: it.itemKey, competencyId: comp.acCompetencyId, textEn: it.textEn, textAr: it.textAr });
+        meta.set(it.itemKey, { competencyId: comp.acCompetencyId, reverse: it.reverse });
+      }
+      continue;
+    }
     if (scope && !scope.has(comp.acCompetencyId)) continue;
     for (const it of comp.items) {
       items.push({ itemKey: it.itemKey, competencyId: comp.acCompetencyId, textEn: it.textEn, textAr: it.textAr });
@@ -46,17 +61,20 @@ function personaItemsForBundle(ctx: BundleCandidateContext): {
 }
 
 export async function startBundlePersona(ctx: BundleCandidateContext): Promise<{ sessionId: string; items: BundlePersonaItem[] }> {
-  const { items } = personaItemsForBundle(ctx);
   if (ctx.candidate.persona_session_id) {
+    const served = await loadServedItemKeys(ctx.candidate.persona_session_id);
+    const { items } = personaItemsForBundle(ctx, served ? new Set(served) : null);
     return { sessionId: ctx.candidate.persona_session_id, items };
   }
+  const { items } = personaItemsForBundle(ctx);
   const session = await createAnonymousBehavioralSession(ctx.candidate.full_name, {
     takerEmail: ctx.candidate.email,
     organizationId: ctx.candidate.organization_id,
     projectLabel: `Bundle: ${ctx.bundle.name_en}`,
     // Pin the composed competency scope on the session (00123) so the standard
     // Persona report renders it as a scoped sitting.
-    scopedCompetencyIds: ctx.personaCompetencyIds,
+    scopedCompetencyIds: ctx.personaCompetencyIds ? translateCompetencyIds(ctx.personaCompetencyIds) : null,
+    servedItemKeys: items.map((it) => it.itemKey),
   });
   await setBundlePersonaSession(ctx.candidate.id, session.id);
   return { sessionId: session.id, items };
@@ -66,7 +84,8 @@ export async function submitBundlePersona(
   ctx: BundleCandidateContext,
   answers: Array<{ itemKey: string; rawScore: number }>,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { items, meta } = personaItemsForBundle(ctx);
+  const served = await loadServedItemKeys(ctx.candidate.persona_session_id);
+  const { items, meta } = personaItemsForBundle(ctx, served ? new Set(served) : null);
   const byKey = new Map(answers.map((a) => [a.itemKey, a.rawScore]));
   for (const it of items) {
     const v = byKey.get(it.itemKey);

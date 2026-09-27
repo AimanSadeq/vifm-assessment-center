@@ -5,8 +5,10 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES, translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import {
   createAnonymousBehavioralSession,
+  loadServedItemKeys,
   saveBehavioralAnswers,
   submitAnonymousBehavioral,
   type BehavioralAnswer,
@@ -32,14 +34,27 @@ type PersonaItemMeta = { competencyId: string; reverse: boolean };
 
 /** Served items for the role (answer-irrelevant fields only) + a server-side
  *  key→{competencyId,reverse} map (reverse is never trusted from the client). */
-export function personaItemsForConfig(config: RoleReadinessConfig): {
+export function personaItemsForConfig(
+  config: RoleReadinessConfig,
+  served: Set<string> | null = null,
+): {
   items: PersonaItemPublic[];
   meta: Map<string, PersonaItemMeta>;
 } {
-  const ids = new Set(config.competencies.map((c) => c.competency_id));
+  // An open sitting keeps exactly the statements it was served (00225); a new
+  // one serves the role's competencies on the active framework.
+  const ids = new Set(translateCompetencyIds(config.competencies.map((c) => c.competency_id)));
   const items: PersonaItemPublic[] = [];
   const meta = new Map<string, PersonaItemMeta>();
-  for (const comp of BEHAVIORAL_COMPETENCIES) {
+  for (const comp of served ? BEHAVIORAL_COMPETENCIES : ACTIVE_BEHAVIORAL_COMPETENCIES) {
+    if (served) {
+      for (const it of comp.items) {
+        if (!served.has(it.itemKey)) continue;
+        items.push({ itemKey: it.itemKey, competencyId: comp.acCompetencyId, textEn: it.textEn, textAr: it.textAr });
+        meta.set(it.itemKey, { competencyId: comp.acCompetencyId, reverse: it.reverse });
+      }
+      continue;
+    }
     if (!ids.has(comp.acCompetencyId)) continue;
     for (const it of comp.items) {
       items.push({ itemKey: it.itemKey, competencyId: comp.acCompetencyId, textEn: it.textEn, textAr: it.textAr });
@@ -59,16 +74,19 @@ export async function startPersonaSection(candidate: {
   persona_session_id: string | null;
 }, config: RoleReadinessConfig): Promise<{ sessionId: string; items: PersonaItemPublic[] }> {
   const svc = createServiceClient();
-  const { items } = personaItemsForConfig(config);
 
   if (candidate.persona_session_id) {
+    const served = await loadServedItemKeys(candidate.persona_session_id);
+    const { items } = personaItemsForConfig(config, served ? new Set(served) : null);
     return { sessionId: candidate.persona_session_id, items };
   }
+  const { items } = personaItemsForConfig(config);
   const session = await createAnonymousBehavioralSession(candidate.full_name, {
     takerEmail: candidate.email,
     organizationId: candidate.organization_id,
-    scopedCompetencyIds: config.competencies.map((c) => c.competency_id),
+    scopedCompetencyIds: translateCompetencyIds(config.competencies.map((c) => c.competency_id)),
     projectLabel: `Role Readiness: ${config.name_en}`,
+    servedItemKeys: items.map((it) => it.itemKey),
   });
   await svc.from("rr_candidates").update({ persona_session_id: session.id, status: "in_progress" }).eq("id", candidate.id);
   return { sessionId: session.id, items };
@@ -82,7 +100,8 @@ export async function submitPersonaSection(
   config: RoleReadinessConfig,
   answers: Array<{ itemKey: string; rawScore: number }>,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { items, meta } = personaItemsForConfig(config);
+  const served = await loadServedItemKeys(sessionId);
+  const { items, meta } = personaItemsForConfig(config, served ? new Set(served) : null);
   const byKey = new Map(answers.map((a) => [a.itemKey, a.rawScore]));
   // Completeness: every served item must be answered 1-5.
   for (const it of items) {

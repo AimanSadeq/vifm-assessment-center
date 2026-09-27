@@ -10,6 +10,8 @@ import {
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
 import { buildPersonaPdfData } from "@/lib/reports/persona-report-data";
 import { isStaffCaller } from "@/lib/ara/auth-guards";
+import { loadPersonaCompetencies } from "@/lib/persona/bank";
+import { translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 
 export type StartPersonaOptions = {
   /** 'development' (narrative + suggestions) or 'hiring' (fit vs a target role). */
@@ -102,6 +104,21 @@ export async function startPersonaAction(
           const rows = (existingRows ?? []) as Array<{
             id: string; status: string; randomization_seed: number | null; item_format: string | null;
           }>;
+          // The statements the open sitting was served (00225), read on its own
+          // so a DB without the column still resumes.
+          let resumeServed: string[] | null = null;
+          if (rows[0] && rows[0].status !== "submitted") {
+            try {
+              const { data: sv } = await sb
+                .from("behavioral_assessment_sessions")
+                .select("served_item_keys")
+                .eq("id", rows[0].id)
+                .maybeSingle<{ served_item_keys: string[] | null }>();
+              resumeServed = sv?.served_item_keys ?? null;
+            } catch {
+              resumeServed = null;
+            }
+          }
           if (rows.some((x) => x.status === "submitted")) {
             return { ok: false as const, completed: true as const, error: "This assessment has already been completed." };
           }
@@ -125,6 +142,7 @@ export async function startPersonaAction(
               answers,
               seed: existing.randomization_seed ?? null,
               itemFormat: (existing.item_format as "normative" | "ipsative" | "both" | null) ?? null,
+              servedItemKeys: resumeServed,
             };
           }
           // Project label (00137) read separately so a pending migration can't
@@ -155,6 +173,37 @@ export async function startPersonaAction(
       }
     }
 
+    // A pinned scope stored before a framework change may name retired
+    // competencies: serve (and record) their successors instead (00225).
+    if (scopedCompetencyIds && scopedCompetencyIds.length > 0) {
+      scopedCompetencyIds = translateCompetencyIds(scopedCompetencyIds);
+    }
+
+    // The exact statements this sitting serves, computed from the same bank
+    // and scope the form renders, so resume and save can hold the sitting to
+    // them. Forced-choice-only runs serve no rated statements.
+    let servedItemKeys: string[] | null = null;
+    if (itemFormat !== "ipsative") {
+      try {
+        const bank = await loadPersonaCompetencies();
+        // Record only scope competencies the bank can serve. A scope that
+        // matches nothing makes the form fall back to the full bank, so the
+        // session must not keep the unmatched scope - saving would otherwise
+        // discard every answer as out of scope.
+        if (scopedCompetencyIds && scopedCompetencyIds.length > 0) {
+          const inBank = new Set(bank.map((c) => c.acCompetencyId));
+          const kept = scopedCompetencyIds.filter((id) => inBank.has(id));
+          scopedCompetencyIds = kept.length > 0 ? kept : null;
+        }
+        const scope = scopedCompetencyIds && scopedCompetencyIds.length > 0 ? new Set(scopedCompetencyIds) : null;
+        servedItemKeys = bank
+          .filter((c) => !scope || scope.has(c.acCompetencyId))
+          .flatMap((c) => c.items.map((it) => it.itemKey));
+      } catch {
+        servedItemKeys = null;
+      }
+    }
+
     const session = await createAnonymousBehavioralSession(name.trim() || null, {
       organizationId,
       voucherRedemptionId: redemptionId,
@@ -165,6 +214,7 @@ export async function startPersonaAction(
       scopedCompetencyIds,
       projectLabel,
       itemFormat,
+      servedItemKeys,
     });
 
     if (redemptionId) {

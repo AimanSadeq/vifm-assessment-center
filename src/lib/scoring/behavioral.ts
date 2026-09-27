@@ -9,6 +9,8 @@
 // prehire candidate flows); the candidate identity is enforced at the route/
 // page layer (dev trusts the candidateId; under auth=on gate via profile_id).
 // ─────────────────────────────────────────────────────────────
+import { BEHAVIORAL_FRAMEWORK_VERSION, translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
+import { snapshotPersonaRole } from "@/lib/scoring/persona-roles";
 import { createServiceClient } from "@/lib/supabase/server";
 
 export type BehavioralStatus = "not_started" | "in_progress" | "submitted";
@@ -79,6 +81,10 @@ export async function createAnonymousBehavioralSession(
     projectLabel?: string | null;
     /** Item format (migration 00140, SD-9): 'normative' / 'ipsative' / 'both'. */
     itemFormat?: "normative" | "ipsative" | "both";
+    /** The exact normative item keys served (migration 00225). Resume and save
+     *  honour this set, so a later bank or framework change cannot reshuffle an
+     *  open sitting. */
+    servedItemKeys?: string[] | null;
   },
 ): Promise<BehavioralSession> {
   const sb = createServiceClient();
@@ -129,9 +135,21 @@ export async function createAnonymousBehavioralSession(
       : {}),
   };
 
+  // 00225 (newest): framework version, served items, frozen target role. The
+  // role is snapshotted here so every caller (standalone, voucher, bundle, Role
+  // Readiness) records the profile the sitting is scored against.
+  const served = (opts?.servedItemKeys ?? []).filter(Boolean);
+  const roleSnapshot = await snapshotPersonaRole(opts?.targetRoleProfileId ?? null);
+  const with225: Record<string, unknown> = {
+    ...with140,
+    framework_version: BEHAVIORAL_FRAMEWORK_VERSION,
+    ...(served.length > 0 ? { served_item_keys: Array.from(new Set(served)) } : {}),
+    ...(roleSnapshot ? { target_role_snapshot: roleSnapshot } : {}),
+  };
+
   // Peel the newest migration's columns first on each missing-column error:
-  // 00140 item_format -> 00137 project_label -> 00129 taker_email -> 00123 scope -> 00110 -> core.
-  const attempts = [with140, with137, with129, with123, with110, baseCore];
+  // 00225 versioning -> 00140 item_format -> 00137 project_label -> 00129 taker_email -> 00123 scope -> 00110 -> core.
+  const attempts = [with225, with140, with137, with129, with123, with110, baseCore];
   let data: { id: string; status: string } | null = null;
   let error: unknown = null;
   for (const payload of attempts) {
@@ -339,23 +357,20 @@ export async function saveBehavioralAnswers(
   const sb = createServiceClient();
   // Read the session WITH its pinned scope (00123). Tolerant of the column
   // being absent - fall back to the basic select.
-  type SessionScopeRow = { id: string; status: string; scoped_competency_ids?: string[] | null };
+  type SessionScopeRow = {
+    id: string;
+    status: string;
+    scoped_competency_ids?: string[] | null;
+    served_item_keys?: string[] | null;
+  };
   let session: SessionScopeRow | null = null;
   {
-    const wide = await sb
-      .from("behavioral_assessment_sessions")
-      .select("id, status, scoped_competency_ids")
-      .eq("id", sessionId)
-      .maybeSingle();
-    if (wide.error && isMissingColumnError(wide.error)) {
-      const basic = await sb
-        .from("behavioral_assessment_sessions")
-        .select("id, status")
-        .eq("id", sessionId)
-        .maybeSingle();
-      session = (basic.data as SessionScopeRow) ?? null;
-    } else {
-      session = (wide.data as SessionScopeRow) ?? null;
+    // Newest columns first; each fallback drops one migration's columns.
+    for (const cols of ["id, status, scoped_competency_ids, served_item_keys", "id, status, scoped_competency_ids", "id, status"]) {
+      const res = await sb.from("behavioral_assessment_sessions").select(cols).eq("id", sessionId).maybeSingle();
+      if (res.error && isMissingColumnError(res.error)) continue;
+      session = (res.data as unknown as SessionScopeRow) ?? null;
+      break;
     }
   }
   if (!session) return { ok: false, error: "Invalid session" };
@@ -365,11 +380,24 @@ export async function saveBehavioralAnswers(
   // at render. The take page is auth-bypassed and the save action is keyed only
   // by sessionId, so a crafted call could otherwise inject out-of-scope answers
   // and widen a pinned assessment. Empty/null scope = full bank (no filtering).
+  // A scope stored before a framework change may name retired competencies;
+  // their successors count as in scope too, so a sitting served on the new
+  // framework never has its answers silently discarded (00225).
   const scopeSet =
     Array.isArray(session.scoped_competency_ids) && session.scoped_competency_ids.length > 0
-      ? new Set(session.scoped_competency_ids)
+      ? new Set([...session.scoped_competency_ids, ...translateCompetencyIds(session.scoped_competency_ids)])
       : null;
-  const inScope = scopeSet ? answers.filter((a) => scopeSet.has(a.competencyId)) : answers;
+  // Normative answers must be to a statement this sitting was actually served.
+  // Forced-choice rows are keyed by block and pass through.
+  const servedSet =
+    Array.isArray(session.served_item_keys) && session.served_item_keys.length > 0
+      ? new Set(session.served_item_keys)
+      : null;
+  const inScope = answers.filter(
+    (a) =>
+      (!scopeSet || scopeSet.has(a.competencyId)) &&
+      (!servedSet || (a.itemType ?? "normative") !== "normative" || servedSet.has(a.itemKey)),
+  );
 
   const valid = inScope.filter((a) => Number.isInteger(a.rawScore) && a.rawScore >= 1 && a.rawScore <= 5);
   const baseRow = (a: BehavioralAnswer) => ({
@@ -453,4 +481,22 @@ export async function submitBehavioralAssessment(
     .eq("id", session.id);
 
   return { ok: true, scored: rows.length };
+}
+
+/** The normative item keys a sitting was served (00225), or null when the
+ *  sitting predates the column or served the full bank without recording it. */
+export async function loadServedItemKeys(sessionId: string | null | undefined): Promise<string[] | null> {
+  if (!sessionId) return null;
+  try {
+    const sb = createServiceClient();
+    const { data, error } = await sb
+      .from("behavioral_assessment_sessions")
+      .select("served_item_keys")
+      .eq("id", sessionId)
+      .maybeSingle<{ served_item_keys: string[] | null }>();
+    if (error) return null;
+    return Array.isArray(data?.served_item_keys) && data.served_item_keys.length > 0 ? data.served_item_keys : null;
+  } catch {
+    return null;
+  }
 }

@@ -62,3 +62,56 @@ export async function loadPersonaRoleById(roleId: string): Promise<PersonaRoleOp
   const all = await loadPersonaRoleOptions();
   return all.find((r) => r.id === roleId) ?? null;
 }
+
+/** The role a sitting was scored against, frozen at start (00225
+ *  behavioral_assessment_sessions.target_role_snapshot). Reports read this
+ *  instead of the live profile, so editing or re-mapping a role profile later
+ *  can never re-score a completed sitting. */
+export type PersonaRoleSnapshot = PersonaRoleOption & { snapshotAt: string };
+
+export async function snapshotPersonaRole(roleId: string | null | undefined): Promise<PersonaRoleSnapshot | null> {
+  if (!roleId) return null;
+  const role = await loadPersonaRoleById(roleId);
+  return role ? { ...role, snapshotAt: new Date().toISOString() } : null;
+}
+
+/** Parse a stored snapshot defensively; anything malformed reads as absent. */
+export function parsePersonaRoleSnapshot(raw: unknown): PersonaRoleOption | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as { id?: unknown; name?: unknown; comps?: unknown };
+  if (typeof r.id !== "string" || !Array.isArray(r.comps)) return null;
+  const comps = r.comps
+    .filter((c): c is { competencyId: string; name?: string; target: number; weight?: number } =>
+      !!c && typeof (c as { competencyId?: unknown }).competencyId === "string" && Number.isFinite(Number((c as { target?: unknown }).target)))
+    .map((c) => ({
+      competencyId: c.competencyId,
+      name: typeof c.name === "string" ? c.name : "",
+      target: Number(c.target),
+      weight: Number.isFinite(Number(c.weight)) ? Number(c.weight) : 1,
+    }));
+  return { id: r.id, name: typeof r.name === "string" ? r.name : "Role profile", comps };
+}
+
+/** Frozen snapshots for a set of sessions (tolerant of 00225 not applied). */
+export async function loadPersonaRoleSnapshots(sessionIds: string[]): Promise<Map<string, PersonaRoleOption>> {
+  const out = new Map<string, PersonaRoleOption>();
+  if (sessionIds.length === 0) return out;
+  try {
+    const sb = createServiceClient();
+    for (let i = 0; i < sessionIds.length; i += 150) {
+      const { data, error } = await sb
+        .from("behavioral_assessment_sessions")
+        .select("id, target_role_snapshot")
+        .in("id", sessionIds.slice(i, i + 150))
+        .not("target_role_snapshot", "is", null);
+      if (error) return out;
+      for (const row of (data ?? []) as Array<{ id: string; target_role_snapshot: unknown }>) {
+        const snap = parsePersonaRoleSnapshot(row.target_role_snapshot);
+        if (snap) out.set(row.id, snap);
+      }
+    }
+  } catch {
+    /* column absent - callers fall back to the live profile */
+  }
+  return out;
+}

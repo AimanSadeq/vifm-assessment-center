@@ -3,7 +3,7 @@ export const dynamic = "force-dynamic";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getOrCreateBehavioralSession, loadBehavioralResponses } from "@/lib/scoring/behavioral";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES, translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import { BackLink } from "@/components/shared/back-link";
 import { BehavioralRunner } from "./_components/behavioral-runner";
 
@@ -28,11 +28,11 @@ export default async function BehavioralAssessmentPage({ params }: Props) {
     .from("engagement_competencies")
     .select("competency_id")
     .eq("engagement_id", cand.engagement_id as string);
-  const scopedIds = new Set((engComps ?? []).map((r) => r.competency_id as string));
-  const competencies =
-    scopedIds.size > 0
-      ? BEHAVIORAL_COMPETENCIES.filter((c) => scopedIds.has(c.acCompetencyId))
-      : BEHAVIORAL_COMPETENCIES;
+  // Active framework (00225); an engagement set up before a framework change
+  // is read through the competencies that absorbed its choices.
+  const scopedIds = new Set(translateCompetencyIds((engComps ?? []).map((r) => r.competency_id as string)));
+  const scopedComps = ACTIVE_BEHAVIORAL_COMPETENCIES.filter((c) => scopedIds.has(c.acCompetencyId));
+  const competencies = scopedComps.length > 0 ? scopedComps : ACTIVE_BEHAVIORAL_COMPETENCIES;
 
   return (
     <div>

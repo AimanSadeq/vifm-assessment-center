@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { usableIdentity } from "@/lib/privacy/purged";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { loadPersonaCompetencies } from "@/lib/persona/bank";
+import { translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
 import { loadCompetencyDefinitions } from "@/lib/scoring/competency-definitions";
 import { getVoucherScopeByRedemptionToken } from "@/lib/persona/vouchers";
@@ -132,8 +133,10 @@ export default async function PersonaTakePage({
   // the candidate just takes the pre-configured test - the runner locks the
   // picker and we serve only the scoped competencies' items.
   const scope = await getVoucherScopeByRedemptionToken(redemption.redemption_token);
+  // A scope stored before a framework change is read through its successors
+  // (00225), matching what startPersonaAction records on the session.
   const scopedSet = scope.scopedCompetencyIds && scope.scopedCompetencyIds.length > 0
-    ? new Set(scope.scopedCompetencyIds)
+    ? new Set(translateCompetencyIds(scope.scopedCompetencyIds))
     : null;
   const allCompetencies = await loadPersonaCompetencies();
   const competencies = scopedSet

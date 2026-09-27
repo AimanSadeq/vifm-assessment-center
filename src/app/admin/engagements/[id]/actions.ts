@@ -1,5 +1,7 @@
 "use server";
 
+import { loadCompetencySuccessorMap } from "@/lib/competencies/succession";
+import { successorOf } from "@/lib/scoring/behavioral-framework";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import {
   addCandidateSchema,
@@ -602,10 +604,29 @@ export async function createReengagementAction(input: {
       .eq("engagement_id", prior.id),
   ]);
 
-  if (comps && comps.length > 0) {
+  // Carry the prior design onto the live framework (00225): a competency the
+  // framework has since retired becomes the one that absorbed it. When two
+  // prior competencies merged into one, keep a single row (the higher weight)
+  // so the one-row-per-competency rules cannot fail the copy.
+  const successors = await loadCompetencySuccessorMap(sb as never);
+  const liveId = (id: string) => successorOf(id, successors);
+  const compRows = new Map<string, { engagement_id: string; competency_id: string; weight: number | null }>();
+  for (const c of comps ?? []) {
+    const id = liveId(c.competency_id as string);
+    const w = (c.weight as number | null) ?? null;
+    const prev = compRows.get(id);
+    if (!prev || (w ?? 0) > (prev.weight ?? 0)) compRows.set(id, { engagement_id: newId, competency_id: id, weight: w });
+  }
+  const matrixRows = new Map<string, { engagement_id: string; exercise_id: string; competency_id: string }>();
+  for (const m of matrix ?? []) {
+    const id = liveId(m.competency_id as string);
+    matrixRows.set(`${m.exercise_id}:${id}`, { engagement_id: newId, exercise_id: m.exercise_id as string, competency_id: id });
+  }
+
+  if (compRows.size > 0) {
     const { error } = await sb
       .from("engagement_competencies")
-      .insert(comps.map((c) => ({ engagement_id: newId, competency_id: c.competency_id, weight: c.weight })));
+      .insert([...compRows.values()]);
     if (error) {
       await rollback();
       return { error: `Competencies: ${error.message}` };
@@ -620,14 +641,10 @@ export async function createReengagementAction(input: {
       return { error: `Exercises: ${error.message}` };
     }
   }
-  if (matrix && matrix.length > 0) {
+  if (matrixRows.size > 0) {
     const { error } = await sb
       .from("exercise_competency_matrix")
-      .insert(matrix.map((m) => ({
-        engagement_id: newId,
-        exercise_id: m.exercise_id,
-        competency_id: m.competency_id,
-      })));
+      .insert([...matrixRows.values()]);
     if (error) {
       await rollback();
       return { error: `Matrix: ${error.message}` };
@@ -1012,7 +1029,7 @@ export async function linkReflectEngagementAction(
   const fw = fws?.[0];
   if (fw) {
     const [{ data: acComps }, { data: rComps }] = await Promise.all([
-      sb.from("competencies").select("id, name"),
+      sb.from("competencies").select("id, name").is("superseded_by", null),
       sb.from("reflect_competencies").select("id, name_en, ac_competency_id").eq("framework_id", fw.id),
     ]);
     const acByName = new Map((acComps ?? []).map((c) => [norm(c.name), c.id as string]));

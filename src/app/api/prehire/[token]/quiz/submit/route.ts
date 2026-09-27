@@ -5,7 +5,7 @@ import { logPrehireEvent } from "@/lib/prehire/audit";
 import type { IntegrityFlags, IntegrityEvent } from "@/lib/scoring/integrity";
 import type { QuizQuestion } from "@/types/database";
 
-type StoredDetail = { questions?: QuizQuestion[] } | null;
+type StoredDetail = { questions?: QuizQuestion[]; competencyIds?: string[] } | null;
 
 // PDPL-safe: keep only non-negative counts/durations/lengths and the event log's
 // kind + numeric metadata - never any pasted/copied text. Mirrors the Fluent
@@ -103,7 +103,16 @@ export async function POST(req: Request, { params }: { params: { token: string }
       raw_score: correct,
       normalized_score: normalized,
       passed,
-      detail: { questions: strippedQuestions, answers, review },
+      // competencyIds: the set frozen at quiz start (00225 plumbing) - kept so
+      // the report never re-reads a later-edited requisition.
+      detail: {
+        questions: strippedQuestions,
+        answers,
+        review,
+        ...(Array.isArray((stage.detail as StoredDetail)?.competencyIds)
+          ? { competencyIds: (stage.detail as StoredDetail)!.competencyIds }
+          : {}),
+      },
       // Advisory integrity telemetry (tab-away / copy / paste). Surfaced to
       // recruiters on the SME review page; never auto-fails. Only written when
       // the client captured something.

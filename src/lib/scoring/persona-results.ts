@@ -12,7 +12,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { selfScoreByCompetency, overallSelfScore, type PersonaScoreRow } from "./behavioral";
 import { computeFit, type FitBandKey } from "./persona-fit";
-import { loadPersonaRoleOptions } from "./persona-roles";
+import { loadPersonaRoleOptions, loadPersonaRoleSnapshots } from "./persona-roles";
 import { usableIdentity } from "@/lib/privacy/purged";
 
 export type PersonaResultRow = {
@@ -262,6 +262,8 @@ export async function listPersonaResults(
 
     const roles = await loadPersonaRoleOptions();
     const roleById = new Map(roles.map((r) => [r.id, r]));
+    // Frozen role per sitting (00225) wins over the live profile.
+    const frozenBySession = await loadPersonaRoleSnapshots(ids);
 
     return sessions.map((s): PersonaResultRow => {
       const rows = bySession.get(s.id) ?? [];
@@ -275,7 +277,7 @@ export async function listPersonaResults(
       let fitPct: number | null = null;
       let fitBand: FitBandKey | null = null;
       if (s.target_role_profile_id) {
-        const role = roleById.get(s.target_role_profile_id);
+        const role = frozenBySession.get(s.id) ?? roleById.get(s.target_role_profile_id);
         if (role) {
           roleName = role.name;
           // Fit over the role competencies actually served (mirrors the report route).

@@ -36,6 +36,14 @@ const ITEMS_PER_PAGE = 12;
 
 export type RoleProfileOption = { id: string; name: string; comps: RoleCompReq[] };
 
+/** Keep only the statements a resumed sitting was served; null = no restriction. */
+function restrictToServed(comps: BehavioralCompetency[], served: Set<string> | null): BehavioralCompetency[] {
+  if (!served) return comps;
+  return comps
+    .map((c) => ({ ...c, items: c.items.filter((it) => served.has(it.itemKey)) }))
+    .filter((c) => c.items.length > 0);
+}
+
 export function PersonaStandaloneClient({
   competencies,
   redemptionToken = null,
@@ -97,6 +105,10 @@ export function PersonaStandaloneClient({
   const itemFormatLocked = pinned?.itemFormat != null;
   const [itemFormat, setItemFormat] = useState<ItemFormat>(pinned?.itemFormat ?? "both");
   const [seed, setSeed] = useState<number>(0);
+  // On resume: the exact statements the sitting was served (00225). The form
+  // lays out only these, so a bank or framework change made while the sitting
+  // was open cannot reshuffle or extend it.
+  const [servedKeys, setServedKeys] = useState<Set<string> | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [ipsChoices, setIpsChoices] = useState<Record<string, { most?: string; least?: string }>>({});
@@ -189,7 +201,7 @@ export function PersonaStandaloneClient({
   // the same designed role yields the same scoped test either way. On the
   // voucher path the `competencies` prop is already scoped upstream and `pinned`
   // is set, so we leave it untouched (it may carry an admin override).
-  const effectiveCompetencies = useMemo<BehavioralCompetency[]>(() => {
+  const baseCompetencies = useMemo<BehavioralCompetency[]>(() => {
     if (pinned) return competencies;
     // "full" override: assess the whole framework even with a role selected.
     if (!targetRoleId || scopeMode === "full") return competencies;
@@ -199,6 +211,10 @@ export function PersonaStandaloneClient({
     const scoped = competencies.filter((c) => want.has(c.acCompetencyId));
     return scoped.length > 0 ? scoped : competencies;
   }, [competencies, pinned, targetRoleId, roleProfiles, scopeMode]);
+  const effectiveCompetencies = useMemo<BehavioralCompetency[]>(
+    () => restrictToServed(baseCompetencies, servedKeys),
+    [baseCompetencies, servedKeys],
+  );
 
   // How many of the selected role's competencies exist in the served bank
   // (drives the coverage-toggle label).
@@ -324,7 +340,12 @@ export function PersonaStandaloneClient({
         // Land on the first page that still has an unanswered statement, not
         // page 1 (trial: Asaad - "you are dropped on page 1 of 14 and have to
         // click through to find where you left off").
-        const pages = paginate(flattenNormativeItems(effectiveCompetencies, effSeed), ITEMS_PER_PAGE);
+        const served =
+          "servedItemKeys" in res && Array.isArray(res.servedItemKeys) && res.servedItemKeys.length > 0
+            ? new Set(res.servedItemKeys)
+            : null;
+        setServedKeys(served);
+        const pages = paginate(flattenNormativeItems(restrictToServed(baseCompetencies, served), effSeed), ITEMS_PER_PAGE);
         let resumePage = 0;
         outer: for (let pi = 0; pi < pages.length; pi++) {
           for (const it of pages[pi]) {
@@ -456,7 +477,7 @@ export function PersonaStandaloneClient({
   const reset = () => {
     if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
     pendingRef.current.clear();
-    setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({});
+    setPhase("intro"); setSessionId(null); setAnswers({}); setIpsChoices({}); setServedKeys(null);
     setProfile(null); setInsights({}); setCourses([]); setReport(null); setPage(0); setSeed(0); setError("");
   };
 

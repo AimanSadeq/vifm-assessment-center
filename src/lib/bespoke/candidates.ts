@@ -6,7 +6,7 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES, translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import { loadBespokeServices, type BespokeServiceRow } from "./services";
 
 const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
@@ -61,8 +61,11 @@ export async function findBundleCandidateByToken(token: string): Promise<BundleC
   const scoped = COGNITIVE_SUBTEST_KEYS.filter((k) => cfg.logica?.subtests?.includes(k));
   const logicaSubtests = scoped.length > 0 && scoped.length < COGNITIVE_SUBTEST_KEYS.length ? scoped : null;
 
-  const known = BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
-  const scopedPersona = known.filter((id) => cfg.persona?.competencyIds?.includes(id));
+  // Active framework (00225); a bundle scope stored before a framework change
+  // is translated onto the competencies that absorbed it.
+  const known = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => c.acCompetencyId);
+  const wanted = new Set(translateCompetencyIds(cfg.persona?.competencyIds ?? []));
+  const scopedPersona = known.filter((id) => wanted.has(id));
   const personaCompetencyIds = scopedPersona.length > 0 && scopedPersona.length < known.length ? scopedPersona : null;
 
   return { candidate: data, bundle, stages, logicaSubtests, personaCompetencyIds };

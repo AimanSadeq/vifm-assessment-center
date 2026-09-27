@@ -1,3 +1,4 @@
+import { translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import { NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/server";
 import { findCandidateByToken } from "@/lib/prehire/candidate-access";
@@ -147,9 +148,11 @@ export async function POST(_req: Request, { params }: { params: { token: string 
 
   // Resolve the curated competency set (CAL-PRE-502). Falls back to the role
   // profile, then to the synthetic single-competency deck for full back-compat.
+  // A requisition set up before a framework change is read through the
+  // competencies that absorbed its picks (00225).
   const ranked = await resolveRankedCompetencies(
     svc,
-    ctx.requisition.competency_ids,
+    ctx.requisition.competency_ids ? translateCompetencyIds(ctx.requisition.competency_ids) : null,
     ctx.requisition.role_profile_id
   );
 
@@ -353,7 +356,9 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       prehire_candidate_id: ctx.candidate.id,
       kind: "quiz",
       status: "in_progress",
-      detail: { questions },
+      // competencyIds freezes the set this candidate is assessed on, so the
+      // report keeps it even if the requisition is edited later.
+      detail: { questions, ...(ranked.length > 0 ? { competencyIds: ranked.map((r) => r.id) } : {}) },
       started_at: new Date().toISOString(),
     },
     { onConflict: "prehire_candidate_id,kind" }

@@ -235,11 +235,17 @@ export async function buildPrehireCandidatePdf(params: {
   // tags every stored question with its competency_id (quiz/start); detail.review
   // records which were correct. Join them into { correct, total } per competency.
   const examByComp = new Map<string, { correct: number; total: number }>();
+  // The competency set frozen when the quiz started (00225 plumbing).
+  let frozenCompetencyIds: string[] | null = null;
   {
     const quizDetail = (rawResults.find((r) => r.kind === "quiz")?.detail ?? null) as {
       questions?: { id?: string; competency_id?: string }[];
       review?: { id?: string; isCorrect?: boolean }[];
+      competencyIds?: string[];
     } | null;
+    if (Array.isArray(quizDetail?.competencyIds) && quizDetail!.competencyIds!.length > 0) {
+      frozenCompetencyIds = quizDetail!.competencyIds!.filter((x) => typeof x === "string");
+    }
     const qs = Array.isArray(quizDetail?.questions) ? quizDetail!.questions! : [];
     const review = Array.isArray(quizDetail?.review) ? quizDetail!.review! : [];
     const compByQid = new Map<string, string>();
@@ -278,10 +284,14 @@ export async function buildPrehireCandidatePdf(params: {
 
     // The competency id set: explicit picks first (matches the quiz), else the
     // role profile's competencies.
+    // The set frozen at quiz start wins, so editing the requisition or its role
+    // profile later cannot strip or add rows on a candidate already assessed.
     const ids =
-      explicitIds && explicitIds.length > 0
-        ? explicitIds
-        : [...metaById.keys()];
+      frozenCompetencyIds && frozenCompetencyIds.length > 0
+        ? frozenCompetencyIds
+        : explicitIds && explicitIds.length > 0
+          ? explicitIds
+          : [...metaById.keys()];
 
     if (ids.length > 0) {
       const { data: comps } = await sb

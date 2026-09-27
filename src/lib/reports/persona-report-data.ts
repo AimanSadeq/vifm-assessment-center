@@ -9,7 +9,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { selfScoreByCompetency } from "@/lib/scoring/behavioral";
 import { BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-items";
-import { loadPersonaRoleById, type PersonaRoleOption } from "@/lib/scoring/persona-roles";
+import { loadPersonaRoleById, loadPersonaRoleSnapshots, type PersonaRoleOption } from "@/lib/scoring/persona-roles";
 import { computeFit, competencyNarrative, developmentNarrative, FIT_BAND_HEX, readinessVerdict, READINESS_VERDICT_HEX } from "@/lib/scoring/persona-fit";
 import { personaBand } from "@/lib/scoring/persona-bands";
 import {
@@ -166,9 +166,13 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
   } catch { /* tolerant */ }
 
   // ── Role (both purposes) ──
-  const role: PersonaRoleOption | null = session.target_role_profile_id
-    ? await loadPersonaRoleById(session.target_role_profile_id)
-    : null;
+  // The role as it stood when the sitting started (00225 snapshot); the live
+  // profile only for sittings that predate the snapshot. A later edit or
+  // framework re-map of the profile can then never re-score this report.
+  const frozenRole = (await loadPersonaRoleSnapshots([sessionId])).get(sessionId) ?? null;
+  const role: PersonaRoleOption | null =
+    frozenRole ??
+    (session.target_role_profile_id ? await loadPersonaRoleById(session.target_role_profile_id) : null);
   const targetById = new Map((role?.comps ?? []).map((c) => [c.competencyId, c.target]));
 
   // Role-critical marking (A.3): weight at/above the role median weight = critical.

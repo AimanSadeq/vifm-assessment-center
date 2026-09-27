@@ -97,7 +97,18 @@ export default async function AraConsultantPage() {
     .order("created_at", { ascending: false })
     .limit(10)
     .returns<PersonalSnapshotRow[]>();
-  const personalSnapshots = (personalRows ?? []).map((row) => {
+  type PersonalEntry = {
+    id: string;
+    created_at: string;
+    tier: "snapshot" | "deep_dive";
+    name: string;
+    email: string | null;
+    completed_at: string | null;
+    access_token: string | null;
+    /** null = a standalone personal sitting; otherwise the cohort it belongs to. */
+    where: string | null;
+  };
+  const standaloneSnapshots: PersonalEntry[] = (personalRows ?? []).map((row) => {
     const r = row.respondent?.[0] ?? null;
     return {
       id: row.id,
@@ -107,8 +118,72 @@ export default async function AraConsultantPage() {
       email: r?.email ?? null,
       completed_at: r?.completed_at ?? null,
       access_token: r?.access_token ?? null,
+      where: null,
     };
   });
+
+  // Respondents of the org assessments listed below: one query, chunked so a
+  // long pipeline never trips the 1000-row cap. Feeds two things - the
+  // "N of M completed" cell on each assessment row, and the cohort members in
+  // the personal panel. A person who sat a department cohort with the personal
+  // layer on has a personal report exactly like a standalone snapshot, but
+  // used to appear nowhere on this page: the panel listed only individual-stage
+  // assessments, so "I completed it on Thursday and I can't find it" was the
+  // literal experience.
+  type RespondentLite = {
+    assessment_id: string;
+    name: string | null;
+    email: string | null;
+    completed_at: string | null;
+    first_opened_at: string | null;
+    created_at: string;
+    access_token: string | null;
+    individual_only: boolean | null;
+  };
+  const orgRows = rows ?? [];
+  const respondentsByAssessment = new Map<string, RespondentLite[]>();
+  for (let i = 0; i < orgRows.length; i += 150) {
+    const ids = orgRows.slice(i, i + 150).map((r) => r.id);
+    const { data: chunk } = await sb
+      .from("ara_respondents")
+      .select("assessment_id, name, email, completed_at, first_opened_at, created_at, access_token, individual_only")
+      .in("assessment_id", ids)
+      .returns<RespondentLite[]>();
+    for (const r of chunk ?? []) {
+      const list = respondentsByAssessment.get(r.assessment_id) ?? [];
+      list.push(r);
+      respondentsByAssessment.set(r.assessment_id, list);
+    }
+  }
+  const peopleFor = (assessmentId: string) => {
+    const list = respondentsByAssessment.get(assessmentId) ?? [];
+    return { total: list.length, completed: list.filter((r) => r.completed_at).length };
+  };
+  const cohortMembers: PersonalEntry[] = [];
+  for (const row of orgRows) {
+    if (!row.include_individual_layer) continue;
+    // Simulation cohorts carry dozens of seeded respondents each; they would
+    // bury the real people this panel exists to surface.
+    if (row.is_sandbox) continue;
+    const unit = row.scope_label?.trim() || row.organization?.name || tr("araConsultant.list_no_organization");
+    for (const r of respondentsByAssessment.get(row.id) ?? []) {
+      const started = r.first_opened_at ?? r.created_at;
+      if (started < thirtyDaysAgo) continue;
+      cohortMembers.push({
+        id: `${row.id}:${r.access_token ?? r.email ?? r.name ?? ""}`,
+        created_at: started,
+        tier: (row.assessment_tier as "snapshot" | "deep_dive" | null) ?? "snapshot",
+        name: r.name ?? tr("araConsultant.list_anonymous"),
+        email: r.email,
+        completed_at: r.completed_at,
+        access_token: r.access_token,
+        where: unit,
+      });
+    }
+  }
+  const personalSnapshots: PersonalEntry[] = [...standaloneSnapshots, ...cohortMembers]
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
+    .slice(0, 25);
   const personalCompletedCount = personalSnapshots.filter((p) => p.completed_at).length;
   const personalDeepDiveCount = personalSnapshots.filter((p) => p.tier === "deep_dive").length;
 
@@ -230,6 +305,7 @@ export default async function AraConsultantPage() {
                 <TableRow>
                   <TableHead>{tr("araConsultant.list_col_name")}</TableHead>
                   <TableHead>{tr("araConsultant.list_col_email")}</TableHead>
+                  <TableHead>{tr("araConsultant.list_col_where")}</TableHead>
                   <TableHead>{tr("araConsultant.list_col_tier")}</TableHead>
                   <TableHead>{tr("araConsultant.list_col_started")}</TableHead>
                   <TableHead>{tr("araConsultant.list_col_status")}</TableHead>
@@ -241,6 +317,15 @@ export default async function AraConsultantPage() {
                   <TableRow key={p.id}>
                     <TableCell className="font-medium">{p.name}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">{p.email}</TableCell>
+                    <TableCell className="text-xs">
+                      {p.where ? (
+                        <span className="inline-flex items-center rounded-full border border-[#0D9488]/40 bg-[#0D9488]/5 px-2 py-0.5 text-[10px] font-medium text-[#0D9488]">
+                          {tr("araConsultant.list_where_cohort", { unit: p.where })}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">{tr("araConsultant.list_where_standalone")}</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       {p.tier === "deep_dive" ? (
                         <Badge className="bg-violet-600 hover:bg-violet-600 text-[10px]">
@@ -313,6 +398,8 @@ export default async function AraConsultantPage() {
                 <TableHead>{tr("araConsultant.list_col_phase")}</TableHead>
                 <TableHead>{tr("araConsultant.list_col_sandbox")}</TableHead>
                 <TableHead>{tr("araConsultant.list_col_created")}</TableHead>
+                <TableHead>{tr("araConsultant.list_col_people")}</TableHead>
+                <TableHead className="w-24"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -368,6 +455,28 @@ export default async function AraConsultantPage() {
                     </TableCell>
                     <TableCell className="text-xs text-muted-foreground">
                       {new Date(row.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {(() => {
+                        const people = peopleFor(row.id);
+                        return people.total > 0 ? (
+                          <Link
+                            href={`/ara/consultant/assessments/${row.id}?tab=respondents`}
+                            className="tabular-nums text-accent hover:underline whitespace-nowrap"
+                          >
+                            {tr("araConsultant.list_people_cell", { completed: people.completed, total: people.total })}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">{tr("araConsultant.list_people_none")}</span>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button asChild size="sm" variant="outline" className="gap-1">
+                        <Link href={`/ara/consultant/assessments/${row.id}`}>
+                          {tr("araConsultant.list_open")} <ArrowRight className="h-3.5 w-3.5" />
+                        </Link>
+                      </Button>
                     </TableCell>
                   </TableRow>
                 );

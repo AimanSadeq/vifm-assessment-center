@@ -119,13 +119,21 @@ const statusVariant: Record<string, string> = {
   unknown: "bg-muted text-muted-foreground",
 };
 
+const TAB_VALUES = ["overview", "phase2", "guide", "compliance", "portfolio", "respondents"] as const;
+type TabValue = (typeof TAB_VALUES)[number];
+
 export default async function AraAssessmentDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams?: { tab?: string };
 }) {
   const sb = createServiceClient();
   const t = await getServerT();
+  // ?tab=respondents lets the dashboard's "N people" link land on the people,
+  // not the overview. Anything unrecognised falls back to the overview.
+  const initialTab: TabValue = TAB_VALUES.includes(searchParams?.tab as TabValue) ? (searchParams!.tab as TabValue) : "overview";
 
   const { data: assessment } = await sb
     .from("ara_assessments")
@@ -634,7 +642,7 @@ export default async function AraAssessmentDetailPage({
           </div>
         </div>
 
-        <Tabs defaultValue="overview" className="mt-2">
+        <Tabs defaultValue={initialTab} className="mt-2">
           <TabsList className="mb-6">
             <TabsTrigger value="overview">{t("araAssessmentDetail.tab_overview")}</TabsTrigger>
             <TabsTrigger value="phase2">{t("araAssessmentDetail.tab_phase2_notes")}</TabsTrigger>

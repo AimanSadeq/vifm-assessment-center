@@ -24,7 +24,13 @@ export type StartPersonaOptions = {
   /** SD-9: which item format(s) to serve - 'normative' (Likert), 'ipsative'
    *  (most/least), or 'both' (default). Overridden by a voucher pin. */
   itemFormat?: "normative" | "ipsative" | "both";
+  /** Standalone runs narrowed to a role's competencies: the ids actually served.
+   *  Saved on the session so the result records what was assessed, like a
+   *  voucher scope. Ignored on the voucher path (the voucher pin wins). */
+  scopedCompetencyIds?: string[] | null;
 };
+
+const SCOPE_ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Start a standalone (anonymous) Persona run. Name is an optional label.
@@ -50,7 +56,12 @@ export async function startPersonaAction(
     // and the development plan), so it is honoured regardless of purpose.
     let purpose: "development" | "hiring" = opts?.purpose === "hiring" ? "hiring" : "development";
     let targetRoleProfileId: string | null = opts?.targetRoleProfileId ?? null;
-    let scopedCompetencyIds: string[] | null = null;
+    // Standalone scope as sent by the runner (only ever a narrowing of the bank;
+    // shape-checked). The voucher path below replaces it with the pinned scope.
+    const sentScope = Array.isArray(opts?.scopedCompetencyIds)
+      ? Array.from(new Set(opts.scopedCompetencyIds.filter((x) => typeof x === "string" && SCOPE_ID_RE.test(x)))).slice(0, 60)
+      : [];
+    let scopedCompetencyIds: string[] | null = !redemptionToken && sentScope.length > 0 ? sentScope : null;
     let itemFormat: "normative" | "ipsative" | "both" =
       opts?.itemFormat === "normative" || opts?.itemFormat === "ipsative" ? opts.itemFormat : "both";
 

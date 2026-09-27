@@ -52,8 +52,13 @@ export function BehavioralRunner({
     () => competencies.reduce((n, c) => n + c.items.length, 0),
     [competencies],
   );
-  const answeredCount = Object.keys(answers).length;
-  const allAnswered = answeredCount >= totalItems;
+  // Count only answers to items on this form: saved answers for items no
+  // longer served must not satisfy the completion check.
+  const answeredCount = useMemo(
+    () => competencies.reduce((n, c) => n + c.items.filter((it) => answers[it.itemKey] !== undefined).length, 0),
+    [competencies, answers],
+  );
+  const allAnswered = totalItems > 0 && answeredCount >= totalItems;
 
   // Self-profile (computed client-side from answers, reverse mapped) shown on
   // the submitted screen so the candidate sees their own result.

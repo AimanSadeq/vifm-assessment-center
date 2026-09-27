@@ -221,7 +221,10 @@ export function PersonaStandaloneClient({
   );
 
   const totalNorm = normItems.length;
-  const answeredNorm = Object.keys(answers).length;
+  // Count only answers to statements actually on this form. A resumed sitting
+  // can carry saved answers for items no longer served (a bank edit, a changed
+  // scope); counting those let the "all answered" gate pass with gaps left.
+  const answeredNorm = normItems.reduce((n, it) => (answers[it.itemKey] !== undefined ? n + 1 : n), 0);
   const allNormAnswered = answeredNorm >= totalNorm && totalNorm > 0;
   // PER-9: find the first unanswered normative item (+ which page it's on) so a
   // blocked taker can jump straight to it instead of hunting page by page.
@@ -292,6 +295,11 @@ export function PersonaStandaloneClient({
         targetRoleProfileId: targetRoleId || null,
         seed: s,
         itemFormat,
+        // A role-narrowed standalone run records the competencies it served.
+        scopedCompetencyIds:
+          !pinned && effectiveCompetencies.length < competencies.length
+            ? effectiveCompetencies.map((c) => c.acCompetencyId)
+            : null,
       });
       if (!res.ok) {
         setError(

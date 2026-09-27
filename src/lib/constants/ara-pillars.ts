@@ -103,5 +103,8 @@ export const ARA_OVERALL_BANDS: ReadonlyArray<{
   { label_en: "Early Stage", label_ar: "مرحلة مبكرة", min: 2.0, max: 2.9, color: "#FDBA74" },
   { label_en: "In Progress", label_ar: "في التقدم", min: 3.0, max: 3.9, color: "#FBBF24" },
   { label_en: "Advanced", label_ar: "متقدم", min: 4.0, max: 4.4, color: "#34D399" },
-  { label_en: "AI Leader", label_ar: "رائد في الذكاء الاصطناعي", min: 4.5, max: 5.0, color: "#FBBF24" },
+  // Deep green, matching L5 Leading on the maturity scale. It used to share
+  // In Progress's amber, so the two bands were indistinguishable on the gauge
+  // and the legend.
+  { label_en: "AI Leader", label_ar: "رائد في الذكاء الاصطناعي", min: 4.5, max: 5.0, color: "#12805c" },
 ] as const;

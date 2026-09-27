@@ -46,7 +46,7 @@
 
 import type { ReportData } from "./report-types";
 import { AR_FONT_HREF, escapeHtml as esc } from "@/lib/reports/html-to-pdf";
-import { GAP_TONES, DEFAULT_TARGET, type GapSeverity } from "@/lib/scoring/competency-gap";
+import { GAP_TONES, DEFAULT_TARGET, gapSeverity, type GapSeverity } from "@/lib/scoring/competency-gap";
 
 // ────────────────────────────────────────────────────────────────
 // Arabic BARS + OAR labels (the only domain enums the report renders).
@@ -85,16 +85,18 @@ function gapBadgeAr(
   target: number = DEFAULT_TARGET
 ): { severity: GapSeverity; label: string } | null {
   if (score == null || !Number.isFinite(score)) return null;
-  const t = Math.round(target);
-  const s = Math.round(score);
-  const gap = t - s;
-
-  if (gap >= 3) return { severity: "significant_gap", label: `فجوة كبيرة (${gap} مستويات)` };
-  if (gap === 2) return { severity: "moderate_gap", label: "فجوة متوسطة (مستويان)" };
-  if (gap === 1) return { severity: "minor_gap", label: "فجوة طفيفة (مستوى واحد)" };
-  if (gap === 0) return { severity: "on_target", label: "ضمن المستهدف" };
-  if (gap === -1) return { severity: "strength", label: "نقطة قوة" };
-  return { severity: "significant_strength", label: "نقطة قوة كبيرة" };
+  const gap = Math.round((target - score) * 10) / 10;
+  const severity = gapSeverity(gap);
+  // Arabic level wording: whole levels use the dual/plural forms; a
+  // half-level shows the number.
+  const levels = (g: number) =>
+    Number.isInteger(g) ? (g === 1 ? "مستوى واحد" : g === 2 ? "مستويان" : `${g} مستويات`) : `${g} مستوى`;
+  if (severity === "significant_gap") return { severity, label: `فجوة كبيرة (${levels(gap)})` };
+  if (severity === "moderate_gap") return { severity, label: `فجوة متوسطة (${levels(gap)})` };
+  if (severity === "minor_gap") return { severity, label: `فجوة طفيفة (${levels(gap)})` };
+  if (severity === "on_target") return { severity, label: "ضمن المستهدف" };
+  if (severity === "strength") return { severity, label: "نقطة قوة" };
+  return { severity, label: "نقطة قوة كبيرة" };
 }
 
 function gapPillHtml(score: number | null | undefined): string {

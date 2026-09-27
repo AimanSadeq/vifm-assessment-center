@@ -28,21 +28,55 @@ export type GapBadgeData = {
 
 export const DEFAULT_TARGET = 3;
 
+/** Round to one decimal for display; whole numbers stay whole. */
+function tidy(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
+/**
+ * Severity of a raw gap (target - score, unrounded). The bands sit on the
+ * half-levels, so whole-number gaps land exactly where they always did
+ * (3+ significant, 2 moderate, 1 minor, 0 on target, -1 strength, -2 or
+ * lower significant strength). Targets can be half-levels (4.5, 2.5), and
+ * rounding both sides first turned a half-level shortfall into "1 level".
+ */
+export function gapSeverity(rawGap: number): GapSeverity {
+  if (rawGap >= 2.5) return "significant_gap";
+  if (rawGap >= 1.5) return "moderate_gap";
+  if (rawGap >= 0.5) return "minor_gap";
+  if (rawGap > -0.5) return "on_target";
+  if (rawGap > -1.5) return "strength";
+  return "significant_strength";
+}
+
+/** "1 level", "2 levels", "0.5 level", "1.5 levels". */
+export function formatGapLevels(gap: number): string {
+  const g = tidy(gap);
+  return `${g} ${g > 1 ? "levels" : "level"}`;
+}
+
 export function getCompetencyGap(
   score: number | null | undefined,
   target: number = DEFAULT_TARGET
 ): GapBadgeData | null {
   if (score == null || !Number.isFinite(score)) return null;
-  const t = Math.round(target);
-  const s = Math.round(score);
-  const gap = t - s;
-
-  if (gap >= 3) return { severity: "significant_gap", label: `Significant Gap (${gap} levels)`, gap, score: s, target: t };
-  if (gap === 2) return { severity: "moderate_gap", label: "Moderate Gap (2 levels)", gap, score: s, target: t };
-  if (gap === 1) return { severity: "minor_gap", label: "Minor Gap (1 level)", gap, score: s, target: t };
-  if (gap === 0) return { severity: "on_target", label: "On Target", gap, score: s, target: t };
-  if (gap === -1) return { severity: "strength", label: "Strength", gap, score: s, target: t };
-  return { severity: "significant_strength", label: "Significant Strength", gap, score: s, target: t };
+  const t = tidy(target);
+  const s = tidy(score);
+  const gap = tidy(t - s);
+  const severity = gapSeverity(gap);
+  const label =
+    severity === "significant_gap"
+      ? `Significant Gap (${formatGapLevels(gap)})`
+      : severity === "moderate_gap"
+        ? `Moderate Gap (${formatGapLevels(gap)})`
+        : severity === "minor_gap"
+          ? `Minor Gap (${formatGapLevels(gap)})`
+          : severity === "on_target"
+            ? "On Target"
+            : severity === "strength"
+              ? "Strength"
+              : "Significant Strength";
+  return { severity, label, gap, score: s, target: t };
 }
 
 type Tone = { bg: string; fg: string; border: string };

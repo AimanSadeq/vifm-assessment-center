@@ -3,6 +3,7 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { EXERCISE_CHECK_MAP } from "@/lib/ac/exercise-quality";
+import { draftExerciseExamples } from "@/lib/ai/scale-anchor-drafter";
 
 export async function updateExerciseAction(exerciseId: string, data: Record<string, unknown>) {
   const supabase = await createClient();
@@ -165,4 +166,92 @@ export async function recordExerciseTrialAction(values: {
   });
   if (error) return { error: error.message };
   return { ok: true };
+}
+
+// ── B19 (BPS 4.24): exercise-specific indicator examples ──────────
+// What the evidence of a competency can look like IN this exercise, shown to
+// assessors on the observation screen. AI drafts land as 'pending'; admins
+// approve, reject, add or delete. All writes admin-only.
+
+
+const EXAMPLE_UUID = /^[0-9a-f-]{36}$/i;
+
+async function exampleReviewer(uid: string): Promise<string> {
+  const sb = createServiceClient();
+  const { data } = await sb.from("profiles").select("full_name, email").eq("id", uid).maybeSingle<{ full_name: string | null; email: string | null }>();
+  return data?.full_name?.trim() || data?.email || "VIFM admin";
+}
+
+export async function draftExerciseExamplesAction(input: { exerciseId: string; competencyId: string }) {
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: "Only an admin can draft examples." };
+    throw e;
+  }
+  if (!EXAMPLE_UUID.test(input.exerciseId) || !EXAMPLE_UUID.test(input.competencyId)) return { error: "Unknown exercise or competency." };
+  const sb = createServiceClient();
+  const [{ data: ex }, { data: comp }, { data: inds }] = await Promise.all([
+    sb.from("exercises").select("name, exercise_type, scenario_context, participant_brief").eq("id", input.exerciseId).maybeSingle(),
+    sb.from("competencies").select("name, description").eq("id", input.competencyId).is("retired_at", null).maybeSingle(),
+    sb.from("behavioral_indicators").select("indicator_type, description").eq("competency_id", input.competencyId).eq("indicator_type", "positive"),
+  ]);
+  if (!ex || !comp) return { error: "Unknown exercise or competency." };
+  const drafts = await draftExerciseExamples({
+    exerciseName: ex.name as string,
+    exerciseType: ex.exercise_type as string,
+    scenario: ((ex.scenario_context as string | null) || (ex.participant_brief as string | null)) ?? null,
+    competencyName: comp.name as string,
+    definition: (comp.description as string | null) ?? null,
+    positives: (inds ?? []).map((i) => i.description as string).filter((d) => !d.startsWith("[DEV TIP]")),
+  });
+  if (!drafts) return { error: "No AI draft came back. Check the AI key, or add examples by hand." };
+  // Replace only the PENDING drafts for this pair; approved examples stay.
+  await sb.from("exercise_indicator_examples").delete().eq("exercise_id", input.exerciseId).eq("competency_id", input.competencyId).eq("sme_status", "pending").eq("source", "ai_draft");
+  const { error } = await sb.from("exercise_indicator_examples").insert(
+    drafts.map((d, i) => ({ exercise_id: input.exerciseId, competency_id: input.competencyId, polarity: d.polarity, example_en: d.example_en, example_ar: d.example_ar, sort_order: i + 1, source: "ai_draft", sme_status: "pending" })),
+  );
+  if (error) return { error: error.message };
+  return { success: true, count: drafts.length };
+}
+
+export async function addExerciseExampleAction(input: { exerciseId: string; competencyId: string; polarity: "positive" | "negative"; exampleEn: string; exampleAr?: string }) {
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: "Only an admin can add examples." };
+    throw e;
+  }
+  const en = input.exampleEn?.trim() ?? "";
+  if (!EXAMPLE_UUID.test(input.exerciseId) || !EXAMPLE_UUID.test(input.competencyId)) return { error: "Unknown exercise or competency." };
+  if (en.length < 8 || en.length > 400) return { error: "An example needs 8-400 characters." };
+  if (input.polarity !== "positive" && input.polarity !== "negative") return { error: "Choose positive or negative." };
+  const sb = createServiceClient();
+  const { error } = await sb.from("exercise_indicator_examples").insert({
+    exercise_id: input.exerciseId, competency_id: input.competencyId, polarity: input.polarity,
+    example_en: en, example_ar: input.exampleAr?.trim() || null, sort_order: 99, source: "manual", sme_status: "pending",
+  });
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function reviewExerciseExampleAction(input: { id: string; status: "approved" | "rejected" | "delete" }) {
+  let caller;
+  try {
+    caller = await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: "Only an admin can review examples." };
+    throw e;
+  }
+  if (!EXAMPLE_UUID.test(input.id)) return { error: "Unknown example." };
+  const sb = createServiceClient();
+  if (input.status === "delete") {
+    const { error } = await sb.from("exercise_indicator_examples").delete().eq("id", input.id);
+    return error ? { error: error.message } : { success: true };
+  }
+  const { error } = await sb
+    .from("exercise_indicator_examples")
+    .update({ sme_status: input.status, sme_reviewer_name: await exampleReviewer(caller.uid), sme_reviewed_at: new Date().toISOString() })
+    .eq("id", input.id);
+  return error ? { error: error.message } : { success: true };
 }

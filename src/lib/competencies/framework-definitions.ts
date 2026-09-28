@@ -128,10 +128,22 @@ export function resolveDomainVisual(name: string, index: number, total: number):
 // ── Proficiency scale (5-point BARS) - the grid's scale card ──
 export type BarsLevel = { level: number; labelEn: string; labelAr: string; color: string; target?: boolean };
 
+// One vocabulary for the scale everywhere (BPS 4.30): these are the same
+// words the assessor rating screen, the wash-up and the reports use.
 export const BARS_SCALE: BarsLevel[] = [
-  { level: 1, labelEn: "Significant Gap", labelAr: "فجوة كبيرة", color: "#D0DFF4" },
-  { level: 2, labelEn: "Development Needed", labelAr: "بحاجة إلى تطوير", color: "#A8C4E5" },
-  { level: 3, labelEn: "Meets Requirement", labelAr: "يلبّي المتطلّب", color: "#5391D5", target: true },
-  { level: 4, labelEn: "Above Requirement", labelAr: "يفوق المتطلّب", color: "#1A3A6B" },
-  { level: 5, labelEn: "Role Model", labelAr: "قدوة يُحتذى", color: "#010131" },
+  { level: 1, labelEn: "Significant Development Needed", labelAr: "حاجة تطويرية كبيرة", color: "#D0DFF4" },
+  { level: 2, labelEn: "Development Needed", labelAr: "حاجة تطويرية", color: "#A8C4E5" },
+  { level: 3, labelEn: "Competent", labelAr: "كفؤ", color: "#5391D5", target: true },
+  { level: 4, labelEn: "Strength", labelAr: "نقطة قوة", color: "#1A3A6B" },
+  { level: 5, labelEn: "Significant Strength", labelAr: "نقطة قوة كبيرة", color: "#010131" },
 ];
+
+/** The official meaning of each point of the VIFM 1-5 BARS scale, keyed by
+ *  point (client-safe; the same words as BARS_SCALE). */
+export const BARS_POINT_LABELS: Record<1 | 2 | 3 | 4 | 5, { en: string; ar: string }> = {
+  1: { en: "Significant Development Needed", ar: "حاجة تطويرية كبيرة" },
+  2: { en: "Development Needed", ar: "حاجة تطويرية" },
+  3: { en: "Competent", ar: "كفؤ" },
+  4: { en: "Strength", ar: "نقطة قوة" },
+  5: { en: "Significant Strength", ar: "نقطة قوة كبيرة" },
+};

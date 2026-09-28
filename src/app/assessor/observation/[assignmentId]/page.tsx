@@ -39,6 +39,22 @@ export default async function ObservationPage({ params }: Props) {
     .in("competency_id", compIds.length > 0 ? compIds : ["none"])
     .order("sort_order");
 
+  // B19: what each score means for these competencies (BPS 4.31) and what the
+  // evidence can look like in THIS exercise (4.24). Rejected drafts are never
+  // shown; pending ones are, labelled as drafts. Tolerant of 00227 missing.
+  const { data: anchors } = await supabase
+    .from("competency_scale_anchors")
+    .select("competency_id, scale_point, anchor_en, anchor_ar, sme_status")
+    .in("competency_id", compIds.length > 0 ? compIds : ["none"])
+    .neq("sme_status", "rejected");
+  const { data: examples } = await supabase
+    .from("exercise_indicator_examples")
+    .select("id, competency_id, polarity, example_en, example_ar, sme_status, sort_order")
+    .eq("exercise_id", assignment.exercise_id)
+    .in("competency_id", compIds.length > 0 ? compIds : ["none"])
+    .neq("sme_status", "rejected")
+    .order("sort_order");
+
   // Fetch existing observations for this assignment
   const { data: observations } = await supabase
     .from("observations")
@@ -99,6 +115,8 @@ export default async function ObservationPage({ params }: Props) {
         assessorNotes={exercise.assessor_notes}
         competencies={competencies}
         behavioralIndicators={indicators ?? []}
+        scaleAnchors={anchors ?? []}
+        exerciseExamples={examples ?? []}
         existingObservations={observations ?? []}
         existingRatings={ratings ?? []}
       />

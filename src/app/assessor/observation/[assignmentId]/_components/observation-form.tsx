@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BackLink } from "@/components/shared/back-link";
+import { ScaleAnchors, type ScaleAnchor } from "@/components/shared/scale-anchors";
 import { saveObservationAction, deleteObservationAction, saveRatingAction, deleteRatingAction } from "../actions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -45,6 +46,15 @@ type BehavioralIndicator = {
   sort_order: number;
 };
 
+type ExerciseExample = {
+  id: string;
+  competency_id: string;
+  polarity: "positive" | "negative";
+  example_en: string;
+  example_ar: string | null;
+  sme_status: string;
+};
+
 type Props = {
   assignmentId: string;
   engagementId: string;
@@ -58,6 +68,10 @@ type Props = {
   assessorNotes?: string | null;
   competencies: Competency[];
   behavioralIndicators: BehavioralIndicator[];
+  /** B19 (BPS 4.31): per-competency meaning of each scale point. */
+  scaleAnchors?: (ScaleAnchor & { competency_id: string })[];
+  /** B19 (BPS 4.24): what the evidence can look like in this exercise. */
+  exerciseExamples?: ExerciseExample[];
   existingObservations: ObservationRow[];
   existingRatings: RatingRow[];
 };
@@ -75,9 +89,13 @@ export function ObservationForm({
   assessorNotes,
   competencies,
   behavioralIndicators,
+  scaleAnchors = [],
+  exerciseExamples = [],
   existingObservations,
   existingRatings,
 }: Props) {
+  const anchorsFor = (compId: string) => scaleAnchors.filter((a) => a.competency_id === compId);
+  const examplesFor = (compId: string) => exerciseExamples.filter((e) => e.competency_id === compId);
   const { t } = useTranslation();
   const barsLabel = (score: number) => t(`assessorPortal.observation.bars.${score}`);
   const typeLabel = (k: string) => {
@@ -413,6 +431,21 @@ export function ObservationForm({
                 </div>
               )}
 
+              {/* B19 (4.24): exercise-specific examples of the evidence */}
+              {newObsCompId && examplesFor(newObsCompId).length > 0 && (
+                <div className="rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-3 space-y-1">
+                  <p className="text-xs font-semibold text-muted-foreground">{t("assessorPortal.observation.observe.examplesTitle")}</p>
+                  {examplesFor(newObsCompId).map((ex) => (
+                    <p key={ex.id} className={cn("text-[11px]", ex.polarity === "positive" ? "text-green-700" : "text-red-600")}>
+                      {ex.polarity === "positive" ? "+" : "−"} {ex.example_en}
+                    </p>
+                  ))}
+                  {examplesFor(newObsCompId).some((ex) => ex.sme_status !== "approved") && (
+                    <p className="text-[10px] text-amber-700">{t("assessorPortal.observation.observe.examplesDraft")}</p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-1">
                 <Label>{t("assessorPortal.observation.observe.behavioralObservation")}</Label>
                 <Textarea
@@ -562,6 +595,9 @@ export function ObservationForm({
                   <p className="text-xs text-center text-muted-foreground">
                     {r.score > 0 ? barsLabel(r.score) : !ratings[comp.id] ? t("assessorPortal.observation.rate.neNoEvidence") : t("assessorPortal.observation.rate.selectRating")}
                   </p>
+
+                  {/* B19 (BPS 4.31): what each score means for THIS competency */}
+                  <ScaleAnchors anchors={anchorsFor(comp.id)} selected={r.score || null} barsLabel={barsLabel} />
 
                   {/* Justification */}
                   <Textarea

@@ -417,6 +417,35 @@ def plan_reflect(sb, wb, plan):
     notes_sheet(plan, wb, "Competency review", "Competency")
 
 
+def plan_anchors(sb, wb, plan):
+    """B19 (BPS 4.31): the 1-5 scale anchors per competency."""
+    ws = wb["Scale anchors"]
+    _, rows = read_sheet(ws)
+    table = "competency_scale_anchors"
+    bank = fetch_by_ids(sb, table, [r.get(ID) for _, r in rows])
+    src = ["Competency", "Point", "Point label", "Anchor (EN)", "Anchor (AR)"]
+    for rn, rowd, iid, row, verdict, rev in iter_reviewed(plan, ws, src, "Anchor (EN)", table, bank):
+        label = f"{rowd.get('Competency')} {rowd.get('Point')}: " + norm(rowd.get("Anchor (EN)"))[:70]
+        if drifted(row["anchor_en"], rowd.get("Anchor (EN)")):
+            plan.hold(ws.title, rn, iid, verdict, "Anchor text changed after this workbook was issued", rev, label, table)
+            continue
+        stamp = {"sme_reviewer_name": plan.reviewer, "sme_reviewed_at": NOW, "updated_at": NOW}
+        if verdict == "approve":
+            vals = {"sme_status": "approved", **stamp}
+            if is_no(rowd.get("Arabic OK?")):
+                plan.warn(ws.title, rn, iid, "Approved, but the Arabic was marked not OK with no replacement given")
+        elif verdict == "revise":
+            txt = text_revision(plan, ws.title, rn, iid, rowd, rev, label, table, row, "anchor_en", "anchor_ar")
+            if txt is None:
+                continue
+            vals = {**txt, "source": "sme", "sme_status": "approved", **stamp}
+        else:
+            vals = {"sme_status": "rejected", **stamp}
+            plan.warn(ws.title, rn, iid, "Rejected anchors are hidden from assessors until a replacement is written")
+        plan.change(table, iid, "update", vals, _pick(row, vals), ws.title, rn, verdict, verdict, rev, label)
+    notes_sheet(plan, wb, "Competency review", "Competency", source=("Definition",))
+
+
 def plan_ac(sb, wb, plan):
     comps = {c["name"]: c["id"] for c in sb.table("competencies").select("id, name").execute().data or []}
     next_sort = {}
@@ -696,12 +725,12 @@ def plan_logica(sb, wb, plan, drafts=False):
                 plan.coverage.append(f"Logica {facet} / {diff}: only {n} live question left after import")
 
 
-def notes_sheet(plan, wb, sheet, first_col):
+def notes_sheet(plan, wb, sheet, first_col, source=()):
     if sheet not in wb.sheetnames:
         return
     _, rows = read_sheet(wb[sheet], marker=first_col)
     for rn, rowd in rows:
-        rev = {h: v for h, v in rowd.items() if v and h not in (first_col, "Items")}
+        rev = {h: v for h, v in rowd.items() if v and h not in (first_col, "Items", *source)}
         if rev and rowd.get(first_col):
             plan.notes.append(dict(sheet=sheet, row=rn, id=None, review={first_col: rowd[first_col], **rev},
                                    label=rowd[first_col]))
@@ -728,6 +757,8 @@ def detect(path, wb):
         return "persona"
     if name.startswith("ARC-"):
         return "arc"
+    if name.startswith("AC-Scale-Anchors"):
+        return "ac_anchors"
     if name.startswith("AC-"):
         return "ac"
     if name.startswith("Reflect-360-"):
@@ -765,6 +796,8 @@ def build_plan(sb, path, reviewer):
         plan_reflect(sb, wb, plan)
     elif bank == "ac":
         plan_ac(sb, wb, plan)
+    elif bank == "ac_anchors":
+        plan_anchors(sb, wb, plan)
     elif bank == "arc":
         plan_arc(sb, wb, plan)
     elif bank == "technical":

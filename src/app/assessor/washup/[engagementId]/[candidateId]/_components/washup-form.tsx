@@ -1,5 +1,6 @@
 "use client";
 
+import { ScaleAnchors, type ScaleAnchor } from "@/components/shared/scale-anchors";
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,6 +62,8 @@ type Props = {
   candidateId: string;
   candidateName: string;
   competencies: Competency[];
+  /** B19 (BPS 4.31): per-competency meaning of each scale point. */
+  scaleAnchors?: (ScaleAnchor & { competency_id: string })[];
   worksheets: Record<string, unknown>[];
   existingConsensus: Record<string, unknown>[];
   existingOar: Record<string, unknown> | null;
@@ -75,6 +78,7 @@ export function WashupForm({
   candidateId,
   candidateName,
   competencies,
+  scaleAnchors = [],
   worksheets,
   existingConsensus,
   existingOar,
@@ -601,6 +605,13 @@ export function WashupForm({
                 <p className="text-xs text-center text-muted-foreground mt-1">
                   {c.score > 0 ? t(`ratings.bars.${c.score}`) : t("assessorWashup.form.agreeOnRating")}
                 </p>
+                <div className="mt-2">
+                  <ScaleAnchors
+                    anchors={scaleAnchors.filter((a) => a.competency_id === comp.id)}
+                    selected={c.score || null}
+                    barsLabel={(n) => t(`ratings.bars.${n}`)}
+                  />
+                </div>
               </div>
 
               {/* Discussion notes */}

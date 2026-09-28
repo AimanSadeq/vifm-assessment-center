@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { ExerciseDetail } from "./_components/exercise-detail";
 import { ExerciseQualityPanel } from "./_components/exercise-quality-panel";
+import { ExerciseExamplesPanel, type ExerciseExampleRow } from "./_components/exercise-examples-panel";
 import { BackLink } from "@/components/shared/back-link";
 import { reviewExerciseQuality } from "@/lib/ac/exercise-quality";
 
@@ -36,6 +37,19 @@ export default async function ExerciseDetailPage({ params }: Props) {
 
   if (exResult.error || !exResult.data) return notFound();
 
+  // B19 (BPS 4.24): examples per competency for this exercise, the active
+  // framework to pick from, and which competencies it has observed before.
+  const [activeComps, exampleRows, observedRows] = await Promise.all([
+    supabase.from("competencies").select("id, name, sort_order").is("retired_at", null).order("sort_order")
+      .then((r) => (r.data ?? []) as { id: string; name: string }[], () => [] as { id: string; name: string }[]),
+    supabase.from("exercise_indicator_examples").select("id, competency_id, polarity, example_en, sme_status, source, sort_order").eq("exercise_id", params.id).order("sort_order")
+      .then((r) => (r.data ?? []) as ExerciseExampleRow[], () => [] as ExerciseExampleRow[]),
+    supabase.from("exercise_competency_matrix").select("competency_id").eq("exercise_id", params.id)
+      .then((r) => (r.data ?? []) as { competency_id: string }[], () => [] as { competency_id: string }[]),
+  ]);
+  const activeIds = new Set(activeComps.map((c) => c.id));
+  const commonlyObserved = Array.from(new Set(observedRows.map((r) => r.competency_id))).filter((id) => activeIds.has(id));
+
   const usedLive = usageResult.some((u) => {
     const e = u.engagements as unknown as { status?: string } | null;
     return e?.status === "active" || e?.status === "completed" || e?.status === "archived";
@@ -69,6 +83,12 @@ export default async function ExerciseDetailPage({ params }: Props) {
         checks={checksResult}
         trials={trialsResult}
         review={qualityReview}
+      />
+      <ExerciseExamplesPanel
+        exerciseId={params.id}
+        competencies={activeComps}
+        examples={exampleRows}
+        commonlyObserved={commonlyObserved}
       />
     </>
   );

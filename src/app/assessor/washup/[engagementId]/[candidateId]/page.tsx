@@ -42,6 +42,15 @@ export default async function WashupCandidatePage({ params }: Props) {
         .maybeSingle(),
     ]);
 
+  // B19 (BPS 4.31): the same scale-point anchors the assessors rated against,
+  // so the panel agrees each rating against one shared reading of the scale.
+  const washupCompIds = ((compResult.data ?? []) as { competency_id: string }[]).map((r) => r.competency_id);
+  const { data: scaleAnchors } = await supabase
+    .from("competency_scale_anchors")
+    .select("competency_id, scale_point, anchor_en, anchor_ar, sme_status")
+    .in("competency_id", washupCompIds.length > 0 ? washupCompIds : ["none"])
+    .neq("sme_status", "rejected");
+
   if (engResult.error || !engResult.data || candResult.error || !candResult.data) {
     return notFound();
   }
@@ -126,6 +135,7 @@ export default async function WashupCandidatePage({ params }: Props) {
         candidateId={candidateId}
         candidateName={candResult.data.full_name}
         competencies={competencies}
+        scaleAnchors={scaleAnchors ?? []}
         worksheets={worksheetsResult.data ?? []}
         existingConsensus={consensusResult.data ?? []}
         existingOar={oarResult.data}

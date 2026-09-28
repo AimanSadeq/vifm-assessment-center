@@ -246,7 +246,9 @@ export default async function AraRespondPage({
                  are answering about their own behaviours, not their org's
                  portfolio, so the section is suppressed and the "your
                  consultant" copy doesn't leak into the self-served flow. */}
-            {ctx.assessment.engagement_stage !== "individual" && (
+            {/* UC-03: also hidden from individual_only respondents on an org
+                 assessment - they answer only the personal questions. */}
+            {ctx.assessment.engagement_stage !== "individual" && !ctx.respondent.individual_only && (
               <UseCasesSection
                 token={params.token}
                 language={language}

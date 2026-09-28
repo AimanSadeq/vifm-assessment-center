@@ -44,6 +44,24 @@ export async function addAraUseCaseAsRespondent(input: {
   const lockError = await respondentWriteLockError(respondent);
   if (lockError) return { ok: false, error: lockError };
 
+  // UC-03: the use-case portfolio is organisation evidence. A respondent who
+  // answers only the personal questions never sees the section, so refuse a
+  // write from one too (the personal-stage check mirrors the page).
+  if ((respondent as { individual_only?: boolean | null }).individual_only) {
+    return { ok: false, error: "Use cases are not part of this assessment" };
+  }
+  {
+    const sbStage = createServiceClient();
+    const { data: stageRow } = await sbStage
+      .from("ara_assessments")
+      .select("engagement_stage")
+      .eq("id", respondent.assessment_id)
+      .maybeSingle<{ engagement_stage: string }>();
+    if (stageRow?.engagement_stage === "individual") {
+      return { ok: false, error: "Use cases are not part of this assessment" };
+    }
+  }
+
   const parsed = createAraUseCaseSchema.safeParse({
     assessment_id: respondent.assessment_id,
     name: input.name,

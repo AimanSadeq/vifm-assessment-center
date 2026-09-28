@@ -25,14 +25,18 @@ import type { AraPillarId } from "@/types/ara";
  */
 export async function InvestmentMatrix({
   pillarData,
+  lang,
 }: {
   pillarData: Array<{
     pillar_id: AraPillarId;
     raw_score: number | null;
     pillar_weight: number;
   }>;
+  /** Report language. Omitted = the viewer's locale (the EN/bilingual report). */
+  lang?: "en" | "ar";
 }) {
-  const t = await getServerT();
+  const t = await getServerT(lang);
+  const ar = lang === "ar";
   const PAD = 60;
   const LEGEND_W = 200;
   const W = 540;
@@ -86,7 +90,7 @@ export async function InvestmentMatrix({
       return {
         pillar_id: p.pillar_id,
         index: i + 1,
-        name: pillar?.name_en ?? p.pillar_id,
+        name: (ar ? pillar?.name_ar : pillar?.name_en) ?? pillar?.name_en ?? p.pillar_id,
         x: clamp(PAD + effort * plotW + dx, PAD + R, PAD + plotW - R),
         y: clamp(PAD + (1 - value) * plotH + dy, PAD + R, PAD + plotH - R),
       };
@@ -204,13 +208,10 @@ export async function InvestmentMatrix({
         will otherwise read meaning into a position that carries none. Say it
         rather than let the chart imply a judgement nobody made. */}
     {!weightsVary && (
-      <p style={{ fontSize: "8.5pt", color: "#6b7280", marginTop: "8pt", lineHeight: 1.5 }}>
-        All in-scope pillars currently carry the same weight
-        ({maxWeight.toFixed(1)}%), so the vertical axis does not separate them and
-        every pillar sits on the midline. Priority here is read left to right:
-        the further right, the more work to reach the 4.00 target. To make
-        business value differentiate, set per-pillar weights on the assessment
-        before generating the report.
+      <p style={{ fontSize: "8.5pt", color: "#6b7280", marginTop: "8pt", lineHeight: 1.5 }} dir={ar ? "rtl" : undefined}>
+        {ar
+          ? `تحمل جميع الركائز ضمن النطاق حالياً الوزن نفسه (${maxWeight.toFixed(1)}%)، لذا لا يفصل المحور الرأسي بينها وتقع كل ركيزة على الخط الأوسط. تُقرأ الأولوية هنا أفقياً: كلما اتجهت الركيزة إلى اليمين زاد الجهد اللازم لبلوغ هدف 4.00. ولكي تميّز القيمة التجارية بين الركائز، حدّد وزناً لكل ركيزة في التقييم قبل إصدار التقرير.`
+          : `All in-scope pillars currently carry the same weight (${maxWeight.toFixed(1)}%), so the vertical axis does not separate them and every pillar sits on the midline. Priority here is read left to right: the further right, the more work to reach the 4.00 target. To make business value differentiate, set per-pillar weights on the assessment before generating the report.`}
       </p>
     )}
     </>

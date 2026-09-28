@@ -50,6 +50,8 @@ export type BilingualReportProps = {
   sector: string;
   isSandbox: boolean;
   reportDate: string;
+  /** The report date written in Arabic; falls back to reportDate. */
+  reportDateAr?: string;
   overall: number | null;
   overallLabelEn: string | null;
   overallLabelAr: string | null;
@@ -83,7 +85,9 @@ export type BilingualReportProps = {
    *  during the in-flight migration. */
   respondents?: Array<{
     name: string;
+    name_ar?: string | null;
     role_label_en: string | null;
+    role_label_ar?: string | null;
     completed_at: string | null;
     assignments?: Array<{ pillar_id: string }>;
   }>;
@@ -113,6 +117,11 @@ export type BilingualReportProps = {
   /** Individual-layer tier (snapshot | deep_dive) - shapes the
    *  Workforce reliability caption. */
   assessmentTier?: string | null;
+  /** PDF-34/41: print the Arabic column only, full width, A4 portrait - the
+   *  Arabic-language report. Every English cell is hidden by report.css
+   *  (.ar-only-report), so the Arabic PDF carries the same sections as the
+   *  bilingual one instead of the English-only portrait flow. */
+  arabicOnly?: boolean;
 };
 
 /**
@@ -135,6 +144,10 @@ export function BilingualReport(p: BilingualReportProps) {
   // KPI-tile denominators reflect the SCOPED count, not a hardcoded 8 - a
   // Department (4) / Division (6) run previously read "2 / 8" in the client PDF.
   const scopedCount = scopedPillars.length;
+  // Language of the visuals that span both columns: English in the bilingual
+  // report (unchanged), Arabic in the Arabic-only report (PDF-41).
+  const vl: "en" | "ar" = p.arabicOnly ? "ar" : "en";
+  const sectorAr: Record<string, string> = { government: "حكومي", banking: "مصرفي", general: "عام" };
   const arDigits = (n: number) => String(n).replace(/\d/g, (d) => "٠١٢٣٤٥٦٧٨٩"[Number(d)]);
   const stageBadgeBg =
     stageDef.tone === "teal" ? "rgba(45, 212, 191, 0.15)" :
@@ -146,7 +159,7 @@ export function BilingualReport(p: BilingualReportProps) {
     "#FCD34D";
 
   return (
-    <>
+    <div className={p.arabicOnly ? "ar-only-report" : undefined} dir={p.arabicOnly ? "rtl" : undefined}>
       {/* ─── Cover - already bilingual by design ─── */}
       <section
         className="report-page-bilingual-with-visual"
@@ -155,7 +168,7 @@ export function BilingualReport(p: BilingualReportProps) {
         <div><VifmLogo variant="white" size="md" /></div>
         <div style={{ textAlign: "center", alignSelf: "center" }}>
           <p style={{ fontSize: "9pt", opacity: 0.7, letterSpacing: "0.15em", margin: 0 }}>
-            {p.isSandbox ? tr("en", "confidential_sample") : tr("en", "confidential_internal")}
+            {p.isSandbox ? tr(vl, "confidential_sample") : tr(vl, "confidential_internal")}
           </p>
           {/* Stage badge - mirrors the EN report cover. */}
           <div style={{ marginTop: "16pt" }}>
@@ -167,7 +180,9 @@ export function BilingualReport(p: BilingualReportProps) {
               background: stageBadgeBg, color: stageBadgeColor,
               border: `1pt solid ${stageBadgeColor}40`,
             }}>
-              Stage {stageDef.number} · {stageDef.label_en}{stageDef.is_pro_bono && " · Complimentary"}
+              {p.arabicOnly
+                ? <>المرحلة {arDigits(stageDef.number)} · {stageDef.label_ar}{stageDef.is_pro_bono && " · مجاني"}</>
+                : <>Stage {stageDef.number} · {stageDef.label_en}{stageDef.is_pro_bono && " · Complimentary"}</>}
             </span>
           </div>
           <h1 style={{ fontSize: "42pt", fontWeight: 600, color: "white", margin: "16pt 0 8pt" }}>
@@ -186,7 +201,7 @@ export function BilingualReport(p: BilingualReportProps) {
               )}
             </p>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginTop: "12pt" }}>
+          <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", marginTop: "12pt" }}>
             <p style={{ color: "white", opacity: 0.85, fontSize: "14pt" }}>
               AI Readiness Compass® Report
             </p>
@@ -195,14 +210,14 @@ export function BilingualReport(p: BilingualReportProps) {
             </p>
           </div>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", fontSize: "9pt", opacity: 0.75 }}>
+        <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20pt", fontSize: "9pt", opacity: 0.75 }}>
           <div>
             <p style={{ margin: 0 }}>{regionEn} · {sectorCap}</p>
             <p style={{ margin: 0 }}>Report generated {p.reportDate}</p>
           </div>
           <div dir="rtl">
-            <p style={{ margin: 0 }}>{regionAr} · {sectorCap}</p>
-            <p style={{ margin: 0 }}>{tr("ar", "report_generated")} {p.reportDate}</p>
+            <p style={{ margin: 0 }}>{regionAr} · {sectorAr[p.sector] ?? sectorCap}</p>
+            <p style={{ margin: 0 }}>{tr("ar", "report_generated")} {p.reportDateAr ?? p.reportDate}</p>
           </div>
         </div>
       </section>
@@ -218,7 +233,7 @@ export function BilingualReport(p: BilingualReportProps) {
               questions per pillar, so scores are indicative and not directly
               comparable to full-form benchmarks or prior full-form years. */}
           {p.questionsPerPillar != null && (
-            <div
+            <div className="bi-grid"
               style={{
                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6mm",
                 border: "1px solid #f5d9a8", background: "#fffbeb", borderRadius: "4pt",
@@ -233,7 +248,7 @@ export function BilingualReport(p: BilingualReportProps) {
               </p>
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+          <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
             <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "exec_summary")}</h2>
             <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
               {tr("ar", "exec_summary")}
@@ -244,7 +259,7 @@ export function BilingualReport(p: BilingualReportProps) {
               left column reads English LTR and the right column reads
               Arabic RTL. The two halves share a single grid row to stay
               visually aligned. */}
-          <div style={{
+          <div className="bi-grid" style={{
             display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10mm",
             marginBottom: "8mm",
           }}>
@@ -316,7 +331,7 @@ export function BilingualReport(p: BilingualReportProps) {
 
           <div style={{ display: "flex", alignItems: "center", gap: "12mm", justifyContent: "center" }}>
             <div style={{ flex: "0 0 auto" }}>
-              <MaturityGauge score={p.overall} />
+              <MaturityGauge score={p.overall} lang={vl} />
             </div>
             <div style={{ textAlign: "center" }}>
               <p style={{ fontSize: "60pt", fontWeight: 600, color: "#010131", lineHeight: 1, margin: "0 0 4pt" }}>
@@ -324,9 +339,15 @@ export function BilingualReport(p: BilingualReportProps) {
                 <span style={{ fontSize: "22pt", color: "#6b7280", fontWeight: 400 }}> / 5.00</span>
               </p>
               <p style={{ fontSize: "14pt", color: "#5391D5", fontWeight: 500 }}>
-                {p.overallLabelEn ?? "-"}
-                {p.overallLabelAr && (
-                  <span dir="rtl" style={{ marginLeft: "8pt" }}>· {p.overallLabelAr}</span>
+                {p.arabicOnly ? (
+                  p.overallLabelAr ?? p.overallLabelEn ?? "-"
+                ) : (
+                  <>
+                    {p.overallLabelEn ?? "-"}
+                    {p.overallLabelAr && (
+                      <span dir="rtl" style={{ marginLeft: "8pt" }}>· {p.overallLabelAr}</span>
+                    )}
+                  </>
                 )}
               </p>
             </div>
@@ -489,8 +510,8 @@ export function BilingualReport(p: BilingualReportProps) {
               <tbody>
                 {(p.respondents ?? []).map((r, i) => (
                   <tr key={i} style={{ borderTop: "1px solid #e5e7eb" }}>
-                    <td style={biCell}><strong>{r.name}</strong></td>
-                    <td style={biCell}>{r.role_label_en ?? "-"}</td>
+                    <td style={biCell}><strong>{r.name_ar || r.name}</strong></td>
+                    <td style={biCell}>{r.role_label_ar || r.role_label_en || "-"}</td>
                     <td style={biCell}>{r.completed_at ? tr("ar", "completed") : tr("ar", "in_progress")}</td>
                   </tr>
                 ))}
@@ -524,14 +545,14 @@ export function BilingualReport(p: BilingualReportProps) {
 
       {/* ─── Radar Overview ─── */}
       <section className="report-page-bilingual-with-visual">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+        <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
           <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "pillar_overview")}</h2>
           <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
             {tr("ar", "pillar_overview")}
           </h2>
         </div>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <RadarChart pillarScores={p.scoreMap} size={400} pillars={scopedPillars} />
+          <RadarChart pillarScores={p.scoreMap} size={400} pillars={scopedPillars} language={vl} />
         </div>
         <div className="bilingual-text">
           <div className="col-en">
@@ -571,7 +592,7 @@ export function BilingualReport(p: BilingualReportProps) {
           return (
             <section key={pillar.id} className="report-page-bilingual">
               {/* Bilingual title row spans both columns */}
-              <div style={{
+              <div className="bi-grid" style={{
                 gridColumn: "1 / -1",
                 display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt",
                 marginBottom: "8pt", paddingBottom: "6pt",
@@ -601,7 +622,7 @@ export function BilingualReport(p: BilingualReportProps) {
                   p.includeIndividualLayer &&
                   p.workforceRollup &&
                   p.workforceRollup.respondents.some((r) => r.overall != null) && (
-                    <div
+                    <div className="bi-grid"
                       style={{
                         gridColumn: "1 / -1",
                         display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8pt",
@@ -781,13 +802,13 @@ export function BilingualReport(p: BilingualReportProps) {
 
       {/* ─── Gap Heatmap ─── */}
       <section className="report-page-bilingual-with-visual">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+        <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
           <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "gap_heatmap")}</h2>
           <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
             {tr("ar", "gap_heatmap")}
           </h2>
         </div>
-        <div><GapHeatmap countsByPillarByLevel={p.heatmapData} cohortSize={p.heatmapCohortSize ?? 0} pillars={scopedPillars} /></div>
+        <div><GapHeatmap countsByPillarByLevel={p.heatmapData} cohortSize={p.heatmapCohortSize ?? 0} pillars={scopedPillars} lang={vl} /></div>
         <div className="bilingual-text">
           <div className="col-en"><p className="report-body">{tr("en", "heatmap_intro")}</p></div>
           <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "heatmap_intro")}</p></div>
@@ -797,14 +818,14 @@ export function BilingualReport(p: BilingualReportProps) {
       {/* ─── Investment Matrix (Stage 2+ only) ─── */}
       {p.engagementStage !== "department" && (
         <section className="report-page-bilingual-with-visual">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+          <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
             <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "investment_matrix")}</h2>
             <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
               {tr("ar", "investment_matrix")}
             </h2>
           </div>
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <InvestmentMatrix pillarData={p.investmentData} />
+            <InvestmentMatrix pillarData={p.investmentData} lang={p.arabicOnly ? "ar" : undefined} />
           </div>
           <div className="bilingual-text">
             <div className="col-en"><p className="report-body">{tr("en", "matrix_intro")}</p></div>
@@ -816,13 +837,13 @@ export function BilingualReport(p: BilingualReportProps) {
       {/* ─── Gantt Roadmap (Stage 2+ only) ─── */}
       {p.engagementStage !== "department" && (
         <section className="report-page-bilingual-with-visual">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+          <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
             <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "roadmap")}</h2>
             <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
               {tr("ar", "roadmap")}
             </h2>
           </div>
-          <div><GanttRoadmap initiatives={p.roadmapInitiatives} /></div>
+          <div><GanttRoadmap initiatives={p.roadmapInitiatives} lang={p.arabicOnly ? "ar" : undefined} /></div>
           <div className="bilingual-text">
             <div className="col-en"><p className="report-body">{tr("en", "roadmap_intro")}</p></div>
             <div className="col-ar" dir="rtl"><p className="report-body">{tr("ar", "roadmap_intro")}</p></div>
@@ -942,13 +963,13 @@ export function BilingualReport(p: BilingualReportProps) {
 
       {/* ─── Regulatory Compliance ─── */}
       <section className="report-page-bilingual-with-visual">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+        <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
           <h2 className="report-h2" style={{ margin: 0 }}>{tr("en", "compliance_summary")}</h2>
           <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
             {tr("ar", "compliance_summary")}
           </h2>
         </div>
-        <div><ComplianceSummary frameworks={p.complianceSummaries} /></div>
+        <div><ComplianceSummary frameworks={p.complianceSummaries} lang={p.arabicOnly ? "ar" : undefined} /></div>
         <div className="bilingual-text">
           <div className="col-en">
             <p className="report-body">{tr("en", "compliance_intro")}</p>
@@ -972,7 +993,7 @@ export function BilingualReport(p: BilingualReportProps) {
       {/* ─── AI Use Case Portfolio ─── */}
       {p.useCases.length > 0 && (
         <section className="report-page-bilingual-with-visual">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
+          <div className="bi-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", marginBottom: "6mm" }}>
             <h2 className="report-h2" style={{ margin: 0 }}>AI Use Case Portfolio</h2>
             <h2 className="report-h2" dir="rtl" style={{ margin: 0, textAlign: "right" }}>
               محفظة حالات استخدام الذكاء الاصطناعي
@@ -1406,7 +1427,7 @@ export function BilingualReport(p: BilingualReportProps) {
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>{tr("ar", "appendix_retention")}</p>
         </div>
       </section>
-    </>
+    </div>
   );
 }
 

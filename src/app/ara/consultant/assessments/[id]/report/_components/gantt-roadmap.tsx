@@ -10,14 +10,20 @@ import { GANTT_HORIZONS } from "./report-encodings";
  */
 export async function GanttRoadmap({
   initiatives,
+  lang,
 }: {
   initiatives: Array<{
     name: string;
+    name_ar?: string;
     horizon: "quick" | "build" | "transform";
     pillar: string;
+    pillar_ar?: string;
   }>;
+  /** Report language. Omitted = the viewer's locale (the EN/bilingual report). */
+  lang?: "en" | "ar";
 }) {
-  const t = await getServerT();
+  const t = await getServerT(lang);
+  const ar = lang === "ar";
   const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
   const horizonSpec = {
     quick: { ...GANTT_HORIZONS.quick, label: t("araReport.gantt_quick_wins") },
@@ -52,7 +58,7 @@ export async function GanttRoadmap({
               paddingBottom: "2pt",
             }}
           >
-            M{m}
+            {ar ? `ش${m}` : `M${m}`}
           </div>
         ))}
       </div>
@@ -76,12 +82,12 @@ export async function GanttRoadmap({
               style={{
                 padding: "4pt 8pt",
                 background: "#f9fafb",
-                borderLeft: `3pt solid ${spec.color}`,
+                borderInlineStart: `3pt solid ${spec.color}`,
                 fontSize: "8.5pt",
               }}
             >
-              <div style={{ fontWeight: 500, color: "#010131" }}>{init.name}</div>
-              <div style={{ fontSize: "7.5pt", color: "#6b7280" }}>{init.pillar}</div>
+              <div style={{ fontWeight: 500, color: "#010131" }}>{ar ? (init.name_ar ?? init.name) : init.name}</div>
+              <div style={{ fontSize: "7.5pt", color: "#6b7280" }}>{ar ? (init.pillar_ar ?? init.pillar) : init.pillar}</div>
             </div>
             {MONTHS.map((m) => {
               const inRange = m >= spec.start && m <= spec.end;
@@ -93,10 +99,12 @@ export async function GanttRoadmap({
                   style={{
                     background: inRange ? spec.color : "#f3f4f6",
                     height: "14pt",
-                    borderTopLeftRadius: isStart ? "4pt" : 0,
-                    borderBottomLeftRadius: isStart ? "4pt" : 0,
-                    borderTopRightRadius: isEnd ? "4pt" : 0,
-                    borderBottomRightRadius: isEnd ? "4pt" : 0,
+                    // Logical corners so the rounded start/end follow the
+                    // reading direction (months run right-to-left in Arabic).
+                    borderStartStartRadius: isStart ? "4pt" : 0,
+                    borderEndStartRadius: isStart ? "4pt" : 0,
+                    borderStartEndRadius: isEnd ? "4pt" : 0,
+                    borderEndEndRadius: isEnd ? "4pt" : 0,
                   }}
                 />
               );

@@ -266,3 +266,33 @@
   direction: rtl;
   text-align: right;
 }
+
+/* ─── Arabic-only report (PDF-34/41) ─────────────────────────
+   The Arabic PDF reuses the bilingual report's Arabic column, full width on
+   A4 portrait, so it carries exactly the bilingual sections instead of the
+   English-only portrait flow. English cells: .col-en and the first child of
+   every inline two-column pair (.bi-grid). !important beats the inline
+   grid-template-columns on those pairs. */
+.ar-only-report .report-page-bilingual,
+.ar-only-report .report-page-bilingual-with-visual {
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 18mm;
+  page: auto;
+  grid-template-columns: 1fr;
+  direction: rtl;
+}
+.ar-only-report .col-en,
+.ar-only-report .bi-grid > :first-child {
+  display: none !important;
+}
+.ar-only-report .bi-grid,
+.ar-only-report .bilingual-text {
+  grid-template-columns: 1fr !important;
+}
+@media print {
+  .ar-only-report .report-page-bilingual,
+  .ar-only-report .report-page-bilingual-with-visual {
+    min-height: 296mm !important;
+  }
+}

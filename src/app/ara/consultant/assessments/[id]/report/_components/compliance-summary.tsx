@@ -30,6 +30,7 @@ const percentColor = (percent: number | null) => {
 export async function ComplianceSummary({
   frameworks,
   tierTotals,
+  lang,
 }: {
   frameworks: FrameworkComplianceSummary[];
   /**
@@ -39,8 +40,11 @@ export async function ComplianceSummary({
    * itself as "1 FRAMEWORK" on two consecutive pages.
    */
   tierTotals?: Record<number, number>;
+  /** Report language. Omitted = the viewer's locale (the EN/bilingual report). */
+  lang?: "en" | "ar";
 }) {
-  const t = await getServerT();
+  const t = await getServerT(lang);
+  const ar = lang === "ar";
 
   const tierLabel: Record<number, string> = {
     1: t("araReport.compliance_tier_1"),
@@ -80,7 +84,7 @@ export async function ComplianceSummary({
               })()}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: "8pt" }}>
-              {rows.map((f) => <FrameworkCard key={f.framework_id} f={f} t={t} />)}
+              {rows.map((f) => <FrameworkCard key={f.framework_id} f={f} t={t} ar={ar} />)}
             </div>
           </div>
         );
@@ -91,7 +95,7 @@ export async function ComplianceSummary({
 
 type TFn = Awaited<ReturnType<typeof getServerT>>;
 
-function FrameworkCard({ f, t }: { f: FrameworkComplianceSummary; t: TFn }) {
+function FrameworkCard({ f, t, ar = false }: { f: FrameworkComplianceSummary; t: TFn; ar?: boolean }) {
   const total = Math.max(1, f.met + f.partial + f.not_met + f.unknown);
   const pct = (n: number) => (n / total) * 100;
 
@@ -110,13 +114,17 @@ function FrameworkCard({ f, t }: { f: FrameworkComplianceSummary; t: TFn }) {
             fontSize: "10.5pt", fontWeight: 600, color: TOKENS.navy,
             margin: 0, lineHeight: 1.3,
           }}>
-            {f.framework_name_en}
+            {ar ? (f.framework_name_ar || f.framework_name_en) : f.framework_name_en}
           </p>
-          <p dir="rtl" style={{
-            fontSize: "9pt", color: TOKENS.mute, margin: "2pt 0 0",
-          }}>
-            {f.framework_name_ar}
-          </p>
+          {/* Arabic report: the Arabic name leads and the English is not
+              repeated (PDF-41). Bilingual/EN: English, Arabic underneath. */}
+          {!ar && (
+            <p dir="rtl" style={{
+              fontSize: "9pt", color: TOKENS.mute, margin: "2pt 0 0",
+            }}>
+              {f.framework_name_ar}
+            </p>
+          )}
           <p style={{
             fontSize: "8pt", color: TOKENS.mute, letterSpacing: "0.05em",
             textTransform: "uppercase", margin: "4pt 0 0", fontWeight: 500,
@@ -126,7 +134,7 @@ function FrameworkCard({ f, t }: { f: FrameworkComplianceSummary; t: TFn }) {
               : t("araReport.compliance_requirement_count_other", { count: f.total })}
           </p>
         </div>
-        <div style={{ textAlign: "right", flexShrink: 0 }}>
+        <div style={{ textAlign: "end", flexShrink: 0 }}>
           <p style={{
             fontSize: "22pt", fontWeight: 700, color: percentColor(f.percent),
             margin: 0, lineHeight: 1, fontVariantNumeric: "tabular-nums",

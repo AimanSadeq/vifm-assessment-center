@@ -133,7 +133,7 @@ export default async function AraReportPage({
     detectAraShadowAi(assessment.id),
     sb
       .from("ara_respondents")
-      .select("name, role_label_en, email, completed_at, assignments:ara_respondent_pillar_assignments(pillar_id)")
+      .select("name, name_ar, role_label_en, role_label_ar, email, completed_at, assignments:ara_respondent_pillar_assignments(pillar_id)")
       .eq("assessment_id", assessment.id)
       .order("created_at"),
     sb
@@ -387,20 +387,29 @@ export default async function AraReportPage({
 
   // Roadmap initiatives - derive from gaps (Quick Wins / Build) and
   // strengths (Transform). Consultant Phase 2 work can replace later.
+  // Arabic name for a pillar given its English name (gaps/strengths carry
+  // the English name), for the Arabic report's roadmap (PDF-41).
+  const pillarAr = (en: string) => ARA_PILLARS.find((x) => x.name_en === en)?.name_ar ?? en;
   const roadmapInitiatives = [
     ...gaps.slice(0, 2).map((g) => ({
       name: `Stabilise ${g.pillar} fundamentals`,
+      name_ar: `تثبيت أساسيات ${pillarAr(g.pillar)}`,
       pillar: g.pillar,
+      pillar_ar: pillarAr(g.pillar),
       horizon: "quick" as const,
     })),
     ...gaps.slice(0, 3).map((g) => ({
       name: `Institutionalise ${g.pillar} practices`,
+      name_ar: `مأسسة ممارسات ${pillarAr(g.pillar)}`,
       pillar: g.pillar,
+      pillar_ar: pillarAr(g.pillar),
       horizon: "build" as const,
     })),
     ...strengths.slice(0, 2).map((s) => ({
       name: `Scale ${s.pillar} leadership`,
+      name_ar: `توسيع الريادة في ${pillarAr(s.pillar)}`,
       pillar: s.pillar,
+      pillar_ar: pillarAr(s.pillar),
       horizon: "transform" as const,
     })),
   ];
@@ -420,15 +429,21 @@ export default async function AraReportPage({
   ) : null;
 
   // Bilingual side-by-side landscape is its own layout - render it here
-  // instead of the portrait EN/AR flow below.
-  if (langParam === "bilingual") {
+  // instead of the portrait EN/AR flow below. The Arabic report (PDF-34/41)
+  // is that same layout with only the Arabic column, full width in portrait:
+  // the portrait flow below is written in English and printed an Arabic PDF
+  // that was almost entirely English.
+  if (langParam === "bilingual" || langParam === "ar") {
+    const arabicOnly = langParam === "ar";
     return (
       <>
         <BackLink href="/ara" label="Back" history />
         {!bare && (
           <div className="no-print bg-gray-100 py-6 px-4 text-center">
             <p className="text-sm text-muted-foreground">
-              Bilingual preview (landscape, English left · Arabic right).
+              {arabicOnly
+                ? "Arabic preview (portrait)."
+                : "Bilingual preview (landscape, English left · Arabic right)."}{" "}
               Use <strong>Download PDF</strong> on the assessment page to export.
             </p>
           </div>
@@ -436,12 +451,14 @@ export default async function AraReportPage({
         <div className={bare ? "" : "bg-gray-100 py-8"}>
           {provisionalStrip}
           <BilingualReport
+            arabicOnly={arabicOnly}
             organizationName={assessment.organization?.name ?? "Client"}
             organizationNameAr={assessment.organization?.name_ar ?? null}
             region={assessment.region}
             sector={assessment.sector}
             isSandbox={assessment.is_sandbox}
             reportDate={reportDate}
+            reportDateAr={new Date().toLocaleDateString("ar-SA-u-ca-gregory-nu-latn", { day: "numeric", month: "long", year: "numeric" })}
             overall={overall}
             overallLabelEn={overallLabel}
             overallLabelAr={overallScore?.overall_label_ar ?? null}

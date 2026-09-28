@@ -216,7 +216,8 @@ export async function updateAraOrganization(formData: FormData) {
 
 export async function deleteAraOrganization(orgId: string) {
   // Delete is strictly admin - cascades to all consultants' assessments.
-  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  let caller: Awaited<ReturnType<typeof requireRole>>;
+  try { caller = await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
 
   // Audit BEFORE the cascade delete (the row is gone afterwards). The
@@ -237,8 +238,20 @@ export async function deleteAraOrganization(orgId: string) {
       reason: `Hard-deleted "${org?.name ?? "unknown"}" and cascaded ${count ?? 0} assessment(s).`,
       client_request: false,
       performed_at: new Date().toISOString(),
+      performed_by: caller.isDev ? null : caller.uid,
     });
   } catch { /* audit is best-effort; never block the delete */ }
+
+  // The cascade deletes rows, not storage: remove the org's uploaded
+  // supporting-material files (and email-log rows) first, as the retention
+  // and sandbox purges already do, so no personal documents are orphaned.
+  try {
+    const { data: orgAssessments } = await sb.from("ara_assessments").select("id").eq("organization_id", orgId);
+    const { deleteAssessmentCollateral } = await import("@/lib/ara/retention");
+    await deleteAssessmentCollateral(sb, (orgAssessments ?? []).map((a) => a.id as string));
+  } catch (e) {
+    console.error(`[ara delete org] collateral cleanup failed for ${orgId}:`, e);
+  }
 
   const { error } = await sb.from("ara_organizations").delete().eq("id", orgId);
   if (error) return { ok: false, error: error.message };
@@ -255,7 +268,8 @@ export async function deleteAraOrganization(orgId: string) {
  */
 export async function anonymizeAraOrganization(orgId: string, reason: string) {
   // Data-erasure is strictly admin - logged in ara_data_management_log.
-  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  let caller: Awaited<ReturnType<typeof requireRole>>;
+  try { caller = await requireRole("admin"); } catch (e) { return authErr(e); }
   const sb = createServiceClient();
   const now = new Date().toISOString();
 
@@ -319,10 +333,63 @@ export async function anonymizeAraOrganization(orgId: string, reason: string) {
       if (logErr) {
         console.error(`[ara anonymize] email-log scrub failed for org ${orgId}:`, logErr.message);
       }
+
+      // ORG-ANON-03: the rest of the personal data tied to these assessments.
+      // Each scrub is separate and its error logged, so a column missing on an
+      // older environment cannot undo the core anonymisation above.
+      const scrub = async (label: string, run: () => PromiseLike<{ error: { message: string } | null }>) => {
+        const { error } = await run();
+        if (error) console.error(`[ara anonymize] ${label} scrub failed for org ${orgId}:`, error.message);
+      };
+      // Optional self-reported demographics (grade, tenure, gender, nationality).
+      await scrub("respondent demographics", () =>
+        sb.from("ara_respondents").update({ demographics: null }).in("assessment_id", ids));
+      // Voucher redemptions: who redeemed, from where.
+      await scrub("voucher redemptions", () =>
+        sb.from("ara_voucher_redemptions").update({
+          redeemer_name: "[ANONYMIZED]",
+          redeemer_email: "anonymized@example.invalid",
+          company_name: "[ANONYMIZED]",
+          ip: null,
+          user_agent: null,
+        }).in("ara_assessment_id", ids));
+      // Named owners on the AI use-case portfolio.
+      await scrub("use-case owners", () =>
+        sb.from("ara_use_cases").update({ business_owner: null, technical_owner: null }).in("assessment_id", ids));
+      // Scope labels routinely carry the client's name ("<Client> - Finance").
+      await scrub("assessment scope labels", () =>
+        sb.from("ara_assessments").update({ scope_label: null, scope_label_ar: null, parent_unit_label: null }).in("id", ids));
+      // Uploaded supporting documents: org documents that name the client and
+      // its people. They have no analytic value once anonymised, so the files
+      // and their rows go.
+      {
+        const { data: mats } = await sb
+          .from("ara_supporting_materials")
+          .select("id, file_url, material_type")
+          .in("assessment_id", ids);
+        const paths = (mats ?? [])
+          .filter((m) => (m as { material_type: string }).material_type !== "url")
+          .map((m) => (m as { file_url: string | null }).file_url)
+          .filter((x): x is string => !!x);
+        for (let i = 0; i < paths.length; i += 100) {
+          const { error } = await sb.storage.from("ara-materials").remove(paths.slice(i, i + 100));
+          if (error) console.error(`[ara anonymize] material file removal failed for org ${orgId}:`, error.message);
+        }
+        await scrub("supporting materials", () => sb.from("ara_supporting_materials").delete().in("assessment_id", ids));
+      }
     }
   }
 
-  // 3. Audit log
+  // Vouchers issued for this client carry its name and a named contact.
+  {
+    const { error } = await sb
+      .from("ara_vouchers")
+      .update({ client_name: "[ANONYMIZED]", contact_name: null, contact_email: null, contact_title: null })
+      .eq("organization_id", orgId);
+    if (error) console.error(`[ara anonymize] voucher contact scrub failed for org ${orgId}:`, error.message);
+  }
+
+  // 3. Audit log - with the admin who did it (ORG-ANON-06).
   await sb.from("ara_data_management_log").insert({
     action: "anonymize_organization",
     target_table: "ara_organizations",
@@ -330,6 +397,7 @@ export async function anonymizeAraOrganization(orgId: string, reason: string) {
     reason,
     client_request: true,
     performed_at: now,
+    performed_by: caller.isDev ? null : caller.uid,
   });
 
   revalidatePath("/ara/admin/organizations");

@@ -168,7 +168,8 @@ export async function setAraRegulatoryDocumentStatus(
 // sandbox assessment; cascades wipe respondents, answers, materials, etc.
 // ─────────────────────────────────────────────────────────────
 export async function clearAraSandboxData(formData: FormData) {
-  try { await requireRole("admin"); } catch (e) { return authErr(e); }
+  let purgeCaller: Awaited<ReturnType<typeof requireRole>>;
+  try { purgeCaller = await requireRole("admin"); } catch (e) { return authErr(e); }
   const confirmation = String(formData.get("confirmation") ?? "").trim();
   if (confirmation !== "DELETE SANDBOX DATA") {
     return { ok: false, error: 'Type "DELETE SANDBOX DATA" exactly to confirm.' };
@@ -214,6 +215,7 @@ export async function clearAraSandboxData(formData: FormData) {
       reason: `Hard-deleted sandbox assessment (batch of ${count}) and cascaded children.`,
       client_request: false,
       performed_at: new Date().toISOString(),
+      performed_by: purgeCaller.isDev ? null : purgeCaller.uid,
     }))
   );
   if (auditErr) console.error("[ara sandbox purge] audit-log write failed:", auditErr.message);

@@ -262,13 +262,13 @@ their tightly-coupled siblings are **FIXED + shipped** (commits `04a5a17`, `7e0d
 - [x] **NOTES-14** - general (pillar_id NULL) report notes now render as an "Overall observations" bilingual section (were dropped from the bilingual report).
 - [x] **GOV-05** - retention dropped 3y -> 2y (CLAUDE.md / PDPL) via shared `ARA_RETENTION_YEARS` constant. SDAIA-relevant.
 - [x] **AUTHZ-04** - docstring corrected (loadRespondentByToken loads regardless of status, by design, to keep results viewable); frozen/archived write-lock confirmed in saveAraAnswer + added to markAraRespondentComplete.
-- [ ] **OFFLINE-02** - offline banner promises local persistence that doesn't exist; implement localStorage mirror or soften copy.
+- [x] **OFFLINE-02** - offline banner promises local persistence that doesn't exist; implement localStorage mirror or soften copy. **Re-checked 2026-09-28: fixed - banner now says answers only save while connected.**
 - [ ] **QCRUD-08 / CMT-01** - AI-authored (is_active=false) questions have no admin activation path; stale security comment.
 
 **Open GAPs (6):**
-- [ ] **STATUS-08/09** - org assessments never transition draft->active or ->completed (happy path is draft->frozen).
-- [ ] **ORG-DELETE-02 / SANDBOX-05 / AUDIT-IMMUTABLE-01** - org hard-delete + sandbox purge write no audit row; `ara_data_management_log` has no immutability trigger.
-- [ ] **DEEPDIVE-03 / MODEB-06** - Mode B deep-dive doesn't set consultant_id -> owning consultant can't open its detail under RLS.
+- [x] **STATUS-08/09** - org assessments never transition draft->active or ->completed (happy path is draft->frozen). **Re-checked 2026-09-28: fixed - active/completed transitions exist in consultant-actions.**
+- [ ] **ORG-DELETE-02 / SANDBOX-05 / AUDIT-IMMUTABLE-01** - org hard-delete + sandbox purge write no audit row; `ara_data_management_log` has no immutability trigger. **Re-checked 2026-09-28: audit rows ARE now written (erasure, anonymise, sandbox purge); still open = no immutability trigger on the log.**
+- [x] **DEEPDIVE-03 / MODEB-06** - Mode B deep-dive doesn't set consultant_id -> owning consultant can't open its detail under RLS. **Re-checked 2026-09-28: fixed - deep-dive issuance sets consultant_id.**
 - [ ] **REASSESS-09** - prior_assessment_id (00020) not surfaced as a Year N-1 baseline link.
 - [ ] **NOTES-13** - note_text_ar not hand-editable.
 - [ ] **DEFER-01** - regulatory documents have no admin approve/reject lifecycle.

@@ -217,6 +217,14 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   105 anchors, 32 already rewritten in a VIFM first pass. Import with
   `python scripts/sme-import/sme_import.py <file> --reviewer "Ali"`; approval removes the "draft"
   label on the assessor observation + wash-up screens.
+- [x] **Prof. Yassin's return loaded 2026-09-28** - Technical Accounting / Business Reporting /
+  Finance: 32 approved + 2 rejected + 3 cut-scores (all three domains now certifiable, 10/10/12
+  approved vs the 8 floor); his 36 old-framework Reflect approvals carried onto the identical v2
+  statements (`.tmp/sme/returned/yassin-2026-09-28/`). Financial Literacy (13 items) has no live row.
+- [ ] **11 held Technical items from Yassin** - 9 carry a written stem/key fix to make in
+  `/admin/tech-assessment/items` (see `.tmp/sme/imports/yassin-2026-09-28-applied.xlsx`, Held
+  sheet); 2 Business Reporting Basel items (CET1 ratio, LCR) are outside his specialty - send to the
+  banking reviewer (Moayad).
 - [ ] **Returned v1 workbooks with notes** - reviewers were told to send back any old workbook they
   had already annotated so the notes can be carried across by hand (v1 rows are retired, so the
   importer cannot apply them). Match on statement text: v2 pooled rows keep the v1 wording.

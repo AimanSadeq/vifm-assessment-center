@@ -935,7 +935,13 @@ def apply_plan(sb, plan, imported_by):
         logs.append(dict(base, item_id=n["id"], action="note", review=n["review"], applied=False, sheet=n["sheet"],
                          row_number=n["row"]))
     for k in range(0, len(logs), 200):
-        sb.table("sme_review_log").insert(logs[k:k + 200]).execute()
+        # PostgREST bulk insert needs every object to carry the same keys
+        # (PGRST102). Cut-score and note rows have fewer fields than item rows,
+        # so a batch mixing them failed AFTER the bank writes had landed,
+        # leaving applied changes with no audit row. Pad every row to the union.
+        batch = logs[k:k + 200]
+        keys = set().union(*(r.keys() for r in batch))
+        sb.table("sme_review_log").insert([{key: r.get(key) for key in keys} for r in batch]).execute()
     return errors
 
 

@@ -3,6 +3,8 @@
 import { z } from "zod";
 import { headers, cookies } from "next/headers";
 import { redeemVoucher, normalizeCode } from "@/lib/ara/vouchers";
+import { createServiceClient } from "@/lib/supabase/server";
+import { loadVoucherBlock } from "@/lib/vouchers/status";
 
 /** First-party cookie name binding this browser to its sitting for a given code. */
 function resumeCookieName(code: string): string {
@@ -74,4 +76,36 @@ export async function redeemVoucherAction(
   }
 
   return { ok: true, redirectTo: res.respondentUrl };
+}
+
+export type VoucherCodeCheck = {
+  /** The code as the platform reads it (pasted link text stripped, upper-cased). */
+  code: string;
+  state: "ok" | "unknown" | "disabled" | "expired" | "used_up";
+  /** The voucher's client name, so the form can offer it as the company. */
+  company?: string;
+};
+
+/**
+ * VOUCHER-12: check a TYPED code as soon as the delegate leaves the field, so a
+ * mistyped, spent or expired code is flagged before they fill in the rest of
+ * the form. Advisory only - the atomic claim RPC at submit remains the gate,
+ * and loadVoucherBlock is never stricter than it.
+ */
+export async function checkVoucherCodeAction(raw: string): Promise<VoucherCodeCheck> {
+  const code = normalizeCode(String(raw ?? "")).slice(0, 40);
+  if (code.length < 4) return { code, state: "unknown" };
+  try {
+    const sb = createServiceClient();
+    const { data } = await sb
+      .from("ara_vouchers")
+      .select("client_name")
+      .eq("code", code)
+      .maybeSingle<{ client_name: string | null }>();
+    if (!data) return { code, state: "unknown" };
+    const block = await loadVoucherBlock("ara", code);
+    return { code, state: block ? block.reason : "ok", company: data.client_name || undefined };
+  } catch {
+    return { code, state: "ok" }; // lookup failed - let the submit decide
+  }
 }

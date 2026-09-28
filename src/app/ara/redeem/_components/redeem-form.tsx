@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Compass, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { redeemVoucherAction } from "../actions";
+import { checkVoucherCodeAction, redeemVoucherAction, type VoucherCodeCheck } from "../actions";
 
 type Props = {
   initialCode?: string;
@@ -24,6 +24,44 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
   const [lang, setLang] = useState<"en" | "ar">(initialLang === "ar" ? "ar" : "en");
   const ar = lang === "ar";
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
+  const [codeState, setCodeState] = useState<VoucherCodeCheck["state"] | null>(null);
+  const codeRef = useRef<HTMLInputElement>(null);
+  const companyRef = useRef<HTMLInputElement>(null);
+
+  // VOUCHER-12: flag a mistyped, spent or expired code as soon as the delegate
+  // leaves the field, and show the code as the platform reads it (pasted email
+  // link text stripped). Advisory - submit is still the real check.
+  async function checkCode() {
+    const el = codeRef.current;
+    if (!el || initialCode) return;
+    const raw = el.value;
+    if (!raw.trim()) {
+      setCodeState(null);
+      return;
+    }
+    const r = await checkVoucherCodeAction(raw);
+    if (codeRef.current && r.code && r.code !== raw) codeRef.current.value = r.code;
+    if (r.company && companyRef.current && !companyRef.current.value.trim()) companyRef.current.value = r.company;
+    setCodeState(r.state);
+  }
+  const codeMessage: Record<Exclude<VoucherCodeCheck["state"], "ok">, [string, string]> = {
+    unknown: [
+      "We can't find this code. Please check it against your invitation email.",
+      "لم نعثر على هذا الرمز. يرجى التحقق منه في رسالة الدعوة.",
+    ],
+    disabled: [
+      "This code has been deactivated. Please contact the organisation that invited you.",
+      "تم إيقاف هذا الرمز. يرجى التواصل مع الجهة التي دعتك.",
+    ],
+    expired: [
+      "This code has expired. Please contact the organisation that invited you.",
+      "انتهت صلاحية هذا الرمز. يرجى التواصل مع الجهة التي دعتك.",
+    ],
+    used_up: [
+      "All places on this code have been taken. Please contact the organisation that invited you.",
+      "تم استخدام جميع المقاعد المتاحة لهذا الرمز. يرجى التواصل مع الجهة التي دعتك.",
+    ],
+  };
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -90,7 +128,17 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
               defaultValue={initialCode}
               readOnly={!!initialCode}
               required
+              ref={codeRef}
+              onBlur={checkCode}
+              onChange={() => codeState && setCodeState(null)}
+              aria-invalid={codeState != null && codeState !== "ok"}
+              aria-describedby={codeState && codeState !== "ok" ? "code-status" : undefined}
             />
+            {codeState && codeState !== "ok" && (
+              <p id="code-status" role="status" className="text-xs text-destructive">
+                {tx(codeMessage[codeState][0], codeMessage[codeState][1])}
+              </p>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">{tx("Full name", "الاسم الكامل")}</Label>
@@ -102,7 +150,7 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
           </div>
           <div className="space-y-2">
             <Label htmlFor="company">{tx("Company", "جهة العمل")}</Label>
-            <Input id="company" name="company" placeholder={tx("Your organisation", "مؤسستك")} defaultValue={initialCompany} required />
+            <Input id="company" name="company" ref={companyRef} placeholder={tx("Your organisation", "مؤسستك")} defaultValue={initialCompany} required />
           </div>
 
           {error && (

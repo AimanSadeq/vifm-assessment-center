@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { loadVoucherBlock } from "@/lib/vouchers/status";
+import { normalizeCode } from "@/lib/vouchers/codegen";
 import { VoucherBlockedCard } from "@/components/shared/voucher-blocked-card";
 import { RedeemForm } from "./_components/redeem-form";
 
@@ -14,7 +15,7 @@ export const metadata = { title: "Redeem Voucher · AI Readiness Compass®" };
 type Props = { searchParams?: { code?: string } };
 
 export default async function RedeemVoucherPage({ searchParams }: Props) {
-  const code = searchParams?.code?.trim() || "";
+  const code = normalizeCode(searchParams?.code ?? "");
 
   let company = "";
   // Default to a REAL run: every admin-issued voucher is is_practice=false, so a
@@ -27,7 +28,7 @@ export default async function RedeemVoucherPage({ searchParams }: Props) {
       const { data } = await sb
         .from("ara_vouchers")
         .select("client_name, is_practice")
-        .eq("code", code.toUpperCase())
+        .eq("code", code)
         .maybeSingle<{ client_name: string | null; is_practice: boolean | null }>();
       company = data?.client_name || "";
       isPractice = data?.is_practice === true;

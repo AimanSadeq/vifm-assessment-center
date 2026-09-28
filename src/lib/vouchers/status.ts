@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { VOUCHER_DESCRIPTORS, type VoucherServiceKey } from "./descriptor";
+import { normalizeCode } from "./codegen";
 
 /**
  * Why a voucher code cannot currently be claimed.
@@ -41,13 +42,15 @@ export async function loadVoucherBlock(
   service: VoucherServiceKey,
   rawCode: string,
 ): Promise<VoucherBlock | null> {
-  const code = rawCode.trim();
+  // Same cleaning as the claim path, so a code pasted with its email link text
+  // ("VIFM-ARC-XXXX-XXXX [caliber.viftraining.com]") resolves here too.
+  const code = normalizeCode(rawCode);
   if (!code) return null;
 
   const descriptor = VOUCHER_DESCRIPTORS[service];
   // redeemViaDescriptor normalizeCode()s (trim + uppercase) before invoking
   // EVERY claim RPC, role-readiness included, so match on the uppercased code.
-  const lookup = code.toUpperCase();
+  const lookup = code;
 
   try {
     const sb = createServiceClient();

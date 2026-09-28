@@ -743,13 +743,19 @@ export async function recommendCoursesForIndividualSnapshot(args: {
 
   // 1. Build a flat list of (factor, competency_name, gap) tuples.
   type FactorGap = { factorId: AraIndividualFactorId; factorLabel: string; factorLabelAr: string | null; competencyNames: string[]; gap: number };
+  // REC-ARA-46: the scale is 1-5, so a score below 1 is not a score - callers
+  // pass 0 for a factor nobody answered. Treat that factor as NOT MEASURED (no
+  // gap) instead of the largest possible gap, which recommended training for a
+  // factor the person was never asked about.
+  const measured = (v: number | undefined): v is number => typeof v === "number" && Number.isFinite(v) && v >= 1;
   const allGaps: FactorGap[] = ARA_INDIVIDUAL_FACTORS
+    .filter((f) => measured(args.factorScores[f.id]))
     .map((f) => ({
       factorId: f.id,
       factorLabel: f.name_en,
       factorLabelAr: f.name_ar ?? null,
       competencyNames: f.ac_competency_names,
-      gap: target - (args.factorScores[f.id] ?? target),
+      gap: target - args.factorScores[f.id],
     }))
     .filter((fg) => fg.competencyNames.length > 0);
 

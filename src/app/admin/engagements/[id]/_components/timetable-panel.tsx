@@ -15,7 +15,7 @@
  * afterwards.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,9 +36,23 @@ const KINDS = [
   { value: "other", label: "Other" },
 ] as const;
 
-const clock = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-const day = (iso: string) => new Date(iso).toLocaleDateString([], { day: "numeric", month: "short" });
+// One fixed format on both sides of hydration. The server cannot know the
+// viewer's locale or timezone, so the first render prints UTC in a fixed
+// format and the panel switches to the viewer's local time once mounted (the
+// same approach as LocalDate). Letting the runtime pick the locale printed
+// "28/09/2026" on the server and "9/28/2026" in the browser.
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const pad = (n: number) => String(n).padStart(2, "0");
+const clockOf = (iso: string, local: boolean) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return local ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+};
+const dayOf = (iso: string, local: boolean) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return local ? `${d.getDate()} ${MONTHS[d.getMonth()]}` : `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+};
 
 export function TimetablePanel({
   engagementId,
@@ -56,6 +70,10 @@ export function TimetablePanel({
   exercises?: Row[];
 }) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const clock = (iso: string) => clockOf(iso, mounted);
+  const day = (iso: string) => dayOf(iso, mounted);
   const [busy, setBusy] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({

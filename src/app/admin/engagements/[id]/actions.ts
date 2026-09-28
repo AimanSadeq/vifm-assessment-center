@@ -20,6 +20,7 @@ import { CENTRE_ROLE_MAP } from "@/lib/ac/centre-roles";
 import { reviewCentreRoles, competenceIsCurrent } from "@/lib/ac/centre-roles-review";
 import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
 import { sendEmail } from "@/lib/integrations/email";
+import { siteOrigin } from "@/lib/site-url";
 
 // Defence-in-depth: every admin-only mutating action runs through this.
 // Under AUTH_ENABLED=false the helper returns a synthetic admin so dev
@@ -264,7 +265,7 @@ export async function inviteCandidateToPortalAction(candidateId: string) {
 
   const link = await generateCandidateSetupLink(cand.email);
   const portalUrl =
-    link ?? `${process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com"}/login`;
+    link ?? `${siteOrigin()}/login`;
 
   const dates =
     eng?.start_date && eng?.end_date

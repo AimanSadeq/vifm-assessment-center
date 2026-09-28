@@ -13,6 +13,7 @@ import { buildPrehireCandidatePdf } from "@/lib/reports/prehire-candidate-pdf";
 import { uuidish } from "@/lib/validations/ids";
 import { DEMO_ORG_NAME, DEMO_ORG_NAME_AR } from "@/lib/demo/constants";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
+import { siteOrigin } from "@/lib/site-url";
 
 /** Flatten a Zod error into a readable message (field errors included, not just
  *  top-level formErrors - otherwise a field failure shows the useless fallback). */
@@ -506,11 +507,7 @@ const STAGE_MINUTES: Record<PrehireStageKind, number> = {
 };
 
 function appBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://caliber.viftraining.com"
-  ).replace(/\/+$/, "");
+  return siteOrigin();
 }
 
 async function sendPrehireInvite(candidateId: string): Promise<boolean> {

@@ -23,6 +23,7 @@ import {
 import { extractBehaviorsFromValues } from "@/lib/ai/reflect-behavior-extractor";
 import { sendReflectEmail, roleLabel } from "./email";
 import { createClientOrganization } from "@/lib/clients/registry";
+import { siteOrigin } from "@/lib/site-url";
 
 // ──────────────────────────────────────────────────────────────
 // Inline org creation - used by the wizard's "Add new" affordance.
@@ -1182,10 +1183,7 @@ async function sendInvitationsForEngagement(
   // broken link in the email. Fall back through NEXT_PUBLIC_SITE_URL to the
   // production domain so the invitation always carries a clickable absolute URL
   // (the in-app Copy-link already uses window.location.origin and was unaffected).
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://caliber.viftraining.com";
+  const baseUrl = siteOrigin();
   let count = 0;
   let failed = 0;
   const now = new Date().toISOString();

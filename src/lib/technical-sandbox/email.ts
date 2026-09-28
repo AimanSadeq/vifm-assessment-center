@@ -2,13 +2,10 @@
 // Sends an access link/code to a delegate, and results + PDF on completion.
 // Best-effort: callers should not fail their flow if email fails.
 import { sendViaResend, resendConfigured } from "@/lib/integrations/resend";
+import { siteOrigin } from "@/lib/site-url";
 
 export function appOrigin(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "https://caliber.viftraining.com"
-  );
+  return siteOrigin();
 }
 
 const wrap = (inner: string) => `

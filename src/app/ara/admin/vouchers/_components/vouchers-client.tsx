@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
 import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction, emailVouchersToDelegatesAction } from "../actions";
+import { siteOrigin } from "@/lib/site-url";
 
 type VoucherRow = {
   id: string;
@@ -49,7 +50,7 @@ const selectClass =
 
 // Canonical redeem base. Prefer the live origin (set after mount); fall back to
 // the configured site URL so a server-rendered link is still valid.
-const SITE_FALLBACK = (process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com").replace(/\/+$/, "");
+const SITE_FALLBACK = siteOrigin();
 
 export function VouchersClient({
   vouchers,

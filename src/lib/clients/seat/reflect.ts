@@ -18,6 +18,7 @@ import { drawAllocation, releaseAllocation, type Allocation } from "../allocatio
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { sendReflectEmail, roleLabel } from "@/lib/reflect/email";
+import { siteOrigin } from "@/lib/site-url";
 
 export type SeatDelegate = { email: string; name?: string };
 export type SeatActivityRow = {
@@ -327,7 +328,7 @@ async function sendShellInvitations(
   }
   if (raters.length === 0) return 0;
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
+  const baseUrl = siteOrigin();
   const now = new Date().toISOString();
   let emailed = 0;
 

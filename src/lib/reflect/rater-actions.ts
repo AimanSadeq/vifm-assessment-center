@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { findRaterByToken } from "./rater-access";
 import { sendReflectEmail, roleLabel } from "./email";
+import { siteOrigin } from "@/lib/site-url";
 
 // ──────────────────────────────────────────────────────────────
 // Internal: validate token + return the rater row. Never trust
@@ -457,7 +458,7 @@ async function sendCompletionNoticeForRater(raterId: string): Promise<void> {
     const completed = (siblingStatuses ?? []).filter((r) => r.status === "completed").length;
 
     const lang = eng.default_language;
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "";
+    const baseUrl = siteOrigin();
 
     await sendReflectEmail({
       to: profile.email,
@@ -537,10 +538,7 @@ export async function sendReflectRaterReminder(
   // Absolute base URL - fall back through NEXT_PUBLIC_SITE_URL to the prod
   // domain so a reminder never carries a dead relative link when
   // NEXT_PUBLIC_APP_URL is unset (mirrors the consultant invitation path).
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    "https://caliber.viftraining.com";
+  const baseUrl = siteOrigin();
 
   const res = await sendReflectEmail({
     to: rater.email,

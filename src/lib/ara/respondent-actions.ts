@@ -8,6 +8,7 @@ import { loadRespondentByToken, loadQuestionsForRespondent, capPerFactor, capPer
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import type { AraLanguage, AraPillarId, AraQuestion, AraRespondent } from "@/types/ara";
+import { siteOrigin } from "@/lib/site-url";
 
 // ─────────────────────────────────────────────────────────────
 // Internal: validate token + return respondent. Never trust the
@@ -442,9 +443,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
   // the action returns. Each branch is independently best-effort.
   const runPostCompletion = async () => {
     const tasks: Promise<unknown>[] = [];
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = siteOrigin();
 
     if (personalEmailApplies) {
       // Client-level results-delivery prefs (migration 00108). Tolerant: no org

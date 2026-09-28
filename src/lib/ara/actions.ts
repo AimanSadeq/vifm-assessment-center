@@ -19,6 +19,7 @@ import { isAIConfigured } from "@/lib/ai/client";
 import { createClientOrganization, type AraRegion, type AraSector } from "@/lib/clients/registry";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
+import { siteOrigin } from "@/lib/site-url";
 
 // Uniform auth-error unwrapper - server actions return a shape the UI
 // can render as a toast instead of a Next error screen.
@@ -1448,11 +1449,7 @@ export async function aiAuthorAraQuestion(formData: FormData) {
 // is flagged so the consultant knows it didn't reach the real address.
 // ─────────────────────────────────────────────────────────────
 function appBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-    "http://localhost:3000"
-  );
+  return siteOrigin();
 }
 
 export async function sendAraRespondentInvitation(respondentId: string) {

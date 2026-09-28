@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { siteOrigin } from "@/lib/site-url";
 
 /**
  * Candidate login provisioning.
@@ -153,7 +154,7 @@ export async function provisionCandidateLogin(opts: {
  */
 export async function generateCandidateSetupLink(email: string): Promise<string | null> {
   const sb = createServiceClient();
-  const site = process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com";
+  const site = siteOrigin();
   const { data, error } = await sb.auth.admin.generateLink({
     type: "recovery",
     email: email.trim().toLowerCase(),

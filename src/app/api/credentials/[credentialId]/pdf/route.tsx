@@ -11,6 +11,7 @@ import { CredentialCertificate } from "@/lib/reports/credential-certificate";
 import { renderCredentialCertificateHtmlAr } from "@/lib/reports/credential-certificate-ar-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 import { getServerLocale } from "@/lib/i18n/server";
+import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -73,7 +74,7 @@ export async function GET(req: Request, { params }: { params: { credentialId: st
       }
     }
 
-    const base = process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com";
+    const base = siteOrigin();
     const verifyUrl = `${base}/verify/${data.verification_code}`;
 
     // Language: explicit ?lang= wins, else the server locale cookie. Only

@@ -18,6 +18,7 @@ import {
   type ProposalStatus,
 } from "@/lib/proposals/service";
 import { revalidatePath } from "next/cache";
+import { siteOrigin } from "@/lib/site-url";
 
 type Result<T> = ({ ok: true } & T) | { error: string };
 
@@ -32,11 +33,7 @@ async function gate(): Promise<{ error: string } | null> {
 }
 
 function appBase(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "https://caliber.viftraining.com"
-  ).replace(/\/$/, "");
+  return siteOrigin();
 }
 
 export async function setRateAction(input: { serviceKey: string; unitRate: number; currency: string }) {

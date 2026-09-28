@@ -8,6 +8,7 @@ import { buildSectionEditorData } from "@/lib/proposals/section-editor";
 import { ProposalBuilder } from "../_components/proposal-builder";
 import { ProposalActions } from "../_components/proposal-actions";
 import { ProposalSectionEditor } from "../_components/proposal-section-editor";
+import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,7 @@ export default async function ProposalDetailPage({ params }: { params: { id: str
   const [clients, bundles, rates] = await Promise.all([loadClientOptions(), loadBundleOptions(), loadRateMap()]);
   const sectionData = buildSectionEditorData(proposal);
 
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://caliber.viftraining.com").replace(/\/$/, "");
+  const base = siteOrigin();
   const clientUrl = `${base}/proposals/${proposal.accessToken}`;
 
   return (

@@ -46,6 +46,7 @@ import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } fro
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { createHash } from "node:crypto";
 import { usableIdentity } from "@/lib/privacy/purged";
+import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -169,7 +170,7 @@ async function emailFluentResult(
   result: FluentResult
 ): Promise<void> {
   try {
-    const base = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "").replace(/\/+$/, "");
+    const base = siteOrigin();
     const certUrl = `${base}/api/ac/fluent/${resultId}/certificate`;
     await sendEmail({
       to,

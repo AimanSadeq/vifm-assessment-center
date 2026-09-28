@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 import { sendEmail } from "@/lib/integrations/email";
+import { siteOrigin } from "@/lib/site-url";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const appBase = (process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "https://caliber.viftraining.com").replace(/\/$/, "");
+  const appBase = siteOrigin();
   const svc = createServiceClient();
   const now = Date.now();
   const DAY = 86_400_000;

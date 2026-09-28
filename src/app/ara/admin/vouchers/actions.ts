@@ -6,8 +6,9 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { createVoucherBatch } from "@/lib/ara/vouchers";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendViaResend } from "@/lib/integrations/resend";
+import { siteOrigin } from "@/lib/site-url";
 
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://caliber.viftraining.com").replace(/\/+$/, "");
+const SITE_URL = siteOrigin();
 
 function inviteEmailHtml(link: string, code: string): string {
   return `

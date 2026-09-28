@@ -2,13 +2,10 @@
 // transport. Invites a line manager to the token-gated engagement survey.
 // Best-effort: callers fall back to copy-link when email is unconfigured.
 import { sendViaResend, resendConfigured } from "@/lib/integrations/resend";
+import { siteOrigin } from "@/lib/site-url";
 
 export function appOrigin(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "https://caliber.viftraining.com"
-  );
+  return siteOrigin();
 }
 
 const wrap = (inner: string) => `

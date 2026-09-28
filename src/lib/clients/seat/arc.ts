@@ -20,6 +20,7 @@ import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
 import { createVoucherBatch as createArcVoucherBatch, type VoucherTier } from "@/lib/ara/vouchers";
 import type { AraEngagementStage, AraLanguage, AraPillarId, AraRegion, AraSector } from "@/types/ara";
+import { siteOrigin } from "@/lib/site-url";
 
 // ─────────────────────────────────────────────────────────────
 // Shared seat-service contract (identical shape across services).
@@ -81,11 +82,7 @@ function resolveShellConfig(cfg: Record<string, unknown>): ArcShellConfig {
 }
 
 function appBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ||
-    "http://localhost:3000"
-  );
+  return siteOrigin();
 }
 
 function emailLanguage(lang: AraLanguage): AraEmailLanguage {

@@ -25,6 +25,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { sendEmail, isEmailConfigured } from "@/lib/integrations/email";
 import { logPrehireEvent } from "@/lib/prehire/audit";
 import type { PrehireStagePlanEntry, PrehireStageKind } from "@/types/prehire";
+import { siteOrigin } from "@/lib/site-url";
 
 // ── Shared seat-service contract ─────────────────────────────────
 export type SeatDelegate = { email: string; name?: string };
@@ -59,11 +60,7 @@ const VALID_STAGE_KINDS: PrehireStageKind[] = ["fluent", "quiz", "cbi", "assessm
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function appBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_APP_URL ||
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    "https://caliber.viftraining.com"
-  ).replace(/\/+$/, "");
+  return siteOrigin();
 }
 
 /** Validate + normalize a stage plan coming from service_config (untyped jsonb). */

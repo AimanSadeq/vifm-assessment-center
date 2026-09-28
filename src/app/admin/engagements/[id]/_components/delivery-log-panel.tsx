@@ -17,6 +17,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { addDeliveryLogEntryAction } from "../actions";
+import { LocalDate } from "@/components/shared/local-date";
 
 type Row = Record<string, unknown>;
 
@@ -146,7 +147,7 @@ export function DeliveryLogPanel({
                     {KINDS.find((k) => k.value === e.kind)?.label ?? (e.kind as string)}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(e.occurred_at as string).toLocaleString()}
+                    <LocalDate value={e.occurred_at as string} withTime />
                     {e.logged_by_name ? ` · ${e.logged_by_name as string}` : ""}
                     {nameOf(e.candidate_id) ? ` · ${nameOf(e.candidate_id)}` : " · whole centre"}
                   </span>

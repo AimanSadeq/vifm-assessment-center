@@ -40,6 +40,7 @@ import { Trash2, Send, FileText, CheckCircle, Eye, Repeat2, Loader2, History, Gr
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { localizedName } from "@/lib/i18n/localized";
+import { LocalDate } from "@/components/shared/local-date";
 
 type RoleProfileOption = {
   id: string;
@@ -363,7 +364,7 @@ export function EngagementDetail({
           {isSelectionCentre ? (
             weightsConfirmedAt ? (
               <span className="text-green-700">
-                Weights confirmed {new Date(weightsConfirmedAt).toLocaleDateString()}
+                Weights confirmed <LocalDate value={weightsConfirmedAt} />
               </span>
             ) : (
               <span className="flex items-center gap-2 text-amber-800">

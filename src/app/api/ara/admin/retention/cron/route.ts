@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { runRetentionPurge } from "@/lib/ara/retention";
 import { timingSafeStrEqual } from "@/lib/utils/secret";
 
+// CRON-18: the purge uses the service-role client + storage removals - Node
+// runtime, never cached (every call must run the sweep), like the other crons.
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 /**
  * Daily retention-purge cron endpoint.
  *
@@ -33,14 +38,14 @@ export async function GET(request: Request) {
       {
         ok: false,
         error:
-          "CRON_SECRET env var is not set. The cron endpoint is intentionally locked down until you set this in your Vercel project - set it to a long random string and rotate it as you would any secret.",
+          "CRON_SECRET env var is not set. The cron endpoint is intentionally locked down until it is set on the Render service (and as the matching GitHub Actions secret) - use a long random string and rotate it as you would any secret.",
       },
       { status: 503 }
     );
   }
 
-  // Vercel Cron auto-attaches the bearer; manual cron runners (e.g. a
-  // simple Supabase scheduled function via pg_cron) can also send it.
+  // The GitHub Actions workflow sends the bearer; any other scheduler
+  // (Render Cron Jobs, pg_cron) can send the same header.
   const auth = request.headers.get("authorization") ?? "";
   if (!timingSafeStrEqual(auth, `Bearer ${expected}`)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });

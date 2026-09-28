@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadRegulatoryCoverage } from "@/lib/ara/regulatory-coverage";
 import {
   Compass, Users, ClipboardCheck, Layers, BarChart3, FileText, Recycle,
   Shield, Database, Building2, FileClock, FlaskConical,
@@ -130,27 +131,6 @@ const NUMBERS: Array<{ value: number; label: string; tone: Tone }> = [
   { value: 60, label: "Max report pages", tone: "violet" },
 ];
 
-const UAE_FRAMEWORKS = [
-  "UAE Personal Data Protection Law",
-  "UAE National AI Strategy 2031",
-  "UAE AI Charter (2024, 12 principles)",
-  "UAE AI Ethics Guide (2022)",
-  "TDRA Digital Government Regulations",
-  "Dubai Centre for AI (DCAI) Guidelines",
-  "Abu Dhabi Digital Authority (ADDA) Standards",
-];
-
-const SAUDI_FRAMEWORKS = [
-  "Saudi Personal Data Protection Law",
-  "SDAIA National Data Governance Framework",
-  "NCA Essential Cybersecurity Controls (ECC-2:2024)",
-  "NCA Cloud Cybersecurity Controls (CCC-2:2024)",
-  "SDAIA AI Ethics Principles (2023 v2)",
-  "SDAIA AI Adoption Framework (2024)",
-  "Saudi Vision 2030 - AI Targets",
-  "SDAIA Generative AI Guidelines (2024)",
-];
-
 const MILESTONES: Array<{ id: string; title: string; body: string }> = [
   { id: "M1", title: "Foundation",    body: "Schema, consultant role, nav" },
   { id: "M2", title: "Core CRUD",     body: "Orgs, assessments, questions" },
@@ -162,7 +142,9 @@ const MILESTONES: Array<{ id: string; title: string; body: string }> = [
 
 // ───────────────────────────────────────────────────────────────
 
-export default function AraRoadmapPage() {
+export default async function AraRoadmapPage() {
+  // Regulatory coverage read from the seeded bank (DOC-COUNT-02/DOC-NAMES-01).
+  const coverage = await loadRegulatoryCoverage();
   return (
     <div className="min-h-screen bg-background">
       <BackLink href="/ara" label="Back" history />
@@ -324,7 +306,7 @@ export default function AraRoadmapPage() {
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <EngineItem icon={BarChart3}    tone="blue"    title="Scoring engine"  body="7-layer computation, perception-vs-reality" />
-                <EngineItem icon={Shield}       tone="emerald" title="Compliance"      body="16 frameworks, 56 requirements" />
+                <EngineItem icon={Shield}       tone="emerald" title="Compliance"      body={`${coverage.frameworkCount} frameworks, ${coverage.requirementCount} requirements`} />
                 <EngineItem icon={TrendingUp}   tone="gold"    title="Peer benchmarks" body="Sector medians, YoY trajectory" />
                 <EngineItem icon={FileClock}    tone="rose"    title="Retention"       body="3-year purge, GDPR / PDPL compliant" />
               </div>
@@ -363,7 +345,7 @@ export default function AraRoadmapPage() {
           <div className="text-center mb-10">
             <span className="ara-eyebrow">Regulatory coverage</span>
             <h2 className="text-3xl font-semibold text-primary mt-3">
-              15 GCC frameworks mapped to 56 requirements
+              {coverage.frameworkCount} GCC frameworks mapped to {coverage.requirementCount} requirements
             </h2>
             <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
               Clients only ever see frameworks applicable to their region, enforced
@@ -375,17 +357,17 @@ export default function AraRoadmapPage() {
             <FadeIn delay={0}>
               <RegionCard
                 region="United Arab Emirates"
-                count={7}
+                count={coverage.uae.length}
                 tone="blue"
-                frameworks={UAE_FRAMEWORKS}
+                frameworks={coverage.uae}
               />
             </FadeIn>
             <FadeIn delay={120}>
               <RegionCard
                 region="Kingdom of Saudi Arabia"
-                count={8}
+                count={coverage.saudi.length}
                 tone="emerald"
-                frameworks={SAUDI_FRAMEWORKS}
+                frameworks={coverage.saudi}
               />
             </FadeIn>
           </div>
@@ -400,8 +382,7 @@ export default function AraRoadmapPage() {
             M1 through M6: all milestones shipped
           </h2>
           <p className="text-sm text-muted-foreground mt-3 max-w-2xl mx-auto">
-            Six development phases, now ready for pilot. Production cutover is a
-            single flag in <code className="bg-muted px-1.5 py-0.5 rounded text-xs">src/lib/auth/config.ts</code>.
+            Six development phases, all live in production.
           </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">

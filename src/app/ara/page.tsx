@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { loadRegulatoryCoverage } from "@/lib/ara/regulatory-coverage";
 import {
   ArrowRight, Shield, Users, Link2, Sparkles, CheckCircle2, BarChart3, Globe, Route, User, GraduationCap,
 } from "lucide-react";
@@ -11,7 +12,8 @@ import { CountUp } from "@/components/shared/ara/count-up";
 import { FadeIn } from "@/components/shared/ara/fade-in";
 import { SelectionLanding } from "./_components/selection-landing";
 
-export default function AraRootPage({ searchParams }: { searchParams?: { lens?: string } }) {
+export default async function AraRootPage({ searchParams }: { searchParams?: { lens?: string } }) {
+  const coverage = await loadRegulatoryCoverage();
   // Thread the talent lens (from /ara?lens=acquisition|development, set by the
   // landing's For Selection / For Development entries) into the snapshot +
   // engage links, so a hiring entry yields an acquisition-lensed result - which
@@ -82,7 +84,7 @@ export default function AraRootPage({ searchParams }: { searchParams?: { lens?: 
               The VIFM AI Readiness Compass - a bilingual diagnostic calibrated for the GCC.
             </p>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              Eight pillars, sixteen regulatory frameworks, and a bilingual branded
+              Eight pillars, {coverage.frameworkCount} regulatory frameworks, and a bilingual branded
               report - delivered in English, Arabic, or side-by-side landscape.
               Plus a complimentary, self-served Personal Snapshot for individuals. Built
               for consultant-led engagements across UAE and Saudi Arabia.
@@ -208,7 +210,7 @@ export default function AraRootPage({ searchParams }: { searchParams?: { lens?: 
                 icon: Shield,
                 tone: "emerald" as const,
                 title: "GCC regulatory calibration",
-                body: "16 frameworks seeded for UAE and Saudi (PDPL, NCA ECC, SDAIA NDGF, DCAI, ADDA, Vision 2030) with 56 mapped requirements.",
+                body: `${coverage.frameworkCount} frameworks for UAE and Saudi Arabia (PDPL, NCA ECC, SDAIA NDGF, SAMA CSF, DCAI, ADDA, Vision 2030) with ${coverage.requirementCount} mapped requirements.`,
               },
               {
                 icon: CheckCircle2,

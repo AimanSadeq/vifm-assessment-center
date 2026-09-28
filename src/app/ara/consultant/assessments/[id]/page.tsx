@@ -47,7 +47,7 @@ import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
@@ -379,6 +379,17 @@ export default async function AraAssessmentDetailPage({
     "use server";
     await updatePillarWeights(fd);
   };
+  // PDF-07/43: the last few stored report versions, downloadable exactly as
+  // generated (the PDF route stores every generation in ara-reports).
+  const { data: storedReports } = await sb
+    .from("ara_reports")
+    .select("id, language, version, generated_at")
+    .eq("assessment_id", assessment.id)
+    .not("file_url", "is", null)
+    .order("generated_at", { ascending: false })
+    .limit(5)
+    .returns<Array<{ id: string; language: "en" | "ar" | "bilingual"; version: number; generated_at: string }>>();
+
   const createConsultantNoteAction = async (fd: FormData) => {
     "use server";
     await createConsultantNote(fd);
@@ -607,6 +618,22 @@ export default async function AraAssessmentDetailPage({
                 <DropdownMenuItem asChild>
                   <a href={`/api/ara/reports/${assessment.id}/pdf?language=bilingual`}>{t("araAssessmentDetail.bilingual")}</a>
                 </DropdownMenuItem>
+                {(storedReports ?? []).length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[11px] font-normal text-muted-foreground">
+                      {t("araAssessmentDetail.stored_reports")}
+                    </DropdownMenuLabel>
+                    {(storedReports ?? []).map((r) => (
+                      <DropdownMenuItem key={r.id} asChild>
+                        <a href={`/api/ara/reports/${assessment.id}/versions/${r.id}`} className="text-xs">
+                          v{r.version} · {r.language === "ar" ? "العربية" : r.language === "bilingual" ? t("araAssessmentDetail.bilingual") : "English"} ·{" "}
+                          {new Date(r.generated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </a>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
             {isArchived ? (

@@ -233,6 +233,15 @@ async function purge(sb: DemoSb, org: DemoOrgIds): Promise<string> {
   await sb.from("ara_consultant_notes").delete().in("assessment_id", assessIds);
   await sb.from("ara_compliance_results").delete().in("assessment_id", assessIds);
   await sb.from("ara_supporting_materials").delete().in("assessment_id", assessIds);
+  // Demo reports are not business records: remove their stored PDFs too
+  // (the PDF route keeps every generation in the ara-reports bucket).
+  {
+    const { data: stored } = await sb.from("ara_reports").select("file_url").in("assessment_id", assessIds);
+    const paths = (stored ?? []).map((r) => (r as { file_url: string | null }).file_url).filter((x): x is string => !!x);
+    for (let i = 0; i < paths.length; i += 100) {
+      await sb.storage.from("ara-reports").remove(paths.slice(i, i + 100));
+    }
+  }
   await sb.from("ara_reports").delete().in("assessment_id", assessIds);
   await sb.from("ara_email_log").delete().in("assessment_id", assessIds);
   await sb.from("ara_respondents").delete().in("assessment_id", assessIds);

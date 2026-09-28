@@ -35,8 +35,9 @@ export async function GET(
   // Authorize: admin or the assessment's owning consultant can generate.
   // Prevents a consultant from guessing another consultant's assessment
   // UUID and generating a PDF of it.
+  let caller: Awaited<ReturnType<typeof requireAssessmentOwner>>;
   try {
-    await requireAssessmentOwner(params.assessmentId);
+    caller = await requireAssessmentOwner(params.assessmentId);
   } catch (err) {
     if (isAuthorizationError(err)) {
       return NextResponse.json({ ok: false, error: err.message }, { status: 403 });
@@ -99,9 +100,14 @@ export async function GET(
       preferCSSPageSize: true,
     });
 
-    // Log the generation in ara_reports. file_url stays null - we stream
-    // the bytes directly rather than writing to storage. Storage-backed
-    // durable URLs are a future enhancement.
+    // PDF-07/43: keep what was delivered. Each generation gets the next
+    // version number for its assessment + language, the exact PDF is stored
+    // in the private ara-reports bucket (file_url = storage path, signed at
+    // download), and the scores it printed are snapshotted, so VIFM can show
+    // later precisely which report a client received. Best-effort: a storage
+    // failure still streams the PDF and logs the row with file_url null.
+    // Reports are business records retained after an assessment is purged
+    // (migration 00010), so the files are not removed by the retention sweep.
     const sb = createServiceClient();
     const { data: assessment } = await sb
       .from("ara_assessments")
@@ -109,12 +115,7 @@ export async function GET(
       .eq("id", params.assessmentId)
       .maybeSingle<{ id: string }>();
     if (assessment) {
-      await sb.from("ara_reports").insert({
-        assessment_id: assessment.id,
-        language,
-        file_url: null,
-        version: 1,
-      });
+      await recordReportVersion(sb, assessment.id, language, pdf, caller.isDev ? null : caller.uid);
     }
 
     const filename = `ara-report-${params.assessmentId.slice(0, 8)}-${language}.pdf`;
@@ -135,5 +136,44 @@ export async function GET(
     if (browser) {
       await browser.close().catch(() => {});
     }
+  }
+}
+
+const REPORTS_BUCKET = "ara-reports";
+
+async function recordReportVersion(
+  sb: ReturnType<typeof createServiceClient>,
+  assessmentId: string,
+  language: "en" | "ar" | "bilingual",
+  pdf: Uint8Array,
+  generatedBy: string | null,
+): Promise<void> {
+  try {
+    const [{ data: prev }, { data: overall }, { data: pillars }] = await Promise.all([
+      sb.from("ara_reports").select("version").eq("assessment_id", assessmentId).eq("language", language)
+        .order("version", { ascending: false }).limit(1),
+      sb.from("ara_assessment_scores").select("overall_score, overall_label_en, calculated_at")
+        .eq("assessment_id", assessmentId).maybeSingle(),
+      sb.from("ara_pillar_scores").select("pillar_id, raw_score, maturity_level, pillar_weight")
+        .eq("assessment_id", assessmentId),
+    ]);
+    const version = ((prev?.[0] as { version?: number } | undefined)?.version ?? 0) + 1;
+    const path = `${assessmentId}/${language}/v${version}-${Date.now()}.pdf`;
+    const { error: upErr } = await sb.storage
+      .from(REPORTS_BUCKET)
+      .upload(path, pdf, { contentType: "application/pdf", upsert: false });
+    if (upErr) console.error("[ara pdf] storing the report failed:", upErr.message);
+    const row = {
+      assessment_id: assessmentId,
+      language,
+      file_url: upErr ? null : path,
+      version,
+      scores_snapshot: { overall, pillars: pillars ?? [] },
+    };
+    const { error } = await sb.from("ara_reports").insert({ ...row, generated_by: generatedBy });
+    // generated_by references auth.users; retry without it rather than lose the record.
+    if (error) await sb.from("ara_reports").insert(row);
+  } catch (e) {
+    console.error("[ara pdf] report version record failed:", e);
   }
 }

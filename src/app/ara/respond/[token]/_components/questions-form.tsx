@@ -181,10 +181,19 @@ export function QuestionsForm({ token, questions, answers, language, timeLimitMi
   // started_at so the deadline survives leaving and returning. No-op for the
   // untimed personal deep-dive (timeLimitMinutes null).
   useEffect(() => {
-    if (started && timeLimitMinutes && timeLimitMinutes > 0 && startedAt && deadline == null) {
-      const dl = new Date(startedAt).getTime() + timeLimitMinutes * 60 * 1000;
+    if (!started || !timeLimitMinutes || timeLimitMinutes <= 0 || deadline != null) return;
+    const arm = (iso: string) => {
+      const dl = new Date(iso).getTime() + timeLimitMinutes * 60 * 1000;
       setDeadline(dl);
       setRemaining(Math.max(0, Math.round((dl - Date.now()) / 1000)));
+    };
+    if (startedAt) {
+      arm(startedAt);
+    } else {
+      // TIMER-06: resumed with saved answers but no recorded start (legacy
+      // rows). Stamp one now so the countdown is visible - the server would
+      // otherwise start its own clock at the next save without showing it.
+      markAraRespondentStarted(token).then(arm).catch(() => {});
     }
     // Mount-only: anchors once on resume; the onStart handler anchors first runs.
     // eslint-disable-next-line react-hooks/exhaustive-deps

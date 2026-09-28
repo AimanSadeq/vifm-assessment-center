@@ -43,9 +43,14 @@ export default async function AraRespondPage({
   const sb = createServiceClient();
   const { data: refreshed } = await sb
     .from("ara_respondents")
-    .select("language_preference, completed_at")
+    .select("language_preference, completed_at, started_at, first_opened_at")
     .eq("id", ctx.respondent.id)
-    .maybeSingle<{ language_preference: "en" | "ar"; completed_at: string | null }>();
+    .maybeSingle<{
+      language_preference: "en" | "ar";
+      completed_at: string | null;
+      started_at: string | null;
+      first_opened_at: string | null;
+    }>();
 
   const language = refreshed?.language_preference ?? ctx.respondent.language_preference;
   const rtl = language === "ar";
@@ -229,7 +234,10 @@ export default async function AraRespondPage({
           }))}
           language={language}
           timeLimitMinutes={ctx.assessment.time_limit_minutes ?? null}
-          startedAt={ctx.respondent.started_at ?? null}
+          // TIMER-06: the same anchor saveAraAnswer enforces server-side
+          // (started_at, else first_opened_at), so a respondent resuming
+          // without ever pressing Start sees the clock the server is running.
+          startedAt={refreshed?.started_at ?? refreshed?.first_opened_at ?? ctx.respondent.started_at ?? null}
           canSimulate={canSimulate}
         >
           <div className="space-y-6">

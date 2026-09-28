@@ -209,6 +209,24 @@ First workbook back (Yassin, Technical / Accounting, 15 items). Two things came 
   Packs already issued still carry the old wording, so the point was made in the reply instead of
   reissuing workbooks people have started filling.
 
+**Re-cut on behavioural framework v2 - emails SENT 2026-09-28.** The v2 content lives in new rows,
+so the v1 Persona / Assessment Center / Reflect library packs were replaced (v1 copies in
+`.tmp/sme/superseded/`; register `.tmp/_build_assignment.py` is current). Due 15 Oct 2026 for
+everything, including Ali's Persona + Logica (moved from 30 Sep).
+- [ ] **Ali - rating anchors (BPS 4.31, B19) first.** `AC-Scale-Anchors-SME-validation.xlsx`,
+  105 anchors, 32 already rewritten in a VIFM first pass. Import with
+  `python scripts/sme-import/sme_import.py <file> --reviewer "Ali"`; approval removes the "draft"
+  label on the assessor observation + wash-up screens.
+- [ ] **Returned v1 workbooks with notes** - reviewers were told to send back any old workbook they
+  had already annotated so the notes can be carried across by hand (v1 rows are retired, so the
+  importer cannot apply them). Match on statement text: v2 pooled rows keep the v1 wording.
+- [ ] **Arabic** in the anchors (written by VIFM, not a native reviewer) still needs a native check.
+- [ ] **Framework definitions** - Resilience & Composure, Delivery & Accountability and Integrity &
+  Principled Courage include over-time elements (work-life balance, track record, reputation) no
+  exercise can show. For the chartered psychologist's framework review.
+- [ ] **Content flag** - v1 Outcome Ownership carried two customer-focus indicators into v2
+  Delivery & Accountability; for the reviewer of the Delivery & Execution AC pack.
+
 ## D. Minor / cleanup
 - [ ] Remove dead i18n keys `tech.take.chooseTitle` / `chooseIntro` (deprecated broad-domain screener, no live references)
 - [ ] Fix the pre-existing **ARA voucher-page hydration warning** (dev-only "server HTML replaced with client content"; present on `/ara/admin/vouchers` and inherited by the new `/admin/vouchers` hub - React recovers and the page works, but worth cleaning up)

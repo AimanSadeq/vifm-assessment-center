@@ -108,10 +108,18 @@ export const createAraUseCaseSchema = z.object({
 export type CreateAraUseCaseValues = z.infer<typeof createAraUseCaseSchema>;
 
 // ─── Questions ─────────────────────────────────────────────────
-const questionOptionSchema = z.object({
-  value: z.string().min(1),
-  label: z.string().min(1),
-});
+// VAL-02: the bank stores most options as plain strings ("1 - Strongly
+// Disagree") and the scenario/knowledge items as {value, label} pairs; the
+// respondent form accepts both. The schema accepted only pairs, so the admin
+// editor could not save a string-option question and an exported CSV could not
+// be imported back. Both shapes are valid.
+const questionOptionSchema = z.union([
+  z.string().min(1),
+  z.object({
+    value: z.string().min(1),
+    label: z.string().min(1),
+  }),
+]);
 
 export const createAraQuestionSchema = z.object({
   version_id: z.string().uuid(),
@@ -132,5 +140,13 @@ export const createAraQuestionSchema = z.object({
   sector: z.enum(["government", "banking", "general", "all"]).default("all"),
   layer: z.union([z.literal(1), z.literal(2)]).default(1),
   display_order: z.coerce.number().int().nonnegative().default(0),
+  // QCSV-02: the layer an item belongs to beyond its pillar. Exported by the
+  // question CSV so a re-import keeps personal-factor and agentic items as
+  // such instead of turning them into plain pillar questions. DB CHECK
+  // constraints hold the exact id lists; empty = none.
+  individual_factor_id: z.string().trim().max(64).nullable().optional(),
+  agentic_dimension_id: z.string().trim().max(64).nullable().optional(),
+  tier: z.enum(["snapshot", "deep_dive_extra"]).nullable().optional(),
+  is_active: z.boolean().optional(),
 });
 export type CreateAraQuestionValues = z.infer<typeof createAraQuestionSchema>;

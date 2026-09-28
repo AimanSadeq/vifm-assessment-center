@@ -77,6 +77,12 @@ const COLUMNS = [
   "sector",
   "layer",
   "display_order",
+  // QCSV-02: without these a re-import turned personal-factor and agentic
+  // items into plain pillar questions and re-activated drafts.
+  "individual_factor_id",
+  "agentic_dimension_id",
+  "tier",
+  "is_active",
 ] as const;
 
 function serializeQuestionsCsv(rows: AraQuestion[]): string {
@@ -97,6 +103,10 @@ function serializeQuestionsCsv(rows: AraQuestion[]): string {
       q.sector ?? "all",
       String(q.layer ?? 1),
       String(q.display_order ?? 0),
+      (q as { individual_factor_id?: string | null }).individual_factor_id ?? "",
+      (q as { agentic_dimension_id?: string | null }).agentic_dimension_id ?? "",
+      (q as { tier?: string | null }).tier ?? "",
+      (q as { is_active?: boolean | null }).is_active === false ? "false" : "true",
     ];
     return cells.map(csvEscape).join(",");
   });

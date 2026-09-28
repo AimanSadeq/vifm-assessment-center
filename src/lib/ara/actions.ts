@@ -871,7 +871,8 @@ export async function publishAraVersion(versionId: string) {
 // Expected columns (case-sensitive, in any order):
 //   pillar_id, question_number, question_text_en, question_text_ar,
 //   question_type, options_en, options_ar, score_map, help_text_en,
-//   help_text_ar, region, sector, layer, display_order
+//   help_text_ar, region, sector, layer, display_order,
+//   individual_factor_id, agentic_dimension_id, tier, is_active (optional)
 // JSON fields (options_*, score_map) should be valid JSON or empty.
 // ─────────────────────────────────────────────────────────────
 function parseCsv(raw: string): Record<string, string>[] {
@@ -957,9 +958,15 @@ export async function importAraQuestionsCsv(formData: FormData) {
       sector: r.sector || "all",
       layer: Number(r.layer || 1) as 1 | 2,
       display_order: r.display_order || 0,
+      individual_factor_id: r.individual_factor_id || null,
+      agentic_dimension_id: r.agentic_dimension_id || null,
+      tier: r.tier || null,
+      // Missing column (older exports) = active, as before.
+      is_active: r.is_active == null || r.is_active === "" ? true : !/^(false|0|no)$/i.test(r.is_active),
     });
     if (!parsed.success) {
-      errors.push(`Row ${rowNum}: ${parsed.error.issues[0]?.message ?? "invalid"}`);
+      const issue = parsed.error.issues[0];
+      errors.push(`Row ${rowNum}: ${issue?.path?.length ? `${issue.path.join(".")}: ` : ""}${issue?.message ?? "invalid"}`);
       return;
     }
     inserts.push({
@@ -978,6 +985,10 @@ export async function importAraQuestionsCsv(formData: FormData) {
       sector: parsed.data.sector,
       layer: parsed.data.layer,
       display_order: parsed.data.display_order,
+      individual_factor_id: parsed.data.individual_factor_id ?? null,
+      agentic_dimension_id: parsed.data.agentic_dimension_id ?? null,
+      ...(parsed.data.tier ? { tier: parsed.data.tier } : {}),
+      is_active: parsed.data.is_active ?? true,
     });
   });
 

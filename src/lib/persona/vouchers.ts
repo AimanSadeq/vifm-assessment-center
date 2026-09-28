@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 // ─────────────────────────────────────────────────────────────
 // Persona voucher service - generate + redeem access codes for the standalone
@@ -23,7 +24,7 @@ export function generateVoucherCode(): string {
 }
 
 export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
+  return sharedNormalizeCode(code);
 }
 
 export type CreateBatchInput = {

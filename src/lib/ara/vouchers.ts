@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 // ─────────────────────────────────────────────────────────────
 // ARA voucher service - generate + redeem PRACTICE AI Readiness
@@ -29,7 +30,7 @@ export function generateVoucherCode(): string {
 
 /** Normalize a typed code for storage/lookup (uppercase, trimmed). */
 export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
+  return sharedNormalizeCode(code);
 }
 
 export type CreateBatchInput = {

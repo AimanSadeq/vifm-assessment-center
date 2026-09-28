@@ -10,7 +10,9 @@ function resumeCookieName(code: string): string {
 }
 
 const schema = z.object({
-  code: z.string().min(4).max(40),
+  // Cleaned before the length check, so a code pasted with its link text
+  // ("VIFM-ARC-XXXX-XXXX [caliber.viftraining.com]") still redeems.
+  code: z.preprocess((v) => normalizeCode(String(v ?? "")), z.string().min(4, "Enter your voucher code.").max(40, "That does not look like a voucher code. It looks like VIFM-ARC-XXXX-XXXX.")),
   name: z.string().min(2).max(200),
   email: z.string().email().max(200),
   company: z.string().min(2).max(300),

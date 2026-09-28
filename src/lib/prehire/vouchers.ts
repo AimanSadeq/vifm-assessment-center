@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/server";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 // Pre-Hire vouchers: a client-distributable code (or seat-pool batch) tied to a
 // requisition. A no-account applicant self-redeems at /prehire/redeem; the
@@ -24,7 +25,7 @@ export function generatePrehireVoucherCode(): string {
 }
 
 export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
+  return sharedNormalizeCode(code);
 }
 
 export type PrehireDelegate = { name: string; email: string };

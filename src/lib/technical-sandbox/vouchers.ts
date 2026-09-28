@@ -9,6 +9,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { createSession, isMissingSchemaError } from "./service";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
@@ -24,7 +25,7 @@ export function generateVoucherCode(): string {
   return `VIFM-TECH-${randomBlock(4)}-${randomBlock(4)}`;
 }
 export function normalizeCode(code: string): string {
-  return code.trim().toUpperCase();
+  return sharedNormalizeCode(code);
 }
 
 export interface Delegate {

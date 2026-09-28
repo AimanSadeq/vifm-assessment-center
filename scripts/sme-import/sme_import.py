@@ -603,11 +603,17 @@ def plan_technical(sb, wb, plan):
     _, rows = read_sheet(ws)
     bank = fetch_by_ids(sb, "tech_assessment_items", [r.get(ID) for _, r in rows])
     src = ["Skill", "Difficulty", "Type", "Scenario (EN)", "Question (EN)", "A", "B", "C", "D", "Key",
-           "Author explanation", "Question (AR)", "A (AR)", "B (AR)", "C (AR)", "D (AR)", "Bank status"]
+           "Author explanation", "Scenario (AR)", "Question (AR)", "A (AR)", "B (AR)", "C (AR)", "D (AR)",
+           "Bank status"]
     for rn, rowd, iid, row, verdict, rev in iter_reviewed(plan, ws, src, "Question (EN)", "tech_assessment_items", bank):
         label = norm(rowd.get("Question (EN)"))[:90]
         if drifted(row["question_en"], rowd.get("Question (EN)")):
             plan.hold(ws.title, rn, iid, verdict, "Bank text changed after this workbook was issued", rev, label,
+                      "tech_assessment_items")
+            continue
+        issued = [norm(rowd.get(k)) for k in "ABCD"]
+        if any(issued) and issued != [norm(o) for o in (list(row.get("options_en") or []) + [""] * 4)[:4]]:
+            plan.hold(ws.title, rn, iid, verdict, "Answer options changed after this workbook was issued", rev, label,
                       "tech_assessment_items")
             continue
         note = f"SME review ({plan.reviewer}, {NOW[:10]}): {verdict}" + (
@@ -616,6 +622,13 @@ def plan_technical(sb, wb, plan):
         stamp = {"reviewer_name": plan.reviewer, "reviewed_at": NOW, "review_notes": notes}
         if verdict == "approve":
             if _key_checks(plan, ws.title, rn, iid, rowd, rev, label, "tech_assessment_items"):
+                continue
+            repeats = [lang for lang, q, sc in (("English", "question_en", "scenario_en"), ("Arabic", "question_ar", "scenario_ar"))
+                       if norm(row.get(sc)) and norm(row.get(q)) == norm(row.get(sc))]
+            if repeats:
+                plan.hold(ws.title, rn, iid, verdict, f"Approved, but the {' and '.join(repeats)} question repeats its "
+                          "scenario word for word, so a candidate is never asked the question - write the question "
+                          "in the item review console first", rev, label, "tech_assessment_items")
                 continue
             vals = {"status": "approved", **stamp}
         elif verdict == "revise":

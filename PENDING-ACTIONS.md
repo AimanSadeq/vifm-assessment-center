@@ -197,8 +197,14 @@ First workbook back (Yassin, Technical / Accounting, 15 items). Two things came 
     against the whole bank the same day (150 items, only these 2 remain):
   - `90133e9f-b137-45da-adec-098af2bb6af0` real_estate / Development Feasibility
   - `e31fe444-67e2-4534-b3f0-b60119d9e871` real_estate / Property Valuation
-  A guard is worth adding to the item console so a save that leaves the two fields identical is
-  refused, rather than relying on a reviewer to catch it again.
+  The item console + AI drafter already refuse this (a07e129); the SME importer now also holds an
+  Approve of such an item (2026-09-28). The Property Valuation item ALSO has a wrong key (NOI
+  780,000 / 8% = 9,750,000, not among the options) - found by recomputing every worked sum in the
+  bank (148 items, this is the only real error). Both items sent to Aiman as a decision workbook:
+  `.tmp/sme/returned/md-realestate-2026-09-28/Technical-real-estate-MD-decisions.xlsx`; apply with
+  `python .tmp/_apply_md_technical_decisions.py <returned.xlsx> --set realestate [--apply]`.
+  Moayad's issued Real Estate pack contains both; the importer now holds his verdict on either if
+  the options or English text changed after issue.
 - [x] **Workbook instructions did not say that a difficulty-only disagreement is still Approve.**
   Three sound accounting items came back Revise with no fix written purely because the reviewer
   would have relabelled the difficulty; the importer holds those, so Accounting stayed 3 items
@@ -224,8 +230,10 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   workbook: 9 proposed fixes accepted (incl. IAS 1 -> IFRS 18 wording, 3 Arabic questions that
   repeated the scenario), 2 Basel items (CET1, LCR) approved unchanged. All 11 approved + logged in
   `sme_review_log`. Approved now: Accounting 15, Business Reporting 14, Finance 14.
-- [ ] **Technical SME packs lack a Scenario (AR) column** - add it to `.tmp/_build_tech_packs.py`
-  before any re-issue (Yassin misread 3 Arabic items as scenario-less because of it).
+- [x] **Technical SME packs lack a Scenario (AR) column** - added 2026-09-28 to
+  `.tmp/_build_tech_packs.py` (+ the importer knows the column, so it is not mistaken for a review
+  answer); the Arabic check instruction now covers the scenario. Issued packs NOT regenerated -
+  applies to the next issue. Verified: new-layout pack and old-layout returns both preview cleanly.
 - [ ] **Returned v1 workbooks with notes** - reviewers were told to send back any old workbook they
   had already annotated so the notes can be carried across by hand (v1 rows are retired, so the
   importer cannot apply them). Match on statement text: v2 pooled rows keep the v1 wording.

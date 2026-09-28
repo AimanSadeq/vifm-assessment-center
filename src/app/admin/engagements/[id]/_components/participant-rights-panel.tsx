@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { formatLocalDate } from "@/components/shared/local-date";
+import { APPEAL_WINDOW_DAYS, appealDeadline, appealTiming } from "@/lib/ac/participant-rules";
 import {
   respondToConcernAction,
   requestReassessmentAction,
@@ -67,6 +68,7 @@ export function ParticipantRightsPanel({
   concerns = [],
   reassessments = [],
   disclosures = [],
+  resultReleasedAt = {},
   agreedRecipients = null,
 }: {
   engagementId: string;
@@ -75,6 +77,8 @@ export function ParticipantRightsPanel({
   concerns?: Row[];
   reassessments?: Row[];
   disclosures?: Row[];
+  /** candidate id to the date their result was released: the start of the appeal window. */
+  resultReleasedAt?: Record<string, string>;
   agreedRecipients?: string | null;
 }) {
   const router = useRouter();
@@ -150,6 +154,28 @@ export function ParticipantRightsPanel({
                   <span className="text-xs text-muted-foreground">
                     {STAGE_LABEL[c.stage as string] ?? (c.stage as string)} · {dateTimeOf(c.raised_at)}
                   </span>
+                  {c.kind === "appeal" && (() => {
+                    const released = resultReleasedAt[c.candidate_id as string];
+                    const timing = appealTiming(c.raised_at as string, released);
+                    const deadline = appealDeadline(released);
+                    if (timing === "late") {
+                      return (
+                        <span className="rounded bg-rose-100 px-1.5 py-0.5 text-xs text-rose-900">
+                          After the {APPEAL_WINDOW_DAYS}-day window (closed {plainDateOf(deadline?.toISOString())})
+                        </span>
+                      );
+                    }
+                    if (timing === "in_time") {
+                      return (
+                        <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-xs text-emerald-900">
+                          In time (window closes {plainDateOf(deadline?.toISOString())})
+                        </span>
+                      );
+                    }
+                    return (
+                      <span className="text-xs text-muted-foreground">Raised before the result was released</span>
+                    );
+                  })()}
                 </div>
                 <p className="mt-2 whitespace-pre-wrap">{c.body as string}</p>
 

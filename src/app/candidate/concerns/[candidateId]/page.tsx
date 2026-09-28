@@ -8,6 +8,7 @@ import { ImpersonationBanner } from "@/components/shared/impersonation-banner";
 import { RaiseConcernForm } from "./_components/raise-concern-form";
 import { LocalDate } from "@/components/shared/local-date";
 import { loadEngagementContact } from "./actions";
+import { APPEAL_WINDOW_DAYS, appealDeadline, appealTiming } from "@/lib/ac/participant-rules";
 
 type Props = {
   params: { candidateId: string };
@@ -60,6 +61,23 @@ export default async function CandidateConcernsPage({ params, searchParams }: Pr
 
   const contact = await loadEngagementContact(candidate.engagement_id as string);
 
+  // The appeal window starts when the result reaches the participant, which is
+  // the report's release. Read under the participant's own session, so it only
+  // ever sees its own report; tolerant of the read failing.
+  const releasedAt = await supabase
+    .from("candidate_reports")
+    .select("released_at")
+    .eq("candidate_id", candidateId)
+    .not("released_at", "is", null)
+    .order("released_at", { ascending: true })
+    .limit(1)
+    .then(
+      (r) => ((r.data?.[0]?.released_at as string | undefined) ?? null),
+      () => null
+    );
+  const deadline = appealDeadline(releasedAt);
+  const windowClosed = deadline ? appealTiming(new Date(), releasedAt) === "late" : false;
+
   return (
     <div className="space-y-6">
       {asAdmin && (
@@ -81,6 +99,27 @@ export default async function CandidateConcernsPage({ params, searchParams }: Pr
             your results. Raising a concern does not affect your results, and you can appeal against a result you
             believe is wrong.
           </p>
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <div className="font-medium text-foreground">Appealing against a result</div>
+            <p className="mt-1 text-muted-foreground">
+              {!deadline ? (
+                <>
+                  Once you receive your result, you have {APPEAL_WINDOW_DAYS} days to appeal against it.
+                </>
+              ) : windowClosed ? (
+                <>
+                  The {APPEAL_WINDOW_DAYS}-day window for appeals closed on{" "}
+                  <LocalDate value={deadline.toISOString()} dateOnly />. You can still raise it below, and it will be
+                  looked at to decide whether it can be considered.
+                </>
+              ) : (
+                <>
+                  You can appeal against your result until <LocalDate value={deadline.toISOString()} dateOnly />,{" "}
+                  {APPEAL_WINDOW_DAYS} days after you received it.
+                </>
+              )}
+            </p>
+          </div>
           {contact?.participant_contact_name || contact?.participant_contact_email ? (
             <div className="rounded-lg border bg-muted/40 p-3">
               <div className="font-medium text-foreground">Who you can speak to</div>

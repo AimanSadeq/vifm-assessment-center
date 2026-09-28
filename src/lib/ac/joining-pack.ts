@@ -14,6 +14,7 @@
  */
 
 import { acPurposeLabel } from "@/lib/constants/ac-purpose";
+import { APPEAL_WINDOW_DAYS } from "./participant-rules";
 
 export type PackEngagement = {
   id: string;
@@ -182,6 +183,8 @@ export function buildJoiningPack(engagement: PackEngagement, exercises: PackExer
     body:
       "You are entitled to be assessed fairly and consistently, to know what is being assessed and why, to ask questions " +
       "at any point, and to challenge a result you believe is wrong. Raising a question or a concern does not affect your results.\n\n" +
+      `If you believe a result is wrong, you can appeal within ${APPEAL_WINDOW_DAYS} days of receiving it, from your ` +
+      "assessment portal under \"Questions or concerns\" or through the contact below.\n\n" +
       (contact
         ? `Questions about this centre go to ${engagement.participant_contact_name ?? "your assessment contact"}` +
           (engagement.participant_contact_email ? ` (${engagement.participant_contact_email})` : "") +

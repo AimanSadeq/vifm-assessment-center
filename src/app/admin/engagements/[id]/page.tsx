@@ -114,6 +114,24 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
   ]);
 
+  // When each participant's result reached them, which is when their appeal
+  // window opens. Tolerant: without it every appeal simply shows no timing.
+  const resultReleasedAt: Record<string, string> = {};
+  await supabase
+    .from("candidate_reports")
+    .select("candidate_id, released_at")
+    .eq("engagement_id", id)
+    .not("released_at", "is", null)
+    .then(
+      (r) => {
+        for (const row of (r.data ?? []) as { candidate_id: string; released_at: string }[]) {
+          const prev = resultReleasedAt[row.candidate_id];
+          if (!prev || row.released_at < prev) resultReleasedAt[row.candidate_id] = row.released_at;
+        }
+      },
+      () => undefined
+    );
+
   // Requests to share a report outside the agreed recipients (BPS 8.13).
   // Tolerant of migration 00212 not being applied.
   const disclosures = await supabase
@@ -614,6 +632,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         concerns={concerns}
         reassessments={reassessments}
         disclosures={disclosures}
+        resultReleasedAt={resultReleasedAt}
         agreedRecipients={(engagement as { pack_report_recipients?: string | null }).pack_report_recipients ?? null}
       />
       <ReadinessSetupPanel engagementId={id} setup={readinessSetup} />

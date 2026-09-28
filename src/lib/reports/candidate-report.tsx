@@ -7,6 +7,7 @@ import { Document, Font, Page, Text, View, StyleSheet } from "@react-pdf/rendere
 // Ordinary words keep wrapping normally.
 Font.registerHyphenationCallback((word) => (/[@/]/.test(word) ? [word] : word.split("­")));
 import type { ReportData } from "./report-types";
+import { APPEAL_WINDOW_DAYS } from "@/lib/ac/participant-rules";
 import { getCompetencyGap, GAP_TONES, type GapBadgeData } from "@/lib/scoring/competency-gap";
 
 const BARS: Record<number, string> = {
@@ -681,7 +682,8 @@ function UsingThisReportPage({ d }: { d: ReportData }) {
         {" "}
         A concern or an appeal can also be raised from your own assessment portal, under &quot;Questions or
         concerns&quot;. It is recorded with the assessment, answered in writing, and raising one does not
-        change your results.
+        change your results. An appeal against a result should be made within {APPEAL_WINDOW_DAYS} days of
+        receiving this report.
       </Text>
 
       <Text style={[s.bodyText, { marginTop: 10, fontSize: 8.5, color: C.textMuted }]}>

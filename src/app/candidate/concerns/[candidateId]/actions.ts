@@ -2,6 +2,7 @@
 
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { publishToAllAdmins } from "@/lib/notifications/publish";
+import { APPEAL_WINDOW_DAYS, appealTiming } from "@/lib/ac/participant-rules";
 
 /**
  * A participant raising a concern about how the centre was run, or appealing
@@ -45,13 +46,29 @@ export async function raiseConcernAction(values: {
     return { error: error.message };
   }
 
+  // A late appeal is accepted, never refused: the window is a house rule the
+  // centre agreement allows to vary, and whether a late appeal is considered is
+  // a judgement for a person. The admin is simply told it arrived late.
+  let lateAppeal = false;
+  if (values.kind === "appeal") {
+    const releasedAt = await supabase
+      .from("candidate_reports")
+      .select("released_at")
+      .eq("candidate_id", candidate.id as string)
+      .not("released_at", "is", null)
+      .order("released_at", { ascending: true })
+      .limit(1)
+      .then((r) => ((r.data?.[0]?.released_at as string | undefined) ?? null), () => null);
+    lateAppeal = appealTiming(new Date(), releasedAt) === "late";
+  }
+
   // Nobody watches a table. Raising something that sits unread is the failure
   // mode the clause exists to prevent, so the admin team is told immediately.
   await publishToAllAdmins({
     kind: values.kind === "appeal" ? "appeal_raised" : "concern_raised",
     title:
       values.kind === "appeal"
-        ? `Appeal raised by ${candidate.full_name as string}`
+        ? `Appeal raised by ${candidate.full_name as string}${lateAppeal ? ` (after the ${APPEAL_WINDOW_DAYS}-day window)` : ""}`
         : `Concern raised by ${candidate.full_name as string}`,
     body: body.slice(0, 180),
     link: `/admin/engagements/${candidate.engagement_id as string}`,

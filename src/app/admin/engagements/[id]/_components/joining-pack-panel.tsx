@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { formatLocalDate } from "@/components/shared/local-date";
 import { saveJoiningPackAction, publishJoiningPackAction, decideAdjustmentAction } from "../actions";
+import { PACK_NOTICE_DAYS, PACK_LATE_REASON_MIN, packNoticeDays, packNoticeShort } from "@/lib/ac/participant-rules";
 
 type Row = Record<string, unknown>;
 
@@ -63,8 +64,15 @@ export function JoiningPackPanel({
     adjustmentsNote: (engagement.pack_adjustments_note as string) ?? "",
   });
   const [adjAnswer, setAdjAnswer] = useState<Record<string, { text: string; minutes: string }>>({});
+  const [lateReason, setLateReason] = useState("");
 
   const publishedAt = engagement.pack_published_at as string | null;
+  const startDate = (engagement.start_date as string | null) ?? null;
+  // Notice if published now, and the notice that was actually given once published.
+  const noticeNow = packNoticeDays(startDate, new Date());
+  const shortNow = !publishedAt && packNoticeShort(startDate, new Date());
+  const noticeGiven = publishedAt ? packNoticeDays(startDate, publishedAt) : null;
+  const lateReasonOnFile = (engagement.pack_late_reason as string | null) ?? null;
   const set = (k: keyof typeof form, v: string | boolean) => setForm((f) => ({ ...f, [k]: v }));
 
   const save = async () => {
@@ -86,7 +94,7 @@ export function JoiningPackPanel({
 
   const publish = async () => {
     setBusy("publish");
-    const res = await publishJoiningPackAction(engagementId);
+    const res = await publishJoiningPackAction(engagementId, shortNow ? lateReason : undefined);
     setBusy(null);
     if ("error" in res && res.error) {
       toast.error(typeof res.error === "string" ? res.error : "Could not publish.", { duration: 9000 });
@@ -139,7 +147,11 @@ export function JoiningPackPanel({
             {open ? "Close" : "Edit"}
           </Button>
           {!publishedAt && (
-            <Button size="sm" onClick={publish} disabled={busy === "publish"}>
+            <Button
+              size="sm"
+              onClick={publish}
+              disabled={busy === "publish" || (shortNow && lateReason.trim().length < PACK_LATE_REASON_MIN)}
+            >
               Publish
             </Button>
           )}
@@ -156,6 +168,45 @@ export function JoiningPackPanel({
             </>
           )}
         </p>
+
+        {!publishedAt && startDate === null && (
+          <p className="text-xs text-muted-foreground">
+            Set the centre start date to check the notice participants get. VIFM&apos;s rule is at least{" "}
+            {PACK_NOTICE_DAYS} days (BPS 5.40).
+          </p>
+        )}
+        {!publishedAt && startDate !== null && !shortNow && noticeNow !== null && (
+          <p className="text-xs text-muted-foreground">
+            Published today, participants would get {noticeNow} days&apos; notice. VIFM&apos;s rule is at least{" "}
+            {PACK_NOTICE_DAYS} (BPS 5.40).
+          </p>
+        )}
+        {shortNow && (
+          <div className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">
+            <div className="font-medium">Short notice</div>
+            <p className="mt-1">
+              {noticeNow !== null && noticeNow < 0
+                ? "The centre has already started."
+                : `The centre starts in ${noticeNow} day${noticeNow === 1 ? "" : "s"}.`}{" "}
+              VIFM&apos;s rule is at least {PACK_NOTICE_DAYS} days&apos; notice so participants can prepare (BPS
+              5.40). You can still publish, but the reason is recorded with the pack.
+            </p>
+            <Textarea
+              className="mt-2 bg-white"
+              rows={2}
+              value={lateReason}
+              onChange={(e) => setLateReason(e.target.value)}
+              placeholder="Why the notice is shorter, for example: selection centre set by the client's hiring timetable."
+            />
+          </div>
+        )}
+        {publishedAt && noticeGiven !== null && (
+          <p className="text-xs text-muted-foreground">
+            Published with {noticeGiven} days&apos; notice
+            {noticeGiven < PACK_NOTICE_DAYS ? ` (below the ${PACK_NOTICE_DAYS}-day rule)` : ""}.
+            {lateReasonOnFile ? ` Reason recorded: ${lateReasonOnFile}` : ""}
+          </p>
+        )}
 
         {missing.length > 0 && (
           <div className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">

@@ -16,6 +16,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { issueReadyNowForEngagement } from "@/lib/credentials/ac-ready-now";
 import { reviewStaffing } from "@/lib/ac/staffing";
 import { buildJoiningPack, type PackEngagement, type PackExercise } from "@/lib/ac/joining-pack";
+import { PACK_NOTICE_DAYS, PACK_LATE_REASON_MIN, packNoticeDays, packNoticeShort } from "@/lib/ac/participant-rules";
 import { CENTRE_ROLE_MAP } from "@/lib/ac/centre-roles";
 import { reviewCentreRoles, competenceIsCurrent } from "@/lib/ac/centre-roles-review";
 import { provisionCandidateLogin, generateCandidateSetupLink } from "@/lib/auth/provision-candidate";
@@ -1314,7 +1315,7 @@ export async function saveJoiningPackAction(values: {
   return { ok: true };
 }
 
-export async function publishJoiningPackAction(engagementId: string) {
+export async function publishJoiningPackAction(engagementId: string, lateReason?: string) {
   let uid: string | null = null;
   try {
     const caller = await requireRole(["admin"]);
@@ -1347,11 +1348,40 @@ export async function publishJoiningPackAction(engagementId: string) {
     };
   }
 
+  // VIFM's house rule is at least PACK_NOTICE_DAYS of notice (BPS 5.40; centre
+  // agreement 8.1). Less is allowed, because a selection centre sometimes cannot
+  // give three weeks, but only with the reason on the record.
+  const now = new Date();
+  const startDate = (eng as { start_date?: string | null }).start_date ?? null;
+  const short = packNoticeShort(startDate, now);
+  const reason = (lateReason ?? "").trim();
+  if (short && reason.length < PACK_LATE_REASON_MIN) {
+    const days = packNoticeDays(startDate, now) ?? 0;
+    return {
+      error:
+        (days < 0
+          ? "The centre has already started. "
+          : `The centre starts in ${days} day${days === 1 ? "" : "s"}. `) +
+        `VIFM's rule is at least ${PACK_NOTICE_DAYS} days' notice, so participants have time to prepare. ` +
+        "To publish anyway, record why the notice is shorter.",
+      needsLateReason: true,
+    };
+  }
+
   const { error } = await sb
     .from("engagements")
-    .update({ pack_published_at: new Date().toISOString(), pack_published_by: uid })
+    .update({
+      pack_published_at: now.toISOString(),
+      pack_published_by: uid,
+      pack_late_reason: short ? reason : null,
+    })
     .eq("id", engagementId);
-  if (error) return { error: error.message };
+  if (error) {
+    if (/pack_late_reason/.test(error.message)) {
+      return { error: "Apply migration 00229 first: there is nowhere yet to record why the notice is short." };
+    }
+    return { error: error.message };
+  }
   return { ok: true };
 }
 

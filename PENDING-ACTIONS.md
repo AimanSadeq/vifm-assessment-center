@@ -193,9 +193,8 @@ First workbook back (Yassin, Technical / Accounting, 15 items). Two things came 
   never asked the question. Found by Yassin in review, not by us. All 5 are `status='in_review'`,
   so none has ever been served in a certified test. Fix is to author the missing Arabic question
   in `/admin/tech-assessment/items` (Arabic is SME-reviewed content, so it is not a code change):
-  - `189c1536-8bd7-472f-bad7-4bb1e4a8402f` accounting / Consolidation
-  - `40eaaa31-89b7-4184-aad4-a3d149416127` accounting / Management Accounting
-  - `2f93dba2-3e81-4f55-82bd-b83c201833bc` accounting / Revenue Recognition
+  - The 3 accounting items were fixed 2026-09-28 (MD decision workbook). Still open, rechecked
+    against the whole bank the same day (150 items, only these 2 remain):
   - `90133e9f-b137-45da-adec-098af2bb6af0` real_estate / Development Feasibility
   - `e31fe444-67e2-4534-b3f0-b60119d9e871` real_estate / Property Valuation
   A guard is worth adding to the item console so a save that leaves the two fields identical is

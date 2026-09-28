@@ -393,7 +393,8 @@ def plan_reflect(sb, wb, plan):
     ws = wb["Behaviours"]
     _, rows = read_sheet(ws)
     bank = fetch_by_ids(sb, "reflect_behaviors", [r.get(ID) for _, r in rows])
-    src = ["Competency", "Competency (AR)", "What the competency means", "Statement (EN)", "Statement (AR)"]
+    src = ["Competency", "Competency (AR)", "What the competency means", "Statement (EN)", "Statement (AR)",
+           "Originally written for"]
     for rn, rowd, iid, row, verdict, rev in iter_reviewed(plan, ws, src, "Statement (EN)", "reflect_behaviors", bank):
         label = norm(rowd.get("Statement (EN)"))[:90]
         if drifted(row["text_en"], rowd.get("Statement (EN)")):
@@ -450,13 +451,17 @@ def plan_anchors(sb, wb, plan):
 def plan_ac(sb, wb, plan):
     comps = {c["name"]: c["id"] for c in sb.table("competencies").select("id, name").execute().data or []}
     next_sort = {}
-    for sheet, en_header, is_tip in (("Rating anchors", "Indicator (EN)", False), ("Development tips", "Development tip", True)):
+    # v1 packs called the indicator sheet "Rating anchors"; the v2 packs call it "Behavioural indicators"
+    # so it cannot be confused with the 1-5 scale-anchors pack (AC-Scale-Anchors-*, handled by plan_anchors).
+    for sheet, en_header, is_tip in (("Rating anchors", "Indicator (EN)", False),
+                                     ("Behavioural indicators", "Indicator (EN)", False),
+                                     ("Development tips", "Development tip", True)):
         if sheet not in wb.sheetnames:
             continue
         ws = wb[sheet]
         _, rows = read_sheet(ws)
         bank = fetch_by_ids(sb, "behavioral_indicators", [r.get(ID) for _, r in rows])
-        src = ["Competency", "Type", en_header]
+        src = ["Competency", "Type", en_header, "Originally written for"]
         last_comp = ""
         for rn, rowd in rows:  # carry the competency down for the authoring rows
             if rowd.get("Competency"):

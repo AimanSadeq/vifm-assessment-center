@@ -423,7 +423,7 @@ def plan_anchors(sb, wb, plan):
     _, rows = read_sheet(ws)
     table = "competency_scale_anchors"
     bank = fetch_by_ids(sb, table, [r.get(ID) for _, r in rows])
-    src = ["Competency", "Point", "Point label", "Anchor (EN)", "Anchor (AR)"]
+    src = ["Competency", "Point", "Point label", "Anchor (EN)", "Anchor (AR)", "VIFM first-pass change"]
     for rn, rowd, iid, row, verdict, rev in iter_reviewed(plan, ws, src, "Anchor (EN)", table, bank):
         label = f"{rowd.get('Competency')} {rowd.get('Point')}: " + norm(rowd.get("Anchor (EN)"))[:70]
         if drifted(row["anchor_en"], rowd.get("Anchor (EN)")):

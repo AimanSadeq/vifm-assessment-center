@@ -4,7 +4,8 @@ import { I18nextProvider } from "react-i18next";
 import { usePathname } from "next/navigation";
 import i18n from "./config";
 import { LOCALE_COOKIE } from "./cookie";
-import { useEffect, type ReactNode } from "react";
+import { isLocaleAwareRoute } from "./locale-routes";
+import { useEffect, useMemo, type ReactNode } from "react";
 
 function readCookie(name: string): string | null {
   if (typeof document === "undefined") return null;
@@ -13,57 +14,51 @@ function readCookie(name: string): string | null {
 }
 
 /**
- * Routes that opt INTO the user's locale cookie (rtl when ar). Everything
- * else (login, the public marketing/landing surfaces) stays English/LTR.
- * The admin/consultant portal is being migrated to bilingual Arabic/RTL
- * phase by phase; /admin is enabled here. The /ara and /reflect consoles
- * join as their translation phases land.
+ * Routes that opt INTO the user's locale cookie live in ./locale-routes (one
+ * list, shared with the pre-paint script in the root layout).
+ *
+ * I18N-03: the language used to be applied only in a post-mount effect, so a
+ * user with the Arabic cookie saw every client component render in English and
+ * left-to-right, then flip. The root layout now passes the cookie's locale in
+ * (`initialLocale`), and the translation instance starts in the right language
+ * on the server render as well as the client. Each provider gets its OWN
+ * instance (cloneInstance shares the loaded resources) - changing the language
+ * of the module singleton during a server render would leak into concurrent
+ * requests. The html dir/lang are set before first paint by the layout script;
+ * the effect below keeps them in step on client-side navigation.
  */
-function localeAwareRoute(pathname: string | null): boolean {
-  if (!pathname) return false;
-  // Fluent is the English-language placement - its UI stays English/LTR even
-  // though the rest of /ac is locale-aware.
-  if (pathname.startsWith("/ac/fluent")) return false;
-  return (
-    pathname.startsWith("/candidate") ||
-    pathname.startsWith("/ara/respond") ||
-    pathname.startsWith("/ara/consultant") ||
-    pathname.startsWith("/ara/admin") ||
-    pathname.startsWith("/ara/cohort") ||
-    pathname.startsWith("/reflect/consultant") ||
-    pathname.startsWith("/reflect/admin") ||
-    pathname.startsWith("/admin") ||
-    pathname.startsWith("/assessor") ||
-    pathname.startsWith("/client") ||
-    pathname.startsWith("/ac") ||
-    pathname.startsWith("/courses") ||
-    pathname.startsWith("/verify") ||
-    pathname.startsWith("/login") ||
-    pathname.startsWith("/register") ||
-    pathname.startsWith("/password-reset")
-  );
-}
-
-export function I18nProvider({ children }: { children: ReactNode }) {
+export function I18nProvider({
+  children,
+  initialLocale = null,
+}: {
+  children: ReactNode;
+  /** The `vifm-locale` cookie as read by the server, or null. */
+  initialLocale?: string | null;
+}) {
   const pathname = usePathname();
+  const aware = isLocaleAwareRoute(pathname);
+  const startLang = aware && initialLocale === "ar" ? "ar" : "en";
 
-  // Sync i18next + html dir/lang on mount AND on every route change.
-  // - Locale-aware routes (the portals listed above, now incl. the bilingual
-  //   admin/assessor/client surfaces) follow the cookie (rtl when ar).
-  // - Public marketing/landing surfaces stay ltr/en.
+  // One instance per provider mount, started in the language this request
+  // should render in. Deliberately keyed only on mount: later changes go
+  // through changeLanguage below (and the switcher), not a re-clone.
+  const instance = useMemo(
+    () => i18n.cloneInstance({ lng: startLang }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
   useEffect(() => {
     const cookieLang = readCookie(LOCALE_COOKIE);
-    const aware = localeAwareRoute(pathname);
-    const targetLang = aware ? (cookieLang ?? i18n.language) : "en";
-
-    if (targetLang !== i18n.language) {
-      i18n.changeLanguage(targetLang);
+    const targetLang = isLocaleAwareRoute(pathname) ? (cookieLang ?? instance.language) : "en";
+    if (targetLang !== instance.language) {
+      instance.changeLanguage(targetLang);
     }
     if (typeof document !== "undefined") {
       document.documentElement.lang = targetLang;
       document.documentElement.dir = targetLang === "ar" ? "rtl" : "ltr";
     }
-  }, [pathname]);
+  }, [pathname, instance]);
 
-  return <I18nextProvider i18n={i18n}>{children}</I18nextProvider>;
+  return <I18nextProvider i18n={instance}>{children}</I18nextProvider>;
 }

@@ -119,6 +119,13 @@ export default async function ClientEngagementDetailPage({ params }: Props) {
           <p className="text-sm text-muted-foreground">
             {t("clientPortal.detail.resultsSubtitle")}
           </p>
+          {/* BPS 8.4: guidance for the people deciding with these reports. */}
+          <p className="text-sm">
+            <a href={`/api/reports/${params.id}/guidance`} className="font-medium text-accent hover:underline">
+              {t("clientPortal.detail.guidanceNote")}
+            </a>
+            <span className="ms-2 text-xs text-muted-foreground">{t("clientPortal.detail.guidanceNoteHint")}</span>
+          </p>
         </CardHeader>
         <CardContent>
           {candidates.length === 0 ? (

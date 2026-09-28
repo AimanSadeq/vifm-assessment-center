@@ -1142,9 +1142,16 @@ export function EngagementDetail({
                 </Table>
               )}
 
-              {/* Bulk share */}
+              {/* Bulk share, plus the decision makers' guidance note (BPS 8.4) */}
               {candidates.length > 0 && (
-                <div className="flex justify-end">
+                <div className="flex flex-wrap items-center justify-end gap-3">
+                  <a
+                    href={`/api/reports/${engagement.id as string}/guidance`}
+                    className="text-sm font-medium text-accent hover:underline"
+                    title={t("adminEngagements.detail.guidanceNoteHint")}
+                  >
+                    {t("adminEngagements.detail.guidanceNote")}
+                  </a>
                   <Button
                     variant="default"
                     className="gap-2"

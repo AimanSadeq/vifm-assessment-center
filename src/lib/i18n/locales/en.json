@@ -1886,6 +1886,8 @@
       "share": "Share",
       "toastReportsAutoShared": "Reports auto-shared with {{n}} candidate(s)",
       "autoShareAll": "Auto-Share All Reports",
+      "guidanceNote": "Guidance for decision makers (PDF)",
+      "guidanceNoteHint": "How to read and use this centre's results. Send it with the reports.",
       "confirmStatusTitle": "Confirm Status Change",
       "confirmStatusBody": "Are you sure you want to {{action}} this engagement? This action changes the engagement status to",
       "confirmAction": {
@@ -3970,6 +3972,8 @@
       "target": "Target: {{role}}",
       "resultsTitle": "Candidate Results",
       "resultsSubtitle": "Overall assessment ratings and report status for each candidate.",
+      "guidanceNote": "How to read and use these results (PDF)",
+      "guidanceNoteHint": "Guidance for the people making decisions with these reports.",
       "noCandidates": "No candidates in this project.",
       "colCandidate": "Candidate",
       "colAssessmentStatus": "Assessment Status",

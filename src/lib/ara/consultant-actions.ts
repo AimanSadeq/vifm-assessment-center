@@ -38,26 +38,64 @@ export async function createConsultantNote(formData: FormData) {
   });
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
 
-  // Best-effort translation. If ANTHROPIC_API_KEY is missing or the
-  // call fails, we save the note without a translation; the AR side
-  // of the bilingual report will show a "translation pending" caption.
+  // note_text is always the English text and note_text_ar the Arabic (see
+  // src/lib/ara/note-text.ts). Best-effort translation of whichever side the
+  // consultant did not write: if ANTHROPIC_API_KEY is missing or the call
+  // fails, an English-authored note saves with no Arabic (the Arabic report
+  // says the translation is pending), and an Arabic-authored note keeps the
+  // Arabic original in note_text too (NOTES-07). Either side can be corrected
+  // by hand afterwards with updateConsultantNote.
   const { translateConsultantNote } = await import("@/lib/ai/translate");
-  const noteTextAr =
-    parsed.data.note_language === "en"
-      ? await translateConsultantNote(parsed.data.note_text, "en", "ar")
-      : parsed.data.note_text; // already in AR
+  const isAr = parsed.data.note_language === "ar";
+  const noteTextEn = isAr
+    ? (await translateConsultantNote(parsed.data.note_text, "ar", "en")) ?? parsed.data.note_text
+    : parsed.data.note_text;
+  const noteTextAr = isAr
+    ? parsed.data.note_text
+    : await translateConsultantNote(parsed.data.note_text, "en", "ar");
 
   const sb = createServiceClient();
   const { error } = await sb.from("ara_consultant_notes").insert({
     assessment_id: parsed.data.assessment_id,
     pillar_id: parsed.data.pillar_id,
-    note_text: parsed.data.note_text,
+    note_text: noteTextEn,
     note_text_ar: noteTextAr,
     include_in_report: parsed.data.include_in_report,
     note_language: parsed.data.note_language,
   });
   if (error) return { ok: false, error: error.message };
 
+  revalidatePath(`/ara/consultant/assessments/${parsed.data.assessment_id}`);
+  return { ok: true };
+}
+
+// NOTES-13: hand-edit a saved note in both languages. Nothing is re-translated -
+// what the consultant writes here is what the report prints.
+const noteUpdateSchema = z.object({
+  note_id: z.string().uuid(),
+  assessment_id: z.string().uuid(),
+  note_text: z.string().trim().min(1, "The English text is required").max(5000),
+  note_text_ar: z.string().trim().max(5000),
+});
+
+export async function updateConsultantNote(formData: FormData) {
+  const parsed = noteUpdateSchema.safeParse({
+    note_id: formData.get("note_id"),
+    assessment_id: formData.get("assessment_id"),
+    note_text: formData.get("note_text"),
+    note_text_ar: formData.get("note_text_ar") ?? "",
+  });
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  try { await requireAssessmentOwner(parsed.data.assessment_id); } catch (e) { return authErr(e); }
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("ara_consultant_notes")
+    .update({ note_text: parsed.data.note_text, note_text_ar: parsed.data.note_text_ar || null })
+    .eq("id", parsed.data.note_id)
+    .eq("assessment_id", parsed.data.assessment_id)
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+  if (!data || data.length === 0) return { ok: false, error: "Note not found on this assessment" };
   revalidatePath(`/ara/consultant/assessments/${parsed.data.assessment_id}`);
   return { ok: true };
 }

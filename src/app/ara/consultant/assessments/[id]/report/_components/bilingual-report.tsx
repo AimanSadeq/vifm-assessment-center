@@ -1,4 +1,5 @@
 import { VifmLogo } from "@/components/shared/vifm-logo";
+import { noteTextFor } from "@/lib/ara/note-text";
 import { orgFactSheetRows } from "@/lib/reports/fact-sheet-content";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/constants/ara-pillars";
 import { DELTA_COLORS, USE_CASE_RISK_COLORS, USE_CASE_STAGE_COLORS } from "./report-encodings";
@@ -721,7 +722,7 @@ export function BilingualReport(p: BilingualReportProps) {
                         lang="ar"
                         index={i + 1}
                         type={inferFindingType(n.note_text)}
-                        text={n.note_text_ar ?? n.note_text}
+                        text={noteTextFor(n, "ar", { bilingual: true })}
                       />
                     ))}
                   </div>
@@ -769,7 +770,7 @@ export function BilingualReport(p: BilingualReportProps) {
                     lang="ar"
                     index={i + 1}
                     type={inferFindingType(n.note_text)}
-                    text={n.note_text_ar ?? n.note_text}
+                    text={noteTextFor(n, "ar", { bilingual: true })}
                   />
                 ))}
               </div>

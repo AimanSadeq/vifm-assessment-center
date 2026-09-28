@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { noteTextFor } from "@/lib/ara/note-text";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentCaller, isInternalAraRender } from "@/lib/ara/auth-guards";
 import { VifmLogo } from "@/components/shared/vifm-logo";
@@ -1981,7 +1982,7 @@ function PillarPages({
                 lang={lang}
                 index={i + 1}
                 type={inferFindingType(n.note_text)}
-                text={lang === "ar" ? (n.note_text_ar ?? n.note_text) : n.note_text}
+                text={noteTextFor(n, lang)}
               />
             ))}
           </div>

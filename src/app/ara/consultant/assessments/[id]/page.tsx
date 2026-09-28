@@ -21,6 +21,7 @@ import { ARA_STAGE_MAP, getPillarsForAssessment } from "@/lib/constants/ara-stag
 import { bulkImportAraRespondents, createAraRespondent } from "@/lib/ara/actions";
 import { SendInvitationButton } from "./_components/send-invitation-button";
 import { StartReassessmentButton } from "./_components/start-reassessment-button";
+import { NoteEditor } from "./_components/note-editor";
 import { AraPathwayCard } from "./_components/ara-pathway-card";
 import {
   createConsultantNote, deleteConsultantNote, toggleNoteIncludeInReport,
@@ -84,6 +85,7 @@ type ConsultantNoteRow = {
   id: string;
   pillar_id: string | null;
   note_text: string;
+  note_text_ar: string | null;
   include_in_report: boolean;
   note_language: "en" | "ar";
   created_at: string;
@@ -189,7 +191,7 @@ export default async function AraAssessmentDetailPage({
       .maybeSingle<OverallScoreRow>(),
     sb
       .from("ara_consultant_notes")
-      .select("id, pillar_id, note_text, include_in_report, note_language, created_at")
+      .select("id, pillar_id, note_text, note_text_ar, include_in_report, note_language, created_at")
       .eq("assessment_id", assessment.id)
       .order("created_at", { ascending: false })
       .returns<ConsultantNoteRow[]>(),
@@ -1391,9 +1393,13 @@ export default async function AraAssessmentDetailPage({
                           </form>
                         </div>
                       </div>
-                      <p className="text-sm whitespace-pre-wrap" dir={n.note_language === "ar" ? "rtl" : "ltr"}>
-                        {n.note_text}
-                      </p>
+                      <NoteEditor
+                        noteId={n.id}
+                        assessmentId={assessment.id}
+                        noteLanguage={n.note_language}
+                        textEn={n.note_text}
+                        textAr={n.note_text_ar}
+                      />
                     </div>
                   );
                 })}

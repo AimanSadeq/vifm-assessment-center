@@ -257,20 +257,38 @@ their tightly-coupled siblings are **FIXED + shipped** (commits `04a5a17`, `7e0d
 - [x] Dead Agentic tier (AGN-* / 00116 layer flip + save bypass + form sections) + GUIDE-07 + DERIVE-04 contamination guard applied across scoring / compliance / distortion / detectors.
 - [x] (Earlier) SAMA CSF framework (00113/00114), sector binding (00115), compliance recalc-on-completion + pillar-scope gating + not-yet-calculated state, regulatory-extractor severity enum, Phase 2 Arabic help text, bilingual PDF Workforce+Agentic sections.
 
-**Open FAILs (3 left; 3 fixed 2026-06-19, commit `0e33fc5`):**
-- [ ] **WEIGHT-04** - weight editor writes 0 into out-of-scope pillars / not scoped to the in-scope set (non-Enterprise). Pairs with the SCORE-16 renormalization (overlaps SD-1).
-- [x] **NOTES-14** - general (pillar_id NULL) report notes now render as an "Overall observations" bilingual section (were dropped from the bilingual report).
-- [x] **GOV-05** - retention dropped 3y -> 2y (CLAUDE.md / PDPL) via shared `ARA_RETENTION_YEARS` constant. SDAIA-relevant.
-- [x] **AUTHZ-04** - docstring corrected (loadRespondentByToken loads regardless of status, by design, to keep results viewable); frozen/archived write-lock confirmed in saveAraAnswer + added to markAraRespondentComplete.
-- [x] **OFFLINE-02** - offline banner promises local persistence that doesn't exist; implement localStorage mirror or soften copy. **Re-checked 2026-09-28: fixed - banner now says answers only save while connected.**
-- [ ] **QCRUD-08 / CMT-01** - AI-authored (is_active=false) questions have no admin activation path; stale security comment.
-
-**Open GAPs (6):**
-- [x] **STATUS-08/09** - org assessments never transition draft->active or ->completed (happy path is draft->frozen). **Re-checked 2026-09-28: fixed - active/completed transitions exist in consultant-actions.**
-- [ ] **ORG-DELETE-02 / SANDBOX-05 / AUDIT-IMMUTABLE-01** - org hard-delete + sandbox purge write no audit row; `ara_data_management_log` has no immutability trigger. **Re-checked 2026-09-28: audit rows ARE now written (erasure, anonymise, sandbox purge); still open = no immutability trigger on the log.**
-- [x] **DEEPDIVE-03 / MODEB-06** - Mode B deep-dive doesn't set consultant_id -> owning consultant can't open its detail under RLS. **Re-checked 2026-09-28: fixed - deep-dive issuance sets consultant_id.**
-- [ ] **REASSESS-09** - prior_assessment_id (00020) not surfaced as a Year N-1 baseline link.
-- [ ] **NOTES-13** - note_text_ar not hand-editable.
-- [ ] **DEFER-01** - regulatory documents have no admin approve/reject lifecycle.
-
-**Open PARTIALs (28, condensed):** TIMER-05 (time limit client-only, not server-enforced), QCSV-02/VAL-02 (CSV export doesn't round-trip; options-shape Zod mismatch), EMAIL-17 (Graph transport drops PDF attachments), ORG-ANON-03/06 (anonymize leaves residual PII + no actor), YOY-07 (YoY scan truncates below the compatible prior), DIST-04 (distortion mean not leave-one-out), REC-ARA-40 (ARA->quote leads all attributed "direct"), DOC-COUNT-02/DOC-NAMES-01 (doc framework counts/names vs seeded), NAME-01 (globals.css comment still says "ARA Compass"), I18N-03 (RTL FOUC under ar cookie on consultant/admin), AGN-REASSESS-01 (reassessment doesn't carry include_agentic/individual_layer + tier + pillars_in_scope), NOTES-07/15 (AR-authored notes no EN translation; null note_text_ar shows EN dup), PDF-07/43 (no durable PDF persisted; no version bump), PDF-17/34/38/41 (bilingual radar axis labels English; section parity; localized compliance chrome), UC-03 (use-case portfolio not suppressed for individual_only), TIMER-06 (resume doesn't auto-arm countdown), EMAIL-15/18 (personal-email gate; split origin env vars), CRON-14/18 (cron copy says Vercel; pin node runtime), VOUCHER-12 (redeem page doesn't pre-validate code), REC-ARA-46 (zero-answer factor read as max gap).
+**All closed as of 2026-09-28.** Re-checked against the code: several were already fixed on
+2026-07-03/04 (commits `fa5ceca`, `abba0b9`) but never ticked here; the rest were fixed on
+2026-09-28 (one commit each).
+- [x] Fixed July: WEIGHT-04 (weights scoped to in-scope pillars), STATUS-08/09 (Launch / Mark
+  complete), ORG-DELETE-02 + SANDBOX-05 audit rows, TIMER-05 (server-side time limit), DEFER-01
+  (regulatory approve/reject), QCRUD-08 (activate AI-authored questions), DIST-04 (leave-one-out),
+  YOY-07 (prior scan by major version), PDF-17 (radar labels), DEEPDIVE-03, EMAIL-17 (attachments),
+  OFFLINE-02 (honest banner), AGN-REASSESS-01 (reassessment carries layers + scope), NOTES-14.
+- [x] AUDIT-IMMUTABLE-01 - `ara_data_management_log` append-only (migration 00228, applied +
+  verified: UPDATE/DELETE/TRUNCATE refused, performed_by -> NULL allowed for account deletion).
+- [x] NOTES-07/13/15 - Arabic notes get English on save; Arabic report says "translation
+  pending" instead of repeating English; notes editable in both languages.
+- [x] PDF-34/38/41 - the Arabic PDF prints the bilingual report's Arabic column (A4 portrait)
+  instead of the English-only portrait flow; spanning charts/panels take the report language.
+- [x] PDF-07/43 - every PDF stored in the private `ara-reports` bucket with a version number +
+  scores snapshot; last five downloadable from the assessment page. (Also created the missing
+  `ara-materials` bucket - respondent supporting-material uploads had been failing.)
+- [x] REC-ARA-46 - an unanswered personal factor (score 0) is "not measured", not the max gap.
+- [x] TIMER-06 - resume shows the same countdown the server enforces.
+- [x] VOUCHER-12 - a typed voucher code is checked on leaving the field.
+- [x] UC-03 - no use-case portfolio for personal-only respondents (page + server action).
+- [x] I18N-03 - no left-to-right flash for Arabic users (pre-paint script + server locale).
+- [x] QCSV-02/VAL-02 - question CSV round-trips (verified: 213/213, zero field differences).
+- [x] ORG-ANON-03/06 - anonymise scrubs demographics, redemptions, voucher contacts, scope
+  labels, use-case owners, uploaded files; the admin is recorded on every erasure log row.
+  Free-text answers and consultant notes are deliberately left as written.
+- [x] REC-ARA-40 - `?source=ara` carries from ARC pages to the quote form (engagement_type 'ara').
+- [x] DOC-COUNT-02/DOC-NAMES-01 - ARC landing + roadmap read framework/requirement counts and
+  names from the bank (16 frameworks, 66 requirements, SAMA CSF listed).
+- [x] EMAIL-18 - one `siteOrigin()` for every outbound link (some paths fell back to localhost).
+- [x] CRON-14/18 - ARC retention cron pinned to Node runtime, Render copy.
+- [x] REASSESS-09 - assessment page links the prior year's baseline and later reassessments.
+- [x] EMAIL-15 - moot: the personal-results email was retired by client policy (no sender).
+- [ ] **Policy to confirm:** stored report PDFs are kept as business records after an assessment
+  is purged (handover rule, migration 00010), and they include respondents' names.

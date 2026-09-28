@@ -188,7 +188,7 @@ can be relaxed for Gmail-class recipients.
 
 First workbook back (Yassin, Technical / Accounting, 15 items). Two things came out of it:
 
-- [ ] **Arabic question duplicates the Arabic scenario on 5 technical items.** `question_ar`
+- [x] **Arabic question duplicates the Arabic scenario on 5 technical items.** CLOSED 2026-09-28: all 5 fixed (3 via the Yassin set, 2 real-estate via Aiman's second decision workbook, incl. the Property Valuation key now $9,750,000); bank-wide recheck finds 0 left. `question_ar`
   holds a verbatim copy of `scenario_ar`, so an Arabic candidate reads the case twice and is
   never asked the question. Found by Yassin in review, not by us. All 5 are `status='in_review'`,
   so none has ever been served in a certified test. Fix is to author the missing Arabic question

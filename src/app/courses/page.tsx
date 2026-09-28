@@ -47,7 +47,7 @@ const LEVELS: VifmCourseLevel[] = ["foundation", "intermediate", "advanced"];
 export default async function CoursesCataloguePage({
   searchParams,
 }: {
-  searchParams?: { vertical?: string; level?: string };
+  searchParams?: { vertical?: string; level?: string; source?: string };
 }) {
   const t = await getServerT();
   const sb = createServiceClient();
@@ -183,7 +183,7 @@ export default async function CoursesCataloguePage({
               </p>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {list.map((c) => (
-                  <CourseCard key={c.id} course={c} t={t} />
+                  <CourseCard key={c.id} course={c} t={t} source={searchParams?.source === "ara" ? "ara" : undefined} />
                 ))}
               </div>
             </div>
@@ -255,7 +255,7 @@ function FilterChip({ href, label, active }: { href: string; label: string; acti
   );
 }
 
-function CourseCard({ course, t }: { course: CatalogueRow; t: ServerT }) {
+function CourseCard({ course, t, source }: { course: CatalogueRow; t: ServerT; source?: "ara" }) {
   const durationLabel =
     course.min_duration_days === course.max_duration_days
       ? `${course.default_duration_days}d`
@@ -265,7 +265,9 @@ function CourseCard({ course, t }: { course: CatalogueRow; t: ServerT }) {
       ? course.overview_en.slice(0, 200).trimEnd() + "…"
       : course.overview_en
     : t("coursesPublic.cardOutlineFallback");
-  const href = `/courses/${course.code ?? course.id}`;
+  // REC-ARA-40: a visitor who arrived from an ARC surface keeps that source
+  // so the quote request is attributed to it.
+  const href = `/courses/${course.code ?? course.id}${source ? `?source=${source}` : ""}`;
 
   return (
     <Link
@@ -305,7 +307,7 @@ function CourseCard({ course, t }: { course: CatalogueRow; t: ServerT }) {
 }
 
 function withParams(
-  current: { vertical?: string; level?: string } | undefined,
+  current: { vertical?: string; level?: string; source?: string } | undefined,
   patch: Partial<Record<string, string | undefined>>
 ): string {
   const params = new URLSearchParams();

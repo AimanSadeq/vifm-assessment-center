@@ -828,6 +828,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
               : "No recommendations yet - either all your factors are near target, or the catalogue doesn't yet cover the relevant capabilities."
           }
           courses={recommendations}
+          publicSource="ara"
           context="ac"
         />
         )}
@@ -855,7 +856,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             </div>
           </div>
           <Link
-            href="/courses"
+            href="/courses?source=ara"
             className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline shrink-0"
           >
             {isAr ? "افتح الكتالوج" : "Open catalogue"}

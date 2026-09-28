@@ -19,6 +19,13 @@ type Props = {
    * Used purely for the chip styling; both shapes render the same.
    */
   context: "ac" | "ara";
+  /**
+   * REC-ARA-40: on a public, client-facing surface (the personal results
+   * page) the cards link to the PUBLIC course page with this source marker,
+   * which carries through to the quote request so the lead is attributed to
+   * ARC. Omitted (staff surfaces): cards open the admin course record.
+   */
+  publicSource?: "ara";
 };
 
 /**
@@ -40,6 +47,7 @@ export async function RecommendedCoursesPanel({
   emptyMessage,
   courses,
   context,
+  publicSource,
 }: Props) {
   const t = await getServerT();
   const rtl = getServerDir(await getServerLocale()) === "rtl";
@@ -102,7 +110,11 @@ export async function RecommendedCoursesPanel({
           return (
             <Link
               key={c.course_id}
-              href={`/admin/courses/${c.course_id}`}
+              href={
+                publicSource
+                  ? `/courses/${encodeURIComponent(c.course_code ?? c.course_id)}?source=${publicSource}`
+                  : `/admin/courses/${c.course_id}`
+              }
               className="block rounded-md border bg-card hover:bg-muted/40 transition-colors p-3"
             >
               <div className="flex items-start justify-between gap-3">

@@ -333,7 +333,7 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
             diagnostic narrows the field; the catalogue shows the field.
           </p>
           <Link
-            href="/courses"
+            href="/courses?source=ara"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             Open the training catalogue <ArrowRight className="h-4 w-4" />

@@ -137,7 +137,7 @@ export default async function QuoteRequestPage({
           courseTitle={course.title_en}
           courseLanguages={course.languages ?? []}
           courseDeliveryModes={course.delivery_modes ?? []}
-          engagementType={reflectContext?.engagement_type}
+          engagementType={reflectContext?.engagement_type ?? (searchParams?.source === "ara" ? "ara" : undefined)}
           reflectEngagementId={reflectContext?.reflect_engagement_id}
           reflectParticipantId={reflectContext?.reflect_participant_id}
           prefillName={reflectContext?.prefillName}

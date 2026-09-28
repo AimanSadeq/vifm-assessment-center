@@ -39,8 +39,10 @@ type CourseDetailRow = VifmCourse;
 
 export default async function CourseDetailPage({
   params,
+  searchParams,
 }: {
   params: { code: string };
+  searchParams?: { source?: string };
 }) {
   const t = await getServerT();
   const sb = createServiceClient();
@@ -63,7 +65,8 @@ export default async function CourseDetailPage({
           max: course.max_duration_days,
         });
 
-  const requestQuoteHref = `/courses/${course.code ?? course.id}/request-quote`;
+  // REC-ARA-40: carry an ARC source marker through to the quote form.
+  const requestQuoteHref = `/courses/${course.code ?? course.id}/request-quote${searchParams?.source === "ara" ? "?source=ara" : ""}`;
 
   return (
     <div className="min-h-screen bg-background">

@@ -332,7 +332,8 @@ def plan_persona(sb, wb, plan):
     ws = wb["Items"]
     _, rows = read_sheet(ws)
     bank = fetch_by_ids(sb, "persona_items", [r.get(ID) for _, r in rows])
-    src = ["Competency", "Competency (AR)", "Item", "Reverse", "Statement (EN)", "Statement (AR)", "Bank status"]
+    src = ["Competency", "Competency (AR)", "Item", "Reverse", "Statement (EN)", "Statement (AR)",
+           "Originally written for", "Bank status"]
     rejects = []
     comp_name = {bank[r[ID]]["ac_competency_id"]: r.get("Competency") for _, r in rows if r.get(ID) in bank}
     for rn, rowd, iid, row, verdict, rev in iter_reviewed(plan, ws, src, "Statement (EN)", "persona_items", bank):
@@ -385,7 +386,7 @@ def plan_persona(sb, wb, plan):
                                   + "; a replacement must be written first", rev, label, "persona_items")
             else:
                 plan.coverage.append(f"Persona {comp_name.get(comp, comp)}: {len(live)} live statements after rejections")
-    notes_sheet(plan, wb, "Competency review", "Competency")
+    notes_sheet(plan, wb, "Competency review", "Competency", source=("Definition", "Statements"))
 
 
 def plan_reflect(sb, wb, plan):

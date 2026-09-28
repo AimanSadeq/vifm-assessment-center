@@ -290,5 +290,6 @@ their tightly-coupled siblings are **FIXED + shipped** (commits `04a5a17`, `7e0d
 - [x] CRON-14/18 - ARC retention cron pinned to Node runtime, Render copy.
 - [x] REASSESS-09 - assessment page links the prior year's baseline and later reassessments.
 - [x] EMAIL-15 - moot: the personal-results email was retired by client policy (no sender).
-- [ ] **Policy to confirm:** stored report PDFs are kept as business records after an assessment
-  is purged (handover rule, migration 00010), and they include respondents' names.
+- [x] **Policy decided 2026-09-28 (Aiman): keep stored report PDFs permanently** as business
+  records, including after the assessment is purged (handover rule, migration 00010). Do not add
+  them to the retention sweep.

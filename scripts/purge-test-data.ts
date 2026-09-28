@@ -57,7 +57,7 @@ const DELETE_TABLES: string[] = [
   "ara_respondent_pillar_assignments",
   "ara_supporting_materials",
   "ara_use_cases",
-  "ara_data_management_log",
+  // ara_data_management_log is append-only (migration 00228) - never purged.
   "ara_email_log",
   "ara_voucher_redemptions",
   "ara_respondents",

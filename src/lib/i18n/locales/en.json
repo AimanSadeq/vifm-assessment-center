@@ -2768,6 +2768,8 @@
     "notes_desc_a": "Observations from the Deep Dive workshop. Toggle",
     "notes_desc_b": "to surface a note in the final report; otherwise it stays internal.",
     "no_notes": "No notes yet.",
+    "prior_run": "Reassessment of the {{year}} assessment",
+    "next_run": "Reassessed in {{year}}",
     "stored_reports": "Previously generated (exact copies)",
     "note_edit": "Edit",
     "note_save": "Save",

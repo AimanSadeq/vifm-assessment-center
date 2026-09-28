@@ -379,6 +379,20 @@ export default async function AraAssessmentDetailPage({
     "use server";
     await updatePillarWeights(fd);
   };
+  // REASSESS-09: the year-on-year chain. prior_assessment_id (00020) was
+  // written on reassessment but never shown, so a consultant could not get
+  // from this year's run to last year's baseline (or back).
+  const priorId = (assessment as { prior_assessment_id?: string | null }).prior_assessment_id ?? null;
+  const [{ data: priorRun }, { data: nextRuns }] = await Promise.all([
+    priorId
+      ? sb.from("ara_assessments").select("id, assessment_year, status").eq("id", priorId)
+          .maybeSingle<{ id: string; assessment_year: number; status: string }>()
+      : Promise.resolve({ data: null }),
+    sb.from("ara_assessments").select("id, assessment_year, status").eq("prior_assessment_id", assessment.id)
+      .order("assessment_year", { ascending: true })
+      .returns<Array<{ id: string; assessment_year: number; status: string }>>(),
+  ]);
+
   // PDF-07/43: the last few stored report versions, downloadable exactly as
   // generated (the PDF route stores every generation in ara-reports).
   const { data: storedReports } = await sb
@@ -479,6 +493,20 @@ export default async function AraAssessmentDetailPage({
               {assessment.scope_label && (
                 <p className="text-sm text-muted-foreground mb-3">
                   {t("araAssessmentDetail.scope_label")} <span className="font-medium text-foreground">{assessment.scope_label}</span>
+                </p>
+              )}
+              {(priorRun || (nextRuns ?? []).length > 0) && (
+                <p className="text-sm text-muted-foreground mb-3 flex flex-wrap gap-x-4 gap-y-1">
+                  {priorRun && (
+                    <Link href={`/ara/consultant/assessments/${priorRun.id}`} className="text-accent hover:underline">
+                      {t("araAssessmentDetail.prior_run", { year: priorRun.assessment_year })}
+                    </Link>
+                  )}
+                  {(nextRuns ?? []).map((n) => (
+                    <Link key={n.id} href={`/ara/consultant/assessments/${n.id}`} className="text-accent hover:underline">
+                      {t("araAssessmentDetail.next_run", { year: n.assessment_year })}
+                    </Link>
+                  ))}
                 </p>
               )}
               <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">

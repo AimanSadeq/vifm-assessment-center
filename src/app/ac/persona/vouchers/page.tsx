@@ -9,6 +9,7 @@ import { personaResultCountsByClient, personaVoucherActivity } from "@/lib/scori
 import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherNav } from "@/components/shared/voucher-nav";
+import { VoucherBatchChecklists } from "@/components/shared/voucher-batch-checklists";
 import { VouchersClient, type PersonaVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -159,6 +160,7 @@ export default async function PersonaVouchersPage() {
         roleOptions={roleOptions}
         personaCompetencies={personaCompetencies}
       />
+      <VoucherBatchChecklists service="persona" />
     </div>
   );
 }

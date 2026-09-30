@@ -6,6 +6,7 @@ import { functionsReadinessSummary } from "@/lib/competencies/technical-function
 import { listVouchers } from "@/lib/technical-sandbox/vouchers";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { VoucherNav } from "@/components/shared/voucher-nav";
+import { VoucherBatchChecklists } from "@/components/shared/voucher-batch-checklists";
 import { VouchersClient } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,7 @@ export default async function TechVouchersPage() {
       ) : (
         <VouchersClient functions={functions} vouchers={vouchers} clients={clients} readiness={readiness} />
       )}
+      <VoucherBatchChecklists service="techno" />
     </div>
   );
 }

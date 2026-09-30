@@ -5,7 +5,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { evaluateChecklist } from "./evaluate.ts";
-import { AC_CHECKLIST, ARC_CHECKLIST } from "./definitions.ts";
+import { AC_CHECKLIST, ARC_CHECKLIST, CHECKLISTS } from "./definitions.ts";
 
 test("an automatic item ticks itself from the facts", () => {
   const s = evaluateChecklist(AC_CHECKLIST, { "ac.purpose": { done: true, detail: "selection" } }, []);
@@ -55,9 +55,28 @@ test("the current phase is the first with an open item, and null when all done",
   assert.equal(partial.currentPhase, "close");
 });
 
-test("every item key is unique within a service", () => {
-  for (const def of [AC_CHECKLIST, ARC_CHECKLIST]) {
+test("every item key is unique within a service and carries the service prefix", () => {
+  for (const def of Object.values(CHECKLISTS)) {
     const keys = def.items.map((i) => i.key);
     assert.equal(new Set(keys).size, keys.length, def.service);
+    for (const k of keys) assert.ok(k.startsWith(`${def.service}.`), `${def.service}: ${k}`);
+    assert.equal(def.service, CHECKLISTS[def.service].service);
   }
+});
+
+test("every service has every phase and an owner on every item", () => {
+  for (const def of Object.values(CHECKLISTS)) {
+    const st = evaluateChecklist(def, {}, []);
+    assert.equal(st.phases.length, 5, def.service);
+    assert.equal(st.done, 0, def.service);
+    for (const it of def.items) assert.ok(["bd", "consultant", "admin", "client"].includes(it.owner), `${def.service}: ${it.key}`);
+  }
+});
+
+test("the voucher services share one shape, with the integrity item only where flagged", () => {
+  const keysOf = (s: keyof typeof CHECKLISTS) => CHECKLISTS[s].items.map((i) => i.key.replace(`${s}.`, ""));
+  assert.deepEqual(keysOf("persona"), keysOf("logica"));
+  assert.deepEqual(keysOf("fluent"), keysOf("techno"));
+  assert.ok(keysOf("fluent").includes("integrity"));
+  assert.ok(!keysOf("persona").includes("integrity"));
 });

@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isChecklistService, CHECKLISTS } from "@/lib/checklists/definitions";
-import { loadChecklist } from "@/lib/checklists/load";
+import { canManageChecklist, loadChecklist } from "@/lib/checklists/load";
 import { buildChecklistHtml } from "@/lib/reports/checklist-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 
 /**
  * GET /api/admin/checklists/[service]/[id]/pdf - the engagement checklist as
- * a printable PDF. Admin, or the consultant who owns an AI Readiness
- * assessment.
+ * a printable PDF. Admin, or the consultant who owns the engagement (AI
+ * Readiness, Reflect 360).
  */
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function GET(_req: Request, { params }: { params: { service: string
   const sb = createServiceClient();
   const loaded = await loadChecklist(sb, params.service, params.id);
   if (!loaded) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (caller.role !== "admin" && !(caller.role === "consultant" && params.service === "arc" && loaded.subject.consultantId === caller.uid)) {
+  if (!canManageChecklist(caller, params.service, loaded.subject)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

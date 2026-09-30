@@ -233,12 +233,14 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   panel and the Evidence pack PDF (`/api/admin/engagements/[id]/evidence-pack`). Fills as centres
   run; the science (a real sample, a psychometrician) is still non-code. UI not exercised in the
   preview (quick-login refused); data path + PDF verified locally.
-- [x] **Engagement checklists for AC + ARC built 2026-09-30** (migration 00231 APPLIED): live, per-engagement
-  checklists with an owner per item (BD / consultant / admin / client) across five phases; record-backed
-  items tick themselves, the rest are ticked with name, date and note. Panel on the AC engagement detail +
-  ARC assessment overview, `/admin/checklists` overview, master lists, PDF. Verified in preview (tick round
-  trip on the demo engagement). **DEPLOY PENDING.** Next: agree the format, then copy it to the other six
-  services (Persona, Logica, Techno, Fluent, Pre-Hire, Reflect 360).
+- [x] **Engagement checklists for ALL EIGHT services built 2026-09-30** (migrations 00231 + 00232 APPLIED):
+  live, per-engagement checklists with an owner per item (BD / consultant / admin / client) across five
+  phases; record-backed items tick themselves, the rest are ticked with name, date and note. AC + ARC
+  deployed in the morning; Reflect 360, Pre-Hire, Persona, Logica, Fluent, Techno added the same day
+  (voucher services keyed on the voucher batch). Panels on the AC / ARC / Reflect / Pre-Hire pages,
+  issuance tables under the four voucher lists, `/admin/checklists` overview, master lists, PDF per
+  engagement. Verified in preview on a real engagement of every service. **DEPLOY PENDING** (second
+  half). Ahmad to review the process: email drafted, Aiman sends.
 - [x] **Moayad's return loaded 2026-09-30** - Technical Banking / Investment / Real Estate / Treasury:
   47 approved + 4 pass marks (78 / 76 / 74 / 73%, min 10 items; typed as fractions, importer now
   accepts 0-1 as %). Banking 13, Investment 15, Real Estate 12 approved = certifiable; Treasury 8 of

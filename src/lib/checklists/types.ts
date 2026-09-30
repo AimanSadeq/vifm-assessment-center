@@ -12,7 +12,9 @@
  * an automatic item reads the record, so it cannot go stale by mistake.
  */
 
-export type ChecklistService = "ac" | "arc";
+export type ChecklistService = "ac" | "arc" | "reflect" | "prehire" | "persona" | "logica" | "fluent" | "techno";
+
+export const CHECKLIST_SERVICES: ChecklistService[] = ["ac", "arc", "reflect", "prehire", "persona", "logica", "fluent", "techno"];
 
 export type ChecklistOwner = "bd" | "consultant" | "admin" | "client";
 

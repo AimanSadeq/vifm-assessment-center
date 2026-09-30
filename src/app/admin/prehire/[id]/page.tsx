@@ -22,6 +22,8 @@ import { EditStages } from "./_components/edit-stages";
 import { InviteLink } from "./_components/invite-link";
 import { ClientReportCell } from "./_components/client-report-cell";
 import { ClientReportControls } from "./_components/client-report-controls";
+import { loadChecklist } from "@/lib/checklists/load";
+import { ServiceChecklist } from "@/components/shared/service-checklist";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +84,9 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
 
   const plan = (req.stage_config ?? []) as PrehireStagePlanEntry[];
   const orgName = (req.organizations as unknown as { name: string } | null)?.name ?? null;
+  // The engagement checklist, read through the caller's own client so RLS
+  // keeps a non-admin from seeing the requisition's facts.
+  const checklist = await loadChecklist(supabase, "prehire", params.id);
 
   // PAGINATE every per-requisition read (each caps at 1000, and with no .order()
   // the slices are arbitrary AND desync - the shortlist could omit the true top
@@ -236,6 +241,10 @@ export default async function RequisitionDetailPage({ params }: { params: { id: 
         lang={locale === "ar" ? "ar" : "en"}
         unsentCount={unsentReportCount}
       />
+
+      {checklist && (
+        <ServiceChecklist service="prehire" subjectId={req.id as string} status={checklist.status} serviceLabel="Pre-Hire" canTick compact />
+      )}
 
       <Card>
         <CardHeader>

@@ -5,6 +5,7 @@ import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherNav } from "@/components/shared/voucher-nav";
+import { VoucherBatchChecklists } from "@/components/shared/voucher-batch-checklists";
 import { VouchersClient, type FluentVoucherRow } from "./_components/vouchers-client";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,7 @@ export default async function FluentVouchersPage() {
         <VoucherNav active="fluent" />
       </div>
       <VouchersClient vouchers={vouchers} clients={clients.map((c) => c.name)} />
+      <VoucherBatchChecklists service="fluent" />
     </div>
   );
 }

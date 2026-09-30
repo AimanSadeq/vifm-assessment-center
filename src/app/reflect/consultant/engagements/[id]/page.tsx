@@ -17,7 +17,10 @@ import {
 } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages } from "@/lib/ara/paginate";
+import { getCurrentCaller } from "@/lib/ara/auth-guards";
 import { canAccessReflectEngagement } from "@/lib/reflect/report-access";
+import { canManageChecklist, loadChecklist } from "@/lib/checklists/load";
+import { ServiceChecklist } from "@/components/shared/service-checklist";
 import { getServerT, type ServerT } from "@/lib/i18n/server";
 import { cn } from "@/lib/utils";
 import { DebriefRowActions } from "./_components/debrief-row-actions";
@@ -168,6 +171,10 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
   const data = await fetchEngagement(id);
   if (!data) notFound();
   const t = await getServerT();
+  // The engagement checklist: what has been done and what is missing, from
+  // the first conversation to close. Ticked by admin or the owning consultant.
+  const [checklist, caller] = await Promise.all([loadChecklist(createServiceClient(), "reflect", id), getCurrentCaller()]);
+  const canTickChecklist = Boolean(checklist && canManageChecklist(caller, "reflect", checklist.subject));
 
   const { engagement, framework, participants, participantCount, raterCount, raters } = data;
   const status = STATUS_STYLE[engagement.status] ?? STATUS_STYLE.draft;
@@ -469,6 +476,10 @@ export default async function ReflectEngagementDetailPage({ params }: Params) {
 
         {/* Rater invitations - per-rater links + resend (email-independent fallback) */}
         {raterCount > 0 && <RaterInvitations engagementId={engagement.id} raters={raters} status={engagement.status} />}
+
+        {checklist && (
+          <ServiceChecklist service="reflect" subjectId={engagement.id} status={checklist.status} serviceLabel="Reflect 360" canTick={canTickChecklist} compact />
+        )}
       </main>
     </div>
   );

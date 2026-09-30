@@ -104,8 +104,173 @@ export const ARC_CHECKLIST: ChecklistDef = {
   ],
 };
 
-export const CHECKLISTS: Record<ChecklistService, ChecklistDef> = { ac: AC_CHECKLIST, arc: ARC_CHECKLIST };
+export const REFLECT_CHECKLIST: ChecklistDef = {
+  service: "reflect",
+  serviceLabel: "Reflect 360",
+  items: [
+    // ── Before the agreement ──
+    { key: "reflect.need", phase: "before", owner: "client", label: "Client has supplied its values or leadership competencies, or chosen the VIFM library template" },
+    { key: "reflect.region", phase: "before", owner: "bd", label: "Client region and sector confirmed", auto: "reflect.region" },
+    { key: "reflect.proposal", phase: "before", owner: "bd", label: "Proposal issued and accepted", auto: "reflect.proposal", link: () => "/admin/proposals" },
+    { key: "reflect.contact", phase: "before", owner: "bd", label: "Client contact named on the organisation", auto: "reflect.contact" },
+    { key: "reflect.dpa", phase: "before", owner: "bd", label: "Data protection basis confirmed: rater answers are confidential and only reported in groups" },
+    // ── The agreement ──
+    { key: "reflect.sow", phase: "agreement", owner: "bd", label: "Agreement or statement of work signed" },
+    { key: "reflect.rater_model", phase: "agreement", owner: "consultant", label: "Rater model agreed: who nominates raters, which roles, how many per group", hint: "Self, manager, peers and direct reports; the minimum per group protects anonymity." },
+    { key: "reflect.anonymity", phase: "agreement", owner: "consultant", label: "Anonymity threshold set and explained to the client", auto: "reflect.anonymity" },
+    { key: "reflect.language", phase: "agreement", owner: "consultant", label: "Form and report language agreed", auto: "reflect.language" },
+    { key: "reflect.debrief_plan", phase: "agreement", owner: "consultant", label: "Debrief and development-plan follow-through agreed: who coaches, and when" },
+    { key: "reflect.reassessment", phase: "agreement", owner: "bd", label: "Next-cycle reassessment discussed" },
+    // ── Set-up ──
+    { key: "reflect.org", phase: "setup", owner: "admin", label: "Client organisation on the platform", auto: "reflect.org", link: () => "/admin/clients" },
+    { key: "reflect.sandbox", phase: "setup", owner: "consultant", label: "Not marked as a sandbox", auto: "reflect.sandbox" },
+    { key: "reflect.framework", phase: "setup", owner: "consultant", label: "Framework built: each competency decomposed into observable behaviours", auto: "reflect.framework", link: (id) => `/reflect/consultant/engagements/${id}/framework-preview` },
+    { key: "reflect.framework_approved", phase: "setup", owner: "consultant", label: "Framework reviewed and approved (this locks it for launch)", auto: "reflect.framework_approved", link: (id) => `/reflect/consultant/engagements/${id}` },
+    { key: "reflect.participants", phase: "setup", owner: "client", label: "Participants nominated and added", auto: "reflect.participants" },
+    { key: "reflect.raters", phase: "setup", owner: "client", label: "Every participant has a self rating, a manager and enough other raters", auto: "reflect.raters" },
+    { key: "reflect.window", phase: "setup", owner: "consultant", label: "Field window set", auto: "reflect.window" },
+    // ── Delivery ──
+    { key: "reflect.launched", phase: "delivery", owner: "consultant", label: "Engagement launched", auto: "reflect.launched" },
+    { key: "reflect.invited", phase: "delivery", owner: "consultant", label: "Every rater invited", auto: "reflect.invited" },
+    { key: "reflect.completion", phase: "delivery", owner: "consultant", label: "Every rater has completed", auto: "reflect.completion" },
+    { key: "reflect.reminders", phase: "delivery", owner: "consultant", label: "Silent raters reminded", auto: "reflect.reminders", hint: "Reminders go out automatically after 72 hours of silence; tick if chased another way." },
+    // ── Reporting and close ──
+    { key: "reflect.reports", phase: "close", owner: "consultant", label: "Participant report generated for everyone", auto: "reflect.reports" },
+    { key: "reflect.cohort_report", phase: "close", owner: "consultant", label: "Cohort report generated", auto: "reflect.cohort_report", link: (id) => `/reflect/consultant/engagements/${id}/cohort-report` },
+    { key: "reflect.debriefs", phase: "close", owner: "consultant", label: "Debrief held with every participant", auto: "reflect.debriefs" },
+    { key: "reflect.idps", phase: "close", owner: "consultant", label: "Development plan agreed with every participant", auto: "reflect.idps" },
+    { key: "reflect.delivered", phase: "close", owner: "consultant", label: "Cohort report delivered to the client sponsor" },
+    { key: "reflect.closed", phase: "close", owner: "admin", label: "Engagement completed or archived", auto: "reflect.closed" },
+    { key: "reflect.invoice", phase: "close", owner: "bd", label: "Final invoice issued" },
+    { key: "reflect.next", phase: "close", owner: "bd", label: "Next cycle scheduled" },
+  ],
+};
+
+export const PREHIRE_CHECKLIST: ChecklistDef = {
+  service: "prehire",
+  serviceLabel: "Pre-Hire",
+  items: [
+    // ── Before the agreement ──
+    { key: "prehire.need", phase: "before", owner: "client", label: "Client has described the role and supplied the job description" },
+    { key: "prehire.proposal", phase: "before", owner: "bd", label: "Proposal issued and accepted", auto: "prehire.proposal", link: () => "/admin/proposals" },
+    { key: "prehire.recipient", phase: "before", owner: "bd", label: "Client recipient for the screening reports named", auto: "prehire.recipient" },
+    { key: "prehire.dpa", phase: "before", owner: "bd", label: "Data protection basis and the candidate consent wording confirmed" },
+    // ── The agreement ──
+    { key: "prehire.sow", phase: "agreement", owner: "bd", label: "Agreement or statement of work signed" },
+    { key: "prehire.guardrail", phase: "agreement", owner: "bd", label: "Client understands the composite is a screening signal, never a decision: the client decides" },
+    { key: "prehire.plan", phase: "agreement", owner: "consultant", label: "Stage plan agreed: stages, weights and cut scores", auto: "prehire.plan" },
+    { key: "prehire.profile", phase: "agreement", owner: "consultant", label: "Role profile or competencies bound to the requisition", auto: "prehire.profile" },
+    { key: "prehire.english", phase: "agreement", owner: "consultant", label: "English requirement decided", auto: "prehire.english" },
+    { key: "prehire.results_policy", phase: "agreement", owner: "consultant", label: "Agreed what candidates are told about the outcome and by whom" },
+    // ── Set-up ──
+    { key: "prehire.org", phase: "setup", owner: "admin", label: "Client organisation on the platform", auto: "prehire.org", link: () => "/admin/clients" },
+    { key: "prehire.open", phase: "setup", owner: "admin", label: "Requisition open", auto: "prehire.open" },
+    { key: "prehire.candidates", phase: "setup", owner: "client", label: "Candidates added", auto: "prehire.candidates" },
+    { key: "prehire.vouchers", phase: "setup", owner: "admin", label: "Access codes issued, where the client distributes them itself", auto: "prehire.vouchers", hint: "Skip if candidates are invited directly by email." },
+    { key: "prehire.invited", phase: "setup", owner: "admin", label: "Every candidate invited", auto: "prehire.invited" },
+    { key: "prehire.consent", phase: "setup", owner: "client", label: "Every candidate has consented", auto: "prehire.consent" },
+    // ── Delivery ──
+    { key: "prehire.completed", phase: "delivery", owner: "consultant", label: "Every candidate has completed every stage", auto: "prehire.completed" },
+    { key: "prehire.scored", phase: "delivery", owner: "consultant", label: "Composite score computed for every candidate", auto: "prehire.scored" },
+    { key: "prehire.cbi_review", phase: "delivery", owner: "consultant", label: "AI interview transcripts and integrity flags reviewed by a person before any report goes out", link: (id) => `/admin/prehire/${id}` },
+    { key: "prehire.fairness", phase: "delivery", owner: "consultant", label: "Fairness page reviewed: adverse impact and audit trail", link: (id) => `/admin/prehire/${id}/fairness` },
+    // ── Reporting and close ──
+    { key: "prehire.reports_sent", phase: "close", owner: "consultant", label: "Screening report sent to the client for every candidate", auto: "prehire.reports_sent" },
+    { key: "prehire.export", phase: "close", owner: "admin", label: "ATS export taken, where the client wants one", auto: "prehire.export", hint: "Tick manually if the client does not want an export." },
+    { key: "prehire.decisions", phase: "close", owner: "client", label: "Client decisions made and candidates informed by the client" },
+    { key: "prehire.closed", phase: "close", owner: "admin", label: "Requisition closed", auto: "prehire.closed" },
+    { key: "prehire.invoice", phase: "close", owner: "bd", label: "Final invoice issued" },
+  ],
+};
+
+/**
+ * The four voucher-based instruments share one process: the client buys
+ * seats, codes are issued and sent, takers complete, results are reviewed and
+ * delivered. Only the scope item and the links differ.
+ */
+function voucherChecklist(
+  service: ChecklistService,
+  serviceLabel: string,
+  o: { scopeLabel: string; vouchersHref: string; cohortHref: string; reportsLabel: string; integrity?: boolean }
+): ChecklistDef {
+  const p = service;
+  const items: ChecklistDef["items"] = [
+    // ── Before the agreement ──
+    { key: `${p}.need`, phase: "before", owner: "bd", label: "Client objective, cohort size and intended use of the results understood" },
+    { key: `${p}.proposal`, phase: "before", owner: "bd", label: "Proposal issued and accepted", auto: `${p}.proposal`, link: () => "/admin/proposals" },
+    { key: `${p}.contact`, phase: "before", owner: "bd", label: "Client contact recorded on the codes", auto: `${p}.contact` },
+    { key: `${p}.dpa`, phase: "before", owner: "bd", label: "Data protection basis confirmed: takers' results and who may see them" },
+    // ── The agreement ──
+    { key: `${p}.sow`, phase: "agreement", owner: "bd", label: "Agreement or statement of work signed" },
+    { key: `${p}.scope`, phase: "agreement", owner: "consultant", label: o.scopeLabel, auto: `${p}.scope` },
+    { key: `${p}.results_policy`, phase: "agreement", owner: "consultant", label: "Agreed who receives results: the taker, the client, or both, and in what form" },
+    { key: `${p}.language`, phase: "agreement", owner: "consultant", label: "Default language agreed", auto: `${p}.language` },
+    // ── Set-up ──
+    { key: `${p}.org`, phase: "setup", owner: "admin", label: "Client organisation on the platform and linked to the codes", auto: `${p}.org`, link: () => "/admin/clients" },
+    { key: `${p}.seats`, phase: "setup", owner: "admin", label: "Codes issued with the agreed number of seats", auto: `${p}.seats`, link: () => o.vouchersHref },
+    { key: `${p}.expiry`, phase: "setup", owner: "admin", label: "Expiry date set and still ahead", auto: `${p}.expiry` },
+    { key: `${p}.codes_sent`, phase: "setup", owner: "admin", label: "Codes or links sent to the client, or to each delegate", hint: "Email the batch to the client contact, or the links to each delegate, from the vouchers page.", link: () => o.vouchersHref },
+    { key: `${p}.briefing`, phase: "setup", owner: "client", label: "Takers briefed: what the assessment is, how long it takes, device and browser needs" },
+    // ── Delivery ──
+    { key: `${p}.redeemed`, phase: "delivery", owner: "consultant", label: "Every seat redeemed", auto: `${p}.redeemed` },
+    { key: `${p}.completed`, phase: "delivery", owner: "consultant", label: "Every taker has completed", auto: `${p}.completed` },
+    { key: `${p}.reminders`, phase: "delivery", owner: "consultant", label: "Non-starters chased through the client contact" },
+  ];
+  if (o.integrity) {
+    items.push({ key: `${p}.integrity`, phase: "delivery", owner: "consultant", label: "Integrity flags reviewed before results go to the client", link: () => o.cohortHref });
+  }
+  items.push(
+    // ── Reporting and close ──
+    { key: `${p}.reports`, phase: "close", owner: "consultant", label: o.reportsLabel, auto: `${p}.reports`, link: () => o.cohortHref },
+    { key: `${p}.cohort`, phase: "close", owner: "consultant", label: "Cohort view reviewed and shared with the client", link: () => o.cohortHref },
+    { key: `${p}.debrief`, phase: "close", owner: "consultant", label: "Client debrief held" },
+    { key: `${p}.closed`, phase: "close", owner: "admin", label: "Codes disabled or expired", auto: `${p}.closed`, link: () => o.vouchersHref },
+    { key: `${p}.invoice`, phase: "close", owner: "bd", label: "Final invoice issued" }
+  );
+  return { service, serviceLabel, items };
+}
+
+export const PERSONA_CHECKLIST = voucherChecklist("persona", "Persona", {
+  scopeLabel: "Purpose set (development or hiring) and the competency scope or role profile chosen",
+  vouchersHref: "/ac/persona/vouchers",
+  cohortHref: "/ac/persona/cohort",
+  reportsLabel: "Report available for every completed sitting",
+});
+
+export const LOGICA_CHECKLIST = voucherChecklist("logica", "Logica", {
+  scopeLabel: "Subtests in scope agreed",
+  vouchersHref: "/ac/cognitive/vouchers",
+  cohortHref: "/ac/cognitive/cohort",
+  reportsLabel: "Report available for every completed sitting",
+});
+
+export const FLUENT_CHECKLIST = voucherChecklist("fluent", "Fluent", {
+  scopeLabel: "Proctoring decided",
+  vouchersHref: "/ac/fluent/vouchers",
+  cohortHref: "/ac/fluent/cohort",
+  reportsLabel: "Results and certificate emailed to every taker",
+  integrity: true,
+});
+
+export const TECHNO_CHECKLIST = voucherChecklist("techno", "Techno", {
+  scopeLabel: "Function and talent lens chosen",
+  vouchersHref: "/admin/tech-sandbox/vouchers",
+  cohortHref: "/admin/tech-sandbox/results",
+  reportsLabel: "Report stored for every submitted session",
+  integrity: true,
+});
+
+export const CHECKLISTS: Record<ChecklistService, ChecklistDef> = {
+  ac: AC_CHECKLIST,
+  arc: ARC_CHECKLIST,
+  reflect: REFLECT_CHECKLIST,
+  prehire: PREHIRE_CHECKLIST,
+  persona: PERSONA_CHECKLIST,
+  logica: LOGICA_CHECKLIST,
+  fluent: FLUENT_CHECKLIST,
+  techno: TECHNO_CHECKLIST,
+};
 
 export function isChecklistService(v: string): v is ChecklistService {
-  return v === "ac" || v === "arc";
+  return Object.prototype.hasOwnProperty.call(CHECKLISTS, v);
 }

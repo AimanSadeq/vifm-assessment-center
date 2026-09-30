@@ -230,7 +230,7 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   47 approved + 4 pass marks (78 / 76 / 74 / 73%, min 10 items; typed as fractions, importer now
   accepts 0-1 as %). Banking 13, Investment 15, Real Estate 12 approved = certifiable; Treasury 8 of
   the 10 it needs. His Property Valuation fix matched Aiman's 2026-09-28 correction exactly.
-- [ ] **12 held Technical items from Moayad** (Banking 2, Real Estate 3, Treasury 7) - precise written
+- [x] **12 held Technical items from Moayad** - settled 2026-09-30 by Aiman (11 fixes accepted, Loan Structuring approved unchanged); all approved + logged. Banking / Investment / Real Estate / Treasury now 15 approved each = certifiable at Moayad's pass marks. (Banking 2, Real Estate 3, Treasury 7) - precise written
   fixes, turned into field changes in `.tmp/sme/returned/moayad-2026-09-30/Technical-held-items-Moayad-MD-decisions.xlsx`
   (builder `.tmp/_build_md_moayad_decisions.py`); apply with
   `python .tmp/_apply_md_technical_decisions.py <returned.xlsx> --set moayad [--apply]`. Approving

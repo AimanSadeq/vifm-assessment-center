@@ -197,6 +197,7 @@ const NAV: NavEntry[] = [
         link("/admin/quiz-bank", "Quiz Bank", ClipboardCheck),
         link("/admin/fluent-bank", "Fluent Bank", Languages),
         link("/admin/proposals", "Proposals", FileText),
+        link("/admin/checklists", "Engagement checklists", ListChecks),
         link("/admin/fix-register", "Fix Register", History),
       ],
     },

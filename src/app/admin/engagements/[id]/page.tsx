@@ -23,6 +23,8 @@ import { FeedbackPanel } from "./_components/feedback-panel";
 import { TimetablePanel } from "./_components/timetable-panel";
 import { PostCentreReviewPanel } from "./_components/post-centre-review-panel";
 import { EvidencePanel } from "./_components/evidence-panel";
+import { ServiceChecklist } from "@/components/shared/service-checklist";
+import { loadChecklist } from "@/lib/checklists/load";
 import { loadEngagementEvidence } from "@/lib/ac/evidence-data";
 import { reviewSeriesConsistency, type SeriesCentre } from "@/lib/ac/series-consistency";
 import { reviewTimetable } from "@/lib/ac/timetable";
@@ -267,6 +269,10 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       .eq("engagement_id", id)
       .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
   ]);
+
+  // The engagement checklist: the whole process with an owner per step,
+  // automatic where the record can answer. Read with the session client.
+  const checklist = await loadChecklist(supabase, "ac", id);
 
   // Validity evidence (BPS 3.10, 3.20, 9.6-9.10): plan, follow-ups,
   // evaluations and the computed numbers, read once for the panel and the pack.
@@ -542,6 +548,9 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         priorOarMap={priorOarMap}
         currentOarMap={currentOarMap}
       />
+      {checklist && (
+        <ServiceChecklist service="ac" subjectId={id} status={checklist.status} serviceLabel="Assessment Center" canTick compact />
+      )}
       <CentreRulesPanel
         engagementId={id}
         candidates={candidates}

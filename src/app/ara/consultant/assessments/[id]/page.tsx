@@ -52,6 +52,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { ValidatedScoreInput } from "./_components/validated-score-input";
+import { ServiceChecklist } from "@/components/shared/service-checklist";
+import { loadChecklist } from "@/lib/checklists/load";
 import type {
   AraAssessment, AraOrganization, AraRespondent, AraRespondentPillarAssignment,
 } from "@/types/ara";
@@ -151,6 +153,11 @@ export default async function AraAssessmentDetailPage({
   if (caller && caller.role !== "admin" && assessment.consultant_id !== caller.uid) {
     return notFound();
   }
+
+  // The engagement checklist (owner per step; automatic where the record can
+  // answer). Consultants tick their own assessments, admins any.
+  const checklist = await loadChecklist(sb, "arc", assessment.id);
+  const canTickChecklist = Boolean(caller && (caller.role === "admin" || assessment.consultant_id === caller.uid));
 
   // Pillars in scope for THIS assessment (migration 00029). Honours
   // pillars_in_scope when set, falls back to the stage default. Used
@@ -710,6 +717,11 @@ export default async function AraAssessmentDetailPage({
           </TabsList>
 
           <TabsContent value="overview" className="space-y-0">
+        {checklist && (
+          <div className="mb-6">
+            <ServiceChecklist service="arc" subjectId={assessment.id} status={checklist.status} serviceLabel="AI Readiness Compass" canTick={canTickChecklist} compact />
+          </div>
+        )}
 
         {/* Unit hierarchy - only meaningful above a single unit, so it is shown
             on Division and Enterprise engagements (and on any engagement that

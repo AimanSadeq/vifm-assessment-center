@@ -240,7 +240,8 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   (voucher services keyed on the voucher batch). Panels on the AC / ARC / Reflect / Pre-Hire pages,
   issuance tables under the four voucher lists, `/admin/checklists` overview, master lists, PDF per
   engagement. Verified in preview on a real engagement of every service. **DEPLOY PENDING** (second
-  half). Ahmad to review the process: email drafted, Aiman sends.
+  half). **Ahmad reviewing the process** (email sent 2026-09-30 with the eight master lists as PDF);
+  apply his comments to `src/lib/checklists/definitions.ts` when they arrive.
 - [x] **Moayad's return loaded 2026-09-30** - Technical Banking / Investment / Real Estate / Treasury:
   47 approved + 4 pass marks (78 / 76 / 74 / 73%, min 10 items; typed as fractions, importer now
   accepts 0-1 as %). Banking 13, Investment 15, Real Estate 12 approved = certifiable; Treasury 8 of

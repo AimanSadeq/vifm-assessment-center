@@ -22,6 +22,8 @@ import { CentreManualPanel } from "./_components/centre-manual-panel";
 import { FeedbackPanel } from "./_components/feedback-panel";
 import { TimetablePanel } from "./_components/timetable-panel";
 import { PostCentreReviewPanel } from "./_components/post-centre-review-panel";
+import { EvidencePanel } from "./_components/evidence-panel";
+import { loadEngagementEvidence } from "@/lib/ac/evidence-data";
 import { reviewSeriesConsistency, type SeriesCentre } from "@/lib/ac/series-consistency";
 import { reviewTimetable } from "@/lib/ac/timetable";
 import { reviewFeedback } from "@/lib/ac/feedback";
@@ -265,6 +267,10 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
       .eq("engagement_id", id)
       .then((r) => (r.data ?? []) as Record<string, unknown>[], () => [] as Record<string, unknown>[]),
   ]);
+
+  // Validity evidence (BPS 3.10, 3.20, 9.6-9.10): plan, follow-ups,
+  // evaluations and the computed numbers, read once for the panel and the pack.
+  const evidence = await loadEngagementEvidence(supabase, id);
 
   // The centre timetable (BPS 5.35). Tolerant of migration 00220.
   const slotRows = await supabase
@@ -570,6 +576,23 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
         seriesNote={(engagement as { series_note?: string | null }).series_note ?? ""}
         consistency={seriesConsistency}
       />
+      {evidence && (
+        <EvidencePanel
+          engagementId={id}
+          plan={evidence.plan}
+          followups={evidence.followups}
+          followupSummary={evidence.followupSummary}
+          candidates={candidates}
+          ratedCount={evidence.ratedCount}
+          evaluations={evidence.evaluations}
+          calendar={evidence.calendar}
+          validity={evidence.validity}
+          overlap={evidence.overlap}
+          icc={evidence.icc}
+          fairnessNote={evidence.fairnessNote}
+          seriesName={seriesName ?? ""}
+        />
+      )}
       <TimetablePanel
         engagementId={id}
         slots={slotRows}

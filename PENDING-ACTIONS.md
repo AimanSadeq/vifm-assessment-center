@@ -226,6 +226,13 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   Finance: 32 approved + 2 rejected + 3 cut-scores (all three domains now certifiable, 10/10/12
   approved vs the 8 floor); his 36 old-framework Reflect approvals carried onto the identical v2
   statements (`.tmp/sme/returned/yassin-2026-09-28/`). Financial Literacy (13 items) has no live row.
+- [x] **B24 validity evidence structure built 2026-09-30** (migration 00230 APPLIED): `engagements.evaluation_plan`
+  (3.20), `ac_outcome_followups` (6m/12m manager performance rating, the criterion), `ac_evaluations`
+  (9.6/9.8 record). `src/lib/ac/validity.ts` (criterion r with power gates 10/30/100, criteria overlap
+  4.6, evaluation calendar) + `evidence-data.ts` loader shared by the engagement "Validity evidence"
+  panel and the Evidence pack PDF (`/api/admin/engagements/[id]/evidence-pack`). Fills as centres
+  run; the science (a real sample, a psychometrician) is still non-code. UI not exercised in the
+  preview (quick-login refused); data path + PDF verified locally.
 - [x] **Moayad's return loaded 2026-09-30** - Technical Banking / Investment / Real Estate / Treasury:
   47 approved + 4 pass marks (78 / 76 / 74 / 73%, min 10 items; typed as fractions, importer now
   accepts 0-1 as %). Banking 13, Investment 15, Real Estate 12 approved = certifiable; Treasury 8 of

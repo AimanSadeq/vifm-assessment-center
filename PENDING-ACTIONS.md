@@ -108,7 +108,7 @@ matrix, PVM logic-input, read-only SQL).
 - [x] Demo-login dropdown gated to `NODE_ENV !== "production"` (hidden on the live site)
 - [x] Supabase Auth Site URL set to `https://caliber.viftraining.com`
 - [ ] Create additional role logins as needed (consultant / lead+associate assessor / candidate / client) - same flow, set `role` accordingly
-- [ ] Create `ahmad.rashid@viftraining.com` admin - run `scripts/create-admin.ts` (creates the auth user + role=admin profile; prints a temp password to share/reset)
+- [x] (Already done - checked 2026-09-30: auth user confirmed, admin profile present, last sign-in 5 Aug 2026.) Create `ahmad.rashid@viftraining.com` admin - run `scripts/create-admin.ts` (creates the auth user + role=admin profile; prints a temp password to share/reset)
 - [ ] Rotate or disable the weak demo credential `admin@viftraining.com` / `admin123` now that auth is live
 - [ ] Decide on open self-registration: `/register` is reachable when logged out; confirm that's acceptable or lock it down
 - [ ] NOW LIVE-RELEVANT: pre-flip hardening buckets 2-3 below are enforced in prod from here on

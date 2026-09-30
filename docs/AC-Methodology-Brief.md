@@ -16,7 +16,7 @@ It is the AC counterpart to the AI Readiness Compass methodology brief (`docs/AR
 
 ### The framework
 
-VIFM-AC measures behaviour against **38 competencies**, each elaborated by behavioural indicators (**249 in total**), organised into **clusters** under **four domains**:
+VIFM-AC measures behaviour against **21 competencies** (framework v2, active since 27 September 2026), each elaborated by behavioural indicators (**225 in total**, positive and negative) and development tips (**117**), organised into **8 clusters** under **four domains**:
 
 - **THINKING** - reasoning, problem-solving, judgement, strategy.
 - **RESULTS** - achievement, drive, execution, accountability.
@@ -24,6 +24,8 @@ VIFM-AC measures behaviour against **38 competencies**, each elaborated by behav
 - **SELF** - integrity, adaptability, resilience, self-management.
 
 The domain → cluster → competency → indicator hierarchy is held in the database (`competency_domains`, `competency_clusters`, `competencies`, `behavioral_indicators`), so every competency has an explicit place in the model and every behavioural indicator rolls up to exactly one competency.
+
+Framework v2 consolidated the earlier 41-competency, 9-cluster model (v1): 8 competencies carried over unchanged, 12 new ones each absorbed two or three v1 competencies, two knowledge competencies moved to the Technical pillar, and the Adaptability and Change cluster was retired. Nothing was deleted: a v1 competency is marked retired with a pointer to its successor, so results recorded against v1 still render, and every sitting records the framework version it was scored on. The v2 definitions, Arabic and behavioural indicators are with a chartered psychologist and subject-matter reviewers; any change they make becomes v3 the same way. Each competency also carries descriptive anchors for the points of the rating scale (see §3), currently under expert review.
 
 ### Why a behavioural framework
 
@@ -47,7 +49,7 @@ Every competency now carries a per-competency **validation-evidence trail** in t
 
 ### Rating format
 
-Behaviours are rated on a **5-point competency rubric** (1–5), criterion-referenced to the behavioural-indicator anchors rather than to a norm group. Ratings are stored per competency per assessor (`ratings`), preserving the raw observations behind every score.
+Behaviours are rated on a **5-point competency rubric** (1–5), criterion-referenced to the behavioural-indicator anchors rather than to a norm group, with a descriptive anchor for each scale point per competency (`competency_scale_anchors`) and exercise-specific indicator examples for assessors. Ratings are stored per competency per assessor (`ratings`), preserving the raw observations behind every score. Competency ratings are agreed at a chaired integration meeting; for a **selection** centre the overall rating is then **calculated** as the weighted average of the agreed competency ratings, with weights fixed and approved before the centre, while development and succession centres reach it by discussion. This follows the BPS standard's requirement for an arithmetic integration rule in selection (§4).
 
 ---
 
@@ -69,13 +71,19 @@ A formal construct-validity study (e.g., confirmatory factor analysis or a multi
 
 We rely on the published **meta-analytic** evidence for the criterion-related validity of the assessment-centre method (Gaugler et al., 1987; Arthur et al., 2003 - §6) rather than a local predictive study against VIFM client outcomes. We do not yet make a site-specific predictive-validity claim.
 
+The structure for a local study now exists. For every rated participant the platform schedules a **6- and 12-month outcome follow-up** (`ac_outcome_followups`): whether the person went into the role, and the line manager's rating of their performance on the centre's own 1-5 scale, collected by VIFM from the client. The correlation between centre rating and later performance is computed from these and reported with its sample size: no figure is shown below 10 participants, it is marked an early indication below 30, and provisional below the standard's guide of about 100. Whether a client agrees to this collection is recorded per centre in the evaluation plan (`engagements.evaluation_plan`) and in the centre agreement.
+
+### Alignment with the BPS standard
+
+The programme was mapped clause by clause against the British Psychological Society's *Design and Delivery of Assessment Centres* (Division of Occupational Psychology, 2015; 195 clauses). Every requirement that can be met in the platform now is: purpose recorded per centre and driving the integration rule; a centre agreement and plan generated from the design; a participant joining pack, consent, adjustments, concerns and appeals; centre roles with competence records; staffing rules; a delivery log; exercise quality checks; fairness monitoring; a guidance note for decision makers with every set of reports; and the validity evidence described above, summarised per centre in an evidence pack. The clauses that remain open are those only data can close: a validation sample and the evaluations that run once centres have been delivered.
+
 ---
 
 ## 5. Reliability
 
 ### Inter-rater reliability
 
-The platform records each assessor's rating per competency (`ratings`), so inter-rater agreement (ICC / consensus) is **computable** from the audit trail. It will be reported in the assessor analytics console once enough multi-assessor sessions have accrued. This is the reliability evidence most natural to an observational method.
+The platform records each assessor's rating per competency (`ratings`), so inter-rater agreement (ICC(2,1), two-way random, single measure) is **computed** from the audit trail, on complete cases only: the pair of assessors who co-rated the most participants, with no imputation of missing ratings. It is reported per centre in the evidence pack and pooled across centres in the assessor analytics console. This is the reliability evidence most natural to an observational method.
 
 ### Internal consistency
 
@@ -121,7 +129,8 @@ Items, competencies and exercises were authored to content-align with establishe
 ## 7. Limitations & honest disclosures
 
 - **No empirical factor structure yet.** Construct validity (incl. the exercise-vs-dimension question) and fairness/DIF analyses have not been run. The framework is content-validated, not empirically confirmed.
-- **Criterion validity is method-level, not site-level.** We rely on published AC meta-analyses, not a local predictive study against VIFM client outcomes.
+- **Criterion validity is method-level, not site-level.** We rely on published AC meta-analyses. The follow-up structure for a local study exists, but no centre has yet accumulated the follow-ups to report from, and about 100 participants are needed for a study with reasonable power.
+- **Framework v2 content is under expert review.** Competency definitions, behavioural indicators and rating-scale anchors were drafted with AI assistance and are being reviewed by subject-matter experts and a chartered psychologist. Each report states the review status of the content used.
 - **Rater effects are real.** Observational ratings carry leniency/halo risk. Assessor training and multi-assessor designs mitigate but do not eliminate it; inter-rater agreement is the reliability metric we report.
 - **Test–retest stability is not yet tracked.**
 
@@ -130,7 +139,7 @@ Items, competencies and exercises were authored to content-align with establishe
 ## 8. Update cadence
 
 - Competency framework: re-versioned as the framework owner revises it; the active framework is the source of truth for new assessments.
-- Methodology brief: re-issued with each framework revision. This document is v1.0.
+- Methodology brief: re-issued with each framework revision. This document is v1.1 (framework v2).
 - Validation-evidence trails: reviewed continuously in `/admin/ac-evidence`; coverage tracked in `/admin/evidence-map`.
 
 ---
@@ -154,8 +163,9 @@ Two kinds of evidence: **(A)** established coefficients for the *method* (the as
 **B. VIFM's own reliability - method, threshold, and current status**
 
 - **Inter-rater reliability:** Intraclass Correlation (**ICC**; Shrout & Fleiss, 1979) across assessors, integrated to a consensus wash-up; target **ICC ≥ .70** (good agreement). Status: ICC is computed live per engagement wherever **≥ 2** assessors rate the same candidate-exercise; a stable cross-engagement figure will be published once **≥ 30** multi-rater engagements accrue.
-- **Content validity:** each of the 41 competencies is observed in **≥ 2** exercises (the exercise-competency matrix) - the documented coverage design.
+- **Content validity:** each of the 21 competencies is observed in **≥ 2** exercises (the exercise-competency matrix; enforced at design time) - the documented coverage design. Criteria overlap is checked once 10 or more participants are rated on a pair (pairs correlating above 0.7 are flagged for merging, per the standard).
+- **Criterion validity:** the correlation between centre rating and the 6/12-month manager performance rating, per centre, reported only with its sample size. Status: structure live since 30 September 2026; no follow-ups collected yet.
 
 ---
 
-*VIFM Assessment Center · Methodology Brief v1.0 · Last updated 2026-06-07.*
+*VIFM Assessment Center · Methodology Brief v1.1 · Last updated 2026-09-30 (framework v2; BPS alignment; validity evidence structure).*

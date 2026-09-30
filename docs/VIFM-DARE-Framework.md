@@ -1,6 +1,8 @@
 # VIFM DARE Framework - Decision-Role Profile
 
-How VIFM turns the 41-competency Persona self-assessment into a view of a person's decision-role strengths.
+How VIFM turns the Persona self-assessment into a view of a person's decision-role strengths.
+
+> **Framework v2 (27 September 2026).** The mapping below was written for the 41-competency v1 framework. The active framework is v2, with 21 competencies: each v2 competency inherits the placement of the v1 competencies it absorbed (`extendMapToV2` in `src/lib/competencies/framework-v2.ts`), so the report keeps working on new sittings, and sittings recorded on v1 still read the v1 map. The v2 placements are drafts pending the chartered psychologist's review of the framework.
 
 ---
 

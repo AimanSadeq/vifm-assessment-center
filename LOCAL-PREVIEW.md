@@ -9,6 +9,11 @@ a Render deploy. One-time setup, then it's just `npm run dev`.
 - **Node.js LTS** (v20+): https://nodejs.org  → download the LTS installer, run it.
 - **Git**: https://git-scm.com/downloads
 - Verify in a terminal: `node -v` and `git --version` should print versions.
+- **Python 3.13** (only for the SME review scripts under `scripts/sme-import/` and
+  the `.tmp` builders, which need `openpyxl`). If more than one Python is
+  installed, call it explicitly: `C:\Python313\python.exe script.py`. A newer
+  Python that sits first on PATH without `openpyxl` fails with
+  `No module named 'openpyxl'`.
 
 ### 2. Get the code
 ```bash

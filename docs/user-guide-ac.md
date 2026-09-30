@@ -28,11 +28,11 @@ This guide walks through the full lifecycle for each role.
 | | |
 |---|---|
 | **Who uses it** | VIFM consultants/admins (run engagements), assessors (observe + rate), candidates/delegates (complete assessments), clients (read reports) |
-| **Framework** | VIFM-AC: 4 domains (THINKING / RESULTS / PEOPLE / SELF), 8 clusters, 38 competencies, 249 behavioural indicators, 114 development tips |
+| **Framework** | VIFM-AC v2 (since 27 September 2026): 4 domains (THINKING / RESULTS / PEOPLE / SELF), 8 clusters, 21 competencies, 225 behavioural indicators, 117 development tips, rating-scale anchors per competency |
 | **Exercises** | In-Basket · Role Play · Group Exercise · Case Study · Oral Presentation · CBI |
 | **Scoring** | BARS 1–5 per competency; Overall Assessment Rating (OAR) 1–5 → Ready Now / Ready with Development / Not Ready |
 | **Reports** | 6-page bilingual candidate report + 4-page personalised Learning Plan (30/60/90-day roadmap + recommended VIFM programmes) |
-| **Compliance** | UAE PDPL · Saudi PDPL · GDPR · ISO 10667 · ITF AC Guidelines (6th ed.) |
+| **Compliance** | UAE PDPL · Saudi PDPL · GDPR · ISO 10667 · ITF AC Guidelines (6th ed.) · BPS Design and Delivery of Assessment Centres (2015): every platform-side clause built, see [Running a centre to the standard](#11-running-a-centre-to-the-standard) |
 
 **Entry points by role:**
 
@@ -236,7 +236,12 @@ Features:
 
 #### 8. Release the report
 
-Once the OAR is set, on the engagement detail click *Release reports*. This flips per-candidate `report_status='released'`, allowing candidates to access their reports.
+Once the OAR is set, on the engagement detail click *Release reports*. This flips per-candidate `report_status='released'`, allowing candidates to access their reports. Every report is checked before release and the checker's name is recorded on it. Reports go only to the recipients named in the joining pack; anyone else needs the participant's express permission, which you request from the engagement page with a reason.
+
+Two documents go with the reports:
+
+- **Guidance for decision makers (PDF)**, in the Reports tab: "Using these results", a two-page note built from the engagement that tells the client what the results are for, how to read a report, what they can and cannot show, and how to handle them. A development centre's note warns against using the results for selection, promotion or redundancy. Clients can also download it from their engagement page.
+- **Evidence pack (PDF)**, in the Validity evidence panel: what VIFM can show about whether this centre works (see step 12).
 
 The 6-page bilingual report is generated on demand at `/api/reports/[engId]/[candId]/pdf`:
 
@@ -256,7 +261,31 @@ Engagement detail header → *Re-engage cohort* (visible when status is `complet
 - Does NOT copy assessor assignments, observations, ratings, reports — the new run scores fresh
 - OAR delta pill renders on each candidate row once the new run scores
 
-#### 10. Curate VIFM courses + role profiles + exercises
+#### 11. Running a centre to the standard
+
+The engagement page carries the panels that meet the BPS standard for assessment centres. Work down them in order; each one names what is still missing by clause.
+
+- **Purpose and rules.** Set the purpose (selection, development or succession) in the wizard. Selection centres get a *calculated* overall rating: the weighted average of the agreed competency ratings, using weights you confirm before the centre. Development and succession centres reach it by discussion. Choose whether evidence from outside the centre may be used.
+- **Design record and centre plan.** Record why these criteria and exercises, and how they map to the job; download the *Centre plan (PDF)* and the *Centre agreement (Word)*. The agreement is the statement of work: the blue text comes from the engagement, the yellow fields are completed by hand, and both parties sign it before any implementation work. The client's sign-off on the plan is recorded here.
+- **Centre roles.** Assign the ten centre roles (manager, administrator, assessors, role-players, chair and so on). A centre cannot be activated while anyone assigned lacks a current competence record, or while any participant has fewer than two assessors, or there is less than one assessor per three participants. An override needs a recorded reason.
+- **Joining pack.** Complete the pack fields (purpose statement, venue, preparation, how results are used, decisions and timing, report recipients, feedback, retention, adjustments, contact) and publish it. Participants confirm they have read it before they consent. VIFM's rule is to publish at least **21 days** before the centre; publishing later requires a reason, which is recorded.
+- **Participants.** Concerns and appeals raised from the participant portal appear here with their timing: a participant may appeal within **21 days** of receiving their result, and a later appeal is accepted but flagged. Re-assessment for anyone disturbed or taken ill, the decision the client made and when it was communicated, and requests to share a report with someone outside the agreed recipients, all live in this panel.
+- **Delivery log and timetable.** Record incidents during the centre and how they were handled; build the timetable and check it for clashes.
+- **Feedback.** Feedback owed to each rated participant, who gave it, when and in what form.
+- **Post-centre review.** What went well, what did not, and what changed in the design as a result.
+- **Fairness monitoring.** Voluntary demographics and the four-fifths check on outcomes, for selection and succession centres.
+
+#### 12. Validity evidence
+
+The *Validity evidence* panel holds what the centre can show about whether it works.
+
+- **Agree the plan.** Record what the client agreed for after the centre: a validation study, a reaction study, a business-outcome evaluation, and what triggers the evaluation. This matches clause 11.3 of the agreement.
+- **Schedule follow-ups.** Once participants have a finalised overall rating, schedule the 6- and 12-month follow-ups. Each asks the client whether the person went into the role and how their manager rates their performance, on the centre's 1 to 5 scale. Record each answer as it arrives.
+- **Read the numbers.** Assessor agreement, the correlation between centre rating and later performance, fairness and criteria overlap are computed from the records, each with the sample behind it. Nothing is shown from too few people: no correlation below 10 participants, and anything below 100 is marked provisional.
+- **Record evaluations.** The annual evaluation and the three-yearly major review, with findings under reliability, validity, diversity, participant impact and utility. The panel shows when the next one is due.
+- **Evidence pack (PDF).** Everything above in one document to give the client.
+
+#### 13. Curate VIFM courses + role profiles + exercises
 
 For ongoing maintenance:
 
@@ -322,7 +351,9 @@ The wash-up is the single most important differentiator of the VIFM AC method �
 
 #### 2. Consent form
 
-`/candidate/consent/[id]`. GDPR / UAE PDPL consent. Required before any further data collection. Admins can see whether candidates have consented in the engagement detail.
+`/candidate/consent/[id]`. GDPR / UAE PDPL consent. Required before any further data collection. The joining pack is shown first and the candidate confirms they have read it; the consent then covers data processing, taking part, the named report recipients, and optionally research use. Candidates are asked whether they need an adjustment. Admins can see whether candidates have consented in the engagement detail.
+
+From the welcome page a candidate can also raise a question, concern or appeal at any point, before, during or after the centre. Their page shows the appeal deadline, 21 days after they receive their result.
 
 #### 3. Assessment schedule
 
@@ -400,6 +431,7 @@ A 4-page React-PDF personalised plan:
 - OAR (Ready Now / Ready with Development / Not Ready)
 - **Gap-severity badges** for top 3 gaps
 - Download links for each candidate's released report + Learning Plan
+- A link to *How to read and use these results (PDF)*, the guidance note for the people deciding with these reports
 
 #### 4. Reports
 
@@ -419,9 +451,10 @@ A 4-page React-PDF personalised plan:
 |---|---|
 | Domains | 4 (THINKING · RESULTS · PEOPLE · SELF) |
 | Clusters | 8 |
-| Competencies | 38 |
-| Behavioural indicators | 249 (positive + negative per competency) |
-| Development tips | 114 (3 per competency) |
+| Competencies | 21 (framework v2, since 27 September 2026; the earlier 41 are retired, not deleted, and old results still render) |
+| Behavioural indicators | 225 (positive + negative per competency) |
+| Development tips | 117 |
+| Rating-scale anchors | one per scale point per competency (under expert review) |
 | Tags | 5 per competency |
 | Q&A questions | 3 per competency |
 
@@ -438,11 +471,13 @@ A 4-page React-PDF personalised plan:
 
 ### Overall Assessment Rating (OAR)
 
-| OAR | Recommendation |
+For a **selection** centre the overall rating is calculated: the weighted average of the agreed competency ratings, using weights confirmed before the centre, kept to two decimals and rounded to the nearest whole point. For development and succession centres the panel agrees it by discussion. In both cases the panel records a readiness recommendation:
+
+| Recommendation | Meaning |
 |---|---|
-| 4–5 | **Ready Now** |
-| 3–3.99 | **Ready with Development** |
-| < 3 | **Not Ready** |
+| **Ready Now** | Can step into the target role immediately |
+| **Ready with Development** | Strong pipeline; ready within 12-24 months with focused development |
+| **Not Ready** | Significant development required before this role |
 
 ### Gap-severity badges
 
@@ -463,7 +498,9 @@ Computed as `target - current` on the consensus rating:
 - GDPR for EU/UK operations
 - ISO 10667 — Assessment of People in Work and Organisational Settings
 - International Taskforce on Assessment Center Guidelines (6th Edition)
+- BPS Division of Occupational Psychology, *The Design and Delivery of Assessment Centres* (2015): the Caliber AC was mapped against all 195 clauses and every platform-side requirement is built; what remains needs data from delivered centres
 - **Default retention:** 2 years post-engagement (extendable contractually)
+- **House rules:** joining pack at least 21 days before the centre; appeals within 21 days of the result
 - Audit trail on all significant actions (immutable)
 
 ### URL map
@@ -505,4 +542,4 @@ Computed as `target - current` on the consensus rating:
 
 ---
 
-*Last updated: 2026-04-29.*
+*Last updated: 2026-09-30.*

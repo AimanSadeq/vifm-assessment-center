@@ -1,6 +1,6 @@
 # VIFM-AC Competency Framework v2 — Design Document (Draft)
 
-**Status:** Draft for SME review · **Owner:** VIFM Assessment Center ·
+**Status:** LIVE since 27 September 2026 (migration 00226 loaded the final v2 set: 21 competencies, 8 clusters, 4 domains; v1 rows retired, not deleted; the chartered-psychologist review follows and any change becomes v3). This document is the design record that led to it. · **Owner:** VIFM Assessment Center ·
 **Goal:** Replace the v1 framework (which adopts Korn Ferry Leadership Architect
 competency names and definitions) with a **genuinely original, independently
 authored** framework that VIFM owns outright.

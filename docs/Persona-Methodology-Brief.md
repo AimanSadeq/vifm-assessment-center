@@ -20,7 +20,7 @@ Persona is a behavioural self-report across the VIFM competency framework. A res
 
 ### The competency framework
 
-The framework is organised as **41 competencies grouped into 9 clusters**, which in turn sit under the four VIFM behavioural domains (THINKING, RESULTS, PEOPLE, SELF). The nine clusters are:
+The framework is organised as **21 competencies grouped into 8 clusters** (framework v2, active since 27 September 2026), which in turn sit under the four VIFM behavioural domains (THINKING, RESULTS, PEOPLE, SELF). The eight clusters are:
 
 - Strategic and Commercial Reasoning
 - Customer and Stakeholder Focus
@@ -28,11 +28,10 @@ The framework is organised as **41 competencies grouped into 9 clusters**, which
 - Innovation and Complexity
 - Influence and Communication
 - Leading and Developing Others
-- Adaptability and Change
 - Integrity and Character
 - Growth and Personal Effectiveness
 
-Each competency carries four first-person Likert statements in the Persona item bank, authored in English and Gulf Arabic. The bank began life as a 38-competency, 8-cluster framework; a ninth cluster (Customer and Stakeholder Focus, adding three competencies) was added so that customer and stakeholder behaviours - central to GCC banking and government roles - are measured explicitly rather than folded into other clusters. Where older code comments or report subtitles still read "38 competencies", that wording is stale; the live bank is 41.
+Each competency carries at least four first-person Likert statements in the Persona item bank, authored in English and Gulf Arabic. Framework v2 consolidated the earlier 41-competency, 9-cluster model: 8 competencies carried over unchanged, 12 new ones each absorbed two or three v1 competencies and inherited their statements, two knowledge competencies moved to the Technical pillar, and the Adaptability and Change cluster was retired. Nothing was deleted. A completed sitting records the framework version it was scored on and the exact statements it served, so a later framework change never re-scores an existing report; results recorded on v1 still render. The v2 definitions and Arabic are with a chartered psychologist and subject-matter reviewers, and any change they make becomes v3 the same way.
 
 ### Why it maps to the 360
 
@@ -164,8 +163,8 @@ Two kinds of evidence: **(A)** established coefficients for the *method* (multi-
 
 - **Internal consistency:** Cronbach's **α** per competency cluster, computed from collected Persona responses (the same engine as the Psychometrics bank); target **α ≥ .70**. Status: being established as response volume accrues.
 - **Convergent check:** the self-vs-others gap is computed against Reflect 360 (others) inside Succession Readiness - a built-in triangulation of the self-report.
-- **Content consistency:** Persona uses the *same* 41-competency framework as the Assessment Center and Reflect 360.
+- **Content consistency:** Persona uses the *same* 21-competency framework (v2) as the Assessment Center and Reflect 360.
 
 ---
 
-*VIFM Persona - Behavioural Self-Assessment - Methodology Brief v1.0.*
+*VIFM Persona - Behavioural Self-Assessment - Methodology Brief v1.1 - Last updated 2026-09-30 (framework v2).*

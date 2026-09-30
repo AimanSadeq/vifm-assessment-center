@@ -129,7 +129,7 @@ flowchart LR
 - Optional walkthrough session led by the VIFM consultant
 - Year-on-year reassessment package on Enterprise tier
 
-> ℹ️ **There is no client-facing portal in the ARA module today.** The client receives the PDF directly. A self-service browse + quote portal is on the roadmap — see [post-parity-roadmap.md](post-parity-roadmap.md).
+> ℹ️ **Reports are still delivered by VIFM, not through a portal.** A client manager login (`/portal`) exists for the self-service side of the service (practice-access vouchers, seats and the funnel), but the assessment report itself reaches the client from the consultant, so VIFM keeps control of the narrative.
 
 ---
 
@@ -252,7 +252,7 @@ The Workforce AI Readiness section appears in the PDF when `include_individual_l
 
 #### 9. Deliver and re-engage
 
-Once generated, the PDF stays attached to the assessment record (it survives even if the assessment is later archived — VIFM business records per retention §15.3). Deliver to the client out-of-band (email, secure file share).
+Every generated PDF is stored as a version on the assessment record (the `ara-reports` bucket; each version can be downloaded again from the assessment page) and is kept **permanently** as a VIFM business record, even if the assessment is later archived or purged. Deliver to the client out-of-band (email, secure file share). The Arabic PDF is the same report rendered right-to-left in Arabic only; the side-by-side layout is for Stage 3.
 
 For year-on-year, on the assessment detail action rail click *Start reassessment* — copies the design (org, stage, weights, scope) into a new draft and gives you the option to carry over the same respondents (with fresh tokens). The new assessment links back via `prior_assessment_id`.
 
@@ -383,11 +383,17 @@ Upload a regulatory PDF (UAE PDPL, NCA ECC, etc.) and Claude reads it, extracts 
 
 Hard-delete every assessment marked `is_sandbox=true`. Confirmation phrase required ("DELETE SANDBOX DATA"). Useful after training sessions / demos.
 
+### Practice-access vouchers
+
+`/ara/admin/vouchers`
+
+Vouchers give a delegate the assessment without a login. Issue them per client organisation, email them or copy the link, and follow completions in the ledger. The redeem page accepts the code on its own or pasted inside a whole email: the VIFM code is picked out of the surrounding text.
+
 ### Retention purge
 
 `/ara/admin/retention`
 
-Hard-delete archived assessments past the retention window (default 3 years). Generated reports are detached and survive — they're VIFM business records.
+Hard-delete archived assessments past the retention window. Stored report PDFs are never purged: they are VIFM business records and are kept permanently (decision of 28 September 2026).
 
 A daily cron at `/api/ara/admin/retention/cron` runs the same logic automatically (gated on `CRON_SECRET`).
 
@@ -478,4 +484,4 @@ Likert 1–5 across all factors and pillars:
 
 ---
 
-*Last updated: 2026-04-29.*
+*Last updated: 2026-09-30.*

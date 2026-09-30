@@ -25,7 +25,7 @@ dropdown is hidden outside development.
 
 ### You must log in to see data in dev
 Because reads are RLS-scoped, a portal opened **without a session shows empty
-data** even though `AUTH_ENABLED=false` lets you reach the page. RLS policies
+data** (and with auth on, the middleware sends you to `/login` first). RLS policies
 (`supabase/migrations/00001_*`) require `auth.uid() IS NOT NULL` or a specific
 `auth_role()` (which resolves the role from `profiles` by `auth.uid()`). No
 session → `anon` → every read denied. Log in via a demo account to get a session.
@@ -85,9 +85,15 @@ and `candidates.profile_id` pointing at it.
   `--apply` to execute; pass specific emails to scope). Prints a set-password link
   per candidate. Do NOT provision seeded `@adnoc.ae` demo rows, and do NOT
   provision an email intended to be an admin (e.g. ahmad.rashid) as a candidate.
-- **Clients** are already provisioned the normal way: a `profiles` row with
-  `role='client'` + `organization_id` (the client-org guard reads it via
-  `getClientOrgId()`).
+- **Clients** are provisioned with `npx tsx scripts/create-client-login.ts
+  <email> "<Full Name>" <organization_id>`: a `profiles` row with `role='client'`
+  + `organization_id` (the client-org guard reads it via `getClientOrgId()`).
+  This role sees Assessment Center results at `/client/engagements`. It is
+  distinct from `client_manager` (`scripts/create-client-manager.ts`), which
+  runs the self-service portal at `/portal`; a person holds one role, so a
+  client needing both needs two addresses. Decision 2026-09-30: merging the two,
+  or a client-facing results portal, is a separate project pending the client
+  agreement; use the client script only for demo accounts until then.
 
 ### Files with TODO Comments
 Search for `// TODO:` to find all auth-related placeholders:

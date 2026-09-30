@@ -28,6 +28,8 @@ Items are four-option single-best-answer multiple-choice questions (`question_en
 
 Items move through an explicit SME review workflow - `draft → in_review → approved → rejected → retired` (`status`) - with the reviewer, reviewer name and timestamp recorded (`reviewed_by`, `reviewer_name`, `reviewed_at`, `review_notes`). Only `approved` items are eligible for a live certification test. `source` distinguishes `ai_generated` from `human_authored`; AI-generated items are never administered without passing human review.
 
+Two further controls apply to AI-drafted items. Every numerical item passes an automatic **key verification**: the generator recomputes the worked answer and drops any item whose key does not reproduce (added after reviewers found three wrong keys in a trial). And the SME review itself runs through structured workbooks: each item carries its ID, the reviewer records a verdict, their own answer and any correction, and an importer applies approvals and rejections while holding anything that changes a stem, an option or a key for a person to confirm. Every applied decision is written to an immutable review log (`sme_review_log`).
+
 ### Research anchors (new)
 
 Every item now carries a per-item **validation-evidence trail** (`tech_assessment_items.validation_evidence`, migration 00069). It anchors the item's domain to the content-validity / standard-setting literature (§6) from a curated, closed bibliography, records a confidence level, and is **human-verified** before it reaches any client-facing surface. Coverage is tracked in the Evidence & Validity Map and managed at `/admin/evidence/technical`.
@@ -50,7 +52,9 @@ Items are reviewed by subject-matter experts for realism and relevance; we mark 
 
 ### Criterion validity & the passing standard
 
-The passing standard is documented per domain in `tech_assessment_cut_scores`: a minimum passing percentage (`pass_pct`), a defensibility floor on test length (`min_items` - a 3-item "test" cannot certify), and the **method and rationale** for how the standard was set (e.g., a modified-Angoff SME panel). A documented, criterion-referenced standard is the appropriate validity claim for a certification decision; we do not make a separate predictive claim against downstream job performance.
+The passing standard is documented per domain in `tech_assessment_cut_scores`: a minimum passing percentage (`pass_pct`), a defensibility floor on test length (`min_items` - a 3-item "test" cannot certify), and the **method and rationale** for how the standard was set. A documented, criterion-referenced standard is the appropriate validity claim for a certification decision; we do not make a separate predictive claim against downstream job performance.
+
+As at 30 September 2026, seven of the ten domains have a standard set by a subject-matter expert who worked through every approved item and estimated, for each, the share of barely competent practitioners who would answer it correctly, then averaged those estimates: the modified-Angoff procedure. The recorded standards are Accounting, Business Reporting and Finance at 70% with a minimum of 8 items, and Banking Operations and Risk Management 78%, Investment 76%, Real Estate 74% and Treasury 73%, each with a minimum of 10 items. Each expert's reasoning is stored with the standard. The experts advised against making any single skill must-pass while a domain has only about 15 items, to be revisited once a domain reaches 30 or more. Artificial Intelligence, Analytics and Business Intelligence are still in review.
 
 ### Construct validity
 
@@ -102,7 +106,8 @@ Items content-align with the works below; this is content alignment, not republi
 ## 7. Limitations & honest disclosures
 
 - **Content validity is process-based today.** The SME-review trail supports it; a formal per-domain CVR panel is the next documented step.
-- **Cut-score quality depends on the panel.** A documented modified-Angoff (or equivalent) panel is required per domain; domains without a recorded method/rationale should not certify.
+- **Cut-scores rest on a single expert per domain.** The seven recorded standards were set by one subject-matter expert each, using a modified-Angoff procedure with the reasoning recorded. A multi-judge panel per domain is the next step; domains without a recorded method and rationale do not certify.
+- **Item banks are small.** Certified domains hold 14 to 15 approved items each. Tests draw from the whole approved bank, so with banks this size a candidate may see only one or two items on a given skill, which is why no skill is yet mandatory.
 - **No fairness/DIF analysis yet.** Planned, not run.
 - **No test–retest evidence yet.**
 
@@ -112,7 +117,7 @@ Items content-align with the works below; this is content alignment, not republi
 
 - Item bank: items added, reviewed and retired continuously; item statistics refresh as administrations accrue.
 - Cut scores: re-set when a domain's blueprint changes; each standard records its method and date.
-- Methodology brief: re-issued as the programme matures. This document is v1.0.
+- Methodology brief: re-issued as the programme matures. This document is v1.1.
 - Validation-evidence trails: reviewed in `/admin/evidence/technical`; coverage tracked in `/admin/evidence-map`.
 
 ---
@@ -136,9 +141,10 @@ Two kinds of evidence: **(A)** established coefficients for the *method* (work-s
 **B. VIFM's own reliability - method, threshold, and current status**
 
 - **Item statistics:** per-item difficulty (**p-values**) and pass/fail counts are tracked, behind an SME approve / reject / retire review workflow. Status: light classical statistics only; **IRT / Rasch calibration is the documented Tier-2 path, not yet run**.
-- **Cut-scores:** documented per domain with method and rationale; the CERTIFIED path assembles only SME-approved items above the cut, otherwise the result is explicitly INDICATIVE.
+- **Cut-scores:** documented per domain with method and rationale; the CERTIFIED path assembles only SME-approved items above the cut, otherwise the result is explicitly INDICATIVE. Status: 7 of 10 domains certifiable (SME-set standards recorded 28-30 September 2026).
+- **Key verification:** every AI-drafted numerical item has its key recomputed before it enters the bank; a whole-bank recheck of worked explanations on 28 September 2026 found one wrong key in 148 servable items, since corrected.
 - **Delivery integrity:** single-use sessions, server-held answer key, options re-randomised per administration.
 
 ---
 
-*VIFM Technical Certification · Methodology Brief v1.0 · Last updated 2026-06-07.*
+*VIFM Technical Certification · Methodology Brief v1.1 · Last updated 2026-09-30 (SME-set standards for seven domains; key verification; review log).*

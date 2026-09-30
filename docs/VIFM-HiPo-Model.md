@@ -27,7 +27,10 @@ not the arithmetic.
 ## 2. Pillar 1 - Aspiration (the eight markers)
 
 Aspiration is the mean of eight behavioural competencies from the VIFM
-41-competency framework, selected because they evidence drive, initiative,
+competency framework (the v1 41; on framework v2, active since 27 September
+2026, each marker resolves to the v2 competency that absorbed it, through the
+same `extendMapToV2` mapping the other Persona lenses use, pending the
+psychologist's review), selected because they evidence drive, initiative,
 growth appetite, and the courage to step up:
 
 1. Proactive Initiative

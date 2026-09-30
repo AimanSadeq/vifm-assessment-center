@@ -158,7 +158,7 @@ export function EvidencePanel({
             <span className={`me-2 rounded px-1.5 py-0.5 text-xs ${powerTone}`}>
               {validity.power === "none" ? "No data" : validity.power === "too_small" ? "Too few" : validity.power === "early" ? "Provisional" : "Adequate sample"}
             </span>
-            {validity.r !== null ? <>r = {validity.r.toFixed(2)} over {validity.n}</> : <>{validity.n} with both ratings</>}
+            {validity.r !== null ? <>r = {validity.r.toFixed(2)} over {validity.n} participants</> : <>{validity.n} participants with both ratings</>}
           </Stat>
           <Stat label="Fairness (diversity)">{fairnessNote}</Stat>
           <Stat label="Criteria overlap (4.6)">

@@ -652,6 +652,10 @@ def plan_technical(sb, wb, plan):
         if pass_raw:
             try:
                 pass_pct = float(pass_raw.rstrip("%"))
+                # A reviewer who types 0.78 into a "%" cell means 78%: Excel shows
+                # the fraction as a percentage, so the sheet and the number agree.
+                if 0 < pass_pct <= 1:
+                    pass_pct = round(pass_pct * 100)
                 min_items = int(float(fields.get("Minimum items a test must draw") or 8))
                 if not (1 <= pass_pct <= 100) or min_items < 8:
                     raise ValueError

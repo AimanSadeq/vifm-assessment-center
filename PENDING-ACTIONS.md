@@ -226,6 +226,15 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   Finance: 32 approved + 2 rejected + 3 cut-scores (all three domains now certifiable, 10/10/12
   approved vs the 8 floor); his 36 old-framework Reflect approvals carried onto the identical v2
   statements (`.tmp/sme/returned/yassin-2026-09-28/`). Financial Literacy (13 items) has no live row.
+- [x] **Moayad's return loaded 2026-09-30** - Technical Banking / Investment / Real Estate / Treasury:
+  47 approved + 4 pass marks (78 / 76 / 74 / 73%, min 10 items; typed as fractions, importer now
+  accepts 0-1 as %). Banking 13, Investment 15, Real Estate 12 approved = certifiable; Treasury 8 of
+  the 10 it needs. His Property Valuation fix matched Aiman's 2026-09-28 correction exactly.
+- [ ] **12 held Technical items from Moayad** (Banking 2, Real Estate 3, Treasury 7) - precise written
+  fixes, turned into field changes in `.tmp/sme/returned/moayad-2026-09-30/Technical-held-items-Moayad-MD-decisions.xlsx`
+  (builder `.tmp/_build_md_moayad_decisions.py`); apply with
+  `python .tmp/_apply_md_technical_decisions.py <returned.xlsx> --set moayad [--apply]`. Approving
+  the 7 Treasury items takes it to 15 and makes it certifiable.
 - [x] **11 held Technical items from Yassin** - settled 2026-09-28 by Aiman (MD) via a decision
   workbook: 9 proposed fixes accepted (incl. IAS 1 -> IFRS 18 wording, 3 Arabic questions that
   repeated the scenario), 2 Basel items (CET1, LCR) approved unchanged. All 11 approved + logged in

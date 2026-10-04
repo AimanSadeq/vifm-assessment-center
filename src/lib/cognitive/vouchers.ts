@@ -3,6 +3,7 @@ import { makeVoucherCode } from "@/lib/vouchers/codegen";
 import { redeemViaDescriptor } from "@/lib/vouchers/core";
 import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { formatPersonName } from "@/lib/privacy/person-name";
 
 // ─────────────────────────────────────────────────────────────
 // Cognitive Ability voucher service - generate + redeem access codes for the
@@ -148,7 +149,7 @@ export async function redeemVoucher(
 
       const redemptionBase = {
         voucher_id: voucher.id,
-        redeemer_name: redeemer.redeemerName.trim(),
+        redeemer_name: formatPersonName(redeemer.redeemerName),
         redeemer_email: redeemer.redeemerEmail.trim(),
         company_name: (redeemer.companyName ?? "").trim(),
         organization_id: voucher.organization_id ?? null,

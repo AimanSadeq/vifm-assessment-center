@@ -21,6 +21,7 @@ import {
   type FluentCertificateArData,
 } from "@/lib/reports/fluent-certificate-ar-html";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { getServerLocale } from "@/lib/i18n/server";
 import { fluentServesLive } from "@/lib/bank-readiness/serves-live";
 
@@ -150,7 +151,7 @@ export async function GET(req: Request, { params }: { params: { resultId: string
     ? " The reading and listening items in this sitting were generated live and have not yet been reviewed by a subject-matter expert."
     : "";
 
-  const name = row.taker_name?.trim() || "Candidate";
+  const name = formatPersonName(row.taker_name) || "Candidate";
   const date = new Date(row.created_at).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "long",

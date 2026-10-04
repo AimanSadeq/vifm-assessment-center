@@ -9,6 +9,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { createSession, isMissingSchemaError } from "./service";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I
@@ -280,7 +281,7 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
   try {
     const { id: sessionId, accessToken } = await createSession({
       functionId: voucher.function_id as string,
-      candidateName: input.name.trim(),
+      candidateName: formatPersonName(input.name),
       candidateEmail: input.email.trim(),
       // Display name: for a client-issued voucher (authoritative org id) prefer the
       // voucher's own org label so display matches tenancy; otherwise the redeemer's
@@ -304,7 +305,7 @@ export async function redeemVoucher(input: RedeemInput): Promise<RedeemResult> {
     });
     await sb.from("technical_sandbox_voucher_redemptions").insert({
       voucher_id: voucher.id,
-      redeemer_name: input.name.trim(),
+      redeemer_name: formatPersonName(input.name),
       redeemer_email: input.email.trim(),
       company_name: input.company.trim(),
       session_id: sessionId,

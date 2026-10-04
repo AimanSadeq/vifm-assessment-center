@@ -18,6 +18,7 @@ import type { FluentResult } from "@/lib/ai/fluent-english";
 import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } from "@/lib/scoring/integrity";
 import { recommendEnglishDevelopment, type EnglishRecommendations } from "@/lib/recommender/english";
 import { siteOrigin } from "@/lib/site-url";
+import { formatPersonName } from "@/lib/privacy/person-name";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,7 +28,7 @@ export const runtime = "nodejs";
 // so the identity line is always readable.
 const hasArabic = (s: string) => /[؀-ۿݐ-ݿ]/.test(s);
 const latinSafeName = (name: string | null, email: string | null): string => {
-  const n = name?.trim();
+  const n = formatPersonName(name);
   return n && !hasArabic(n) ? n : email?.trim() || "Candidate";
 };
 

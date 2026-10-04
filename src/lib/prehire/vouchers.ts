@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/server";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 // Pre-Hire vouchers: a client-distributable code (or seat-pool batch) tied to a
@@ -131,7 +132,7 @@ export type PrehireRedeemResult = { ok: true; token: string } | { ok: false; err
 export async function redeemPrehireVoucher(input: PrehireRedeemInput): Promise<PrehireRedeemResult> {
   const sb = createServiceClient();
   const code = normalizeCode(input.code);
-  const name = input.name.trim();
+  const name = formatPersonName(input.name);
   const email = input.email.trim();
   if (!code) return { ok: false, error: "Enter your access code." };
   if (!name || !email) return { ok: false, error: "Your name and email are required." };

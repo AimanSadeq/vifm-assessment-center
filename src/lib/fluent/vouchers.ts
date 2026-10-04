@@ -3,6 +3,7 @@ import { makeVoucherCode } from "@/lib/vouchers/codegen";
 import { redeemViaDescriptor } from "@/lib/vouchers/core";
 import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { formatPersonName } from "@/lib/privacy/person-name";
 
 // ─────────────────────────────────────────────────────────────
 // Fluent voucher service - generate + redeem English-placement access codes.
@@ -111,7 +112,7 @@ export async function redeemVoucher(
         .from("eng_fluent_voucher_redemptions")
         .insert({
           voucher_id: voucher.id,
-          redeemer_name: redeemer.redeemerName.trim(),
+          redeemer_name: formatPersonName(redeemer.redeemerName),
           redeemer_email: redeemer.redeemerEmail.trim(),
           company_name: (redeemer.companyName ?? "").trim(),
           organization_id: voucher.organization_id ?? null,

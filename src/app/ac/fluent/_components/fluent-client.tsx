@@ -9,6 +9,7 @@ import { CappedAudio } from "@/components/shared/capped-audio";
 import { startBrowserStt, type BrowserSttSession } from "@/lib/speech/browser-stt";
 import { FluentDefinitions } from "./fluent-definitions";
 import { useFluentLanguage } from "./fluent-language";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import {
   computeIntegritySignal,
   type IntegrityEvent,
@@ -1096,7 +1097,7 @@ export function FluentClient({
       {phase === "result" && result && canView && (
         <div className="rounded-xl border bg-white p-6 shadow-sm space-y-5">
           {takerName.trim() && (
-            <p className="text-sm text-slate-500">{t.resultFor} <span className="font-semibold text-primary">{takerName.trim()}</span></p>
+            <p className="text-sm text-slate-500">{t.resultFor} <span className="font-semibold text-primary">{formatPersonName(takerName)}</span></p>
           )}
           <div className="flex flex-wrap items-center gap-4">
             <div>

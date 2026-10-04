@@ -46,6 +46,7 @@ import { computeIntegritySignal, type IntegrityFlags, type IntegritySignal } fro
 import { isStaffCaller } from "@/lib/ara/auth-guards";
 import { createHash } from "node:crypto";
 import { usableIdentity } from "@/lib/privacy/purged";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -655,7 +656,7 @@ export async function POST(req: Request) {
     });
     const reliability = overallConfidenceBand(result);
 
-    const takerName = body.takerName?.trim() ? body.takerName.trim() : null;
+    const takerName = body.takerName?.trim() ? formatPersonName(body.takerName) : null;
     const takerEmail = body.takerEmail?.trim() ? body.takerEmail.trim() : null;
     // FLU-1: server-detected mid-test IP change. Compare the IP captured at
     // start with the IP now; both must be known and differ. Merged into the

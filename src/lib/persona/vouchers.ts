@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 // ─────────────────────────────────────────────────────────────
@@ -229,7 +230,7 @@ export async function redeemVoucher(
 
   const redemptionBase = {
     voucher_id: voucher.id,
-    redeemer_name: input.redeemerName.trim(),
+    redeemer_name: formatPersonName(input.redeemerName),
     redeemer_email: input.redeemerEmail.trim(),
     company_name: input.companyName.trim(),
     organization_id: voucher.organization_id ?? null,

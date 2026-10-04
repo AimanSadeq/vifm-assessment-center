@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/server";
 import { usableIdentity } from "@/lib/privacy/purged";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { VifmLogo } from "@/components/shared/vifm-logo";
 import { FluentClient } from "../../_components/fluent-client";
@@ -34,7 +35,7 @@ export default async function FluentTakePage({
   // purge filters on redeemed_at, not on whether the sitting was completed, so
   // an old unused token stays live). Resolve once: never greet a delegate with
   // it, never prefill it, never stamp it onto a proctoring record.
-  const displayName = usableIdentity(redemption.redeemer_name);
+  const displayName = formatPersonName(usableIdentity(redemption.redeemer_name)) || undefined;
   const displayEmail = usableIdentity(redemption.redeemer_email);
 
   // One seat = one placement. Once this token has a completed sitting, refuse a

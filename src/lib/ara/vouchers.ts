@@ -1,5 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { formatPersonName } from "@/lib/privacy/person-name";
 import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
 
 // ─────────────────────────────────────────────────────────────
@@ -514,7 +515,7 @@ export async function redeemVoucher(
     .from("ara_respondents")
     .insert({
       assessment_id: assessmentId,
-      name: input.redeemerName.trim(),
+      name: formatPersonName(input.redeemerName),
       email: input.redeemerEmail.trim(),
       language_preference: language,
     })
@@ -530,7 +531,7 @@ export async function redeemVoucher(
   // 6. Record the redemption (company_name powers future per-company insights).
   await sb.from("ara_voucher_redemptions").insert({
     voucher_id: voucher.id,
-    redeemer_name: input.redeemerName.trim(),
+    redeemer_name: formatPersonName(input.redeemerName),
     redeemer_email: input.redeemerEmail.trim(),
     company_name: input.companyName.trim(),
     ara_assessment_id: assessmentId,

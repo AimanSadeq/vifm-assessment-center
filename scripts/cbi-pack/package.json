@@ -1,0 +1,11 @@
+{
+  "name": "vifm-cbi-pack",
+  "private": true,
+  "description": "Generates the VIFM Competency-Based Interview sample pack (deck, interview guide, report) into docs/samples/cbi.",
+  "scripts": {
+    "build": "node build-all.js"
+  },
+  "dependencies": {
+    "pptxgenjs": "^3.12.0"
+  }
+}

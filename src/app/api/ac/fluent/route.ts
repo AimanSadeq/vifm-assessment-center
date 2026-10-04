@@ -788,7 +788,12 @@ export async function POST(req: Request) {
     // staff-only: returning the detector's own reading to the taker would hand
     // an unsupervised candidate a live oracle to reword against. The persisted
     // result keeps the full detail for the admin surfaces.
-    const isStaff = await isStaffCaller();
+    //
+    // A voucher sitting (redemptionToken present) is a DELEGATE sitting whoever
+    // is logged in: an admin trying a delegate link from their own browser
+    // was shown the full result and report (trial feedback). The staff
+    // preview stays on the standalone /ac/fluent runner, which has no token.
+    const isStaff = (await isStaffCaller()) && !body.redemptionToken?.trim();
     const responseResult = isStaff
       ? result
       : {

@@ -443,7 +443,11 @@ export async function POST(req: Request) {
     // receive the result body + result_id - a non-staff taker's network response
     // must NOT carry the detailed scales/bands/percentiles (UI-hiding alone left
     // the data inspectable in the JSON).
-    const isStaff = await isStaffCaller();
+    // A voucher sitting (redemptionToken present) is a DELEGATE sitting whoever
+    // is logged in, so a staff member trying a delegate link from their own
+    // browser gets the thank-you too. The staff preview stays on the
+    // standalone runner, which has no token.
+    const isStaff = (await isStaffCaller()) && !redemptionToken;
     return NextResponse.json({
       result: isStaff ? finalResult : null,
       result_id: isStaff ? resRow?.id ?? null : null,

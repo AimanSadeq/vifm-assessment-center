@@ -12,6 +12,8 @@ import { VouchersClient as TechVouchersClient } from "@/app/admin/tech-sandbox/v
 import { VouchersClient as FluentVouchersClient, type FluentVoucherRow } from "@/app/ac/fluent/vouchers/_components/vouchers-client";
 import { VouchersClient as CognitiveVouchersClient, type CognitiveVoucherRow } from "@/app/ac/cognitive/vouchers/_components/vouchers-client";
 import { VouchersClient as PersonaVouchersClient, type PersonaVoucherRow } from "@/app/ac/persona/vouchers/_components/vouchers-client";
+import { loadPersonaRoleOptions } from "@/lib/scoring/persona-roles";
+import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framework";
 import { listPrehireVouchers, listPrehireRequisitionsForVoucher } from "@/lib/prehire/vouchers";
 import { PrehireVouchersClient } from "./_components/prehire-vouchers-client";
 import { VoucherHub, type ServiceSummary, type ServiceKey, type HubService } from "./_components/voucher-hub";
@@ -151,8 +153,27 @@ export default async function VouchersHubPage({
   const cognitive = await loadAcService<CognitiveVoucherRow>("cognitive_vouchers", (rows) => (
     <CognitiveVouchersClient vouchers={rows} clients={clientNames} />
   ));
+  // Persona scoping inputs (same as the standalone /ac/persona/vouchers page):
+  // role profiles pre-fill the scope, the active competency catalogue drives
+  // the coverage picker. Without these the issuer can only offer "Full profile".
+  const personaRoleOptions = (await loadPersonaRoleOptions()).map((r) => ({
+    id: r.id,
+    name: r.name,
+    competencyIds: r.comps.map((c) => c.competencyId),
+  }));
+  const personaCompetencies = ACTIVE_BEHAVIORAL_COMPETENCIES.map((c) => ({
+    id: c.acCompetencyId,
+    name: c.nameEn,
+    clusterOrder: c.clusterOrder,
+    clusterName: c.clusterNameEn,
+  }));
   const persona = await loadAcService<PersonaVoucherRow>("persona_vouchers", (rows) => (
-    <PersonaVouchersClient vouchers={rows} clients={clientNames} />
+    <PersonaVouchersClient
+      vouchers={rows}
+      clients={clientNames}
+      roleOptions={personaRoleOptions}
+      personaCompetencies={personaCompetencies}
+    />
   ));
 
   // ── Pre-Hire (vouchers tied to a requisition; redeem provisions a candidate) ──

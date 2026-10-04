@@ -23,13 +23,15 @@ type CompetencyOption = { id: string; name: string; clusterOrder: number; cluste
 export function VouchersClient({
   vouchers,
   clients,
-  roleOptions = [],
-  personaCompetencies = [],
+  roleOptions,
+  personaCompetencies,
 }: {
   vouchers: PersonaVoucherRow[];
   clients: string[];
-  roleOptions?: RoleOption[];
-  personaCompetencies?: CompetencyOption[];
+  // Required on purpose: every embedding must supply the scoping inputs,
+  // otherwise the coverage picker renders empty ("Full profile - all 0").
+  roleOptions: RoleOption[];
+  personaCompetencies: CompetencyOption[];
 }) {
   const [projectLabel, setProjectLabel] = useState("");
   const [language, setLanguage] = useState<"en" | "ar">("en");

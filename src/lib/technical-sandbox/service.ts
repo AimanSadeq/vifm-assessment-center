@@ -525,7 +525,10 @@ export async function createSession(input: CreateSessionInput) {
         "en",
         isCustom ? selectedSkills : null,
       );
-    } catch {
+    } catch (err) {
+      // Logged so a live failure shows up in the server logs (5 Oct 2026: four
+      // L&D trial sittings lost their knowledge section with no trace).
+      console.error(`[tech-sandbox] knowledge section build failed for function ${input.functionId}:`, err);
       mcqTest = null;
     }
   }
@@ -547,6 +550,21 @@ export async function createSession(input: CreateSessionInput) {
         "This function has no assessable content yet - no hands-on tasks and no knowledge blueprint. Author its skills or task blocks before inviting candidates."
       );
     }
+  }
+
+  // A sitting that ASKED for a knowledge section must get one. Until now a
+  // failed build (a function with no approved bank relies on live AI
+  // generation, which can time out or under-deliver) silently degraded the
+  // sitting to hands-on only: the delegate saw no MCQ section, the admin saw a
+  // 0% weight on a 70% voucher, and the seat was consumed. Refuse instead: the
+  // voucher flow rolls the seat back and the delegate can simply try again.
+  if (wantsMcq && (!mcqTest || !Array.isArray(mcqTest.items) || mcqTest.items.length === 0)) {
+    console.error(
+      `[tech-sandbox] refusing to create a sitting without its knowledge section (function ${input.functionId}, custom=${isCustom}, skills=${selectedSkills.length})`
+    );
+    throw new Error(
+      "The knowledge section could not be generated right now, so the assessment was not started. Please try the code again in a few minutes. If this keeps happening, contact VIFM."
+    );
   }
 
   const baseRow = {

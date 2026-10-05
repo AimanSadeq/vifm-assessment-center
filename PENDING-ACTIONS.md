@@ -2,7 +2,7 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-09-30.
+> Last updated: 2026-10-05.
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 
@@ -33,6 +33,7 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 - [x] **SD-8 IA restructure** - two-column Selection/Development IA was already shipped (commit c367822). Remaining cleanup done: sidebar instrument-runner leaf relabelled "Overview" -> "Take assessment" (Cognitive/Persona/Fluent).
 - [x] **SD-9 Persona item-format option** - admin/voucher-pinnable + standalone chooser: normative / ipsative / both (migration 00140). **Deferred: true ipsative SCORING** (Thurstonian IRT - multi-week psychometric build); this is forced-choice presentation, documented honestly in the methodology brief.
 - [x] **SD-10 Provision the SDAIA ARC org as saudi/government** - org provisioned (verified live). Idempotent `scripts/seed-sdaia-pilots.ts` ready (dry-run verified). **OPERATOR ACTION: run `npx tsx scripts/seed-sdaia-pilots.ts --apply` to issue the per-pilot codes** (Pilots 1+3 = Persona codes, Pilot 2 = Technical L&D code - NOT ARC questionnaire codes).
+- [ ] **SD-11 L&D 2.6 approved question bank** - `tech_assessment_items` holds NO items for `learning_development`, so every Techno knowledge section for 2.6 is generated live by AI at the moment a code is redeemed. On 2026-10-05 (05:27-05:37 UTC) four of Ahmad's trial sittings lost the knowledge section this way with no trace (the code silently downgraded to hands-on only). Branch `fix/techno-knowledge-section-refuse` now logs the error and refuses the redemption so the seat is released and the delegate retries. **To remove the live-AI dependency for Pilot 2: author and SME-review an L&D item bank (10 skills, same workbook round trip as the other domains).**
 
 ## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
 

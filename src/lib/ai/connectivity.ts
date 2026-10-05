@@ -23,7 +23,7 @@ export type AiConnectivityResult =
       latencyMs: number;
       checkedAt: string;
       /** Stable category for the UI badge. */
-      kind: "not_configured" | "auth" | "permission" | "model" | "billing" | "bad_request" | "rate_limit" | "overloaded" | "server" | "network" | "unknown";
+      kind: "not_configured" | "auth" | "permission" | "model" | "spend_limit" | "billing" | "bad_request" | "rate_limit" | "overloaded" | "server" | "network" | "unknown";
       httpStatus: number | null;
       message: string;
       /** What to do about it, in one sentence. */
@@ -85,6 +85,14 @@ export async function checkAiConnectivity(): Promise<AiConnectivityResult> {
       return { ...base, kind: "rate_limit", httpStatus: err.status, message, hint: "The account is being rate limited. Wait a few minutes and run the check again; if it persists, review the organisation's rate limits in the Anthropic Console." };
     }
     if (err instanceof Anthropic.BadRequestError) {
+      // The organisation's own monthly spend cap (seen 5 Oct 2026: "You have
+      // reached your specified API usage limits. You will regain access on
+      // 2026-11-01 at 00:00 UTC."). Not a credit problem: the limit is raised
+      // in the Console and access resumes at once.
+      if (/usage limit/i.test(message)) {
+        const reset = message.match(/regain access on ([^."]+)/i)?.[1];
+        return { ...base, kind: "spend_limit", httpStatus: err.status, message, hint: `The organisation's monthly API spend limit has been reached${reset ? ` (resets ${reset})` : ""}. Raise or remove the limit under Settings, Limits in the Anthropic Console; AI features resume immediately, no redeploy needed.` };
+      }
       const billing = /credit|billing|balance|purchase/i.test(message);
       return billing
         ? { ...base, kind: "billing", httpStatus: err.status, message, hint: "The Anthropic account has run out of credit. Add credit under Billing in the Anthropic Console; AI features resume immediately afterwards." }

@@ -12,6 +12,7 @@ const KIND_LABEL: Record<Exclude<AiConnectivityResult, { ok: true }>["kind"], st
   auth: "Invalid API key",
   permission: "Permission denied",
   model: "Model not available",
+  spend_limit: "Spend limit reached",
   billing: "Out of credit",
   bad_request: "Request rejected",
   rate_limit: "Rate limited",

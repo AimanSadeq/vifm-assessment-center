@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { setTimerMinutes } from "@/lib/assessment-timers";
+import { checkAiConnectivity, type AiConnectivityResult } from "@/lib/ai/connectivity";
 
 const TYPE_SCOPES = ["quiz", "fluent", "cognitive"] as const;
 type TypeScope = (typeof TYPE_SCOPES)[number];
@@ -22,4 +23,15 @@ export async function setAssessmentTimerAction(scope: TypeScope, minutes: number
   if (!res.ok) return { error: res.error ?? "Could not save (apply migration 00083)." };
   revalidatePath("/admin/settings");
   return { ok: true };
+}
+
+/** One live request to the configured AI model, admin only (Settings page check). */
+export async function checkAiConnectivityAction(): Promise<{ result: AiConnectivityResult } | { error: string }> {
+  try {
+    await requireRole(["admin"]);
+  } catch (e) {
+    if (isAuthorizationError(e)) return { error: e.message };
+    throw e;
+  }
+  return { result: await checkAiConnectivity() };
 }

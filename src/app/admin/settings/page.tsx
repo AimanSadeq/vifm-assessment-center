@@ -2,13 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Shield, Database, Globe, Mail, Video, Brain, Clock } from "lucide-react";
-import { isAIConfigured } from "@/lib/ai/client";
+import { isAIConfigured, AI_MODEL } from "@/lib/ai/client";
 import { isEmailConfigured } from "@/lib/integrations/email";
 import { isVideoConfigured } from "@/lib/integrations/video";
 import { getServerT } from "@/lib/i18n/server";
 import { BackLink } from "@/components/shared/back-link";
 import { getTimersMap, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { TimerSettings } from "./_components/timer-settings";
+import { AiConnectivity } from "./_components/ai-connectivity";
 
 export default async function SettingsPage() {
   const t = await getServerT();
@@ -113,6 +114,20 @@ export default async function SettingsPage() {
               </div>
             );
           })}
+        </CardContent>
+      </Card>
+
+      {/* AI connectivity: one live call, so a dead key, empty credit or an
+          unavailable model is a one-glance diagnosis instead of a log search. */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Brain className="h-4 w-4 text-accent" />
+            AI connectivity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <AiConnectivity configured={aiConfigured} model={AI_MODEL} />
         </CardContent>
       </Card>
 

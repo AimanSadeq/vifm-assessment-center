@@ -40,23 +40,33 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 
 Engagement: SDC High-Potential Leadership Development Program (proposal `20260809-SDC-02-HPHLD`, charter V0.1). Caliber part = an online "HiPo Identification Assessment" (psychometric + leadership competency) for **50 nominees** (grades 4-8: 22 at G5, 13 at G6, 9 at G7, 3 at G8, 3 at G4), completed remotely, English, individual reports + cohort analytics + SDC debrief; results select the final cohort of 20-25. Proposal also commits a **post-program assessment** (progression), so the setup must be repeatable. People: Suzanne Salim (SDC sponsor), Ali AlShouli (VIFM PM), Ahmad Rashid (partner, wrote the Caliber part).
 
-**Hard rule: send NOTHING to candidates until SDC gives the green light** (they will supply the announcement text for the automated invitation). Caliber does not block the invite button today, so this is manual discipline until the invitation hold is built.
+**Hard rule: send NOTHING to candidates until SDC gives the green light.** Caliber does not block the invite button today, so this is manual discipline until the invitation hold is built.
 
-**Decided (2026-10-06):**
-- Custom SDC setup, scoped to this engagement only (VIFM framework untouched): 10 SDC competencies (Core: Innovation, Results Oriented, Effective Collaboration and Communication, Professionalism and Integrity, Accountability & Ownership; Leadership: Strategic Mindset, Drives Sustainable Performance, Makes Effective Decisions and Plans, Inspires & Motivates, Leads by Example), Basic/Proficient/Advanced levels, required level by grade incl. "Not required".
-- Content ready: Ali's `SDC_HiPo_Caliber_Detailed_Assessor_Indicators_v3.xlsx` (email 2026-10-06), 160 indicators (per competency 4 x B/P/A + 4 negative), IDs like `IN-P2`. Grade 4 = Grade 5 levels (Suzanne, email 2026-10-06 09:01). Leadership competencies required only at G7 (Basic) and G8 (Proficient).
-- Report flow: Required Level -> Assessment Result -> Gap -> Development Area, visual development-style report with a Development Strategies section (Ali's EQ-i reference is MHS-copyrighted: use the structure as inspiration only).
-- Measurement: Aiman supports Option B, scenario-based questions (SJT, MOST/LEAST, keyed to v3 indicators) as the core, with the standard HiPo profile (Persona + Logica) alongside. Behavioural and cognitive are separate sections. Report scenario results as judgement against each level, not observed behaviour.
+**Agreed with SDC (Ahmad's meeting with Suzanne, 2026-10-07) and confirmed to Ali the same day:**
+- **Launch Tue 20 Oct 2026** (Suzanne asked for 15 Oct; pushed to 20 Oct so SDC can sign off content and reports first; she promised fast sign-offs). Completion window proposed 20-29 Oct (to confirm).
+- **One assessment, two parts, max 2 hours:** Part 1 behavioural = SDC scenario questions (SJT), untimed; Part 2 cognitive = Logica reasoning, timed. **No self-report: Persona dropped. No line-manager Engagement survey.**
+- **Scenarios:** 3 per competency (one each at Basic / Proficient / Advanced) = 30, everyone answers all 10 competencies; leadership counts against the requirement only at G7-8, "development only" for G4-6. Each scenario has 4 responses keyed Advanced / Proficient / Basic / Counter-evidence to v3 indicator IDs; candidate picks MOST and LEAST effective. Proposed scoring: MOST pick 3/2/1/0 by level, +1 for picking the Counter-evidence response as LEAST.
+- **Time budget:** 30 x ~2 min + Logica 40 min (Caliber default, `src/lib/assessment-timers.ts`) + 10 min welcome/demographics = ~110 of 120 min. Inductive + numerical core; deductive only if it fits.
+- **Content:** Ali's `SDC_HiPo_Caliber_Detailed_Assessor_Indicators_v3.xlsx` (10 competencies, 160 indicators, IDs like `IN-P2`); Grade 4 = Grade 5 levels (Suzanne, 2026-10-06). Leadership required only at G7 (Basic) and G8 (Proficient).
+- **Reports (simple, as Suzanne asked):** one-page executive summary, one-page IDP, one group report / dashboard ranking candidates. Headline = two-axis grid: competency fit (Above = all required met + 2 exceeded; Meets = 80%+ met; Below) x cognitive agility (Strong 70%+, Solid 50-69%, Developing <50%; indicative until SDC norms). Ranking within grade band (Managerial G7-8, Professional G4-6) by grid position, then fit, then reasoning. VIFM branding only.
+- **One shared link** in SDC's announcement, but each candidate can use it only once: work email checked against the approved list of 50, one sitting each, optional one-time email code if SDC's cyber team wants it.
+- SDC provides the welcome message and the demographic fields. Announcement needs fixing: our name (they used the KSA CR name) -> "Virginia Institute of Finance and Management (VIFM)", year 2026 not 2025, "one online assessment in two parts, about 2 hours" not "five assessments".
 
-**Open:**
-- [ ] **Suzanne's choice of method** (Ahmad meeting her 2026-10-07): (a) self-report as originally presented, (b) scenarios (recommended), or (c) both.
-- [ ] **Line managers**: can they complete the 20-item Engagement survey in the HiPo profile? If not, the profile reports Aspiration and Ability only (Ahmad, same meeting).
-- [ ] Revised dates (invitations, completion, reports, debrief, post-program assessment) and who receives individual and cohort results (Ali, with Suzanne). Charter dates (invites 29 Sep-4 Oct, reports by 19 Nov) have slipped.
-- [ ] SDC sign-off on the VIFM-written definitions and 160 indicators (not yet sent to SDC).
+**Done:**
+- [x] 2026-10-07: decisions + Ali's actions + Aiman's Caliber change list emailed to Ali (cc Ahmad).
+- [x] 2026-10-07: scenario template sent to Ali (`SDC_HiPo_Scenario_Template_v1.xlsx`: 30 rows, level/indicator drop-downs with automatic checks, 3 worked Innovation examples, closest existing VIFM items, v3 indicators, grade requirements, proposed scoring, time budget).
+- [x] 2026-10-07: three sample reports sent to Ali (cc Ahmad) for Suzanne (fictional data): `SDC-HiPo-Sample-1-Executive-Summary.pdf`, `-2-IDP.pdf`, `-3-Group-Report.pdf`.
+- Note: the template and sample-report generators were built in the session scratchpad (the samples reuse `scripts/cbi-pack/html-common.js` + `render-pdf.js`); they are NOT in the repo yet.
+
+**Open (dates are KSA working days):**
+- [ ] **Ali -> Suzanne (Thu 8 Oct):** confirm the decisions; get welcome message, demographic fields, cyber-security requirements for the link, completion deadline, announcement corrections.
+- [ ] **Ali (Sun 11 Oct):** 10 sample scenarios (one per competency) to Aiman for review, then to Suzanne.
+- [ ] **Ali -> Suzanne (Mon 12 Oct):** send the three sample reports; SDC sign-off on reports and the rules above by **Wed 14 Oct**.
+- [ ] **Ali (Wed 14 Oct):** all 30 scenarios complete; SDC sign-off on scenarios (and on the VIFM-written definitions/indicators).
+- [ ] **Caliber build (Aiman, from Sun 11 Oct):** SDC framework scoped to this engagement (10 competencies, definitions, v3 indicators, required level by grade); scenario part (untimed delivery, scoring to B/P/A, gap vs required level); combine with timed Logica, no Persona/Engagement; single shared link with roster check + one attempt per person (+ email code if required); SDC welcome message + demographic fields; the three reports; upload of the 50 candidates (grade, position, business unit, employee ID; normalise `@Soudah.sa` casing); completion tracking + reminders.
+- [ ] **Pilot Sun 18 Oct** with 3-5 internal testers (Ali joins); fixes Mon 19 Oct; **launch Tue 20 Oct** only on SDC's green light.
 - [ ] Charter spells the platform "Calibar": Ali asking Suzanne to correct before EPMO approval.
-- [ ] **Scenario template for Ali** (promised in Aiman's 2026-10-07 email): Excel in the v3 layout, one row per scenario, competency + level, 4 options keyed to indicator IDs, worked examples adapted from the existing SJT bank (`docs/competency-items-*.md`). Hold until Suzanne confirms the method.
-- [ ] Ali drafts ~4-6 scenarios per competency at B/P/A -> internal review -> SDC sign-off -> pilot with a small group (proposal week 2).
-- [ ] **Caliber build** (engagement-scoped; see the 2026-10-06 gap analysis): client framework + Core/Leadership category; indicators tied to levels; participant grade + grade x competency required-level matrix; SJT delivery against the SDC bank; result + gap logic; SDC report; bulk CSV import (grade, position, business unit, employee ID; normalise `@Soudah.sa` casing); invitation hold until client release.
+- [ ] Post-program assessment (progression) to be kept in the revised timeline.
 
 ## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
 

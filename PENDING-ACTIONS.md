@@ -2,7 +2,7 @@
 
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
-> Last updated: 2026-10-05.
+> Last updated: 2026-10-07.
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 
@@ -35,6 +35,28 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 - [x] **SD-10 Provision the SDAIA ARC org as saudi/government** - org provisioned (verified live). Idempotent `scripts/seed-sdaia-pilots.ts` ready (dry-run verified). **OPERATOR ACTION: run `npx tsx scripts/seed-sdaia-pilots.ts --apply` to issue the per-pilot codes** (Pilots 1+3 = Persona codes, Pilot 2 = Technical L&D code - NOT ARC questionnaire codes).
 - [ ] **SD-11 L&D 2.6 approved question bank** - `tech_assessment_items` holds NO items for `learning_development`, so every Techno knowledge section for 2.6 is generated live by AI at the moment a code is redeemed. **To remove the live-AI dependency for Pilot 2: author and SME-review an L&D item bank (10 skills, same workbook round trip as the other domains).**
   - *Incident 2026-10-05 (resolved):* four of Ahmad's 2.6 trial sittings lost the knowledge section with no trace. Root cause was NOT the code: the Anthropic organisation had hit its **monthly API spend limit** ("You have reached your specified API usage limits ... regain access on 2026-11-01"), so every AI call across the platform failed in under a second. Fixed by raising the limit in the Anthropic Console (Settings, Limits); Ahmad confirmed both sections generate again. Shipped on master the same day: `4d72132` (a sitting that asked for a knowledge section is refused with a clear message when it cannot be built, seat released) and `f18968e` + `562b17e` (Admin, Settings, "AI connectivity" card: one live call, reports the cause in plain language, including "Spend limit reached" with the reset date). **Operator action: set the usage alert emails on the Console Limits page so the next approach to the cap is a warning, not an outage.**
+
+## ⭐ SDC HiPo assessment (Soudah Development Company)
+
+Engagement: SDC High-Potential Leadership Development Program (proposal `20260809-SDC-02-HPHLD`, charter V0.1). Caliber part = an online "HiPo Identification Assessment" (psychometric + leadership competency) for **50 nominees** (grades 4-8: 22 at G5, 13 at G6, 9 at G7, 3 at G8, 3 at G4), completed remotely, English, individual reports + cohort analytics + SDC debrief; results select the final cohort of 20-25. Proposal also commits a **post-program assessment** (progression), so the setup must be repeatable. People: Suzanne Salim (SDC sponsor), Ali AlShouli (VIFM PM), Ahmad Rashid (partner, wrote the Caliber part).
+
+**Hard rule: send NOTHING to candidates until SDC gives the green light** (they will supply the announcement text for the automated invitation). Caliber does not block the invite button today, so this is manual discipline until the invitation hold is built.
+
+**Decided (2026-10-06):**
+- Custom SDC setup, scoped to this engagement only (VIFM framework untouched): 10 SDC competencies (Core: Innovation, Results Oriented, Effective Collaboration and Communication, Professionalism and Integrity, Accountability & Ownership; Leadership: Strategic Mindset, Drives Sustainable Performance, Makes Effective Decisions and Plans, Inspires & Motivates, Leads by Example), Basic/Proficient/Advanced levels, required level by grade incl. "Not required".
+- Content ready: Ali's `SDC_HiPo_Caliber_Detailed_Assessor_Indicators_v3.xlsx` (email 2026-10-06), 160 indicators (per competency 4 x B/P/A + 4 negative), IDs like `IN-P2`. Grade 4 = Grade 5 levels (Suzanne, email 2026-10-06 09:01). Leadership competencies required only at G7 (Basic) and G8 (Proficient).
+- Report flow: Required Level -> Assessment Result -> Gap -> Development Area, visual development-style report with a Development Strategies section (Ali's EQ-i reference is MHS-copyrighted: use the structure as inspiration only).
+- Measurement: Aiman supports Option B, scenario-based questions (SJT, MOST/LEAST, keyed to v3 indicators) as the core, with the standard HiPo profile (Persona + Logica) alongside. Behavioural and cognitive are separate sections. Report scenario results as judgement against each level, not observed behaviour.
+
+**Open:**
+- [ ] **Suzanne's choice of method** (Ahmad meeting her 2026-10-07): (a) self-report as originally presented, (b) scenarios (recommended), or (c) both.
+- [ ] **Line managers**: can they complete the 20-item Engagement survey in the HiPo profile? If not, the profile reports Aspiration and Ability only (Ahmad, same meeting).
+- [ ] Revised dates (invitations, completion, reports, debrief, post-program assessment) and who receives individual and cohort results (Ali, with Suzanne). Charter dates (invites 29 Sep-4 Oct, reports by 19 Nov) have slipped.
+- [ ] SDC sign-off on the VIFM-written definitions and 160 indicators (not yet sent to SDC).
+- [ ] Charter spells the platform "Calibar": Ali asking Suzanne to correct before EPMO approval.
+- [ ] **Scenario template for Ali** (promised in Aiman's 2026-10-07 email): Excel in the v3 layout, one row per scenario, competency + level, 4 options keyed to indicator IDs, worked examples adapted from the existing SJT bank (`docs/competency-items-*.md`). Hold until Suzanne confirms the method.
+- [ ] Ali drafts ~4-6 scenarios per competency at B/P/A -> internal review -> SDC sign-off -> pilot with a small group (proposal week 2).
+- [ ] **Caliber build** (engagement-scoped; see the 2026-10-06 gap analysis): client framework + Core/Leadership category; indicators tied to levels; participant grade + grade x competency required-level matrix; SJT delivery against the SDC bank; result + gap logic; SDC report; bulk CSV import (grade, position, business unit, employee ID; normalise `@Soudah.sa` casing); invitation hold until client release.
 
 ## ⭐ Priority 2 - KAFD (King Abdullah Financial District)
 
@@ -225,7 +247,7 @@ everything, including Ali's Persona + Logica (moved from 30 Sep).
   `python scripts/sme-import/sme_import.py <file> --reviewer "Ali"`; approval removes the "draft"
   label on the assessor observation + wash-up screens.
 - [x] **Mufid's return loaded 2026-10-05** - AC + Reflect 360 packs for Thinking / Innovation & Complexity (v2-02). He never annotated the v1 workbooks, so nothing of his to carry across. Applied by hand under the importer's rules (no service key in that session), one `sme_review_log` row per item: AC 28 approved (18 indicators + 10 tips), Reflect 9 approved; 3 Reflect approvals concurred with Prof. Yassin's existing ones (stamp left as his). Workbook text matched the bank exactly.
-  - [ ] **Follow-up with Mufid (14 held, logged with reasons):** 9 approvals where he answered "Measures this competency? = No" (Reflect: "Adjusts plans and approach...", "Connects decisions to how different parts...", "Traces how a change in one area...", "Reassures colleagues..." which stays live on Prof. Yassin's approval; AC: "Becomes overwhelmed...", "Shows interest in learning about... other cultures", "Relates well to people of different levels of seniority", "Adapts own style...", "Shows insensitivity to cultural differences"); 2 Revise with no wording ("Dismisses new ideas without consideration", "Quickly identifies the key ideas behind a topic or technique"); 1 Reject with "Type correct? = No" ("Produces novel and original approaches" - the importer would also have flipped it to a contra-indicator); 2 tips approved but marked not actionable (cross-cultural meeting research, scenario planning); 1 indicator with no verdict ("Remains productive in changing environments"). His note on "Adjusts plans promptly..." (own plan or the team's?) is a wording point for the next revision.
+  - [ ] **Follow-up with Mufid (14 held, logged with reasons; questions emailed 2026-10-05, reply due by 15 Oct; apply his answers the same way when they arrive):** 9 approvals where he answered "Measures this competency? = No" (Reflect: "Adjusts plans and approach...", "Connects decisions to how different parts...", "Traces how a change in one area...", "Reassures colleagues..." which stays live on Prof. Yassin's approval; AC: "Becomes overwhelmed...", "Shows interest in learning about... other cultures", "Relates well to people of different levels of seniority", "Adapts own style...", "Shows insensitivity to cultural differences"); 2 Revise with no wording ("Dismisses new ideas without consideration", "Quickly identifies the key ideas behind a topic or technique"); 1 Reject with "Type correct? = No" ("Produces novel and original approaches" - the importer would also have flipped it to a contra-indicator); 2 tips approved but marked not actionable (cross-cultural meeting research, scenario planning); 1 indicator with no verdict ("Remains productive in changing environments"). His note on "Adjusts plans promptly..." (own plan or the team's?) is a wording point for the next revision.
 - [x] **Prof. Yassin's return loaded 2026-09-28** - Technical Accounting / Business Reporting /
   Finance: 32 approved + 2 rejected + 3 cut-scores (all three domains now certifiable, 10/10/12
   approved vs the 8 floor); his 36 old-framework Reflect approvals carried onto the identical v2

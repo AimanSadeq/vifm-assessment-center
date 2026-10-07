@@ -1,0 +1,127 @@
+"""Draft IDP development actions per SDC competency and target level (70/20/10).
+
+DRAFTS for Ali AlShouli (SDC lead and subject-matter expert) to review or rewrite.
+Module names and activities follow the SDC programme in proposal 20260809-SDC-02-HPHLD
+(M1 Leading Self, M2 Leading Others, M3 Leading the Business, M4 Leading for the Future).
+"""
+
+MODULE = {"IN": "M3 Leading the Business", "RO": "M3 Leading the Business", "ECC": "M2 Leading Others",
+          "PI": "M1 Leading Self", "AO": "M1 Leading Self", "SM": "M3 Leading the Business",
+          "DSP": "M2 Leading Others", "EDP": "M3 Leading the Business", "IM": "M2 Leading Others",
+          "LBE": "M4 Leading for the Future"}
+
+EVIDENCE = "Examples of the goal behaviours, reviewed at each coaching touchpoint and in the post-programme assessment."
+
+# ACTIONS[code][level] = (on the job 70%, coaching 20%, learning 10%)
+ACTIONS = {
+ "IN": {
+  "Basic": ("Pick one task you repeat every week, list two ways to simplify it, try one and note the time saved.",
+            "Discuss with your coach one improvement idea you hesitated to raise, and plan how to propose it.",
+            "Module 3 session on innovation and problem solving; apply one idea-generation technique to a live task."),
+  "Proficient": ("Lead a small improvement in your team's process: compare at least two options, pilot one for a month and measure the result.",
+            "Review the pilot results with your coach, including what you would change and how you handled resistance.",
+            "Module 3 innovation and problem-solving content; use the business challenge to test a new approach."),
+  "Advanced": ("Sponsor a cross-department pilot linked to an SDC priority, with agreed success measures and a decision point to scale or stop.",
+            "Work with your coach on building support for experimentation among senior stakeholders.",
+            "Module 3 strategy and innovation sessions and the capstone project; share lessons with other departments."),
+ },
+ "RO": {
+  "Basic": ("Agree three clear outcomes for the next quarter with your manager, track them weekly and flag any risk early.",
+            "Review your weekly tracking with your coach and identify what most often delays your delivery.",
+            "Module 1 goal-setting session; apply it to your own quarterly outcomes."),
+  "Proficient": ("Own a team deliverable with competing priorities; set milestones, track progress and adjust the plan when obstacles appear.",
+            "Use coaching to work through one trade-off between priorities and how you communicated it.",
+            "Module 3 business acumen and decision-making sessions; apply one prioritisation tool to the deliverable."),
+  "Advanced": ("Set a stretching outcome for a cross-team initiative, align resources around it and report progress to senior management monthly.",
+            "Discuss with your coach how you sustain performance when conditions change mid-delivery.",
+            "Module 3 and the capstone business project; present results and lessons in the C-suite presentation."),
+ },
+ "ECC": {
+  "Basic": ("In your next three meetings, summarise what others said before giving your view, and share notes with colleagues afterwards.",
+            "Ask your coach for feedback on how clearly you communicate in writing, using two recent emails.",
+            "Module 2 communication and collaboration sessions; practise active listening in the workplace application."),
+  "Proficient": ("Lead a joint task with another team: agree roles, hold regular check-ins and resolve one disagreement directly.",
+            "Prepare with your coach for a conversation with a stakeholder who sees the work differently.",
+            "Module 2 sessions on influence, feedback and collaboration; apply them to the team-based challenge."),
+  "Advanced": ("Bring together stakeholders from several functions around a shared outcome, and run the forum that keeps them aligned.",
+            "Use coaching to map key stakeholders and plan how to build trust where relationships are weak.",
+            "Module 4 stakeholder management and Module 2 influence content; apply both in the capstone project."),
+ },
+ "PI": {
+  "Basic": ("Review the policies that apply to your role with your manager and confirm how you handle confidential information.",
+            "Discuss with your coach a time you made a mistake, how you acknowledged it and what you learned.",
+            "Module 1 sessions on personal accountability and leadership standards."),
+  "Proficient": ("When you see a practice that conflicts with policy or values, raise it constructively with the right person and record the outcome.",
+            "Work through a real ethical dilemma from your role with your coach, weighing the competing interests.",
+            "Module 1 leadership standards content; review SDC's code of conduct and its practical cases."),
+  "Advanced": ("Act as the integrity reference point on a sensitive initiative, setting clear standards and holding others to them.",
+            "Use coaching to prepare for addressing a complex ethical issue with senior stakeholders.",
+            "Module 4 executive presence content; share an ethics case with the cohort."),
+ },
+ "AO": {
+  "Basic": ("Keep a commitment log for one month: what you promised, when, and whether it was delivered; tell people early about any slip.",
+            "Review the log with your coach and agree one habit that improves follow-through.",
+            "Module 1 sessions on personal accountability and leadership mindset."),
+  "Proficient": ("Take end-to-end ownership of one improvement, including follow-through after launch and correcting what does not work.",
+            "Use coaching to plan the difficult conversations needed when commitments are at risk.",
+            "Module 1 accountability content; apply it to your stretch assignment."),
+  "Advanced": ("Define clear ownership for every outcome in a team or project, and review accountability openly at each milestone.",
+            "Discuss with your coach how to hold others to account while keeping trust.",
+            "Module 2 team leadership sessions; apply them in the team-based challenge."),
+ },
+ "SM": {
+  "Basic": ("Read SDC's strategy and explain to your manager how your work contributes to two of its priorities.",
+            "Discuss with your coach one decision where you considered the wider context, and what you would do differently.",
+            "Module 3 strategy session and its pre-reading."),
+  "Proficient": ("Lead a short horizon-scan of external trends affecting your area and present the implications to your department head.",
+            "Pair with a senior sponsor to test the assumptions behind your department's plan.",
+            "Module 3 strategy content and the business simulation."),
+  "Advanced": ("Shape a two-to-three-year direction for your function, testing assumptions with scenarios and aligning stakeholders behind it.",
+            "Use coaching to prepare how you will present and defend a long-term view to the executive team.",
+            "Module 3 strategy content and the capstone project with its C-suite presentation."),
+ },
+ "DSP": {
+  "Basic": ("Hold a monthly check-in with your team on commitments and standards, and remove one obstacle each month.",
+            "Review with your coach how you balance short-term delivery with your team's workload.",
+            "Module 2 team leadership sessions."),
+  "Proficient": ("Set clear performance expectations for your team, review them with data each month and adjust resources where needed.",
+            "Discuss with your coach a trade-off between short-term results and team capability, and how you decided.",
+            "Module 2 performance and feedback content; Module 3 business acumen sessions."),
+  "Advanced": ("Design a system that sustains performance in your area, such as a capability plan or a performance rhythm, and track its effect.",
+            "Use coaching to plan deliberate trade-offs between results, people and risk.",
+            "Module 3 business content and Module 4 succession readiness."),
+ },
+ "EDP": {
+  "Basic": ("For your next three decisions, write down the information used, the options considered and a simple action plan.",
+            "Review one of these decisions with your coach after it plays out.",
+            "Module 3 decision-making session; apply one decision tool to a live choice."),
+  "Proficient": ("Lead a decision that involves other stakeholders: evaluate alternatives and risks, decide on time and adjust the plan as conditions change.",
+            "Use coaching to review how you balanced speed and evidence in that decision.",
+            "Module 3 decision-making and problem-solving content and the business simulation."),
+  "Advanced": ("Lead a high-impact decision under uncertainty, with a plan that sets priorities, contingencies and clear accountabilities.",
+            "Discuss with your coach how you integrate conflicting views before deciding.",
+            "Module 3 decision-making content and the capstone project."),
+ },
+ "IM": {
+  "Basic": ("Recognise one specific contribution from a colleague each week, and explain how it helped the team's goal.",
+            "Discuss with your coach what motivates the people you work with most closely.",
+            "Module 2 sessions on team leadership and feedback."),
+  "Proficient": ("In each team meeting, link current work to the team's purpose, and hold a development conversation with each team member this quarter.",
+            "Use coaching to plan how to keep engagement up through a demanding period.",
+            "Module 2 coaching and motivation content; apply it in the team-based challenge."),
+  "Advanced": ("Lead your team or project through a significant change, communicating purpose and adapting your approach to different people's needs.",
+            "Work with your coach on how you build confidence when the path is uncertain.",
+            "Module 4 change management and executive presence content."),
+ },
+ "LBE": {
+  "Basic": ("Choose two behaviours you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
+            "Review that feedback with your coach and agree one change.",
+            "Module 1 sessions on personal leadership and leadership standards."),
+  "Proficient": ("Under pressure, model the standards you set: note one difficult moment each week and how your conduct reinforced them.",
+            "Use coaching to reflect on composure under pressure and how others read your behaviour.",
+            "Module 1 emotional intelligence content and Module 2 team leadership sessions."),
+  "Advanced": ("Take visible responsibility for a difficult leadership decision, explain it openly and model the values it reflects.",
+            "Discuss with your coach how your conduct sets the tone across the organisation.",
+            "Module 4 executive presence content and the capstone presentation."),
+ },
+}

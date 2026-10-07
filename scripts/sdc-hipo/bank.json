@@ -1,0 +1,112 @@
+{
+ "Innovation": {
+  "name": "Creative Problem-Solving",
+  "stem": "Many people abandon your team's intake/onboarding process partway through; the standard fix is to add staff. MOST / LEAST:",
+  "options": {
+   "A": "Add more staff to move people through faster.",
+   "B": "Map where people drop off and redesign those steps, piloting a simpler flow.",
+   "C": "Accept the drop-off as normal.",
+   "D": "Copy another team's process wholesale without testing fit."
+  },
+  "key": "MOST = B; LEAST = C."
+ },
+ "Results Oriented": {
+  "name": "Outcome Ownership",
+  "stem": "Mid-period, your team is behind a key target due to a supplier delay. MOST / LEAST:",
+  "options": {
+   "A": "Report the supplier as the reason and lower expectations.",
+   "B": "Re-plan with the team to recover what's achievable while escalating the supplier issue in parallel.",
+   "C": "Push the team harder without changing the plan.",
+   "D": "Wait to see if the supplier recovers on its own."
+  },
+  "key": "MOST = B; LEAST = A."
+ },
+ "Effective Collaboration and Communication": {
+  "name": "Cross-Functional Collaboration",
+  "stem": "Your goals conflict with another unit's, yet both are needed for the outcome. MOST / LEAST:",
+  "options": {
+   "A": "Optimise your own unit's metric and let them manage theirs.",
+   "B": "Align on the shared outcome and negotiate the trade-offs jointly.",
+   "C": "Escalate immediately for a ruling.",
+   "D": "Quietly deprioritise the joint work."
+  },
+  "key": "MOST = B; LEAST = D."
+ },
+ "Professionalism and Integrity": {
+  "name": "Ethical Conduct",
+  "stem": "A top performer is bending an important rule or standard to hit targets. MOST / LEAST:",
+  "options": {
+   "A": "Ignore it because of their results.",
+   "B": "Address it directly, uphold the standard, and escalate per policy.",
+   "C": "Hint that they should be careful, but take no real action.",
+   "D": "Apply the rule to others but not to them."
+  },
+  "key": "MOST = B; LEAST = A."
+ },
+ "Accountability & Ownership": {
+  "name": "Accountability for Commitments",
+  "stem": "You realise you'll miss a deadline you promised a colleague. MOST / LEAST:",
+  "options": {
+   "A": "Say nothing and hope they don't notice.",
+   "B": "Tell them as soon as you know, with a revised date and a plan.",
+   "C": "Deliver late without comment.",
+   "D": "Blame competing priorities when asked."
+  },
+  "key": "MOST = B; LEAST = A."
+ },
+ "Strategic Mindset": {
+  "name": "Forward Strategy Setting",
+  "stem": "You lead a team. A competitor's new approach is winning over younger customers, and an industry shift is expected within ~18 months. Leadership wants this quarter's targets protected. MOST / LEAST effective:",
+  "options": {
+   "A": "Keep the team focused on this quarter's targets; revisit the threat next year.",
+   "B": "Run a scenario analysis of the shift and shape a 2–3 year response **while** protecting near-term targets.",
+   "C": "Immediately divert investment into an untested new offering.",
+   "D": "Wait for competitors to move, then copy the winning approach."
+  },
+  "key": "MOST = B; LEAST = A."
+ },
+ "Drives Sustainable Performance": {
+  "name": "Resource Mobilisation",
+  "stem": "You're handed a priority project with no extra budget or people. MOST / LEAST:",
+  "options": {
+   "A": "Decline, citing a lack of resources.",
+   "B": "Identify and negotiate for the critical resources, repurpose what you have, and sequence smartly.",
+   "C": "Proceed with nothing and hope it works out.",
+   "D": "Quietly pull people off other work without telling anyone."
+  },
+  "key": "MOST = B; LEAST = D."
+ },
+ "Makes Effective Decisions and Plans": {
+  "name": "Sound Judgement",
+  "stem": "A possible serious problem appears in an important account or process. Confirming it will take ~48 hours; acting now may harm a key relationship; doing nothing risks a major breach. MOST / LEAST:",
+  "options": {
+   "A": "Wait for full confirmation to avoid friction.",
+   "B": "Apply targeted, proportionate interim measures while expediting the check and informing the right people.",
+   "C": "Take the most drastic action immediately.",
+   "D": "Flag it but take no interim action."
+  },
+  "key": "MOST = B; LEAST = A."
+ },
+ "Inspires & Motivates": {
+  "name": "Mobilising Around Purpose",
+  "stem": "Your team is demoralised during a reorganisation. MOST / LEAST:",
+  "options": {
+   "A": "Tell them to focus on their tasks and stop worrying.",
+   "B": "Connect their work to a clear, credible picture of where the unit is heading and why it matters.",
+   "C": "Promise everything will be fine, without basis.",
+   "D": "Vent your own frustration openly to bond with them."
+  },
+  "key": "MOST = B; LEAST = A."
+ },
+ "Leads by Example": {
+  "name": "Trust & Credibility",
+  "stem": "You made a commitment to a peer, but circumstances changed. MOST / LEAST:",
+  "options": {
+   "A": "Quietly drop it and hope it's forgotten.",
+   "B": "Proactively tell them, explain honestly, and propose how to make good.",
+   "C": "Deliver something half-done to technically comply.",
+   "D": "Deny you ever committed to it."
+  },
+  "key": "MOST = B; LEAST = D."
+ }
+}

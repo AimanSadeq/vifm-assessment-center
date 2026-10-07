@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { findBundleCandidateByToken } from "@/lib/bespoke/candidates";
+import { findBundleCandidateByToken, HELD_MESSAGE } from "@/lib/bespoke/candidates";
 import { scoreBundleCognitive } from "@/lib/bespoke/sitting";
 
 export const runtime = "nodejs";
@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: Request, { params }: { params: { token: string } }) {
   const ctx = await findBundleCandidateByToken(params.token);
   if (!ctx) return NextResponse.json({ error: "Invalid link" }, { status: 404 });
+  if (ctx.held) return NextResponse.json({ error: HELD_MESSAGE }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as {
     sessionId?: string;

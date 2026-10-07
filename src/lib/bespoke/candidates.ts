@@ -8,6 +8,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
 import { ACTIVE_BEHAVIORAL_COMPETENCIES, translateCompetencyIds } from "@/lib/scoring/behavioral-framework";
 import { loadBespokeServices, type BespokeServiceRow } from "./services";
+import { loadBundleSettings, type BundleSettings } from "./bundle-settings";
+import { rosterEntryForCandidate, type RosterRow } from "./roster";
 
 const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
 
@@ -27,6 +29,8 @@ export type BundleCandidateRow = {
   persona_session_id: string | null;
   cognitive_result_id: string | null;
   completed_at: string | null;
+  demographics: Record<string, string> | null;
+  cognitive_session_id: string | null;
 };
 
 export type BundleCandidateContext = {
@@ -38,6 +42,12 @@ export type BundleCandidateContext = {
   logicaSubtests: string[] | null;
   /** Persona competency scope from service_config; null = full instrument. */
   personaCompetencyIds: string[] | null;
+  /** Delivery settings (00233); defaults when the bundle has none. */
+  settings: BundleSettings;
+  /** The candidate's approved-list entry on a roster bundle. */
+  rosterEntry: RosterRow | null;
+  /** Bundle is on hold and this candidate is not a pilot tester: no stage may run. */
+  held: boolean;
 };
 
 export async function findBundleCandidateByToken(token: string): Promise<BundleCandidateContext | null> {
@@ -45,10 +55,13 @@ export async function findBundleCandidateByToken(token: string): Promise<BundleC
   const svc = createServiceClient();
   const { data } = await svc
     .from("bundle_candidates")
-    .select("id, bespoke_service_id, organization_id, full_name, email, access_token, status, consent_at, persona_session_id, cognitive_result_id, completed_at")
+    .select("*")
     .eq("access_token", token)
     .maybeSingle<BundleCandidateRow>();
   if (!data) return null;
+  // Tolerate 00233 not applied yet (the columns are then absent).
+  data.demographics = data.demographics ?? null;
+  data.cognitive_session_id = data.cognitive_session_id ?? null;
 
   // The bundle must still be active (archived bundles stop accepting sittings).
   const bundle = (await loadBespokeServices()).find((s) => s.id === data.bespoke_service_id && s.kind === "bundle");
@@ -68,7 +81,10 @@ export async function findBundleCandidateByToken(token: string): Promise<BundleC
   const scopedPersona = known.filter((id) => wanted.has(id));
   const personaCompetencyIds = scopedPersona.length > 0 && scopedPersona.length < known.length ? scopedPersona : null;
 
-  return { candidate: data, bundle, stages, logicaSubtests, personaCompetencyIds };
+  const [settings, rosterEntry] = await Promise.all([loadBundleSettings(bundle.id), rosterEntryForCandidate(data.id)]);
+  const held = settings.held && !rosterEntry?.is_tester;
+
+  return { candidate: data, bundle, stages, logicaSubtests, personaCompetencyIds, settings, rosterEntry, held };
 }
 
 /** Stage completion from the native records (survives reloads). */
@@ -86,13 +102,37 @@ export async function bundleStageState(ctx: BundleCandidateContext): Promise<{ p
   return { personaDone, cognitiveDone: !!ctx.candidate.cognitive_result_id };
 }
 
-export async function setBundleConsent(candidateId: string): Promise<void> {
+/** API guard: the bundle is on hold for this candidate. */
+export const HELD_MESSAGE = "This assessment is not open yet. Your organisation will let you know when it opens.";
+
+/** Validate demographic answers against the bundle's field definitions. */
+export function validateDemographics(
+  fields: BundleSettings["demographicFields"],
+  raw: unknown,
+): { ok: true; values: Record<string, string> } | { ok: false; error: string } {
+  const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  const values: Record<string, string> = {};
+  for (const f of fields) {
+    const v = String(src[f.key] ?? "").trim().slice(0, 200);
+    if (!v) {
+      if (f.required) return { ok: false, error: `Please answer: ${f.label}` };
+      continue;
+    }
+    if (f.type === "select" && !(f.options ?? []).includes(v)) return { ok: false, error: `Please choose an option for: ${f.label}` };
+    values[f.key] = v;
+  }
+  return { ok: true, values };
+}
+
+export async function setBundleConsent(candidateId: string, demographics?: Record<string, string> | null): Promise<void> {
   const svc = createServiceClient();
-  await svc
-    .from("bundle_candidates")
-    .update({ consent_at: new Date().toISOString(), status: "in_progress" })
-    .eq("id", candidateId)
-    .is("consent_at", null);
+  const now = new Date().toISOString();
+  const patch: Record<string, unknown> = { consent_at: now, status: "in_progress" };
+  if (demographics && Object.keys(demographics).length > 0) {
+    patch.demographics = demographics;
+    patch.demographics_at = now;
+  }
+  await svc.from("bundle_candidates").update(patch).eq("id", candidateId).is("consent_at", null);
 }
 
 /** Store the (started) Persona session on the chain. */

@@ -15,7 +15,8 @@ import {
   submitAnonymousBehavioral,
   type BehavioralAnswer,
 } from "@/lib/scoring/behavioral";
-import { generatePsyTest, stripAnswerKey } from "@/lib/psychometrics/generate";
+import { generatePsyTest, stripAnswerKey, BankUnavailableError } from "@/lib/psychometrics/generate";
+import { getTimerMinutes, TIMER_DEFAULTS } from "@/lib/assessment-timers";
 import { computePsyResult, type PsyTest, type PsyTestPublic, type CognitiveItem } from "@/lib/psychometrics/scoring";
 import { applyNorms, type ScaleNorm } from "@/lib/psychometrics/calibration";
 import {
@@ -115,19 +116,85 @@ export async function submitBundlePersona(
 
 // ── Logica stage (scoped cognitive) ─────────────────────────────
 
-export async function startBundleCognitive(
-  ctx: BundleCandidateContext,
-  lang: "en" | "ar",
-): Promise<{ ok: true; sessionId: string; test: PsyTestPublic } | { ok: false; error: string }> {
+/** Reasoning time limit for this bundle: its own setting, else the global Logica timer. */
+export async function bundleLogicaMinutes(ctx: BundleCandidateContext): Promise<number | null> {
+  return ctx.settings.logicaMinutes ?? (await getTimerMinutes("cognitive", TIMER_DEFAULTS.cognitive));
+}
+
+/** Seconds allowed after the deadline for the auto-submit to arrive. */
+const SUBMIT_GRACE_SECONDS = 120;
+
+type CogStart =
+  | { ok: true; sessionId: string; test: PsyTestPublic; remainingSeconds: number | null }
+  | { ok: false; error: string; status: number };
+
+export async function startBundleCognitive(ctx: BundleCandidateContext, lang: "en" | "ar"): Promise<CogStart> {
+  // One attempt only: a submitted section can never be started again.
+  if (ctx.candidate.cognitive_result_id) {
+    return { ok: false, error: "You have already submitted the reasoning section.", status: 409 };
+  }
   const svc = createServiceClient();
-  const test = await generatePsyTest("cognitive", lang, ctx.logicaSubtests ?? undefined);
+  const minutes = await bundleLogicaMinutes(ctx);
+
+  // Resume the open session (same items, same clock) instead of minting a new one.
+  if (ctx.candidate.cognitive_session_id) {
+    const resumed = await resumeCognitive(ctx.candidate.cognitive_session_id, minutes);
+    if (resumed) return resumed;
+  }
+
+  let test: PsyTest;
+  try {
+    // A candidate-bound sitting is always served from the reviewed bank.
+    test = await generatePsyTest("cognitive", lang, ctx.logicaSubtests ?? undefined, { requireBank: true });
+  } catch (e) {
+    if (e instanceof BankUnavailableError) {
+      return { ok: false, error: "The reasoning section is not available right now. Please try again in a few minutes.", status: 503 };
+    }
+    return { ok: false, error: "Could not start the reasoning section.", status: 500 };
+  }
   const { data, error } = await svc
     .from("psy_sessions")
     .insert({ kind: "cognitive", test, taker_email: ctx.candidate.email })
     .select("id")
     .single();
-  if (error || !data) return { ok: false, error: "Could not start the reasoning section." };
-  return { ok: true, sessionId: data.id as string, test: stripAnswerKey(test) };
+  if (error || !data) return { ok: false, error: "Could not start the reasoning section.", status: 500 };
+
+  // Bind the session to the candidate, only if none is bound (two tabs racing).
+  const { data: bound, error: bindErr } = await svc
+    .from("bundle_candidates")
+    .update({ cognitive_session_id: data.id, status: "in_progress" })
+    .eq("id", ctx.candidate.id)
+    .is("cognitive_session_id", null)
+    .select("cognitive_session_id");
+  if (!bindErr && (!bound || bound.length === 0)) {
+    // The other tab won: discard ours and resume theirs.
+    await svc.from("psy_sessions").delete().eq("id", data.id);
+    const { data: row } = await svc.from("bundle_candidates").select("cognitive_session_id").eq("id", ctx.candidate.id).maybeSingle<{ cognitive_session_id: string | null }>();
+    const resumed = row?.cognitive_session_id ? await resumeCognitive(row.cognitive_session_id, minutes) : null;
+    return resumed ?? { ok: false, error: "Could not start the reasoning section.", status: 500 };
+  }
+  return { ok: true, sessionId: data.id as string, test: stripAnswerKey(test), remainingSeconds: minutes ? minutes * 60 : null };
+}
+
+async function resumeCognitive(sessionId: string, minutes: number | null): Promise<CogStart | null> {
+  const svc = createServiceClient();
+  const { data: s } = await svc
+    .from("psy_sessions")
+    .select("id, test, consumed, created_at")
+    .eq("id", sessionId)
+    .maybeSingle<{ id: string; test: PsyTest; consumed: boolean; created_at: string }>();
+  if (!s) return null;
+  if (s.consumed) {
+    return { ok: false, error: "Your reasoning section was submitted but not recorded. Please contact VIFM support.", status: 409 };
+  }
+  if (minutes) {
+    const left = Math.floor((new Date(s.created_at).getTime() + minutes * 60_000 - Date.now()) / 1000);
+    if (left + SUBMIT_GRACE_SECONDS < 0) {
+      return { ok: false, error: "The time for the reasoning section has ended without a submission. Please contact VIFM support.", status: 409 };
+    }
+    return { ok: true, sessionId: s.id, test: stripAnswerKey(s.test), remainingSeconds: Math.max(0, left) };
+  }
+  return { ok: true, sessionId: s.id, test: stripAnswerKey(s.test), remainingSeconds: null };
 }
 
 export async function scoreBundleCognitive(
@@ -137,10 +204,20 @@ export async function scoreBundleCognitive(
   lang: "en" | "ar",
 ): Promise<{ ok: boolean; error?: string }> {
   const svc = createServiceClient();
+  if (ctx.candidate.cognitive_result_id) return { ok: false, error: "This section has already been submitted." };
+  // The session must be this candidate's own.
+  if (ctx.candidate.cognitive_session_id && ctx.candidate.cognitive_session_id !== sessionId) {
+    return { ok: false, error: "Session not found." };
+  }
   const { data: session } = await svc.from("psy_sessions").select("*").eq("id", sessionId).maybeSingle();
-  if (!session) return { ok: false, error: "Session not found." };
+  if (!session || (session.taker_email && session.taker_email !== ctx.candidate.email)) return { ok: false, error: "Session not found." };
   if (session.expires_at && new Date(session.expires_at as string).getTime() < Date.now()) {
-    return { ok: false, error: "This session has expired. Reload the page to start again." };
+    return { ok: false, error: "This session has expired. Please contact VIFM support." };
+  }
+  // Server-side time limit (the on-screen countdown auto-submits at zero).
+  const minutes = await bundleLogicaMinutes(ctx);
+  if (minutes && Date.now() > new Date(session.created_at as string).getTime() + (minutes * 60 + SUBMIT_GRACE_SECONDS) * 1000) {
+    return { ok: false, error: "The time for this section has ended. Please contact VIFM support." };
   }
   // Atomic single-use claim before scoring (no replay / double submit).
   const { data: claimed } = await svc

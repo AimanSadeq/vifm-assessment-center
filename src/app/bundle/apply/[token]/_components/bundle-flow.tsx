@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ClipboardList, Boxes, BrainCircuit, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BundleStage } from "@/lib/bespoke/candidates";
+import type { DemographicField } from "@/lib/bespoke/bundle-settings";
 
 type Phase = "consent" | BundleStage | "done";
 type PersonaItem = { itemKey: string; competencyId: string; textEn: string; textAr: string };
@@ -38,6 +39,8 @@ export function BundleFlow({
   cognitiveDone,
   timerMinutes,
   logicaLabel,
+  welcomeMessage = null,
+  demographicFields = [],
 }: {
   token: string;
   candidateName: string;
@@ -48,6 +51,8 @@ export function BundleFlow({
   cognitiveDone: boolean;
   timerMinutes: number | null;
   logicaLabel: string;
+  welcomeMessage?: string | null;
+  demographicFields?: DemographicField[];
 }) {
   const base = `/api/bundle/${token}`;
   const doneByStage: Record<BundleStage, boolean> = { persona: personaDone, logica: cognitiveDone };
@@ -61,6 +66,8 @@ export function BundleFlow({
   const [phase, setPhase] = useState<Phase>(firstOpen);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [demo, setDemo] = useState<Record<string, string>>({});
+  const demoMissing = demographicFields.filter((f) => f.required && !demo[f.key]?.trim()).length;
   // Local completion tracking so advancing works without a reload.
   const [localDone, setLocalDone] = useState<Record<BundleStage, boolean>>(doneByStage);
 
@@ -93,6 +100,9 @@ export function BundleFlow({
         {phase === "consent" && (
           <div className="rounded-xl border bg-card p-6">
             <h1 className="text-xl font-semibold text-[#010131]">Welcome, {candidateName}</h1>
+            {welcomeMessage && (
+              <div className="mt-3 whitespace-pre-line rounded-lg border bg-[#FEFFF9] p-4 text-sm text-foreground">{welcomeMessage}</div>
+            )}
             <p className="mt-2 text-sm text-muted-foreground">
               You have been invited to complete <span className="font-medium text-foreground">{bundleName}</span>. It has{" "}
               {stages.length === 1 ? "one section" : `${stages.length} sections`}
@@ -103,6 +113,33 @@ export function BundleFlow({
                   : `: a reasoning section (${logicaLabel})`}
               . Your responses produce a report for the sponsoring organisation.
             </p>
+            {demographicFields.length > 0 && (
+              <div className="mt-4 space-y-3 rounded-lg border p-4">
+                <div className="text-sm font-medium text-[#010131]">About you</div>
+                {demographicFields.map((f) => (
+                  <label key={f.key} className="block text-sm">
+                    <span className="text-muted-foreground">{f.label}{f.required ? " *" : ""}</span>
+                    {f.type === "select" ? (
+                      <select
+                        className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        value={demo[f.key] ?? ""}
+                        onChange={(e) => setDemo((p) => ({ ...p, [f.key]: e.target.value }))}
+                      >
+                        <option value="">Select…</option>
+                        {(f.options ?? []).map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    ) : (
+                      <input
+                        className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm"
+                        maxLength={200}
+                        value={demo[f.key] ?? ""}
+                        onChange={(e) => setDemo((p) => ({ ...p, [f.key]: e.target.value }))}
+                      />
+                    )}
+                  </label>
+                ))}
+              </div>
+            )}
             <div className="mt-4 flex items-start gap-2 rounded-lg bg-[#5391D5]/5 p-3 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#5391D5]" />
               <span>By continuing you consent to taking this assessment and to your results being shared with the sponsoring organisation.</span>
@@ -110,11 +147,11 @@ export function BundleFlow({
             <Button
               onClick={async () => {
                 setBusy(true); setError(null);
-                try { await postJson(`${base}/consent`); setPhase(stages.find((s) => !localDone[s]) ?? "done"); }
+                try { await postJson(`${base}/consent`, { demographics: demo }); setPhase(stages.find((s) => !localDone[s]) ?? "done"); }
                 catch (e) { setError((e as Error).message); }
                 finally { setBusy(false); }
               }}
-              disabled={busy}
+              disabled={busy || demoMissing > 0}
               className="mt-5 gap-2"
             >
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} I agree - start
@@ -228,9 +265,17 @@ function CognitiveSection({
     postJson(`${base}/cognitive/start`, { language: "en" })
       .then((j) => {
         if (!live) return;
-        setSessionId(j.sessionId as string);
+        const sid = j.sessionId as string;
+        setSessionId(sid);
         setItems((j.test?.items ?? []) as CogItem[]);
-        if (timerMinutes && timerMinutes > 0) setDeadline(Date.now() + timerMinutes * 60_000);
+        // Restore answers saved on this device for this session (reload safety).
+        try {
+          const saved = window.localStorage.getItem(`bundle-cog-${sid}`);
+          if (saved) setAnswers(JSON.parse(saved) as Record<string, number>);
+        } catch { /* storage unavailable */ }
+        // The server owns the clock: a resumed session keeps its remaining time.
+        if (typeof j.remainingSeconds === "number") setDeadline(Date.now() + j.remainingSeconds * 1000);
+        else if (timerMinutes && timerMinutes > 0) setDeadline(Date.now() + timerMinutes * 60_000);
       })
       .catch((e) => onError((e as Error).message));
     return () => { live = false; };
@@ -250,6 +295,11 @@ function CognitiveSection({
       setBusy(false);
     }
   };
+  useEffect(() => {
+    if (!sessionId) return;
+    try { window.localStorage.setItem(`bundle-cog-${sessionId}`, JSON.stringify(answers)); } catch { /* storage unavailable */ }
+  }, [sessionId, answers]);
+
   const submitRef = useRef(submit);
   submitRef.current = submit;
 

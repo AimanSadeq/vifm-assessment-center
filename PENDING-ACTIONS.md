@@ -40,7 +40,9 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 
 Engagement: SDC High-Potential Leadership Development Program (proposal `20260809-SDC-02-HPHLD`, charter V0.1). Caliber part = an online "HiPo Identification Assessment" (psychometric + leadership competency) for **50 nominees** (grades 4-8: 22 at G5, 13 at G6, 9 at G7, 3 at G8, 3 at G4), completed remotely, English, individual reports + cohort analytics + SDC debrief; results select the final cohort of 20-25. Proposal also commits a **post-program assessment** (progression), so the setup must be repeatable. People: Suzanne Salim (SDC sponsor), Ali AlShouli (VIFM PM), Ahmad Rashid (partner, wrote the Caliber part).
 
-**Hard rule: send NOTHING to candidates until SDC gives the green light.** Caliber does not block the invite button today, so this is manual discipline until the invitation hold is built.
+**Standing rule: Ali AlShouli leads SDC and is the subject-matter expert; keep him in the loop at every stage of the Caliber build** (Aiman, 2026-10-08): build plan to Ali before code (sent 2026-10-08); Ali walks through the candidate flow and reviews the first real reports (Thu 15 Oct); Ali joins the pilot (Sun 18 Oct); a short progress note to Ali at each checkpoint. Ali also writes the IDP development actions (70/20/10) for all 10 competencies by Wed 14 Oct.
+
+**Hard rule: send NOTHING to candidates until SDC gives the green light.** The invitation hold (branch `sdc-bundle-roster`, migration 00233) closes the bundle until it is released; until that is deployed and switched on, this is manual discipline.
 
 **Agreed with SDC (Ahmad's meeting with Suzanne, 2026-10-07) and confirmed to Ali the same day:**
 - **Launch Tue 20 Oct 2026** (Suzanne asked for 15 Oct; pushed to 20 Oct so SDC can sign off content and reports first; she promised fast sign-offs). Completion window proposed 20-29 Oct (to confirm).

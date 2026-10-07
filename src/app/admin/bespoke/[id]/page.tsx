@@ -11,6 +11,9 @@ import { ACTIVE_BEHAVIORAL_COMPETENCIES } from "@/lib/scoring/behavioral-framewo
 import { BackLink } from "@/components/shared/back-link";
 import { Button } from "@/components/ui/button";
 import { ReportCoverageBadges } from "../_components/report-coverage-badges";
+import { loadBundleSettings } from "@/lib/bespoke/bundle-settings";
+import { loadRoster } from "@/lib/bespoke/roster";
+import { DeliveryPanel, type RosterView } from "./delivery-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +52,17 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
       ? svc.from("profiles").select("full_name, email").eq("id", bundle.created_by).maybeSingle<{ full_name: string | null; email: string | null }>()
       : Promise.resolve({ data: null }),
   ]);
+  const [deliverySettings, rosterRows] = await Promise.all([loadBundleSettings(bundle.id), loadRoster(bundle.id)]);
+  const linkedIds = rosterRows.map((r) => r.bundle_candidate_id).filter((x): x is string => !!x);
+  const statusById = new Map<string, string>();
+  if (linkedIds.length) {
+    const { data: st } = await svc.from("bundle_candidates").select("id, status").in("id", linkedIds);
+    for (const r of (st ?? []) as Array<{ id: string; status: string }>) statusById.set(r.id, r.status);
+  }
+  const roster: RosterView[] = rosterRows.map((r) => ({
+    ...r,
+    status: (r.bundle_candidate_id ? statusById.get(r.bundle_candidate_id) ?? "invited" : "not_started") as RosterView["status"],
+  }));
   const orgName = orgRes.data?.name ?? "Unassigned";
   const candidates = (candRes.data ?? []) as Array<{ id: string; full_name: string; email: string; status: string; consent_at: string | null; completed_at: string | null; created_at: string }>;
   const creator = creatorRes.data?.full_name || creatorRes.data?.email || null;
@@ -196,6 +210,8 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
           })}
         </ol>
       </section>
+
+      <DeliveryPanel bundleId={bundle.id} settings={deliverySettings} roster={roster} />
 
       {/* Delivery so far */}
       <div className="grid gap-4 lg:grid-cols-2">

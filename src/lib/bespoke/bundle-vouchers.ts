@@ -9,6 +9,9 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { redeemViaDescriptor } from "@/lib/vouchers/core";
 import { VOUCHER_DESCRIPTORS } from "@/lib/vouchers/descriptor";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
+import { normalizeCode } from "@/lib/vouchers/codegen";
+import { loadBundleSettings } from "./bundle-settings";
+import { findRosterEntry, claimRosterEntry, type RosterRow } from "./roster";
 
 const ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"; // no ambiguous 0/O/1/I/L
 function genCode(): string {
@@ -107,6 +110,13 @@ export async function redeemBundleVoucher(input: {
   if (!input.code.trim()) return { error: "Missing voucher code." };
   if (name.length < 2 || !EMAIL_RE.test(email)) return { error: "Enter your name and a valid email." };
 
+  // Roster gate + invitation hold (00233), checked BEFORE a seat is claimed so a
+  // refused or returning person never burns a seat.
+  const gate = await checkBundleGate(input.code, email);
+  if ("error" in gate) return { error: gate.error };
+  if ("resumeToken" in gate) return { ok: true, token: gate.resumeToken };
+  const rosterEntry = gate.entry;
+
   const out = await redeemViaDescriptor<{ bespoke_service_id: string; organization_id: string | null }>(
     VOUCHER_DESCRIPTORS.bundle,
     { code: input.code, redeemerName: name, redeemerEmail: email },
@@ -125,12 +135,21 @@ export async function redeemBundleVoucher(input: {
         .insert({
           bespoke_service_id: voucher.bespoke_service_id,
           organization_id: voucher.organization_id ?? null,
-          full_name: name,
+          // On a roster bundle the approved list is the source of the name.
+          full_name: rosterEntry?.full_name || name,
           email,
         })
-        .select("access_token")
+        .select("id, access_token")
         .single();
       if (candErr || !cand) return { ok: false, error: candErr?.message ?? "Could not start the assessment." };
+      if (rosterEntry) {
+        const claimed = await claimRosterEntry(rosterEntry.id, cand.id as string);
+        if (!claimed) {
+          // Someone started with this email a moment ago: undo, release the seat.
+          await sb.from("bundle_candidates").delete().eq("id", cand.id);
+          return { ok: false, error: "An assessment has already been started with this email. Open the link again to continue it." };
+        }
+      }
       return { ok: true, token: cand.access_token as string };
     },
     {
@@ -142,6 +161,42 @@ export async function redeemBundleVoucher(input: {
   );
   if (!out.ok) return { error: out.error };
   return { ok: true, token: out.token as string };
+}
+
+type Gate = { entry: RosterRow | null } | { resumeToken: string } | { error: string };
+
+/** Roster + hold rules for a code/email pair. Unknown codes pass through so the
+ *  normal "invalid code" message applies. */
+async function checkBundleGate(rawCode: string, email: string): Promise<Gate> {
+  const code = normalizeCode(rawCode);
+  if (!code) return { entry: null };
+  const sb = createServiceClient();
+  const { data: v } = await sb
+    .from("bundle_vouchers")
+    .select("bespoke_service_id")
+    .eq("code", code)
+    .maybeSingle<{ bespoke_service_id: string }>();
+  if (!v) return { entry: null };
+  const settings = await loadBundleSettings(v.bespoke_service_id);
+  if (!settings.rosterRequired && !settings.held) return { entry: null };
+
+  const entry = settings.rosterRequired ? await findRosterEntry(v.bespoke_service_id, email) : null;
+  if (settings.rosterRequired && !entry) {
+    return { error: "This email is not on the list of people invited to this assessment. Please use your work email, or contact the organisation that invited you." };
+  }
+  if (settings.held && !entry?.is_tester) {
+    return { error: "This assessment is not open yet. Your organisation will let you know when it opens." };
+  }
+  if (entry?.bundle_candidate_id) {
+    const { data: cand } = await sb
+      .from("bundle_candidates")
+      .select("access_token, status")
+      .eq("id", entry.bundle_candidate_id)
+      .maybeSingle<{ access_token: string; status: string }>();
+    if (cand?.status === "completed") return { error: "You have already completed this assessment. Thank you." };
+    if (cand) return { resumeToken: cand.access_token };
+  }
+  return { entry };
 }
 
 /** List a bundle's vouchers (admin/client - service role). */

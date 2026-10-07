@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ClipboardList, Boxes, BrainCircuit, Clock } from "lucide-react";
+import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, ClipboardList, Boxes, BrainCircuit, Clock, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BundleStage } from "@/lib/bespoke/candidates";
 import type { DemographicField } from "@/lib/bespoke/bundle-settings";
@@ -9,6 +9,8 @@ import type { DemographicField } from "@/lib/bespoke/bundle-settings";
 type Phase = "consent" | BundleStage | "done";
 type PersonaItem = { itemKey: string; competencyId: string; textEn: string; textAr: string };
 type CogItem = { id: string; scale: string; stem: string; options: string[] };
+type SjtItem = { id: string; situation: string; options: Array<{ key: string; text: string }> };
+type SjtPick = { most?: string; least?: string };
 
 const LIKERT = [
   { v: 1, label: "Strongly disagree" },
@@ -37,6 +39,7 @@ export function BundleFlow({
   hasConsent,
   personaDone,
   cognitiveDone,
+  sjtDone = false,
   timerMinutes,
   logicaLabel,
   welcomeMessage = null,
@@ -49,13 +52,14 @@ export function BundleFlow({
   hasConsent: boolean;
   personaDone: boolean;
   cognitiveDone: boolean;
+  sjtDone?: boolean;
   timerMinutes: number | null;
   logicaLabel: string;
   welcomeMessage?: string | null;
   demographicFields?: DemographicField[];
 }) {
   const base = `/api/bundle/${token}`;
-  const doneByStage: Record<BundleStage, boolean> = { persona: personaDone, logica: cognitiveDone };
+  const doneByStage: Record<BundleStage, boolean> = { sjt: sjtDone, persona: personaDone, logica: cognitiveDone };
 
   const firstOpen = (): Phase => {
     const open = stages.find((s) => !doneByStage[s]);
@@ -79,6 +83,14 @@ export function BundleFlow({
   };
 
   const stageNumber = (s: BundleStage) => stages.indexOf(s) + 1;
+  const sectionNames: Record<BundleStage, string> = {
+    sjt: "workplace scenarios",
+    persona: "a behavioural self-assessment (Persona)",
+    logica: `a reasoning section (${logicaLabel})`,
+  };
+  const sectionList = stages.map((s) => sectionNames[s]);
+  const sectionText =
+    sectionList.length <= 1 ? sectionList.join("") : `${sectionList.slice(0, -1).join(", ")} and ${sectionList[sectionList.length - 1]}`;
 
   return (
     <div className="min-h-screen bg-[#FEFFF9]">
@@ -105,13 +117,7 @@ export function BundleFlow({
             )}
             <p className="mt-2 text-sm text-muted-foreground">
               You have been invited to complete <span className="font-medium text-foreground">{bundleName}</span>. It has{" "}
-              {stages.length === 1 ? "one section" : `${stages.length} sections`}
-              {stages.includes("persona") && stages.includes("logica")
-                ? ": a behavioural self-assessment (Persona) and a reasoning section (Logica)"
-                : stages.includes("persona")
-                  ? ": a behavioural self-assessment (Persona)"
-                  : `: a reasoning section (${logicaLabel})`}
-              . Your responses produce a report for the sponsoring organisation.
+              {stages.length === 1 ? "one section" : `${stages.length} sections`}: {sectionText}. Your responses produce a report for the sponsoring organisation.
             </p>
             {demographicFields.length > 0 && (
               <div className="mt-4 space-y-3 rounded-lg border p-4">
@@ -157,6 +163,10 @@ export function BundleFlow({
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} I agree - start
             </Button>
           </div>
+        )}
+
+        {phase === "sjt" && (
+          <SjtSection base={base} number={stageNumber("sjt")} onError={setError} onDone={() => advance("sjt")} />
         )}
 
         {phase === "persona" && (
@@ -242,6 +252,161 @@ function PersonaSection({ base, number, onError, onDone }: { base: string; numbe
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
         {allAnswered ? "Submit behavioural section" : `Answer all (${answered}/${items.length})`}
       </Button>
+    </div>
+  );
+}
+
+function SjtSection({ base, number, onError, onDone }: { base: string; number: number; onError: (m: string | null) => void; onDone: () => void }) {
+  const [items, setItems] = useState<SjtItem[] | null>(null);
+  const [picks, setPicks] = useState<Record<string, SjtPick>>({});
+  const [saved, setSaved] = useState<Record<string, string>>({}); // itemId -> "most|least" last saved
+  const [idx, setIdx] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    postJson(`${base}/sjt/start`)
+      .then((j) => {
+        if (!live) return;
+        const list = (j.items ?? []) as SjtItem[];
+        const prior = (j.answers ?? {}) as Record<string, { most: string; least: string }>;
+        setItems(list);
+        setPicks(Object.fromEntries(Object.entries(prior).map(([k, v]) => [k, { most: v.most, least: v.least }])));
+        setSaved(Object.fromEntries(Object.entries(prior).map(([k, v]) => [k, `${v.most}|${v.least}`])));
+        // Resume at the first unanswered scenario.
+        const first = list.findIndex((it) => !prior[it.id]);
+        setIdx(first < 0 ? Math.max(0, list.length - 1) : first);
+      })
+      .catch((e) => onError((e as Error).message));
+    return () => { live = false; };
+  }, [base, onError]);
+
+  const complete = (p?: SjtPick) => !!p?.most && !!p?.least && p.most !== p.least;
+
+  // Save the current scenario's choice to the server when it is complete and changed.
+  const persist = async (itemId: string): Promise<boolean> => {
+    const p = picks[itemId];
+    if (!complete(p)) return true;
+    const sig = `${p!.most}|${p!.least}`;
+    if (saved[itemId] === sig) return true;
+    setSaving(true);
+    try {
+      await postJson(`${base}/sjt/answer`, { itemId, most: p!.most, least: p!.least });
+      setSaved((s) => ({ ...s, [itemId]: sig }));
+      return true;
+    } catch (e) {
+      onError((e as Error).message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!items) return <Loading label="Preparing the scenario section…" />;
+  const total = items.length;
+  const it = items[idx];
+  const pick = picks[it.id] ?? {};
+  const answered = items.filter((x) => complete(picks[x.id])).length;
+  const isLast = idx === total - 1;
+
+  const choose = (field: "most" | "least", key: string) => {
+    onError(null);
+    setPicks((prev) => {
+      const cur = { ...(prev[it.id] ?? {}) };
+      cur[field] = key;
+      // One response cannot be both: picking it for one clears it from the other.
+      const other = field === "most" ? "least" : "most";
+      if (cur[other] === key) delete cur[other];
+      return { ...prev, [it.id]: cur };
+    });
+  };
+
+  const go = async (to: number) => {
+    onError(null);
+    if (!(await persist(it.id))) return;
+    setIdx(to);
+    window.scrollTo({ top: 0 });
+  };
+
+  return (
+    <div>
+      <SectionHeader icon={<Compass className="h-5 w-5" />} title={`Section ${number} · Workplace scenarios`}
+        sub="Read each situation. Mark the response you think is MOST effective and the one you think is LEAST effective. There is no time limit." />
+
+      <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-medium text-[#010131]">Scenario {idx + 1} of {total}</span>
+        <span>{answered}/{total} answered{saving ? " · saving…" : ""}</span>
+      </div>
+      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-[#5391D5] transition-all" style={{ width: `${total ? (answered / total) * 100 : 0}%` }} />
+      </div>
+
+      <div className="rounded-lg border bg-card p-5">
+        <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">{it.situation}</div>
+        <div className="mt-4 grid grid-cols-[1fr_auto_auto] items-center gap-x-2 gap-y-2">
+          <div />
+          <div className="w-12 text-center text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Most</div>
+          <div className="w-12 text-center text-[10px] font-semibold uppercase tracking-wide text-rose-700">Least</div>
+          {it.options.map((o, oi) => {
+            const isMost = pick.most === o.key;
+            const isLeast = pick.least === o.key;
+            return (
+              <div key={o.key} className="contents">
+                <div className={`rounded-md border px-3 py-2 text-sm ${isMost ? "border-emerald-400 bg-emerald-50" : isLeast ? "border-rose-300 bg-rose-50" : "border-border"}`}>
+                  <span className="mr-1.5 font-medium text-muted-foreground">{String.fromCharCode(65 + oi)}.</span>
+                  {o.text}
+                </div>
+                <button type="button" aria-label={`Response ${String.fromCharCode(65 + oi)} most effective`} aria-pressed={isMost}
+                  onClick={() => choose("most", o.key)}
+                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${isMost ? "border-emerald-600 bg-emerald-600 hover:bg-emerald-600" : "border-muted-foreground hover:bg-muted"}`}>
+                  {isMost && <span className="h-2.5 w-2.5 rounded-full bg-white" />}
+                </button>
+                <button type="button" aria-label={`Response ${String.fromCharCode(65 + oi)} least effective`} aria-pressed={isLeast}
+                  onClick={() => choose("least", o.key)}
+                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${isLeast ? "border-rose-600 bg-rose-600 hover:bg-rose-600" : "border-muted-foreground hover:bg-muted"}`}>
+                  {isLeast && <span className="h-2.5 w-2.5 rounded-full bg-white" />}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-2">
+        <Button variant="outline" className="gap-2" disabled={idx === 0 || busy || saving} onClick={() => go(idx - 1)}>
+          <ArrowLeft className="h-4 w-4" /> Previous
+        </Button>
+        {!isLast ? (
+          <Button className="gap-2" disabled={!complete(pick) || busy || saving} onClick={() => go(idx + 1)}>
+            Next <ArrowRight className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            className="gap-2"
+            disabled={answered < total || busy || saving}
+            onClick={async () => {
+              setBusy(true); onError(null);
+              try {
+                if (!(await persist(it.id))) return;
+                await postJson(`${base}/sjt/submit`);
+                onDone();
+              } catch (e) { onError((e as Error).message); }
+              finally { setBusy(false); }
+            }}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            {answered < total ? `Answer all (${answered}/${total})` : "Submit scenario section"}
+          </Button>
+        )}
+      </div>
+      {isLast && answered < total && (
+        <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+          <span className="text-muted-foreground">Still to answer:</span>
+          {items.map((x, i) => !complete(picks[x.id]) && (
+            <button key={x.id} type="button" className="rounded border px-2 py-0.5 hover:bg-muted" onClick={() => go(i)}>{i + 1}</button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

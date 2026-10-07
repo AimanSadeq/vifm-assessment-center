@@ -14,6 +14,8 @@ import { ReportCoverageBadges } from "../_components/report-coverage-badges";
 import { loadBundleSettings } from "@/lib/bespoke/bundle-settings";
 import { loadRoster } from "@/lib/bespoke/roster";
 import { DeliveryPanel, type RosterView } from "./delivery-panel";
+import { loadSjtItems, loadBundleCompetencies } from "@/lib/bespoke/sjt";
+import { ScenarioPanel } from "./scenario-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -52,7 +54,13 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
       ? svc.from("profiles").select("full_name, email").eq("id", bundle.created_by).maybeSingle<{ full_name: string | null; email: string | null }>()
       : Promise.resolve({ data: null }),
   ]);
-  const [deliverySettings, rosterRows] = await Promise.all([loadBundleSettings(bundle.id), loadRoster(bundle.id)]);
+  const [deliverySettings, rosterRows, sjtItems, sjtComps, sjtResults] = await Promise.all([
+    loadBundleSettings(bundle.id),
+    loadRoster(bundle.id),
+    loadSjtItems(bundle.id),
+    loadBundleCompetencies(bundle.id),
+    svc.from("bundle_sjt_results").select("submitted_at").eq("bespoke_service_id", bundle.id).then((r) => (r.data ?? []) as Array<{ submitted_at: string | null }>, () => []),
+  ]);
   const linkedIds = rosterRows.map((r) => r.bundle_candidate_id).filter((x): x is string => !!x);
   const statusById = new Map<string, string>();
   if (linkedIds.length) {
@@ -212,6 +220,15 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
       </section>
 
       <DeliveryPanel bundleId={bundle.id} settings={deliverySettings} roster={roster} />
+
+      <ScenarioPanel
+        bundleId={bundle.id}
+        settings={deliverySettings}
+        competencies={sjtComps}
+        items={sjtItems}
+        started={sjtResults.length}
+        submitted={sjtResults.filter((r) => r.submitted_at).length}
+      />
 
       {/* Delivery so far */}
       <div className="grid gap-4 lg:grid-cols-2">

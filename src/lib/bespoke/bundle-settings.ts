@@ -4,6 +4,7 @@
 // every reader tolerates the table not being migrated yet.
 
 import { createServiceClient } from "@/lib/supabase/server";
+import { DEFAULT_SJT_CONFIG, sanitiseSjtConfig, type SjtConfig } from "./sjt-shared";
 
 export type DemographicField = {
   key: string;
@@ -20,6 +21,9 @@ export type BundleSettings = {
   welcomeMessage: string | null;
   demographicFields: DemographicField[];
   logicaMinutes: number | null;
+  /** Scenario-question stage (00234) runs first when enabled. */
+  sjtEnabled: boolean;
+  sjtConfig: SjtConfig;
 };
 
 export const DEFAULT_BUNDLE_SETTINGS: BundleSettings = {
@@ -29,6 +33,8 @@ export const DEFAULT_BUNDLE_SETTINGS: BundleSettings = {
   welcomeMessage: null,
   demographicFields: [],
   logicaMinutes: null,
+  sjtEnabled: false,
+  sjtConfig: DEFAULT_SJT_CONFIG,
 };
 
 const KEY_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -63,6 +69,8 @@ type Row = {
   welcome_message: string | null;
   demographic_fields: unknown;
   logica_minutes: number | null;
+  sjt_enabled?: boolean;
+  sjt_config?: unknown;
 };
 
 export async function loadBundleSettings(bundleId: string): Promise<BundleSettings> {
@@ -70,7 +78,7 @@ export async function loadBundleSettings(bundleId: string): Promise<BundleSettin
     const sb = createServiceClient();
     const { data, error } = await sb
       .from("bundle_settings")
-      .select("roster_required, held, released_at, welcome_message, demographic_fields, logica_minutes")
+      .select("*")
       .eq("bespoke_service_id", bundleId)
       .maybeSingle<Row>();
     if (error || !data) return DEFAULT_BUNDLE_SETTINGS;
@@ -81,6 +89,8 @@ export async function loadBundleSettings(bundleId: string): Promise<BundleSettin
       welcomeMessage: data.welcome_message?.trim() || null,
       demographicFields: sanitiseDemographicFields(data.demographic_fields),
       logicaMinutes: data.logica_minutes ?? null,
+      sjtEnabled: !!data.sjt_enabled,
+      sjtConfig: sanitiseSjtConfig(data.sjt_config),
     };
   } catch {
     return DEFAULT_BUNDLE_SETTINGS;
@@ -102,6 +112,8 @@ export async function saveBundleSettings(
     welcome_message: next.welcomeMessage?.trim() ? next.welcomeMessage.trim().slice(0, 4000) : null,
     demographic_fields: sanitiseDemographicFields(next.demographicFields),
     logica_minutes: next.logicaMinutes && next.logicaMinutes > 0 ? Math.min(600, Math.round(next.logicaMinutes)) : null,
+    sjt_enabled: next.sjtEnabled,
+    sjt_config: sanitiseSjtConfig(next.sjtConfig),
   };
   // Releasing (held true -> false) stamps who and when; holding again clears it.
   if (patch.held === false && current.held) {

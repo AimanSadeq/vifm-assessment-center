@@ -1,11 +1,13 @@
 "use server";
 
 // Delivery controls for one bundle (00233): roster gate, invitation hold,
-// welcome message, demographic fields, reasoning time limit, roster import.
+// welcome message, demographic fields, reasoning time limit, roster import;
+// and the scenario section switch and scoring settings (00234).
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadBundleService } from "@/lib/bespoke/services";
-import { saveBundleSettings, sanitiseDemographicFields, type DemographicField } from "@/lib/bespoke/bundle-settings";
+import { saveBundleSettings, loadBundleSettings, sanitiseDemographicFields, type DemographicField } from "@/lib/bespoke/bundle-settings";
+import { loadSjtItems, sanitiseSjtConfig } from "@/lib/bespoke/sjt";
 import { parseRoster, upsertRoster, removeRosterEntry } from "@/lib/bespoke/roster";
 
 async function guard(bundleId: string) {
@@ -72,6 +74,36 @@ export async function removeRosterEntryAction(bundleId: string, rosterId: string
   const g = await guard(bundleId);
   if (!g.ok) return { error: g.error };
   const res = await removeRosterEntry(bundleId, rosterId);
+  if ("error" in res) return res;
+  done(bundleId);
+  return { ok: true };
+}
+
+/** Scenario section (00234): switch, presentation order and level cut-offs.
+ *  Submitted results keep the config they were scored with. */
+export async function saveScenarioSettingsAction(
+  bundleId: string,
+  input: { enabled: boolean; order: "shuffled" | "grouped"; cuts: { advanced: number; proficient: number; basic: number } },
+): Promise<{ ok: true } | { error: string }> {
+  const g = await guard(bundleId);
+  if (!g.ok) return { error: g.error };
+  const { advanced, proficient, basic } = input.cuts;
+  if (![advanced, proficient, basic].every((n) => Number.isFinite(n) && n >= 0 && n <= 12)) {
+    return { error: "Cut-offs must be numbers between 0 and 12." };
+  }
+  if (!(basic <= proficient && proficient <= advanced)) return { error: "Cut-offs must rise: Basic, then Proficient, then Advanced." };
+  if (input.enabled && (await loadSjtItems(bundleId)).length === 0) {
+    return { error: "Load the scenarios before switching the section on." };
+  }
+  const current = await loadBundleSettings(bundleId);
+  const res = await saveBundleSettings(
+    bundleId,
+    {
+      sjtEnabled: !!input.enabled,
+      sjtConfig: sanitiseSjtConfig({ ...current.sjtConfig, order: input.order, cuts: { advanced, proficient, basic } }),
+    },
+    g.caller.uid,
+  );
   if ("error" in res) return res;
   done(bundleId);
   return { ok: true };

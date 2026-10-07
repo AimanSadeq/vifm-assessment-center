@@ -10,12 +10,16 @@ import { ACTIVE_BEHAVIORAL_COMPETENCIES, translateCompetencyIds } from "@/lib/sc
 import { loadBespokeServices, type BespokeServiceRow } from "./services";
 import { loadBundleSettings, type BundleSettings } from "./bundle-settings";
 import { rosterEntryForCandidate, type RosterRow } from "./roster";
+import { loadSjtResult } from "./sjt";
 
 const TOKEN_RE = /^[0-9a-fA-F-]{36}$/;
 
 /** The services a bundle can run inside ONE sitting, in service_keys order. */
 export const RUNNABLE_BUNDLE_STAGES = ["persona", "logica"] as const;
-export type BundleStage = (typeof RUNNABLE_BUNDLE_STAGES)[number];
+/** Every stage a sitting can contain: the scenario stage (00234) is switched on
+ *  per bundle in bundle_settings, not composed into service_keys. */
+export const ALL_BUNDLE_STAGES = ["sjt", ...RUNNABLE_BUNDLE_STAGES] as const;
+export type BundleStage = (typeof ALL_BUNDLE_STAGES)[number];
 
 export type BundleCandidateRow = {
   id: string;
@@ -67,7 +71,7 @@ export async function findBundleCandidateByToken(token: string): Promise<BundleC
   const bundle = (await loadBespokeServices()).find((s) => s.id === data.bespoke_service_id && s.kind === "bundle");
   if (!bundle) return null;
 
-  const stages = bundle.service_keys.filter((k): k is BundleStage =>
+  const composed = bundle.service_keys.filter((k): k is BundleStage =>
     (RUNNABLE_BUNDLE_STAGES as readonly string[]).includes(k)
   );
   const cfg = bundle.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
@@ -83,12 +87,14 @@ export async function findBundleCandidateByToken(token: string): Promise<BundleC
 
   const [settings, rosterEntry] = await Promise.all([loadBundleSettings(bundle.id), rosterEntryForCandidate(data.id)]);
   const held = settings.held && !rosterEntry?.is_tester;
+  // Scenario questions are Part 1, before the composed instruments.
+  const stages: BundleStage[] = settings.sjtEnabled ? ["sjt", ...composed] : composed;
 
   return { candidate: data, bundle, stages, logicaSubtests, personaCompetencyIds, settings, rosterEntry, held };
 }
 
 /** Stage completion from the native records (survives reloads). */
-export async function bundleStageState(ctx: BundleCandidateContext): Promise<{ personaDone: boolean; cognitiveDone: boolean }> {
+export async function bundleStageState(ctx: BundleCandidateContext): Promise<{ personaDone: boolean; cognitiveDone: boolean; sjtDone: boolean }> {
   const svc = createServiceClient();
   let personaDone = false;
   if (ctx.candidate.persona_session_id) {
@@ -99,7 +105,8 @@ export async function bundleStageState(ctx: BundleCandidateContext): Promise<{ p
       .maybeSingle<{ status: string }>();
     personaDone = data?.status === "submitted";
   }
-  return { personaDone, cognitiveDone: !!ctx.candidate.cognitive_result_id };
+  const sjtDone = ctx.stages.includes("sjt") ? !!(await loadSjtResult(ctx.candidate.id))?.submitted_at : false;
+  return { personaDone, cognitiveDone: !!ctx.candidate.cognitive_result_id, sjtDone };
 }
 
 /** API guard: the bundle is on hold for this candidate. */
@@ -145,14 +152,15 @@ export async function setBundlePersonaSession(candidateId: string, sessionId: st
  *  runnable stage has its record). */
 export async function rollBundleStatus(
   ctx: BundleCandidateContext,
-  just: { personaDone?: boolean; cognitiveResultId?: string },
+  just: { personaDone?: boolean; cognitiveResultId?: string; sjtDone?: boolean },
 ): Promise<void> {
   const svc = createServiceClient();
   const state = await bundleStageState(ctx);
   const personaDone = just.personaDone ?? state.personaDone;
   const cognitiveDone = !!(just.cognitiveResultId ?? ctx.candidate.cognitive_result_id);
 
-  const allDone = ctx.stages.every((s) => (s === "persona" ? personaDone : s === "logica" ? cognitiveDone : true));
+  const sjtDone = just.sjtDone ?? state.sjtDone;
+  const allDone = ctx.stages.every((s) => (s === "persona" ? personaDone : s === "logica" ? cognitiveDone : s === "sjt" ? sjtDone : true));
   const patch: Record<string, unknown> = { status: allDone ? "completed" : "in_progress" };
   if (just.cognitiveResultId) patch.cognitive_result_id = just.cognitiveResultId;
   if (allDone) patch.completed_at = new Date().toISOString();

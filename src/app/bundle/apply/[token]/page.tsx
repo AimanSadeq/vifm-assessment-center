@@ -9,7 +9,8 @@ export const metadata = { title: "Bespoke assessment · VIFM" };
 
 /**
  * Token-gated one-sitting flow for a composed bespoke bundle (no account):
- * consent -> each runnable service in composed order (Persona, Logica) -> done.
+ * consent -> scenario questions (when enabled) -> each runnable service in
+ * composed order (Persona, Logica) -> done.
  * Public (middleware-bypassed); the token is validated server-side.
  */
 export default async function BundleApplyPage({ params }: { params: { token: string } }) {
@@ -45,6 +46,7 @@ export default async function BundleApplyPage({ params }: { params: { token: str
       hasConsent={!!ctx.candidate.consent_at}
       personaDone={state.personaDone}
       cognitiveDone={state.cognitiveDone}
+      sjtDone={state.sjtDone}
       timerMinutes={timerMinutes}
       logicaLabel={logicaLabel}
       welcomeMessage={ctx.settings.welcomeMessage}

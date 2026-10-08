@@ -31,7 +31,7 @@ const GRADE_LABEL = { 8: "Senior Manager", 7: "Manager", 6: "Senior Specialist",
 
 // Grid rules (proposed for SDC approval).
 // Competency fit: Above = every required competency met and at least 2 above; Meets = at least 80% met; else Below.
-// Cognitive agility: mean reasoning accuracy. Strong >= 70%, Solid 50-69%, Developing < 50%
+// Reasoning performance (renamed from 'cognitive agility' per Ali AlShouli, 8 Oct 2026): mean Logica accuracy. Strong >= 70%, Solid 50-69%, Developing < 50%
 // (same cut-points as the VIFM HiPo model: accuracy mapped to 1-5, bands at 3.0 and 3.8). Indicative until SDC norms exist.
 function fit(grade, res) {
   const req = Object.entries(REQ[grade]).filter(([, r]) => r > 0);
@@ -48,14 +48,14 @@ function cog(scores) {
 // GRID[cogBand][fitBand]
 const GRID = [
   [{ t: "Foundational development", d: "Build core behaviours and reasoning before stretch roles." },
-   { t: "Steady contributor", d: "Meets today's requirement; build learning agility for bigger roles." },
-   { t: "Effective in role", d: "Strong in role; grow agility before accelerating." }],
+   { t: "Steady contributor", d: "Meets today's requirement; strengthen reasoning for bigger roles." },
+   { t: "Effective in role", d: "Strong in role; build reasoning before accelerating." }],
   [{ t: "Develop competencies", d: "Capable thinker with clear behavioural gaps to close first." },
    { t: "Core talent", d: "Solid on both; grow steadily with targeted development." },
    { t: "Strong contributor", d: "Above the bar today; broaden scope and exposure." }],
   [{ t: "Untapped ability", d: "High reasoning ability; behaviours not yet at the required level." },
-   { t: "Emerging potential", d: "Meets the requirement with strong agility; stretch with support." },
-   { t: "High potential", d: "Above requirement with strong agility; accelerate." }],
+   { t: "Emerging potential", d: "Meets the requirement with strong reasoning; stretch with support." },
+   { t: "High potential", d: "Above requirement with strong reasoning; accelerate." }],
 ];
 
 // Fictional sample candidate for the individual reports (Grade 7, so leadership applies at Basic).

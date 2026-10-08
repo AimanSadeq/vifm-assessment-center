@@ -6,14 +6,14 @@ sent to candidates.
 | File | Builds |
 |---|---|
 | `build-template.py` | `SDC_HiPo_Scenario_Template_v1.xlsx`, the workbook Ali uses to write the 30 scenario questions (3 per SDC competency, 4 responses keyed Advanced / Proficient / Basic / Counter-evidence to v3 indicator IDs, with automatic level and indicator checks). |
-| `build-idp-sheet.py` | `SDC_HiPo_IDP_Actions_v1.xlsx`, the sheet Ali reviews: one row per competency and target level an IDP can show (25), with goal behaviours from v3 and draft 70/20/10 actions from `idp_actions.py`. |
+| `build-idp-sheet.py` | `SDC_HiPo_IDP_Actions_v2.xlsx`, the sheet Ali reviews: one row per competency and target level an IDP can show (25), with goal behaviours from v3 and, from `idp_actions.py`, a SMART goal, 30/60/90-day milestones, on-the-job / coaching / learning actions (the 70-20-10 approach) and specific evidence of progress. The sample IDP reads the same file. |
 | `load-scenarios.py` | Checks Ali's completed scenario workbook against `v3.json` (each level once, indicator IDs of the right competency and level, word counts) and, with `--bundle UUID`, writes `out/sdc-scenarios.sql` to load the competencies and scenarios into Caliber (three statements, run one at a time). |
 | `build-reports.js` | The three one-page sample reports for SDC approval: executive summary, individual development plan, group report. All people and results are fictional (`data.js`). |
 
 ```
 cd scripts/sdc-hipo
 python3 build-template.py                 # writes out/SDC_HiPo_Scenario_Template_v1.xlsx
-python3 build-idp-sheet.py                # writes out/SDC_HiPo_IDP_Actions_v1.xlsx
+python3 build-idp-sheet.py                # writes out/SDC_HiPo_IDP_Actions_v2.xlsx
 python3 load-scenarios.py Ali.xlsx       # check only: report per scenario, writes nothing
 python3 load-scenarios.py Ali.xlsx --bundle <bundle uuid>             # loads rows with status Approved
 python3 load-scenarios.py Ali.xlsx --bundle <uuid> --status "Ready for review"   # pilot load

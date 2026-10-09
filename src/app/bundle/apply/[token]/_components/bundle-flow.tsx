@@ -92,10 +92,13 @@ export function BundleFlow({
   const sectionText =
     sectionList.length <= 1 ? sectionList.join("") : `${sectionList.slice(0, -1).join(", ")} and ${sectionList[sectionList.length - 1]}`;
 
+  // The scenario section is a wide, slide-style screen with four response cards in a row.
+  const width = phase === "sjt" ? "max-w-6xl" : "max-w-3xl";
+
   return (
     <div className="min-h-screen bg-[#FEFFF9]">
       <header className="border-b bg-[#010131] px-6 py-4 text-white">
-        <div className="mx-auto flex max-w-3xl items-center gap-2">
+        <div className={`mx-auto flex ${width} items-center gap-2`}>
           <Boxes className="h-5 w-5 text-[#5391D5]" />
           <div>
             <div className="text-sm font-semibold">Bespoke Assessment</div>
@@ -104,7 +107,7 @@ export function BundleFlow({
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl px-6 py-8">
+      <main className={`mx-auto ${width} px-6 py-8`}>
         {error && (
           <div className="mb-4 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
         )}
@@ -262,7 +265,10 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
   const [saved, setSaved] = useState<Record<string, string>>({}); // itemId -> "most|least" last saved
   const [idx, setIdx] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving] = useState(0);
+  // Saves run one at a time: the server merges each answer into one record.
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
+  const savedRef = useRef<Record<string, string>>({});
 
   useEffect(() => {
     let live = true;
@@ -273,7 +279,9 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
         const prior = (j.answers ?? {}) as Record<string, { most: string; least: string }>;
         setItems(list);
         setPicks(Object.fromEntries(Object.entries(prior).map(([k, v]) => [k, { most: v.most, least: v.least }])));
-        setSaved(Object.fromEntries(Object.entries(prior).map(([k, v]) => [k, `${v.most}|${v.least}`])));
+        const sigs = Object.fromEntries(Object.entries(prior).map(([k, v]) => [k, `${v.most}|${v.least}`]));
+        savedRef.current = sigs;
+        setSaved(sigs);
         // Resume at the first unanswered scenario.
         const first = list.findIndex((it) => !prior[it.id]);
         setIdx(first < 0 ? Math.max(0, list.length - 1) : first);
@@ -284,24 +292,36 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
 
   const complete = (p?: SjtPick) => !!p?.most && !!p?.least && p.most !== p.least;
 
-  // Save the current scenario's choice to the server when it is complete and changed.
-  const persist = async (itemId: string): Promise<boolean> => {
-    const p = picks[itemId];
-    if (!complete(p)) return true;
+  // Save one scenario's choice when it is complete and differs from what the server has.
+  const persist = (itemId: string, p: SjtPick | undefined): Promise<boolean> => {
+    if (!complete(p)) return Promise.resolve(true);
     const sig = `${p!.most}|${p!.least}`;
-    if (saved[itemId] === sig) return true;
-    setSaving(true);
-    try {
-      await postJson(`${base}/sjt/answer`, { itemId, most: p!.most, least: p!.least });
-      setSaved((s) => ({ ...s, [itemId]: sig }));
-      return true;
-    } catch (e) {
-      onError((e as Error).message);
-      return false;
-    } finally {
-      setSaving(false);
-    }
+    const run = queue.current.then(async () => {
+      if (savedRef.current[itemId] === sig) return true;
+      setSaving((n) => n + 1);
+      try {
+        await postJson(`${base}/sjt/answer`, { itemId, most: p!.most, least: p!.least });
+        savedRef.current = { ...savedRef.current, [itemId]: sig };
+        setSaved(savedRef.current);
+        return true;
+      } catch (e) {
+        onError((e as Error).message);
+        return false;
+      } finally {
+        setSaving((n) => n - 1);
+      }
+    });
+    queue.current = run;
+    return run;
   };
+
+  // Save as soon as both MOST and LEAST are marked, so leaving the page loses nothing.
+  const current = items?.[idx];
+  const currentPick = current ? picks[current.id] : undefined;
+  useEffect(() => {
+    if (current && complete(currentPick)) void persist(current.id, currentPick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current?.id, currentPick?.most, currentPick?.least]);
 
   if (!items) return <Loading label="Preparing the scenario section…" />;
   const total = items.length;
@@ -309,6 +329,8 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
   const pick = picks[it.id] ?? {};
   const answered = items.filter((x) => complete(picks[x.id])).length;
   const isLast = idx === total - 1;
+  const unsaved = complete(pick) && saved[it.id] !== `${pick.most}|${pick.least}`;
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   const choose = (field: "most" | "least", key: string) => {
     onError(null);
@@ -324,7 +346,7 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
 
   const go = async (to: number) => {
     onError(null);
-    if (!(await persist(it.id))) return;
+    if (!(await persist(it.id, picks[it.id]))) return;
     setIdx(to);
     window.scrollTo({ top: 0 });
   };
@@ -334,70 +356,72 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
       <SectionHeader icon={<Compass className="h-5 w-5" />} title={`Section ${number} · Workplace scenarios`}
         sub="Read each situation. Mark the response you think is MOST effective and the one you think is LEAST effective. There is no time limit." />
 
-      <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-medium text-[#010131]">Scenario {idx + 1} of {total}</span>
-        <span>{answered}/{total} answered{saving ? " · saving…" : ""}</span>
-      </div>
-      <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-[#5391D5] transition-all" style={{ width: `${total ? (answered / total) * 100 : 0}%` }} />
-      </div>
-
-      <div className="rounded-lg border bg-card p-5">
-        <div className="whitespace-pre-line text-sm leading-relaxed text-foreground">{it.situation}</div>
-        <div className="mt-4 grid grid-cols-[1fr_auto_auto] items-center gap-x-2 gap-y-2">
-          <div />
-          <div className="w-12 text-center text-[10px] font-semibold uppercase tracking-wide text-emerald-700">Most</div>
-          <div className="w-12 text-center text-[10px] font-semibold uppercase tracking-wide text-rose-700">Least</div>
-          {it.options.map((o, oi) => {
-            const isMost = pick.most === o.key;
-            const isLeast = pick.least === o.key;
-            return (
-              <div key={o.key} className="contents">
-                <div className={`rounded-md border px-3 py-2 text-sm ${isMost ? "border-emerald-400 bg-emerald-50" : isLeast ? "border-rose-300 bg-rose-50" : "border-border"}`}>
-                  <span className="mr-1.5 font-medium text-muted-foreground">{String.fromCharCode(65 + oi)}.</span>
-                  {o.text}
-                </div>
-                <button type="button" aria-label={`Response ${String.fromCharCode(65 + oi)} most effective`} aria-pressed={isMost}
-                  onClick={() => choose("most", o.key)}
-                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${isMost ? "border-emerald-600 bg-emerald-600 hover:bg-emerald-600" : "border-muted-foreground hover:bg-muted"}`}>
-                  {isMost && <span className="h-2.5 w-2.5 rounded-full bg-white" />}
-                </button>
-                <button type="button" aria-label={`Response ${String.fromCharCode(65 + oi)} least effective`} aria-pressed={isLeast}
-                  onClick={() => choose("least", o.key)}
-                  className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition-colors ${isLeast ? "border-rose-600 bg-rose-600 hover:bg-rose-600" : "border-muted-foreground hover:bg-muted"}`}>
-                  {isLeast && <span className="h-2.5 w-2.5 rounded-full bg-white" />}
-                </button>
-              </div>
-            );
-          })}
+      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        <div className="flex items-center justify-between gap-3 border-b px-5 py-3">
+          <span className="text-xs text-muted-foreground">{answered} of {total} answered</span>
+          <span className="text-sm font-semibold text-[#010131]">Scenario {pad(idx + 1)} of {pad(total)}</span>
         </div>
-      </div>
+        <div className="h-1.5 bg-muted">
+          <div className="h-full bg-[#5391D5] transition-all" style={{ width: `${total ? ((idx + 1) / total) * 100 : 0}%` }} />
+        </div>
 
-      <div className="mt-5 flex items-center justify-between gap-2">
-        <Button variant="outline" className="gap-2" disabled={idx === 0 || busy || saving} onClick={() => go(idx - 1)}>
-          <ArrowLeft className="h-4 w-4" /> Previous
-        </Button>
-        {!isLast ? (
-          <Button className="gap-2" disabled={!complete(pick) || busy || saving} onClick={() => go(idx + 1)}>
-            Next <ArrowRight className="h-4 w-4" />
+        <div className="p-5 sm:p-6">
+          <div className="rounded-lg bg-[#5391D5]/5 p-4 sm:p-5">
+            <div className="whitespace-pre-line text-[15px] leading-relaxed text-foreground">{it.situation}</div>
+          </div>
+          <p className="mt-5 text-sm font-semibold text-[#010131]">Which response is the MOST effective? Which is the LEAST effective?</p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {it.options.map((o, oi) => {
+              const letter = String.fromCharCode(65 + oi);
+              const isMost = pick.most === o.key;
+              const isLeast = pick.least === o.key;
+              return (
+                <div key={o.key}
+                  className={`flex flex-col rounded-lg border bg-background p-4 transition-shadow ${isMost || isLeast ? "border-[#010131]/40 shadow-sm" : "border-border"}`}>
+                  <div className="flex items-start gap-2.5">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#010131] text-xs font-semibold text-white">{letter}</span>
+                    <p className="text-sm leading-relaxed text-foreground">{o.text}</p>
+                  </div>
+                  <div className="mt-auto space-y-1.5 pt-4">
+                    <ChoiceButton label="MOST effective" selected={isMost} tone="most" aria={`Response ${letter} most effective`} onClick={() => choose("most", o.key)} />
+                    <ChoiceButton label="LEAST effective" selected={isLeast} tone="least" aria={`Response ${letter} least effective`} onClick={() => choose("least", o.key)} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-5 py-3">
+          <Button variant="outline" className="gap-2" disabled={idx === 0 || busy} onClick={() => go(idx - 1)}>
+            <ArrowLeft className="h-4 w-4" /> Back
           </Button>
-        ) : (
-          <Button
-            className="gap-2"
-            disabled={answered < total || busy || saving}
-            onClick={async () => {
-              setBusy(true); onError(null);
-              try {
-                if (!(await persist(it.id))) return;
-                await postJson(`${base}/sjt/submit`);
-                onDone();
-              } catch (e) { onError((e as Error).message); }
-              finally { setBusy(false); }
-            }}>
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-            {answered < total ? `Answer all (${answered}/${total})` : "Submit scenario section"}
-          </Button>
-        )}
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            {saving > 0 ? "Saving…" : unsaved ? "Not saved yet" : "Progress saved automatically"}
+          </span>
+          {!isLast ? (
+            <Button className="gap-2" disabled={!complete(pick) || busy} onClick={() => go(idx + 1)}>
+              Next <ArrowRight className="h-4 w-4" />
+            </Button>
+          ) : (
+            <Button
+              className="gap-2"
+              disabled={answered < total || busy || saving > 0}
+              onClick={async () => {
+                setBusy(true); onError(null);
+                try {
+                  if (!(await persist(it.id, picks[it.id]))) return;
+                  await postJson(`${base}/sjt/submit`);
+                  onDone();
+                } catch (e) { onError((e as Error).message); }
+                finally { setBusy(false); }
+              }}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {answered < total ? `Answer all (${answered}/${total})` : "Submit scenario section"}
+            </Button>
+          )}
+        </div>
       </div>
       {isLast && answered < total && (
         <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
@@ -408,6 +432,21 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
         </div>
       )}
     </div>
+  );
+}
+
+/** MOST / LEAST marker under a response card. Cards stay one neutral colour; only the
+ *  candidate's own marks are coloured, so nothing hints at the keyed answer. */
+function ChoiceButton({ label, selected, tone, aria, onClick }: { label: string; selected: boolean; tone: "most" | "least"; aria: string; onClick: () => void }) {
+  const on = tone === "most" ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600" : "border-rose-600 bg-rose-600 text-white hover:bg-rose-600";
+  return (
+    <button type="button" aria-label={aria} aria-pressed={selected} onClick={onClick}
+      className={`flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${selected ? on : "border-border text-muted-foreground hover:bg-muted"}`}>
+      <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-white" : "border-muted-foreground"}`}>
+        {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+      </span>
+      {label}
+    </button>
   );
 }
 

@@ -5,7 +5,8 @@ import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, Download, Clo
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, cognitiveNarrative } from "@/lib/psychometrics/framework";
 import { useCognitiveLanguage } from "./cognitive-language";
-import { FigureGrid, FigureCell } from "@/components/shared/logica-figure";
+import { FigureGrid, FigureCell, FigureData } from "@/components/shared/logica-figure";
+import { hasDrawnOptions } from "@/lib/psychometrics/figure";
 import { useNoCopy } from "@/components/shared/use-no-copy";
 
 type Lang = "en" | "ar";
@@ -533,16 +534,17 @@ export function PsychometricsClient({
                         return (
                           <section key={item.id} className="rounded-lg border bg-white p-4">
                             <p id={`cog-q-${item.id}`} className="text-sm font-semibold text-[#010131]">{num}. {item.stem}</p>
-                            {item.figure && (
+                            {item.figure?.kind === "grid" && (
                               <div className="mt-3">
                                 <FigureGrid figure={item.figure} ariaLabel={lang === "ar" ? "شبكة نمط فيها خانة فارغة" : "Pattern grid with one empty cell"} />
                               </div>
                             )}
-                            <div className={`mt-2 grid gap-2 ${item.figure ? "grid-cols-2 sm:grid-cols-4" : "sm:grid-cols-2"}`} role="radiogroup" aria-labelledby={`cog-q-${item.id}`}>
+                            {item.figure?.kind === "data" && <div className="mt-3"><FigureData figure={item.figure} /></div>}
+                            <div className={`mt-2 grid gap-2 ${hasDrawnOptions(item.figure) ? "grid-cols-2 sm:grid-cols-4" : "sm:grid-cols-2"}`} role="radiogroup" aria-labelledby={`cog-q-${item.id}`}>
                               {item.options.map((opt, oi) => {
                                 // Position letters in this sitting's shuffled order.
                                 const letter = (lang === "ar" ? ["أ", "ب", "ج", "د", "هـ", "و"] : ["A", "B", "C", "D", "E", "F"])[oi] ?? String(oi + 1);
-                                const drawing = item.figure?.options[oi];
+                                const drawing = hasDrawnOptions(item.figure) ? item.figure.options[oi] : undefined;
                                 return (
                                   <label key={oi} htmlFor={`${item.id}-${oi}`} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"}`}>
                                     <input type="radio" id={`${item.id}-${oi}`} name={item.id} checked={answers[item.id] === oi}

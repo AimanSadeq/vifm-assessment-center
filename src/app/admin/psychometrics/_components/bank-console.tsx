@@ -15,7 +15,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PSY_TIER } from "@/lib/psychometrics/calibration";
-import { FigureGrid, FigureCell } from "@/components/shared/logica-figure";
+import { FigureGrid, FigureCell, FigureData } from "@/components/shared/logica-figure";
+import { hasDrawnOptions } from "@/lib/psychometrics/figure";
 import { COGNITIVE_BLUEPRINT, facetKeysForSubtest, cognitiveFacetMeta } from "@/lib/psychometrics/framework";
 import type { PsyBankView, InstrumentReadiness, ScaleReadiness, BankItem, PsyKind } from "@/lib/psychometrics/bank";
 import {
@@ -235,9 +236,10 @@ function ItemRow({ item }: { item: BankItem }) {
             <>
               <p className="mt-1 text-sm text-slate-800">{item.stem_en}</p>
               {item.stem_ar && <p className="text-sm text-slate-400" dir="rtl">{item.stem_ar}</p>}
-              {item.figure && item.options_en && (
+              {item.figure?.kind === "data" && <FigureData figure={item.figure} />}
+              {hasDrawnOptions(item.figure) && item.options_en && (
                 <div className="mt-2 flex flex-wrap items-start gap-3">
-                  <FigureGrid figure={item.figure} ariaLabel="Pattern grid" />
+                  {item.figure.kind === "grid" && <FigureGrid figure={item.figure} ariaLabel="Pattern grid" />}
                   <div className="grid grid-cols-2 gap-1.5">
                     {item.figure.options.map((c, i) => (
                       <div key={i} className={`rounded-md border p-1 ${i === item.correct_index ? "border-emerald-500 bg-emerald-50" : "border-slate-200"}`}>

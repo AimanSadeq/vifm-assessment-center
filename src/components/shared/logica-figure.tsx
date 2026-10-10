@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import type { FigCell, LogicaFigure } from "@/lib/psychometrics/figure";
+import type { DataFigure, FigCell, GridFigure } from "@/lib/psychometrics/figure";
 
 /**
  * Draws a Logica figure spec (lib/psychometrics/figure.ts) with plain SVG
@@ -55,6 +55,18 @@ function Shape({ cell, clipId }: { cell: FigCell; clipId: string }) {
   } else if (cell.shape === "square") {
     outline = <rect x={cx - R} y={cy - R} width={2 * R} height={2 * R} />;
     clipShape = <rect x={cx - R} y={cy - R} width={2 * R} height={2 * R} />;
+  } else if (cell.shape === "rectangle") {
+    outline = <rect x={cx - R * 1.08} y={cy - R * 0.6} width={2.16 * R} height={1.2 * R} />;
+    clipShape = outline;
+  } else if (cell.shape === "diamond") {
+    // Rhombus: four equal sides, no right angles (diagonals 60 x 68 at R=34).
+    const pts = `${cx},${cy - R} ${cx + R * 0.88},${cy} ${cx},${cy + R} ${cx - R * 0.88},${cy}`;
+    outline = <polygon points={pts} />;
+    clipShape = outline;
+  } else if (cell.shape === "isosceles") {
+    const pts = `${cx},${cy - R * 1.12} ${cx + R * 0.78},${cy + R * 1.0} ${cx - R * 0.78},${cy + R * 1.0}`;
+    outline = <polygon points={pts} />;
+    clipShape = outline;
   } else {
     const pts = `${cx},${cy - R * 1.05} ${cx + R * 1.1},${cy + R * 0.85} ${cx - R * 1.1},${cy + R * 0.85}`;
     outline = <polygon points={pts} />;
@@ -155,7 +167,7 @@ export function FigureCell({ cell, size = 72, label }: { cell: FigCell; size?: n
 }
 
 /** The question grid with its "?" cell. */
-export function FigureGrid({ figure, ariaLabel }: { figure: LogicaFigure; ariaLabel: string }) {
+export function FigureGrid({ figure, ariaLabel }: { figure: GridFigure; ariaLabel: string }) {
   const cellPx = figure.cols === 3 ? 84 : 96;
   return (
     <div dir="ltr" role="img" aria-label={ariaLabel}
@@ -174,5 +186,69 @@ export function FigureGrid({ figure, ariaLabel }: { figure: LogicaFigure; ariaLa
         </div>
       ))}
     </div>
+  );
+}
+
+const fmt = (v: number) => (Number.isInteger(v) ? String(v) : String(Math.round(v * 100) / 100));
+
+/**
+ * Data for numerical items: a small table or a single-series column chart.
+ * Every value is printed (candidates compute with exact figures, so nothing
+ * is left to estimate from bar height); one hue, no legend, recessive
+ * baseline. Labels follow the page direction; the chart keeps its authored
+ * left-to-right order.
+ */
+export function FigureData({ figure }: { figure: DataFigure }) {
+  if (figure.style === "table") {
+    return (
+      <table className="mt-1 min-w-[16rem] border-collapse overflow-hidden rounded-lg border border-slate-200 text-sm">
+        <thead>
+          <tr className="bg-slate-50 text-[#010131]">
+            <th className="border-b border-slate-200 px-4 py-2 text-start font-semibold">{figure.labelHead}</th>
+            <th className="border-b border-slate-200 px-4 py-2 text-end font-semibold">{figure.title}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {figure.rows.map((r, i) => (
+            <tr key={i} className="border-b border-slate-100 last:border-0">
+              <td className="px-4 py-1.5 text-slate-700">{r.label}</td>
+              <td className="px-4 py-1.5 text-end font-medium tabular-nums text-[#010131]">{fmt(r.value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  }
+
+  const n = figure.rows.length;
+  const band = 72;
+  const W = Math.max(240, n * band + 32);
+  const H = 196;
+  const top = 34, base = 156;
+  const max = Math.max(...figure.rows.map((r) => r.value), 1);
+  const barW = 24;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width={W} height={H} role="img" aria-label={`${figure.title}: ${figure.rows.map((r) => `${r.label} ${fmt(r.value)}`).join(", ")}`}
+      // The chart's geometry is left-to-right in every language; Arabic labels
+      // still shape correctly inside each text element.
+      style={{ direction: "ltr" }}
+      className="mt-1 max-w-full rounded-lg border border-slate-200 bg-white">
+      <text x={16} y={20} fontSize={12} fontWeight={600} fill="#010131">{figure.title}</text>
+      {figure.rows.map((r, i) => {
+        const cx = 16 + band * i + band / 2;
+        const h = Math.max(2, ((base - top) * r.value) / max);
+        const x = cx - barW / 2, y = base - h, rr = Math.min(4, h);
+        // 4px rounded data end, square at the baseline.
+        const d = `M${x},${base} V${y + rr} Q${x},${y} ${x + rr},${y} H${x + barW - rr} Q${x + barW},${y} ${x + barW},${y + rr} V${base} Z`;
+        return (
+          <g key={i}>
+            <path d={d} fill="#5391D5" />
+            <text x={cx} y={y - 6} textAnchor="middle" fontSize={12} fontWeight={600} fill="#010131">{fmt(r.value)}</text>
+            <text x={cx} y={base + 18} textAnchor="middle" fontSize={11} fill="#475569">{r.label}</text>
+          </g>
+        );
+      })}
+      <line x1={12} x2={W - 12} y1={base} y2={base} stroke="#cbd5e1" strokeWidth={1} />
+    </svg>
   );
 }

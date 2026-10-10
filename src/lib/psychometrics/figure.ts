@@ -1,22 +1,32 @@
 /**
- * Logica visual items (Ali, 10 Oct 2026): matrix questions are served as drawn
- * figures instead of prose. The old stems described every cell in words AND
- * stated the rule that solves the grid, so they measured reading rather than
- * inductive reasoning, and the whole item could be pasted into a chatbot.
+ * Logica visual items (Ali, 10 Oct 2026): questions that are about a picture
+ * or a table are served as one, instead of prose. The old stems described every
+ * cell, shape or data point in words (the matrix ones also stated the rule that
+ * solves them), so they measured reading rather than reasoning, and the whole
+ * item could be pasted into a chatbot.
  *
  * A figure is DATA, never markup: psy_items.figure holds a small spec that the
- * client draws with plain SVG elements (components/shared/logica-figure.tsx).
- * No stored SVG string is ever injected into the page.
+ * client draws with plain SVG / HTML elements (components/shared/logica-figure.tsx).
+ * No stored markup is ever injected into the page. Three kinds:
  *
- * `options` is aligned with options_en/options_ar in AUTHORED order; the
- * per-sitting shuffle permutes it with the same map as the option text, so the
- * key keeps pointing at the right drawing. The option text stays as the
+ *   grid     a 2x2 / 3x3 pattern with one "?" cell, plus one drawing per option
+ *            (inductive matrix items). `kind` may be omitted for this one.
+ *   options  drawn options only, no grid (e.g. odd-one-out shapes).
+ *   data     a small table or bar chart; options stay text (numerical data
+ *            interpretation). Stored with English and Arabic labels; the server
+ *            resolves one language before it reaches the browser.
+ *
+ * Drawn `options` are aligned with options_en/options_ar in AUTHORED order; the
+ * per-sitting shuffle permutes them with the same map as the option text, so
+ * the key keeps pointing at the right drawing. The option text stays as the
  * accessible label of each drawing.
  *
  * Pure and dependency-free (server + client safe).
  */
 
-export const FIG_SHAPES = ["circle", "square", "triangle"] as const;
+// "isosceles" is a tall, clearly non-equilateral triangle (odd-one-out sets,
+// where an equilateral one would add a second "odd" feature: equal sides).
+export const FIG_SHAPES = ["circle", "square", "triangle", "rectangle", "diamond", "isosceles"] as const;
 export type FigShape = (typeof FIG_SHAPES)[number];
 export type FigQuadrant = "tl" | "tr" | "br" | "bl";
 
@@ -41,7 +51,8 @@ export type FigCell = {
   quad?: FigQuadrant[];
 };
 
-export type LogicaFigure = {
+export type GridFigure = {
+  kind: "grid";
   cols: number;
   /** Row-major cells; null is the missing cell shown as "?". */
   cells: (FigCell | null)[];
@@ -49,11 +60,33 @@ export type LogicaFigure = {
   options: FigCell[];
 };
 
+export type OptionsFigure = { kind: "options"; options: FigCell[] };
+
+/** Data figure as served: one language, ready to draw. */
+export type DataFigure = {
+  kind: "data";
+  style: "table" | "bar";
+  /** Chart title, or the value column heading of a table. */
+  title: string;
+  /** Heading of the label column (table only). */
+  labelHead: string;
+  rows: { label: string; value: number }[];
+};
+
+export type LogicaFigure = GridFigure | OptionsFigure | DataFigure;
+
+/** Figures whose answer options are drawings. */
+export const hasDrawnOptions = (f: LogicaFigure | null | undefined): f is GridFigure | OptionsFigure =>
+  !!f && (f.kind === "grid" || f.kind === "options");
+
 const MAX_COUNT = 6;
+const MAX_ROWS = 8;
 const QUADS: readonly FigQuadrant[] = ["tl", "tr", "br", "bl"];
 
 const isCount = (n: unknown, min = 0): n is number =>
   typeof n === "number" && Number.isInteger(n) && n >= min && n <= MAX_COUNT;
+const isText = (s: unknown, max = 80): s is string =>
+  typeof s === "string" && s.trim().length > 0 && s.length <= max;
 
 function parseCell(raw: unknown): FigCell | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
@@ -117,13 +150,56 @@ function parseCell(raw: unknown): FigCell | null {
   return out;
 }
 
+function parseOptions(raw: unknown, optionCount: number): FigCell[] | null {
+  if (!Array.isArray(raw) || raw.length !== optionCount || optionCount < 2) return null;
+  const options: FigCell[] = [];
+  for (const o of raw) {
+    const p = parseCell(o);
+    if (!p) return null;
+    options.push(p);
+  }
+  // Two identical drawings would make the item unanswerable.
+  if (new Set(options.map(cellKey)).size !== options.length) return null;
+  return options;
+}
+
+function parseData(r: Record<string, unknown>, lang: "en" | "ar"): DataFigure | null {
+  if (r.style !== "table" && r.style !== "bar") return null;
+  const pick = (base: string): unknown => r[`${base}_${lang}`];
+  const title = pick("title");
+  const labelHead = pick("label_head");
+  if (!isText(title) || !isText(labelHead)) return null;
+  if (!Array.isArray(r.rows) || r.rows.length < 2 || r.rows.length > MAX_ROWS) return null;
+  const rows: DataFigure["rows"] = [];
+  for (const row of r.rows) {
+    if (!row || typeof row !== "object") return null;
+    const x = row as Record<string, unknown>;
+    const label = x[`label_${lang}`];
+    const value = x.value;
+    if (!isText(label, 40) || typeof value !== "number" || !Number.isFinite(value) || value < 0) return null;
+    rows.push({ label, value });
+  }
+  return { kind: "data", style: r.style, title, labelHead, rows };
+}
+
 /**
- * Validate a stored figure. Returns null for anything malformed, so a bad row
- * is never half-drawn. `optionCount` must match the item's option list.
+ * Validate a stored figure and resolve it for one language. Returns null for
+ * anything malformed, so a bad row is never half-drawn. `optionCount` must
+ * match the item's option list when the options are drawn.
  */
-export function parseFigure(raw: unknown, optionCount: number): LogicaFigure | null {
+export function parseFigure(raw: unknown, optionCount: number, lang: "en" | "ar" = "en"): LogicaFigure | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
+  const kind = r.kind ?? "grid";
+
+  if (kind === "data") return parseData(r, lang);
+
+  if (kind === "options") {
+    const options = parseOptions(r.options, optionCount);
+    return options ? { kind: "options", options } : null;
+  }
+
+  if (kind !== "grid") return null;
   const cols = r.cols;
   if (cols !== 2 && cols !== 3) return null;
   if (!Array.isArray(r.cells) || r.cells.length !== cols * cols) return null;
@@ -136,17 +212,9 @@ export function parseFigure(raw: unknown, optionCount: number): LogicaFigure | n
     cells.push(p);
   }
   if (missing !== 1) return null;
-  if (!Array.isArray(r.options) || r.options.length !== optionCount || optionCount < 2) return null;
-  const options: FigCell[] = [];
-  for (const o of r.options) {
-    const p = parseCell(o);
-    if (!p) return null;
-    options.push(p);
-  }
-  // Two identical drawings would make the item unanswerable.
-  const seen = new Set(options.map(cellKey));
-  if (seen.size !== options.length) return null;
-  return { cols, cells, options };
+  const options = parseOptions(r.options, optionCount);
+  if (!options) return null;
+  return { kind: "grid", cols, cells, options };
 }
 
 /** Canonical string for a cell (equality checks and tests). */
@@ -157,5 +225,6 @@ export function cellKey(c: FigCell): string {
 
 /** Reorder a figure's option drawings with a served-order permutation. */
 export function permuteFigure(fig: LogicaFigure, origIndex: number[]): LogicaFigure {
+  if (!hasDrawnOptions(fig)) return fig;
   return { ...fig, options: origIndex.map((i) => fig.options[i]) };
 }

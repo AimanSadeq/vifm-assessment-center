@@ -445,7 +445,7 @@ export async function assembleFromBank(
         if (it.correct_index == null) return false;
         // A figure item whose drawing does not validate is never served: its stem
         // only says "complete the grid", so it is meaningless without the grid.
-        if (it.figure != null && !parseFigure(it.figure, asStrArr(lang === "ar" ? it.options_ar : it.options_en)?.length ?? 0)) return false;
+        if (it.figure != null && !parseFigure(it.figure, asStrArr(lang === "ar" ? it.options_ar : it.options_en)?.length ?? 0, lang)) return false;
         if (lang === "ar") {
           const oa = asStrArr(it.options_ar);
           return !!(it.stem_ar && it.stem_ar.trim()) && !!oa && oa.length >= 2 && it.correct_index < oa.length;
@@ -478,7 +478,7 @@ export async function assembleFromBank(
             if (ordered.length < need) return null; // fail safe: cell can't fill
             for (const it of ordered.slice(0, need)) {
               const options = (lang === "ar" ? asStrArr(it.options_ar) : asStrArr(it.options_en)) ?? [];
-              const figure = it.figure != null ? parseFigure(it.figure, options.length) : null;
+              const figure = it.figure != null ? parseFigure(it.figure, options.length, lang) : null;
               out.push({
                 id: it.id,
                 scale: subtest,

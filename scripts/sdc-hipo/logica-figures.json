@@ -1,5 +1,5 @@
 {
-  "_about": "Logica ind_matrix items redrawn as figures (Ali, 10 Oct 2026). Each entry replaces one seed_v1 item: the old row is retired, a new row is inserted with the figure, a short stem that no longer states the rule, and the same option text (kept as the accessible label of each drawing). options[i] in the figure is the drawing for options_en[i]. correct is the authored index. Items marked redesigned had to gain rows so the answer is decidable without the rule text; they need Ali's review in particular.",
+  "_about": "Logica items shown as drawings, tables or charts instead of prose (Ali, 10 Oct 2026). Each entry replaces one seed_v1 text item: the old row is retired, a new row is inserted with the figure, a stem that no longer describes the picture or data in words (and, for matrix items, no longer states the rule), and the same option text (kept as the accessible label of each drawing). Figure kinds: grid (pattern + drawn options), options (drawn options only), data (table or bar chart, text options). Entries without their own stem use the shared matrix stem. correct is the authored index. Items marked redesigned changed beyond presentation and need Ali's review in particular.",
   "stem_en": "Look at the pattern in the grid. Which option belongs in the empty cell?",
   "stem_ar": "انظر إلى النمط في الشبكة. أيّ خيار يناسب الخانة الفارغة؟",
   "items": [
@@ -8,10 +8,41 @@
       "label": "Arrows rotating",
       "difficulty": "easy",
       "correct": 0,
+      "options_en": [
+        "A leftward-pointing arrow",
+        "An upward-pointing arrow",
+        "A downward-pointing arrow",
+        "A rightward-pointing arrow"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 2,
-        "cells": [{ "arrow": "up" }, { "arrow": "right" }, { "arrow": "down" }, null],
-        "options": [{ "arrow": "left" }, { "arrow": "up" }, { "arrow": "down" }, { "arrow": "right" }]
+        "cells": [
+          {
+            "arrow": "up"
+          },
+          {
+            "arrow": "right"
+          },
+          {
+            "arrow": "down"
+          },
+          null
+        ],
+        "options": [
+          {
+            "arrow": "left"
+          },
+          {
+            "arrow": "up"
+          },
+          {
+            "arrow": "down"
+          },
+          {
+            "arrow": "right"
+          }
+        ]
       }
     },
     {
@@ -20,17 +51,68 @@
       "difficulty": "easy",
       "redesigned": "The 2x2 version (white, half, full, ?) has no single answer once the rule text is removed. Now a 3x3 grid: every row and every column holds white, left half and full once. Key changes from 'fully white' to 'left half shaded'.",
       "correct": 2,
+      "options_en": [
+        "A fully white circle",
+        "A fully shaded circle",
+        "A circle with its left half shaded",
+        "A circle with its right half shaded"
+      ],
       "rationale": "Every row and every column holds a white circle, a half-shaded circle and a fully shaded circle once each. Row 3 already has full and white, so the missing cell is the half-shaded circle; the third column (full, white, ?) confirms it. 'Fully white' and 'fully shaded' repeat a state already in the row. 'Right half shaded' never appears in the grid.",
       "figure": {
+        "kind": "grid",
         "cols": 3,
         "cells": [
-          { "shape": "circle", "fill": "none" }, { "shape": "circle", "fill": "left" }, { "shape": "circle", "fill": "full" },
-          { "shape": "circle", "fill": "left" }, { "shape": "circle", "fill": "full" }, { "shape": "circle", "fill": "none" },
-          { "shape": "circle", "fill": "full" }, { "shape": "circle", "fill": "none" }, null
+          {
+            "shape": "circle",
+            "fill": "none"
+          },
+          {
+            "shape": "circle",
+            "fill": "left"
+          },
+          {
+            "shape": "circle",
+            "fill": "full"
+          },
+          {
+            "shape": "circle",
+            "fill": "left"
+          },
+          {
+            "shape": "circle",
+            "fill": "full"
+          },
+          {
+            "shape": "circle",
+            "fill": "none"
+          },
+          {
+            "shape": "circle",
+            "fill": "full"
+          },
+          {
+            "shape": "circle",
+            "fill": "none"
+          },
+          null
         ],
         "options": [
-          { "shape": "circle", "fill": "none" }, { "shape": "circle", "fill": "full" },
-          { "shape": "circle", "fill": "left" }, { "shape": "circle", "fill": "right" }
+          {
+            "shape": "circle",
+            "fill": "none"
+          },
+          {
+            "shape": "circle",
+            "fill": "full"
+          },
+          {
+            "shape": "circle",
+            "fill": "left"
+          },
+          {
+            "shape": "circle",
+            "fill": "right"
+          }
         ]
       }
     },
@@ -39,10 +121,41 @@
       "label": "Dot count",
       "difficulty": "easy",
       "correct": 0,
+      "options_en": [
+        "Four dots",
+        "Three dots",
+        "Two dots",
+        "Five dots"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 2,
-        "cells": [{ "dots": 1 }, { "dots": 2 }, { "dots": 3 }, null],
-        "options": [{ "dots": 4 }, { "dots": 3 }, { "dots": 2 }, { "dots": 5 }]
+        "cells": [
+          {
+            "dots": 1
+          },
+          {
+            "dots": 2
+          },
+          {
+            "dots": 3
+          },
+          null
+        ],
+        "options": [
+          {
+            "dots": 4
+          },
+          {
+            "dots": 3
+          },
+          {
+            "dots": 2
+          },
+          {
+            "dots": 5
+          }
+        ]
       }
     },
     {
@@ -50,16 +163,91 @@
       "label": "Shape and dot-count square",
       "difficulty": "hard",
       "correct": 0,
+      "options_en": [
+        "Square with 1 dot",
+        "Triangle with 1 dot",
+        "Square with 3 dots",
+        "Circle with 1 dot"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 3,
         "cells": [
-          { "shape": "circle", "side": { "count": 1 } }, { "shape": "square", "side": { "count": 2 } }, { "shape": "triangle", "side": { "count": 3 } },
-          { "shape": "square", "side": { "count": 3 } }, { "shape": "triangle", "side": { "count": 1 } }, { "shape": "circle", "side": { "count": 2 } },
-          { "shape": "triangle", "side": { "count": 2 } }, { "shape": "circle", "side": { "count": 3 } }, null
+          {
+            "shape": "circle",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "square",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "triangle",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "square",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "triangle",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "circle",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "triangle",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "circle",
+            "side": {
+              "count": 3
+            }
+          },
+          null
         ],
         "options": [
-          { "shape": "square", "side": { "count": 1 } }, { "shape": "triangle", "side": { "count": 1 } },
-          { "shape": "square", "side": { "count": 3 } }, { "shape": "circle", "side": { "count": 1 } }
+          {
+            "shape": "square",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "triangle",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "square",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "circle",
+            "side": {
+              "count": 1
+            }
+          }
         ]
       }
     },
@@ -69,17 +257,94 @@
       "difficulty": "hard",
       "redesigned": "The old text only described row 3; rows 1 and 2 are new. Row 1 shows the fill order (top-left, top-right, bottom-right, bottom-left), row 2 starts empty, row 3 is as before. Key unchanged.",
       "correct": 0,
+      "options_en": [
+        "Three shaded: top-left, top-right, and bottom-right",
+        "Three shaded: top-left, top-right, and bottom-left",
+        "Two shaded: top-left and bottom-right",
+        "Four shaded: all small cells"
+      ],
       "rationale": "Along every row one more small cell is shaded at each step. Row 1 shows the order the cells fill in: top-left, top-right, then bottom-right, then bottom-left (clockwise). Row 3 has top-left, then top-left and top-right, so the next step adds bottom-right. The option ending in bottom-left goes counter-clockwise. 'Two shaded' fails to add a cell. 'Four shaded' adds two cells at once.",
       "figure": {
+        "kind": "grid",
         "cols": 3,
         "cells": [
-          { "quad": ["tl", "tr"] }, { "quad": ["tl", "tr", "br"] }, { "quad": ["tl", "tr", "br", "bl"] },
-          { "quad": [] }, { "quad": ["tl"] }, { "quad": ["tl", "tr"] },
-          { "quad": ["tl"] }, { "quad": ["tl", "tr"] }, null
+          {
+            "quad": [
+              "tl",
+              "tr"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br",
+              "bl"
+            ]
+          },
+          {
+            "quad": []
+          },
+          {
+            "quad": [
+              "tl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr"
+            ]
+          },
+          {
+            "quad": [
+              "tl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr"
+            ]
+          },
+          null
         ],
         "options": [
-          { "quad": ["tl", "tr", "br"] }, { "quad": ["tl", "tr", "bl"] },
-          { "quad": ["tl", "br"] }, { "quad": ["tl", "tr", "br", "bl"] }
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br",
+              "bl"
+            ]
+          }
         ]
       }
     },
@@ -88,14 +353,56 @@
       "label": "Line count",
       "difficulty": "hard",
       "correct": 0,
+      "options_en": [
+        "Five lines",
+        "Four lines",
+        "Six lines",
+        "Three lines"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 3,
         "cells": [
-          { "lines": 1 }, { "lines": 2 }, { "lines": 3 },
-          { "lines": 2 }, { "lines": 3 }, { "lines": 4 },
-          { "lines": 3 }, { "lines": 4 }, null
+          {
+            "lines": 1
+          },
+          {
+            "lines": 2
+          },
+          {
+            "lines": 3
+          },
+          {
+            "lines": 2
+          },
+          {
+            "lines": 3
+          },
+          {
+            "lines": 4
+          },
+          {
+            "lines": 3
+          },
+          {
+            "lines": 4
+          },
+          null
         ],
-        "options": [{ "lines": 5 }, { "lines": 4 }, { "lines": 6 }, { "lines": 3 }]
+        "options": [
+          {
+            "lines": 5
+          },
+          {
+            "lines": 4
+          },
+          {
+            "lines": 6
+          },
+          {
+            "lines": 3
+          }
+        ]
       }
     },
     {
@@ -103,10 +410,41 @@
       "label": "Clock hand",
       "difficulty": "medium",
       "correct": 0,
+      "options_en": [
+        "Hand pointing to 9",
+        "Hand pointing to 12",
+        "Hand pointing to 3",
+        "Hand pointing to 6"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 2,
-        "cells": [{ "clock": 12 }, { "clock": 3 }, { "clock": 6 }, null],
-        "options": [{ "clock": 9 }, { "clock": 12 }, { "clock": 3 }, { "clock": 6 }]
+        "cells": [
+          {
+            "clock": 12
+          },
+          {
+            "clock": 3
+          },
+          {
+            "clock": 6
+          },
+          null
+        ],
+        "options": [
+          {
+            "clock": 9
+          },
+          {
+            "clock": 12
+          },
+          {
+            "clock": 3
+          },
+          {
+            "clock": 6
+          }
+        ]
       }
     },
     {
@@ -114,15 +452,52 @@
       "label": "Dot removed",
       "difficulty": "medium",
       "correct": 0,
+      "options_en": [
+        "A triangle with no dot",
+        "A triangle with a dot inside",
+        "A circle with no dot",
+        "A square with no dot"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 2,
         "cells": [
-          { "shape": "circle", "inner": { "glyph": "dot", "count": 1 } }, { "shape": "circle" },
-          { "shape": "triangle", "inner": { "glyph": "dot", "count": 1 } }, null
+          {
+            "shape": "circle",
+            "inner": {
+              "glyph": "dot",
+              "count": 1
+            }
+          },
+          {
+            "shape": "circle"
+          },
+          {
+            "shape": "triangle",
+            "inner": {
+              "glyph": "dot",
+              "count": 1
+            }
+          },
+          null
         ],
         "options": [
-          { "shape": "triangle" }, { "shape": "triangle", "inner": { "glyph": "dot", "count": 1 } },
-          { "shape": "circle" }, { "shape": "square" }
+          {
+            "shape": "triangle"
+          },
+          {
+            "shape": "triangle",
+            "inner": {
+              "glyph": "dot",
+              "count": 1
+            }
+          },
+          {
+            "shape": "circle"
+          },
+          {
+            "shape": "square"
+          }
         ]
       }
     },
@@ -131,15 +506,47 @@
       "label": "Size and shape",
       "difficulty": "medium",
       "correct": 0,
+      "options_en": [
+        "A large triangle",
+        "A small triangle",
+        "A large square",
+        "A small square"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 2,
         "cells": [
-          { "shape": "square", "size": "small" }, { "shape": "square", "size": "large" },
-          { "shape": "triangle", "size": "small" }, null
+          {
+            "shape": "square",
+            "size": "small"
+          },
+          {
+            "shape": "square",
+            "size": "large"
+          },
+          {
+            "shape": "triangle",
+            "size": "small"
+          },
+          null
         ],
         "options": [
-          { "shape": "triangle", "size": "large" }, { "shape": "triangle", "size": "small" },
-          { "shape": "square", "size": "large" }, { "shape": "square", "size": "small" }
+          {
+            "shape": "triangle",
+            "size": "large"
+          },
+          {
+            "shape": "triangle",
+            "size": "small"
+          },
+          {
+            "shape": "square",
+            "size": "large"
+          },
+          {
+            "shape": "square",
+            "size": "small"
+          }
         ]
       }
     },
@@ -148,15 +555,531 @@
       "label": "Stars inside shapes",
       "difficulty": "medium",
       "correct": 0,
+      "options_en": [
+        "A square containing two stars",
+        "A circle containing two stars",
+        "A square containing one star",
+        "A square containing three stars"
+      ],
       "figure": {
+        "kind": "grid",
         "cols": 2,
         "cells": [
-          { "shape": "circle", "inner": { "glyph": "star", "count": 1 } }, { "shape": "circle", "inner": { "glyph": "star", "count": 2 } },
-          { "shape": "square", "inner": { "glyph": "star", "count": 1 } }, null
+          {
+            "shape": "circle",
+            "inner": {
+              "glyph": "star",
+              "count": 1
+            }
+          },
+          {
+            "shape": "circle",
+            "inner": {
+              "glyph": "star",
+              "count": 2
+            }
+          },
+          {
+            "shape": "square",
+            "inner": {
+              "glyph": "star",
+              "count": 1
+            }
+          },
+          null
         ],
         "options": [
-          { "shape": "square", "inner": { "glyph": "star", "count": 2 } }, { "shape": "circle", "inner": { "glyph": "star", "count": 2 } },
-          { "shape": "square", "inner": { "glyph": "star", "count": 1 } }, { "shape": "square", "inner": { "glyph": "star", "count": 3 } }
+          {
+            "shape": "square",
+            "inner": {
+              "glyph": "star",
+              "count": 2
+            }
+          },
+          {
+            "shape": "circle",
+            "inner": {
+              "glyph": "star",
+              "count": 2
+            }
+          },
+          {
+            "shape": "square",
+            "inner": {
+              "glyph": "star",
+              "count": 1
+            }
+          },
+          {
+            "shape": "square",
+            "inner": {
+              "glyph": "star",
+              "count": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "aa80f9a3-ed9b-467d-8c27-f0c75d1917bd",
+      "label": "Highest temperature",
+      "difficulty": "easy",
+      "correct": 3,
+      "options_en": [
+        "19°C",
+        "21°C",
+        "22°C",
+        "25°C"
+      ],
+      "stem_en": "The chart shows the high temperature on four days. What was the highest temperature recorded?",
+      "stem_ar": "يوضّح المخطط درجة الحرارة العليا في أربعة أيام. ما أعلى درجة حرارة سُجّلت؟",
+      "figure": {
+        "kind": "data",
+        "style": "bar",
+        "title_en": "High temperature (°C)",
+        "title_ar": "درجة الحرارة العليا (درجة مئوية)",
+        "label_head_en": "Day",
+        "label_head_ar": "اليوم",
+        "rows": [
+          {
+            "label_en": "Monday",
+            "label_ar": "الاثنين",
+            "value": 22
+          },
+          {
+            "label_en": "Tuesday",
+            "label_ar": "الثلاثاء",
+            "value": 19
+          },
+          {
+            "label_en": "Wednesday",
+            "label_ar": "الأربعاء",
+            "value": 25
+          },
+          {
+            "label_en": "Thursday",
+            "label_ar": "الخميس",
+            "value": 21
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "4c669428-bb9d-4e8e-87df-3108e97e4bbf",
+      "label": "Books read",
+      "difficulty": "easy",
+      "correct": 1,
+      "options_en": [
+        "11",
+        "12",
+        "13",
+        "15"
+      ],
+      "stem_en": "The table shows the number of books read each month. How many books were read in total across the three months?",
+      "stem_ar": "يوضّح الجدول عدد الكتب المقروءة في كل شهر. كم عدد الكتب المقروءة إجمالاً خلال الأشهر الثلاثة؟",
+      "figure": {
+        "kind": "data",
+        "style": "table",
+        "title_en": "Books read",
+        "title_ar": "عدد الكتب المقروءة",
+        "label_head_en": "Month",
+        "label_head_ar": "الشهر",
+        "rows": [
+          {
+            "label_en": "January",
+            "label_ar": "يناير",
+            "value": 3
+          },
+          {
+            "label_en": "February",
+            "label_ar": "فبراير",
+            "value": 5
+          },
+          {
+            "label_en": "March",
+            "label_ar": "مارس",
+            "value": 4
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "64e6a11d-6e1c-4a59-990a-719961bb8a2a",
+      "label": "Daily rainfall",
+      "difficulty": "easy",
+      "correct": 1,
+      "options_en": [
+        "1",
+        "2",
+        "3",
+        "4"
+      ],
+      "stem_en": "The chart shows the daily rainfall over four days. On how many days was the rainfall exactly 6 mm?",
+      "stem_ar": "يوضّح المخطط كمية الأمطار اليومية على مدى أربعة أيام. في كم يوم كانت كمية الأمطار 6 مم بالضبط؟",
+      "figure": {
+        "kind": "data",
+        "style": "bar",
+        "title_en": "Daily rainfall (mm)",
+        "title_ar": "كمية الأمطار اليومية (مم)",
+        "label_head_en": "Day",
+        "label_head_ar": "اليوم",
+        "rows": [
+          {
+            "label_en": "Day 1",
+            "label_ar": "اليوم 1",
+            "value": 6
+          },
+          {
+            "label_en": "Day 2",
+            "label_ar": "اليوم 2",
+            "value": 6
+          },
+          {
+            "label_en": "Day 3",
+            "label_ar": "اليوم 3",
+            "value": 9
+          },
+          {
+            "label_en": "Day 4",
+            "label_ar": "اليوم 4",
+            "value": 3
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "b6c4aaf6-151d-4a2a-8659-63b586309d46",
+      "label": "Lap times",
+      "difficulty": "hard",
+      "correct": 1,
+      "options_en": [
+        "2 s",
+        "4 s",
+        "6 s",
+        "10 s"
+      ],
+      "stem_en": "The table shows a runner's times for four laps. How much slower was the slowest lap than the average lap time?",
+      "stem_ar": "يوضّح الجدول أزمنة عدّاء في أربع لفّات. بكم كانت أبطأ لفة أبطأ من متوسط زمن اللفة؟",
+      "figure": {
+        "kind": "data",
+        "style": "table",
+        "title_en": "Time (seconds)",
+        "title_ar": "الزمن (ثانية)",
+        "label_head_en": "Lap",
+        "label_head_ar": "اللفة",
+        "rows": [
+          {
+            "label_en": "Lap 1",
+            "label_ar": "اللفة 1",
+            "value": 65
+          },
+          {
+            "label_en": "Lap 2",
+            "label_ar": "اللفة 2",
+            "value": 70
+          },
+          {
+            "label_en": "Lap 3",
+            "label_ar": "اللفة 3",
+            "value": 60
+          },
+          {
+            "label_en": "Lap 4",
+            "label_ar": "اللفة 4",
+            "value": 69
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "56ac4955-ba24-4dec-92c9-1c59ee0cf05d",
+      "label": "Park visitors",
+      "difficulty": "hard",
+      "correct": 3,
+      "options_en": [
+        "50%",
+        "80%",
+        "90%",
+        "125%"
+      ],
+      "stem_en": "The chart shows the number of visitors to a park over four days. By what percentage did visitor numbers increase from Thursday to Saturday?",
+      "stem_ar": "يوضّح المخطط عدد زوار حديقة على مدى أربعة أيام. بأي نسبة مئوية زاد عدد الزوار من الخميس إلى السبت؟",
+      "figure": {
+        "kind": "data",
+        "style": "bar",
+        "title_en": "Visitors",
+        "title_ar": "عدد الزوار",
+        "label_head_en": "Day",
+        "label_head_ar": "اليوم",
+        "rows": [
+          {
+            "label_en": "Thursday",
+            "label_ar": "الخميس",
+            "value": 40
+          },
+          {
+            "label_en": "Friday",
+            "label_ar": "الجمعة",
+            "value": 60
+          },
+          {
+            "label_en": "Saturday",
+            "label_ar": "السبت",
+            "value": 90
+          },
+          {
+            "label_en": "Sunday",
+            "label_ar": "الأحد",
+            "value": 50
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "043892e7-550d-412c-ae35-abe0e5a12ade",
+      "label": "Trail lengths",
+      "difficulty": "hard",
+      "correct": 1,
+      "options_en": [
+        "10.5 km",
+        "11.8 km",
+        "12.0 km",
+        "16.0 km"
+      ],
+      "stem_en": "The table shows the length of four trails. A hiker walks Trails A, C and D. What is the total distance walked?",
+      "stem_ar": "يوضّح الجدول طول أربعة مسارات. يمشي متنزّه المسارات أ وج ود. ما المسافة الإجمالية المقطوعة؟",
+      "figure": {
+        "kind": "data",
+        "style": "table",
+        "title_en": "Length (km)",
+        "title_ar": "الطول (كم)",
+        "label_head_en": "Trail",
+        "label_head_ar": "المسار",
+        "rows": [
+          {
+            "label_en": "Trail A",
+            "label_ar": "المسار أ",
+            "value": 3.5
+          },
+          {
+            "label_en": "Trail B",
+            "label_ar": "المسار ب",
+            "value": 4.2
+          },
+          {
+            "label_en": "Trail C",
+            "label_ar": "المسار ج",
+            "value": 2.8
+          },
+          {
+            "label_en": "Trail D",
+            "label_ar": "المسار د",
+            "value": 5.5
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "a6129471-076a-4d64-9b9c-424c5ab93fc3",
+      "label": "Cars entering",
+      "difficulty": "medium",
+      "correct": 1,
+      "options_en": [
+        "9 a.m. and 10 a.m.",
+        "9 a.m. and 11 a.m.",
+        "10 a.m. and 12 p.m.",
+        "11 a.m. and 12 p.m."
+      ],
+      "stem_en": "The chart shows the number of cars entering a car park each hour. Which two hours had the same number of cars entering?",
+      "stem_ar": "يوضّح المخطط عدد السيارات الداخلة إلى موقف السيارات كل ساعة. في أي ساعتين دخل العدد نفسه من السيارات؟",
+      "figure": {
+        "kind": "data",
+        "style": "bar",
+        "title_en": "Cars entering",
+        "title_ar": "السيارات الداخلة",
+        "label_head_en": "Hour",
+        "label_head_ar": "الساعة",
+        "rows": [
+          {
+            "label_en": "9 a.m.",
+            "label_ar": "9 صباحاً",
+            "value": 12
+          },
+          {
+            "label_en": "10 a.m.",
+            "label_ar": "10 صباحاً",
+            "value": 15
+          },
+          {
+            "label_en": "11 a.m.",
+            "label_ar": "11 صباحاً",
+            "value": 12
+          },
+          {
+            "label_en": "12 p.m.",
+            "label_ar": "12 ظهراً",
+            "value": 9
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "3c06a743-d58c-449c-a5a3-678b4ffc28b0",
+      "label": "Items by colour",
+      "difficulty": "medium",
+      "correct": 1,
+      "options_en": [
+        "8/25",
+        "16/25",
+        "13/25",
+        "1/2"
+      ],
+      "stem_en": "The table shows the number of items collected in each colour. Red and green together make up what fraction of all items collected?",
+      "stem_ar": "يوضّح الجدول عدد العناصر المجمّعة من كل لون. ما الكسر الذي يشكّله الأحمر والأخضر معاً من إجمالي العناصر المجمّعة؟",
+      "figure": {
+        "kind": "data",
+        "style": "table",
+        "title_en": "Items collected",
+        "title_ar": "عدد العناصر المجمّعة",
+        "label_head_en": "Colour",
+        "label_head_ar": "اللون",
+        "rows": [
+          {
+            "label_en": "Red",
+            "label_ar": "أحمر",
+            "value": 8
+          },
+          {
+            "label_en": "Blue",
+            "label_ar": "أزرق",
+            "value": 5
+          },
+          {
+            "label_en": "Green",
+            "label_ar": "أخضر",
+            "value": 8
+          },
+          {
+            "label_en": "Yellow",
+            "label_ar": "أصفر",
+            "value": 4
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "4f4c1ee7-03db-4f94-b8f2-2ca071e2eeb7",
+      "label": "Distance walked",
+      "difficulty": "medium",
+      "correct": 1,
+      "options_en": [
+        "3 km",
+        "4 km",
+        "8 km",
+        "12 km"
+      ],
+      "stem_en": "The chart shows the distance walked each day. How much farther was walked on Thursday than on Monday?",
+      "stem_ar": "يوضّح المخطط المسافة المقطوعة مشياً كل يوم. كم كانت المسافة المقطوعة يوم الخميس أكثر منها يوم الاثنين؟",
+      "figure": {
+        "kind": "data",
+        "style": "bar",
+        "title_en": "Distance walked (km)",
+        "title_ar": "المسافة المقطوعة (كم)",
+        "label_head_en": "Day",
+        "label_head_ar": "اليوم",
+        "rows": [
+          {
+            "label_en": "Monday",
+            "label_ar": "الاثنين",
+            "value": 4
+          },
+          {
+            "label_en": "Tuesday",
+            "label_ar": "الثلاثاء",
+            "value": 7
+          },
+          {
+            "label_en": "Wednesday",
+            "label_ar": "الأربعاء",
+            "value": 5
+          },
+          {
+            "label_en": "Thursday",
+            "label_ar": "الخميس",
+            "value": 8
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "6f9ecd18-b72d-412d-9a83-b21f9e28fced",
+      "label": "Cups of water",
+      "difficulty": "medium",
+      "correct": 1,
+      "options_en": [
+        "6",
+        "7",
+        "8",
+        "21"
+      ],
+      "stem_en": "The table shows the cups of water drunk each day. What is the average number of cups per day over these three days?",
+      "stem_ar": "يوضّح الجدول عدد أكواب الماء المشروبة كل يوم. ما متوسط عدد الأكواب يومياً خلال هذه الأيام الثلاثة؟",
+      "figure": {
+        "kind": "data",
+        "style": "table",
+        "title_en": "Cups of water",
+        "title_ar": "عدد الأكواب",
+        "label_head_en": "Day",
+        "label_head_ar": "اليوم",
+        "rows": [
+          {
+            "label_en": "Sunday",
+            "label_ar": "الأحد",
+            "value": 6
+          },
+          {
+            "label_en": "Monday",
+            "label_ar": "الاثنين",
+            "value": 8
+          },
+          {
+            "label_en": "Tuesday",
+            "label_ar": "الثلاثاء",
+            "value": 7
+          }
+        ]
+      }
+    },
+    {
+      "replaces": "667bd222-2b8e-4348-8cfb-84ba4edaad60",
+      "label": "Odd shape out",
+      "difficulty": "medium",
+      "correct": 2,
+      "options_en": [
+        "A square",
+        "A rectangle",
+        "A triangle",
+        "A four-sided diamond"
+      ],
+      "stem_en": "Look at the four shapes. Which shape does NOT belong with the others?",
+      "stem_ar": "انظر إلى الأشكال الأربعة. أيّ شكل لا ينتمي إلى البقية؟",
+      "redesigned": "The old stem said the rule ('three of them have four sides'). It now only asks which shape does not belong. The triangle is drawn tall (not equilateral) so that 'equal sides' and 'right angles' each split the set 2 and 2, leaving the number of sides as the only feature with one odd shape out. Key unchanged.",
+      "rationale": "A square, a rectangle and a diamond each have four sides; the triangle has three, so it is the odd one out. Other features split the set evenly (square and diamond have equal sides, rectangle and triangle do not; square and rectangle have right angles, diamond and triangle do not), so only the number of sides singles out one shape.",
+      "figure": {
+        "kind": "options",
+        "options": [
+          {
+            "shape": "square"
+          },
+          {
+            "shape": "rectangle"
+          },
+          {
+            "shape": "isosceles"
+          },
+          {
+            "shape": "diamond"
+          }
         ]
       }
     }

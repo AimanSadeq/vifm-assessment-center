@@ -5,8 +5,8 @@ import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, ClipboardLis
 import { Button } from "@/components/ui/button";
 import type { BundleStage } from "@/lib/bespoke/candidates";
 import type { DemographicField } from "@/lib/bespoke/bundle-settings";
-import type { LogicaFigure } from "@/lib/psychometrics/figure";
-import { FigureGrid, FigureCell } from "@/components/shared/logica-figure";
+import { hasDrawnOptions, type LogicaFigure } from "@/lib/psychometrics/figure";
+import { FigureGrid, FigureCell, FigureData } from "@/components/shared/logica-figure";
 import { useNoCopy } from "@/components/shared/use-no-copy";
 
 type Phase = "consent" | BundleStage | "done";
@@ -543,15 +543,16 @@ function CognitiveSection({
         {items.map((it, idx) => (
           <div key={it.id} className="rounded-lg border bg-card p-4">
             <div className="text-sm text-foreground"><span className="text-muted-foreground">{idx + 1}.</span> {it.stem}</div>
-            {it.figure && (
+            {it.figure?.kind === "grid" && (
               <div className="mt-3"><FigureGrid figure={it.figure} ariaLabel="Pattern grid with one empty cell" /></div>
             )}
-            <div className={`mt-2 ${it.figure ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "space-y-1.5"}`}>
+            {it.figure?.kind === "data" && <div className="mt-3"><FigureData figure={it.figure} /></div>}
+            <div className={`mt-2 ${hasDrawnOptions(it.figure) ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "space-y-1.5"}`}>
               {it.options.map((opt, oi) => {
                 const on = answers[it.id] === oi;
                 // Letters are positions in this candidate's shuffled order, not authored labels.
                 const letter = String.fromCharCode(65 + oi);
-                const drawing = it.figure?.options[oi];
+                const drawing = hasDrawnOptions(it.figure) ? it.figure.options[oi] : undefined;
                 return (
                   <button key={oi} type="button" aria-pressed={on} aria-label={drawing ? `Option ${letter}: ${opt}` : undefined}
                     onClick={() => setAnswers((p) => ({ ...p, [it.id]: oi }))}

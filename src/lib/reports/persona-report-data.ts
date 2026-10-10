@@ -157,6 +157,7 @@ export async function buildPersonaPdfData(sessionId: string, lang: PersonaLang =
     const { data: tips } = await sb
       .from("behavioral_indicators")
       .select("competency_id, description, sort_order")
+      .neq("sme_status", "rejected")
       .like("description", "[DEV TIP]%")
       .order("sort_order", { ascending: true });
     for (const t of tips ?? []) {

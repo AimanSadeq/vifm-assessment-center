@@ -35,6 +35,7 @@ export default async function NewRequisitionPage({
     supabase
       .from("behavioral_indicators")
       .select("competency_id, description, indicator_type, sort_order")
+      .neq("sme_status", "rejected")
       .eq("indicator_type", "positive")
       .order("sort_order"),
   ]);

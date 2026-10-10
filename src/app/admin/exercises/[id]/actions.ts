@@ -194,7 +194,7 @@ export async function draftExerciseExamplesAction(input: { exerciseId: string; c
   const [{ data: ex }, { data: comp }, { data: inds }] = await Promise.all([
     sb.from("exercises").select("name, exercise_type, scenario_context, participant_brief").eq("id", input.exerciseId).maybeSingle(),
     sb.from("competencies").select("name, description").eq("id", input.competencyId).is("retired_at", null).maybeSingle(),
-    sb.from("behavioral_indicators").select("indicator_type, description").eq("competency_id", input.competencyId).eq("indicator_type", "positive"),
+    sb.from("behavioral_indicators").select("indicator_type, description").neq("sme_status", "rejected").eq("competency_id", input.competencyId).eq("indicator_type", "positive"),
   ]);
   if (!ex || !comp) return { error: "Unknown exercise or competency." };
   const drafts = await draftExerciseExamples({

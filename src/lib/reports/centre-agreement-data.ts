@@ -45,6 +45,7 @@ export async function loadAgreementInput(
     ? await sb
         .from("behavioral_indicators")
         .select("sme_status")
+        .neq("sme_status", "rejected")
         .in("competency_id", compIds)
         .then(
           (r) => {

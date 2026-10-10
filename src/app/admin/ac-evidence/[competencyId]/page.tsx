@@ -27,6 +27,7 @@ type Detail = {
     indicator_type: string;
     description: string;
     sort_order: number;
+    sme_status: string;
   }>;
 };
 
@@ -36,7 +37,7 @@ export default async function CompetencyEvidenceDetailPage({ params }: Props) {
   const { data } = await sb
     .from("competencies")
     .select(
-      "id, name, name_ar, description, description_ar, validation_evidence, competency_clusters(name, name_ar, competency_domains(name, name_ar)), behavioral_indicators(indicator_type, description, sort_order)"
+      "id, name, name_ar, description, description_ar, validation_evidence, competency_clusters(name, name_ar, competency_domains(name, name_ar)), behavioral_indicators(indicator_type, description, sort_order, sme_status)"
     )
     .eq("id", params.competencyId)
     .maybeSingle<Detail>();
@@ -46,7 +47,10 @@ export default async function CompetencyEvidenceDetailPage({ params }: Props) {
   const dom = data.competency_clusters?.competency_domains;
   const domain = dom ? localizedName(dom, rtl) : "Unassigned";
   const cluster = data.competency_clusters ? localizedName(data.competency_clusters, rtl) : "";
-  const indicators = (data.behavioral_indicators ?? []).sort((a, b) => a.sort_order - b.sort_order);
+  // Indicators an SME rejected are left out, as everywhere else in Caliber.
+  const indicators = (data.behavioral_indicators ?? [])
+    .filter((i) => i.sme_status !== "rejected")
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   return (
     <div className="p-6 max-w-3xl mx-auto">

@@ -317,6 +317,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
     const inds = await supabase
       .from("behavioral_indicators")
       .select("competency_id")
+      .neq("sme_status", "rejected")
       .in("competency_id", competencyIds)
       .then((r) => (r.data ?? []) as { competency_id: string }[], () => [] as { competency_id: string }[]);
     for (const i of inds) indicatorCounts.set(i.competency_id, (indicatorCounts.get(i.competency_id) ?? 0) + 1);

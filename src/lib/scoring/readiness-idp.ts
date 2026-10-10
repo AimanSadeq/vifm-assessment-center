@@ -97,6 +97,7 @@ export async function generateIdpFromReadiness(
   const { data: tips } = await sb
     .from("behavioral_indicators")
     .select("competency_id, description, sort_order")
+    .neq("sme_status", "rejected")
     .in("competency_id", ids)
     .ilike("description", "[DEV TIP]%")
     .order("sort_order");

@@ -311,6 +311,7 @@ export async function buildPrehireCandidatePdf(params: {
       const { data: bis } = await sb
         .from("behavioral_indicators")
         .select("competency_id, description, sort_order")
+        .neq("sme_status", "rejected")
         .in("competency_id", ids)
         .eq("indicator_type", "positive")
         .order("sort_order");

@@ -87,6 +87,7 @@ export async function buildLeadershipPdfData(sessionId: string): Promise<Leaders
       const { data: tipRows } = await sb
         .from("behavioral_indicators")
         .select("competency_id, description, sort_order")
+        .neq("sme_status", "rejected")
         .in("competency_id", devIds)
         .like("description", "[DEV TIP]%")
         .order("sort_order");

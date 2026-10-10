@@ -194,6 +194,7 @@ export async function POST(_req: Request, { params }: { params: { token: string 
       svc
         .from("behavioral_indicators")
         .select("competency_id, indicator_type, description")
+        .neq("sme_status", "rejected")
         .in("competency_id", compIds),
     ]);
 

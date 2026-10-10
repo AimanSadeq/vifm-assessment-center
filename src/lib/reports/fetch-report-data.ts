@@ -47,7 +47,7 @@ export async function fetchReportData(
       supabase.from("development_recommendations").select("competency_id, recommendation, priority, competencies(name)").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
       supabase.from("assessor_assignments").select("profiles(full_name)").eq("engagement_id", engagementId).eq("candidate_id", candidateId),
       supabase.from("engagement_exercises").select("exercises(name, exercise_type, duration_minutes)").eq("engagement_id", engagementId),
-      supabase.from("behavioral_indicators").select("competency_id, indicator_type, description"),
+      supabase.from("behavioral_indicators").select("competency_id, indicator_type, description").neq("sme_status", "rejected"),
     ]);
 
   if (engResult.error || !engResult.data) {
@@ -68,6 +68,7 @@ export async function fetchReportData(
   const contentApproved = await supabase
     .from("behavioral_indicators")
     .select("sme_status")
+    .neq("sme_status", "rejected")
     .in("competency_id", compIds.length > 0 ? compIds : ["00000000-0000-0000-0000-000000000000"])
     .then(
       (r) => {

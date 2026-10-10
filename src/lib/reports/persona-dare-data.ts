@@ -100,6 +100,7 @@ export async function buildDarePdfData(sessionId: string): Promise<DareBuildResu
       const { data: tipRows } = await sb
         .from("behavioral_indicators")
         .select("competency_id, description, sort_order")
+        .neq("sme_status", "rejected")
         .in("competency_id", focusIds)
         .like("description", "[DEV TIP]%")
         .order("sort_order");

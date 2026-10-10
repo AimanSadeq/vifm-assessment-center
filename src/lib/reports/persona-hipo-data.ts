@@ -161,6 +161,7 @@ export async function buildHipoPdfData(input: {
       const { data: tipRows } = await sb
         .from("behavioral_indicators")
         .select("competency_id, description, sort_order")
+        .neq("sme_status", "rejected")
         .in("competency_id", lowest.map((l) => l.cid))
         .like("description", "[DEV TIP]%")
         .order("sort_order");

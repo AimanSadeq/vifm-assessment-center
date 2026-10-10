@@ -68,7 +68,7 @@ export async function gatherEvidenceMetrics(): Promise<EvidenceMetrics> {
     count(sb, "competencies", verifiedFilter),
     count(sb, "competencies", editedFilter),
     count(sb, "competencies", proposedFilter),
-    count(sb, "behavioral_indicators"),
+    count(sb, "behavioral_indicators", (q) => q.neq("sme_status", "rejected")),
     count(sb, "exercises"),
     count(sb, "ratings"),
     // ARC

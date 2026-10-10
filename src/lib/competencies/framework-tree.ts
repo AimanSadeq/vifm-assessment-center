@@ -76,6 +76,7 @@ export async function loadFrameworkTree(): Promise<{ domains: DomainNode[]; coun
       const { data } = await sb
         .from("behavioral_indicators")
         .select("competency_id, indicator_type, description, sort_order")
+        .neq("sme_status", "rejected")
         .order("sort_order");
       return (data ?? []) as IndicatorRow[];
     })(),

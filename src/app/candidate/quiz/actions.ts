@@ -48,6 +48,7 @@ export async function startQuizAttemptAction(values: StartQuizValues) {
     supabase
       .from("behavioral_indicators")
       .select("indicator_type, description")
+      .neq("sme_status", "rejected")
       .eq("competency_id", competencyId),
     supabase
       .from("consensus_ratings")

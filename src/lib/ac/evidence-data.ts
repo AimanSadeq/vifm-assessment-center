@@ -90,7 +90,7 @@ export async function loadEngagementEvidence(sb: SupabaseClient, engagementId: s
 
   const compIds = compRows.map((c) => c.competency_id as string);
   const indicatorRows = compIds.length
-    ? await safe<Row>(sb.from("behavioral_indicators").select("competency_id").in("competency_id", compIds))
+    ? await safe<Row>(sb.from("behavioral_indicators").select("competency_id").neq("sme_status", "rejected").in("competency_id", compIds))
     : [];
   const indicatorCount = new Map<string, number>();
   for (const i of indicatorRows) indicatorCount.set(i.competency_id as string, (indicatorCount.get(i.competency_id as string) ?? 0) + 1);

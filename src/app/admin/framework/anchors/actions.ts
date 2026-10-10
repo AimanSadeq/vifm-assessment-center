@@ -72,7 +72,7 @@ export async function redraftAnchorsAction(input: { competencyId: string }) {
   const sb = createServiceClient();
   const [{ data: comp }, { data: inds }, { data: existing }] = await Promise.all([
     sb.from("competencies").select("id, name, description").eq("id", p.data.competencyId).maybeSingle<{ id: string; name: string; description: string | null }>(),
-    sb.from("behavioral_indicators").select("indicator_type, description").eq("competency_id", p.data.competencyId),
+    sb.from("behavioral_indicators").select("indicator_type, description").neq("sme_status", "rejected").eq("competency_id", p.data.competencyId),
     sb.from("competency_scale_anchors").select("id, scale_point, sme_status").eq("competency_id", p.data.competencyId),
   ]);
   if (!comp) return { error: "Unknown competency." };

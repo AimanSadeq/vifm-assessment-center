@@ -36,6 +36,7 @@ async function loadCompetency(competencyId: string): Promise<CbiCompetency | nul
     sb
       .from("behavioral_indicators")
       .select("indicator_type, description")
+      .neq("sme_status", "rejected")
       .eq("competency_id", competencyId)
       .order("sort_order"),
   ]);

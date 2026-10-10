@@ -242,7 +242,8 @@ async function persona(): Promise<BankReadiness> {
 
 // ── AC behavioural: behavioral_indicators per competency ──
 async function acBehavioural(): Promise<BankReadiness> {
-  const indicators = await selectRows("behavioral_indicators", "competency_id");
+  // Indicators an SME rejected do not count towards coverage.
+  const indicators = (await selectRows("behavioral_indicators", "competency_id, sme_status")).filter((i) => i.sme_status !== "rejected");
   const withIndicators = new Set(indicators.map((i) => String(i.competency_id)));
   const comps = await selectRows("competencies", "id");
   const total = comps.length || COMPETENCY_COUNT;

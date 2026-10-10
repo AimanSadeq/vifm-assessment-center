@@ -1,7 +1,7 @@
 {
-  "_about": "Logica items shown as drawings, tables or charts instead of prose (Ali, 10 Oct 2026). Each entry replaces one seed_v1 text item: the old row is retired, a new row is inserted with the figure, a stem that no longer describes the picture or data in words (and, for matrix items, no longer states the rule), and the same option text (kept as the accessible label of each drawing). Figure kinds: grid (pattern + drawn options), options (drawn options only), data (table or bar chart, text options). Entries without their own stem use the shared matrix stem. correct is the authored index. Items marked redesigned changed beyond presentation and need Ali's review in particular.",
-  "stem_en": "Look at the pattern in the grid. Which option belongs in the empty cell?",
-  "stem_ar": "انظر إلى النمط في الشبكة. أيّ خيار يناسب الخانة الفارغة؟",
+  "_about": "Logica items shown as drawings, tables or charts instead of prose (Ali, 10 Oct 2026). Each entry replaces one seed_v1 text item: the old row is retired, a new row is inserted with the figure, a stem that no longer describes the picture or data in words (and, for matrix items, no longer states the rule), and the same option text (kept as the accessible label of each drawing). Figure kinds: grid (pattern + drawn options), options (drawn options only), data (table or bar chart, text options). Entries without their own stem use the shared matrix stem. correct is the authored index. Items marked redesigned changed beyond presentation and need Ali's review in particular. New items (no 'replaces') are inserted alongside the bank, taking scale, facet and item kind from the item named in 'like'. 'difficulty_from' marks a relabelled difficulty.",
+  "stem_en": "Look at the pattern shown in the grid, then choose the shape that logically completes the empty cell. Choose one answer only.",
+  "stem_ar": "انظر إلى النمط المعروض في المصفوفة، ثم اختر الشكل الذي يُكمل الخانة الفارغة بشكل منطقي. اختر إجابة واحدة فقط من الخيارات المتاحة.",
   "items": [
     {
       "replaces": "1c5a49ec-aa6a-4f30-a663-60b00cc90c5d",
@@ -351,7 +351,7 @@
     {
       "replaces": "eed66f1e-c04c-4980-9ae9-31a78494b63d",
       "label": "Line count",
-      "difficulty": "hard",
+      "difficulty": "easy",
       "correct": 0,
       "options_en": [
         "Five lines",
@@ -403,7 +403,9 @@
             "lines": 3
           }
         ]
-      }
+      },
+      "difficulty_from": "hard",
+      "relabelled": "Labelled hard in the text version, but once drawn it is a simple count (Ali, 10 Oct 2026). Relabelled easy; the new hard items below take its place."
     },
     {
       "replaces": "5d6ea32f-dda6-4d01-9b30-f4e1b257f5ee",
@@ -1082,6 +1084,441 @@
           }
         ]
       }
+    },
+    {
+      "replaces": null,
+      "like": "eed66f1e-c04c-4980-9ae9-31a78494b63d",
+      "label": "Shape, shading and dots (new)",
+      "difficulty": "hard",
+      "correct": 2,
+      "options_en": [
+        "Unshaded square with 2 dots",
+        "Square with left half shaded and 3 dots",
+        "Unshaded square with 3 dots",
+        "Unshaded circle with 3 dots"
+      ],
+      "options_ar": [
+        "مربع غير مظلّل مع نقطتين",
+        "مربع نصفه الأيسر مظلّل مع ثلاث نقاط",
+        "مربع غير مظلّل مع ثلاث نقاط",
+        "دائرة غير مظلّلة مع ثلاث نقاط"
+      ],
+      "rationale": "Three rules at once. Shape: each row and each column holds a circle, a square and a triangle once. Shading: each row and each column holds unshaded, left half and full once. Dots: every cell in row 1 has 1 dot, row 2 has 2, row 3 has 3. Row 3 already has a triangle (left half) and a circle (full), so the missing cell is an unshaded square with 3 dots. Each wrong option breaks exactly one rule.",
+      "figure": {
+        "kind": "grid",
+        "cols": 3,
+        "cells": [
+          {
+            "shape": "circle",
+            "fill": "none",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "left",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "full",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "full",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "none",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "circle",
+            "fill": "left",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "left",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "circle",
+            "fill": "full",
+            "side": {
+              "count": 3
+            }
+          },
+          null
+        ],
+        "options": [
+          {
+            "shape": "square",
+            "fill": "none",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "left",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "none",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "circle",
+            "fill": "none",
+            "side": {
+              "count": 3
+            }
+          }
+        ]
+      }
+    },
+    {
+      "replaces": null,
+      "like": "eed66f1e-c04c-4980-9ae9-31a78494b63d",
+      "label": "Rows, columns and dots (new)",
+      "difficulty": "hard",
+      "correct": 1,
+      "options_en": [
+        "Fully shaded triangle with 4 dots",
+        "Fully shaded triangle with 5 dots",
+        "Triangle with left half shaded and 5 dots",
+        "Fully shaded square with 5 dots"
+      ],
+      "options_ar": [
+        "مثلث مظلّل بالكامل مع أربع نقاط",
+        "مثلث مظلّل بالكامل مع خمس نقاط",
+        "مثلث نصفه الأيسر مظلّل مع خمس نقاط",
+        "مربع مظلّل بالكامل مع خمس نقاط"
+      ],
+      "rationale": "Three rules at once. The shape stays the same along each row (circle, square, triangle). The shading stays the same down each column (unshaded, left half, full). The number of dots goes up by one to the right and by one downwards (1 2 3, 2 3 4, 3 4 ?). The missing cell is a fully shaded triangle with 5 dots. Each wrong option breaks exactly one rule.",
+      "figure": {
+        "kind": "grid",
+        "cols": 3,
+        "cells": [
+          {
+            "shape": "circle",
+            "fill": "none",
+            "side": {
+              "count": 1
+            }
+          },
+          {
+            "shape": "circle",
+            "fill": "left",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "circle",
+            "fill": "full",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "none",
+            "side": {
+              "count": 2
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "left",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "full",
+            "side": {
+              "count": 4
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "none",
+            "side": {
+              "count": 3
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "left",
+            "side": {
+              "count": 4
+            }
+          },
+          null
+        ],
+        "options": [
+          {
+            "shape": "triangle",
+            "fill": "full",
+            "side": {
+              "count": 4
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "full",
+            "side": {
+              "count": 5
+            }
+          },
+          {
+            "shape": "triangle",
+            "fill": "left",
+            "side": {
+              "count": 5
+            }
+          },
+          {
+            "shape": "square",
+            "fill": "full",
+            "side": {
+              "count": 5
+            }
+          }
+        ]
+      }
+    },
+    {
+      "replaces": null,
+      "like": "eed66f1e-c04c-4980-9ae9-31a78494b63d",
+      "label": "Turning pattern (new)",
+      "difficulty": "hard",
+      "correct": 3,
+      "options_en": [
+        "Three shaded: top-left, top-right and bottom-left",
+        "Two shaded: bottom-right and bottom-left",
+        "Four shaded: all small cells",
+        "Three shaded: bottom-right, bottom-left and top-left"
+      ],
+      "options_ar": [
+        "ثلاث خانات مظلّلة: أعلى اليسار وأعلى اليمين وأسفل اليسار",
+        "خانتان مظلّلتان: أسفل اليمين وأسفل اليسار",
+        "أربع خانات مظلّلة: جميع الخانات الصغيرة",
+        "ثلاث خانات مظلّلة: أسفل اليمين وأسفل اليسار وأعلى اليسار"
+      ],
+      "rationale": "Two rules at once. Along each row the shaded pattern turns one quarter clockwise at each step; down each column one more small cell is shaded. Row 3 starts with top-left, top-right and bottom-right; one quarter turn gives top-right, bottom-right and bottom-left; another gives bottom-right, bottom-left and top-left. The two-cell option breaks the count, the four-cell option adds a cell, and the other three-cell option turns two steps instead of one.",
+      "figure": {
+        "kind": "grid",
+        "cols": 3,
+        "cells": [
+          {
+            "quad": [
+              "tl"
+            ]
+          },
+          {
+            "quad": [
+              "tr"
+            ]
+          },
+          {
+            "quad": [
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr"
+            ]
+          },
+          {
+            "quad": [
+              "tr",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "br",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tr",
+              "br",
+              "bl"
+            ]
+          },
+          null
+        ],
+        "options": [
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "br",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "br",
+              "bl",
+              "tl"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "replaces": null,
+      "like": "eed66f1e-c04c-4980-9ae9-31a78494b63d",
+      "label": "Shaded in exactly one (new)",
+      "difficulty": "hard",
+      "correct": 0,
+      "options_en": [
+        "Three shaded: top-left, top-right and bottom-left",
+        "Four shaded: all small cells",
+        "One shaded: bottom-right",
+        "Two shaded: top-right and bottom-left"
+      ],
+      "options_ar": [
+        "ثلاث خانات مظلّلة: أعلى اليسار وأعلى اليمين وأسفل اليسار",
+        "أربع خانات مظلّلة: جميع الخانات الصغيرة",
+        "خانة واحدة مظلّلة: أسفل اليمين",
+        "خانتان مظلّلتان: أعلى اليمين وأسفل اليسار"
+      ],
+      "rationale": "In each row the third square shows the small cells shaded in exactly one of the first two squares; cells shaded in both, or in neither, stay white. Row 3: the first square has top-right, bottom-right and bottom-left; the second has top-left and bottom-right. Bottom-right is in both, so it drops out, leaving top-left, top-right and bottom-left. 'All four' joins the two squares, 'bottom-right only' keeps what they share, and the two-cell option repeats the cell above.",
+      "figure": {
+        "kind": "grid",
+        "cols": 3,
+        "cells": [
+          {
+            "quad": [
+              "tl",
+              "tr"
+            ]
+          },
+          {
+            "quad": [
+              "tr",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr"
+            ]
+          },
+          {
+            "quad": [
+              "tr",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tr",
+              "br",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "br"
+            ]
+          },
+          null
+        ],
+        "options": [
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "tl",
+              "tr",
+              "br",
+              "bl"
+            ]
+          },
+          {
+            "quad": [
+              "br"
+            ]
+          },
+          {
+            "quad": [
+              "tr",
+              "bl"
+            ]
+          }
+        ]
+      }
     }
-  ]
+  ],
+  "_stem_note": "Matrix instruction as worded by Ali (10 Oct 2026); the English follows his Arabic. It gives no hint about counting, rotation, shading or direction."
 }

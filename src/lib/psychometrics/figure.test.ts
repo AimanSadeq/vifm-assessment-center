@@ -12,7 +12,10 @@ import { reorderOptions } from "../scoring/option-shuffle.ts";
 
 const src = JSON.parse(readFileSync(new URL("../../../scripts/sdc-hipo/logica-figures.json", import.meta.url), "utf8")) as {
   stem_en: string; stem_ar: string;
-  items: { replaces: string; label: string; difficulty: string; correct: number; stem_en?: string; stem_ar?: string; figure: { kind: string } }[];
+  items: {
+    replaces: string | null; like?: string; label: string; difficulty: string; difficulty_from?: string; correct: number;
+    options_en: string[]; options_ar?: string[]; stem_en?: string; stem_ar?: string; figure: { kind: string };
+  }[];
 };
 
 const grid2 = { cols: 2, cells: [{ dots: 1 }, { dots: 2 }, { dots: 3 }, null], options: [{ dots: 4 }, { dots: 3 }, { dots: 2 }, { dots: 5 }] };
@@ -55,19 +58,44 @@ const byKind = (k: string) => src.items.filter((i) => i.figure.kind === k);
 const depth = (items: typeof src.items) =>
   items.reduce<Record<string, number>>((a, i) => ({ ...a, [i.difficulty]: (a[i.difficulty] ?? 0) + 1 }), {});
 
-test("all 21 authored figure items validate in both languages", () => {
-  assert.equal(src.items.length, 21);
-  assert.equal(new Set(src.items.map((i) => i.replaces)).size, 21);
-  // Whole facets are replaced, so each keeps its blueprint depth (3 easy / 4 medium / 3 hard).
-  assert.deepEqual(depth(byKind("grid")), { easy: 3, medium: 4, hard: 3 }, "matrix facet");
+test("all 25 authored figure items validate in both languages", () => {
+  const replaced = src.items.filter((i) => i.replaces);
+  const added = src.items.filter((i) => !i.replaces);
+  assert.equal(replaced.length, 21);
+  assert.equal(added.length, 4);
+  assert.equal(new Set(replaced.map((i) => i.replaces)).size, 21);
+  // Every cell of every facet can still fill a sitting (at least one item per
+  // difficulty); the matrix facet gains hard items after the line-count relabel.
+  assert.deepEqual(depth(byKind("grid")), { easy: 4, medium: 4, hard: 6 }, "matrix facet");
   assert.deepEqual(depth(byKind("data")), { easy: 3, medium: 4, hard: 3 }, "data-interpretation facet");
   assert.equal(byKind("options").length, 1);
   for (const it of src.items) {
     for (const lang of ["en", "ar"] as const) {
-      const f = parseFigure(it.figure, 4, lang);
+      const f = parseFigure(it.figure, it.options_en.length, lang);
       assert.ok(f, `${it.label} (${lang}) validates`);
     }
-    assert.ok(it.correct >= 0 && it.correct < 4);
+    assert.ok(it.correct >= 0 && it.correct < it.options_en.length);
+  }
+  for (const it of added) {
+    assert.ok(it.like && it.options_ar?.length === it.options_en.length, `${it.label}: reference item and Arabic options`);
+    assert.equal(it.difficulty, "hard");
+  }
+});
+
+test("each three-rule item's wrong options break exactly one rule", () => {
+  type Cell = { shape?: string; fill?: string; side?: { count: number }; quad?: string[] };
+  const attrs = (c: Cell) => [c.shape, c.fill, c.side?.count, c.quad ? [...c.quad].sort().join("") : undefined];
+  // The two three-rule items: every distractor changes one feature of the key.
+  const threeRule = src.items.filter((i) => !i.replaces && (i.label.startsWith("Shape") || i.label.startsWith("Rows")));
+  assert.equal(threeRule.length, 2);
+  for (const it of threeRule) {
+    const opts = (it.figure as unknown as { options: Cell[] }).options;
+    const key = attrs(opts[it.correct]);
+    opts.forEach((o, i) => {
+      if (i === it.correct) return;
+      const diff = attrs(o).filter((v, k) => v !== key[k]).length;
+      assert.equal(diff, 1, `${it.label}: option ${i} differs from the key in ${diff} features`);
+    });
   }
 });
 
@@ -86,7 +114,21 @@ test("data figures resolve one language and keep the authored values", () => {
 test("no figure stem states the rule", () => {
   const stems = [src.stem_en, src.stem_ar, ...byKind("options").flatMap((i) => [i.stem_en!, i.stem_ar!])];
   for (const s of stems) {
-    assert.ok(s.length < 90, "short instruction only");
+    assert.ok(s.length < 160, "short instruction only");
     assert.doesNotMatch(s, /increase|rotat|clockwise|each row|each column|four sides|يزداد|يدور|عقارب|أضلاع/);
   }
+});
+
+test("number options are ordered, in a random direction per sitting", () => {
+  const seen = new Set<string>();
+  for (let run = 0; run < 200; run++) {
+    const s = reorderOptions(["13", "11", "15", "12"], 3);
+    assert.equal(s.options[s.correctIndex], "12");
+    const vals = s.options.map(Number);
+    const asc = vals.every((v, i) => i === 0 || v > vals[i - 1]);
+    const desc = vals.every((v, i) => i === 0 || v < vals[i - 1]);
+    assert.ok(asc || desc, "always in numerical order");
+    seen.add(asc ? "asc" : "desc");
+  }
+  assert.equal(seen.size, 2, "both directions occur");
 });

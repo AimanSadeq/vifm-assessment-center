@@ -6,10 +6,11 @@
  * the shuffle Techno has always applied, generalised for Fluent receptive items
  * and Logica cognitive items with two psychometric guardrails:
  *
- * - NUMERIC option sets are SORTED ascending, not shuffled - measurement
- *   convention keeps ordered quantities in order (shuffled numbers add
- *   construct-irrelevant scanning load), and the correct value's position then
- *   varies naturally item-to-item anyway.
+ * - NUMERIC option sets are SORTED, not shuffled - measurement convention
+ *   keeps ordered quantities in order (shuffled numbers add
+ *   construct-irrelevant scanning load). The direction (ascending or
+ *   descending) is random per administration, so the key's letter is not the
+ *   same for every taker.
  * - JUDGEMENT scales (True/False/Cannot say, Valid/Invalid, and their Arabic
  *   equivalents) are LEFT AS AUTHORED - their order is semantic, and "Cannot
  *   say" floating to the top reads as a broken item.
@@ -74,6 +75,9 @@ export function reorderOptions(
   const nums = numericValues(options);
   if (nums) {
     indices.sort((a, b) => nums[a] - nums[b]);
+    // Ordered either way, at random per administration (Ali, 10 Oct 2026):
+    // still a logical order, but neighbours no longer share the key's letter.
+    if (Math.random() < 0.5) indices.reverse();
   } else {
     // Fisher-Yates on the index array.
     for (let i = indices.length - 1; i > 0; i--) {

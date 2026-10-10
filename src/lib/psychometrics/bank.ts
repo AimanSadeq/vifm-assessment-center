@@ -385,6 +385,39 @@ export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<s
 }
 
 type ApprovedRow = ItemRow & { times_administered: number };
+
+function shuffled<T>(list: T[]): T[] {
+  const a = [...list];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/**
+ * Choose `need` items from one (facet x difficulty) cell: items the taker has
+ * not seen before first (exclusion is soft: a retaker who has exhausted a cell
+ * is still served rather than 503'd), least-administered first, but at random
+ * among items within one administration of the least-used. Exposure stays
+ * balanced, and takers who start together rarely get the same form (a strict
+ * least-used pick gave every simultaneous taker identical questions).
+ */
+function pickLeastUsed(pool: ApprovedRow[], need: number, exclude: Set<string>): ApprovedRow[] {
+  const used = (it: ApprovedRow) => it.times_administered ?? 0;
+  const picked: ApprovedRow[] = [];
+  for (const tier of [pool.filter((it) => !exclude.has(it.id)), pool.filter((it) => exclude.has(it.id))]) {
+    let rest = [...tier].sort((a, b) => used(a) - used(b));
+    while (picked.length < need && rest.length > 0) {
+      const floor = used(rest[0]);
+      const band = rest.filter((it) => used(it) <= floor + 1);
+      const it = band[Math.floor(Math.random() * band.length)];
+      picked.push(it);
+      rest = rest.filter((x) => x !== it);
+    }
+  }
+  return picked;
+}
 type AssembledCognitive = { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard"; figure?: LogicaFigure };
 
 /**
@@ -468,18 +501,16 @@ export async function assembleFromBank(
       for (const subtest of framework) {
         const facets = facetKeysForSubtest(subtest);
         if (facets.length === 0) return null;
+        const section: AssembledCognitive[] = [];
         for (const facet of facets) {
           for (const diff of difficulties) {
             const need = bp.servedPerFacetByDifficulty[diff];
             const pool = cells.get(`${facet}:${diff}`) ?? [];
-            // Prefer unseen (exclusion soft): a retaker who has exhausted a cell
-            // still gets served rather than 503'd - exclusion only reduces repeats.
-            const ordered = [...pool.filter((it) => !exclude.has(it.id)), ...pool.filter((it) => exclude.has(it.id))];
-            if (ordered.length < need) return null; // fail safe: cell can't fill
-            for (const it of ordered.slice(0, need)) {
+            if (pool.length < need) return null; // fail safe: cell can't fill
+            for (const it of pickLeastUsed(pool, need, exclude)) {
               const options = (lang === "ar" ? asStrArr(it.options_ar) : asStrArr(it.options_en)) ?? [];
               const figure = it.figure != null ? parseFigure(it.figure, options.length, lang) : null;
-              out.push({
+              section.push({
                 id: it.id,
                 scale: subtest,
                 stem: (lang === "ar" ? it.stem_ar : it.stem_en) || it.stem_en,
@@ -491,6 +522,10 @@ export async function assembleFromBank(
             }
           }
         }
+        // Question order is random within each section (sections stay grouped),
+        // so takers sitting side by side do not see the same question at the
+        // same position (Ali, 10 Oct 2026).
+        out.push(...shuffled(section));
       }
       // Exact-count assertion: every subtest emitted its full fixed form.
       if (out.length !== framework.length * bp.servedPerSubtest) return null;

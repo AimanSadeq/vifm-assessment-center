@@ -5,6 +5,8 @@ import { BrainCircuit, Sparkles, Loader2, CheckCircle2, RotateCcw, Download, Clo
 import type { PsyTestPublic, PsyResult, ScaleScore } from "@/lib/psychometrics/scoring";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS, cognitiveNarrative } from "@/lib/psychometrics/framework";
 import { useCognitiveLanguage } from "./cognitive-language";
+import { FigureGrid, FigureCell } from "@/components/shared/logica-figure";
+import { useNoCopy } from "@/components/shared/use-no-copy";
 
 type Lang = "en" | "ar";
 
@@ -108,6 +110,7 @@ export function PsychometricsClient({
   // Submit fires once and is final - require an explicit second click (trial:
   // Asaad - "one stray click ends the test"). Timeout auto-submit bypasses it.
   const [armSubmit, setArmSubmit] = useState(false);
+  const { guard, notice: copyNotice } = useNoCopy();
   // Autosave-blob key. Per voucher token for delegates (two delegates on a
   // shared machine can never resume each other's sitting), and per CANDIDATE
   // for admin-bound runs - without that, Candidate A's abandoned sitting on a
@@ -483,7 +486,12 @@ export function PsychometricsClient({
       )}
 
       {phase === "test" && test && (
-        <div className="space-y-4">
+        <div {...guard} className="select-none space-y-4">
+          {copyNotice && (
+            <div role="status" className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#010131] px-4 py-2 text-xs font-medium text-white shadow-lg">
+              {lang === "ar" ? "النسخ غير متاح أثناء هذا التقييم." : "Copying is turned off during this assessment."}
+            </div>
+          )}
           {/* Sticky progress + countdown: on a timed test the taker must see
               time remaining WITHOUT scrolling to the bottom (trial: Asaad,
               Yassin, Ahmad Ghosheh - three of seven flagged it). */}
@@ -525,14 +533,26 @@ export function PsychometricsClient({
                         return (
                           <section key={item.id} className="rounded-lg border bg-white p-4">
                             <p id={`cog-q-${item.id}`} className="text-sm font-semibold text-[#010131]">{num}. {item.stem}</p>
-                            <div className="mt-2 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-labelledby={`cog-q-${item.id}`}>
-                              {item.options.map((opt, oi) => (
-                                <label key={oi} htmlFor={`${item.id}-${oi}`} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"}`}>
-                                  <input type="radio" id={`${item.id}-${oi}`} name={item.id} checked={answers[item.id] === oi}
-                                    onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))} className="accent-[#5391D5]" />
-                                  <span>{opt}</span>
-                                </label>
-                              ))}
+                            {item.figure && (
+                              <div className="mt-3">
+                                <FigureGrid figure={item.figure} ariaLabel={lang === "ar" ? "شبكة نمط فيها خانة فارغة" : "Pattern grid with one empty cell"} />
+                              </div>
+                            )}
+                            <div className={`mt-2 grid gap-2 ${item.figure ? "grid-cols-2 sm:grid-cols-4" : "sm:grid-cols-2"}`} role="radiogroup" aria-labelledby={`cog-q-${item.id}`}>
+                              {item.options.map((opt, oi) => {
+                                // Position letters in this sitting's shuffled order.
+                                const letter = (lang === "ar" ? ["أ", "ب", "ج", "د", "هـ", "و"] : ["A", "B", "C", "D", "E", "F"])[oi] ?? String(oi + 1);
+                                const drawing = item.figure?.options[oi];
+                                return (
+                                  <label key={oi} htmlFor={`${item.id}-${oi}`} className={`flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm ${answers[item.id] === oi ? "border-[#5391D5] bg-[#5391D5]/5" : "border-slate-200 hover:bg-slate-50"}`}>
+                                    <input type="radio" id={`${item.id}-${oi}`} name={item.id} checked={answers[item.id] === oi}
+                                      aria-label={`${letter}: ${opt}`}
+                                      onChange={() => setAnswers((a) => ({ ...a, [item.id]: oi }))} className="accent-[#5391D5]" />
+                                    <span className="font-semibold text-[#010131]">{letter}</span>
+                                    {drawing ? <FigureCell cell={drawing} size={64} /> : <span>{opt}</span>}
+                                  </label>
+                                );
+                              })}
                             </div>
                           </section>
                         );

@@ -21,6 +21,7 @@ import {
   type CognitiveDifficulty,
 } from "./framework";
 import { cronbachAlpha, instrumentTier, type PsyTier } from "./calibration";
+import { parseFigure, type LogicaFigure } from "./figure";
 
 export type PsyKind = "cognitive";
 export type PsyItemStatus = "draft" | "in_review" | "approved" | "retired" | "rejected";
@@ -55,6 +56,8 @@ export type BankItem = {
   rationale: string | null;
   status: PsyItemStatus;
   source: string;
+  /** Drawn grid + option drawings (matrix items), in authored option order. */
+  figure: LogicaFigure | null;
   /** How many logged answers it has, and how many were right. */
   administered: number;
   correctCount: number;
@@ -124,6 +127,7 @@ type ItemRow = {
   source: string | null;
   times_administered?: number | null;
   times_correct?: number | null;
+  figure?: unknown;
 };
 type RespRow = { result_id: string; item_ref: string | null; scale_key: string | null; response: number | null; correct: boolean | null };
 
@@ -202,7 +206,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
   try {
     const { data: items } = await svc
       .from("psy_items")
-      .select("id, scale_id, kind, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, ar_reviewed, rationale, status, source, times_administered, times_correct");
+      .select("id, scale_id, kind, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, ar_reviewed, rationale, status, source, times_administered, times_correct, figure");
     for (const it of (items ?? []) as ItemRow[]) {
       const loc = scaleById.get(it.scale_id);
       if (!loc) continue;
@@ -222,6 +226,7 @@ export async function loadPsyBank(): Promise<PsyBankView> {
         rationale: it.rationale ?? null,
         status: PSY_STATUSES.includes(it.status as never) ? (it.status as PsyItemStatus) : "draft",
         source: it.source ?? "seed",
+        figure: it.figure != null ? parseFigure(it.figure, asStrArr(it.options_en)?.length ?? 0) : null,
         // Filled from the response log below, not from times_administered /
         // times_correct: those counters are maintained going forward but were
         // never written historically, so every item reads zero correct however
@@ -380,7 +385,7 @@ export async function resolveScaleId(kind: PsyKind, scaleKey: string): Promise<s
 }
 
 type ApprovedRow = ItemRow & { times_administered: number };
-type AssembledCognitive = { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard" };
+type AssembledCognitive = { id: string; scale: string; stem: string; options: string[]; correct: number; difficulty: "easy" | "medium" | "hard"; figure?: LogicaFigure };
 
 /**
  * Assemble a keyed cognitive test from APPROVED bank items.
@@ -415,7 +420,7 @@ export async function assembleFromBank(
 
     const { data: itemRows } = await svc
       .from("psy_items")
-      .select("id, scale_id, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, times_administered")
+      .select("id, scale_id, stem_en, stem_ar, options_en, options_ar, correct_index, reverse_keyed, difficulty, facet, times_administered, figure")
       // Serve the FIXED authored bank (approved vetted + in_review provisional)
       // before falling back to the live-AI/static Tier-1 source - we already have
       // the questions. Logica is indicative regardless, so mixing is safe.
@@ -438,6 +443,9 @@ export async function assembleFromBank(
       // (no silent English fallback - that would re-open the Arabic-parity defect).
       const servable = (it: ApprovedRow): boolean => {
         if (it.correct_index == null) return false;
+        // A figure item whose drawing does not validate is never served: its stem
+        // only says "complete the grid", so it is meaningless without the grid.
+        if (it.figure != null && !parseFigure(it.figure, asStrArr(lang === "ar" ? it.options_ar : it.options_en)?.length ?? 0)) return false;
         if (lang === "ar") {
           const oa = asStrArr(it.options_ar);
           return !!(it.stem_ar && it.stem_ar.trim()) && !!oa && oa.length >= 2 && it.correct_index < oa.length;
@@ -470,6 +478,7 @@ export async function assembleFromBank(
             if (ordered.length < need) return null; // fail safe: cell can't fill
             for (const it of ordered.slice(0, need)) {
               const options = (lang === "ar" ? asStrArr(it.options_ar) : asStrArr(it.options_en)) ?? [];
+              const figure = it.figure != null ? parseFigure(it.figure, options.length) : null;
               out.push({
                 id: it.id,
                 scale: subtest,
@@ -477,6 +486,7 @@ export async function assembleFromBank(
                 options,
                 correct: it.correct_index as number,
                 difficulty: diff,
+                ...(figure ? { figure } : {}),
               });
             }
           }

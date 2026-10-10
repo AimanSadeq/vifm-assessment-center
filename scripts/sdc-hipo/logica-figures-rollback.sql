@@ -1,0 +1,7 @@
+-- Undo logica-figures-load.sql (generated; do not edit by hand).
+-- Restores the text originals and retires the figure versions (kept, not
+-- deleted, so any responses logged against them stay attributable).
+BEGIN;
+UPDATE psy_items SET status = 'retired' WHERE source = 'figure_v1';
+UPDATE psy_items SET status = 'in_review' WHERE id IN ('1c5a49ec-aa6a-4f30-a663-60b00cc90c5d'::uuid, '9f631041-3fb6-463f-a979-39cec64cbd1b'::uuid, 'ef2960dc-a122-4321-9bdc-be21cbe6c4ca'::uuid, '5b06229e-46f7-42df-9e01-0cd37b3dd002'::uuid, 'cd15e7c9-9f40-4f43-9d44-d95945752a1a'::uuid, 'eed66f1e-c04c-4980-9ae9-31a78494b63d'::uuid, '5d6ea32f-dda6-4d01-9b30-f4e1b257f5ee'::uuid, '8fa1a761-4b01-4fc0-879e-fba14a6cc75a'::uuid, 'f1f8fe62-7e7d-4e20-9d5f-4bbe2614b334'::uuid, 'f9ec2980-6227-4aa9-8f7b-7d6eed3b29d2'::uuid) AND status = 'retired';
+COMMIT;

@@ -2,6 +2,7 @@
 // Cognitive: % correct per subtest → indicative band + a g composite. Tier 1 is
 // INDICATIVE - bands are based on raw scores, not local norms.
 
+import type { LogicaFigure } from "./figure";
 import {
   type PsyKind, type PsyBand,
   cognitiveBand, BAND_LABEL_EN, BAND_LABEL_AR,
@@ -23,13 +24,15 @@ export type CognitiveItem = {
    * never sent to the browser (stripAnswerKey drops it).
    */
   orig?: number[];
+  /** Drawn grid + one drawing per option (matrix items); options already in served order. */
+  figure?: LogicaFigure;
 };
 export type PsyTest =
   | { kind: "cognitive"; items: CognitiveItem[]; ai_generated: boolean; served_source?: "bank" | "ai" | "static" };
 
 /** Client-facing test: answer keys (correct) stripped server-side. */
 export type PsyTestPublic =
-  | { kind: "cognitive"; items: { id: string; scale: string; stem: string; options: string[]; difficulty: string }[] };
+  | { kind: "cognitive"; items: { id: string; scale: string; stem: string; options: string[]; difficulty: string; figure?: LogicaFigure }[] };
 
 export type ScaleScore = {
   key: string;

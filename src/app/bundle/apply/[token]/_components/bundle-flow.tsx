@@ -5,10 +5,13 @@ import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, ClipboardLis
 import { Button } from "@/components/ui/button";
 import type { BundleStage } from "@/lib/bespoke/candidates";
 import type { DemographicField } from "@/lib/bespoke/bundle-settings";
+import type { LogicaFigure } from "@/lib/psychometrics/figure";
+import { FigureGrid, FigureCell } from "@/components/shared/logica-figure";
+import { useNoCopy } from "@/components/shared/use-no-copy";
 
 type Phase = "consent" | BundleStage | "done";
 type PersonaItem = { itemKey: string; competencyId: string; textEn: string; textAr: string };
-type CogItem = { id: string; scale: string; stem: string; options: string[] };
+type CogItem = { id: string; scale: string; stem: string; options: string[]; figure?: LogicaFigure };
 type SjtItem = { id: string; situation: string; options: Array<{ key: string; text: string }> };
 type SjtPick = { most?: string; least?: string };
 
@@ -269,6 +272,7 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
   // Saves run one at a time: the server merges each answer into one record.
   const queue = useRef<Promise<unknown>>(Promise.resolve());
   const savedRef = useRef<Record<string, string>>({});
+  const { guard, notice } = useNoCopy();
 
   useEffect(() => {
     let live = true;
@@ -352,7 +356,8 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
   };
 
   return (
-    <div>
+    <div {...guard} className="select-none">
+      <CopyNotice show={notice} />
       <SectionHeader icon={<Compass className="h-5 w-5" />} title={`Section ${number} · Workplace scenarios`}
         sub="Read each situation. Mark the response you think is MOST effective and the one you think is LEAST effective. There is no time limit." />
 
@@ -463,6 +468,7 @@ function CognitiveSection({
   const [deadline, setDeadline] = useState<number | null>(null);
   const [remaining, setRemaining] = useState<number | null>(null);
   const submittedRef = useRef(false);
+  const { guard, notice } = useNoCopy();
 
   useEffect(() => {
     let live = true;
@@ -524,7 +530,8 @@ function CognitiveSection({
   const answered = items.filter((i) => answers[i.id] != null).length;
 
   return (
-    <div>
+    <div {...guard} className="select-none">
+      <CopyNotice show={notice} />
       <SectionHeader icon={<BrainCircuit className="h-5 w-5" />} title={`Section ${number} · Reasoning (Logica)`}
         sub={`${label}. Choose the best answer for each question. ${answered}/${items.length} answered.`} />
       {remaining != null && (
@@ -536,17 +543,23 @@ function CognitiveSection({
         {items.map((it, idx) => (
           <div key={it.id} className="rounded-lg border bg-card p-4">
             <div className="text-sm text-foreground"><span className="text-muted-foreground">{idx + 1}.</span> {it.stem}</div>
-            <div className="mt-2 space-y-1.5">
+            {it.figure && (
+              <div className="mt-3"><FigureGrid figure={it.figure} ariaLabel="Pattern grid with one empty cell" /></div>
+            )}
+            <div className={`mt-2 ${it.figure ? "grid grid-cols-2 gap-2 sm:grid-cols-4" : "space-y-1.5"}`}>
               {it.options.map((opt, oi) => {
                 const on = answers[it.id] === oi;
+                // Letters are positions in this candidate's shuffled order, not authored labels.
+                const letter = String.fromCharCode(65 + oi);
+                const drawing = it.figure?.options[oi];
                 return (
-                  <button key={oi} type="button"
+                  <button key={oi} type="button" aria-pressed={on} aria-label={drawing ? `Option ${letter}: ${opt}` : undefined}
                     onClick={() => setAnswers((p) => ({ ...p, [it.id]: oi }))}
                     className={`flex w-full items-center gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors ${on ? "border-[#5391D5] bg-[#5391D5]/10" : "border-border hover:bg-muted"}`}>
-                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${on ? "border-[#5391D5] bg-[#5391D5]" : "border-muted-foreground"}`}>
-                      {on && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${on ? "bg-[#5391D5] text-white" : "bg-[#010131] text-white"}`}>
+                      {letter}
                     </span>
-                    {opt}
+                    {drawing ? <FigureCell cell={drawing} size={64} /> : opt}
                   </button>
                 );
               })}
@@ -557,6 +570,16 @@ function CognitiveSection({
       <Button className="mt-5 gap-2" disabled={busy} onClick={() => submit(false)}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} Submit reasoning section
       </Button>
+    </div>
+  );
+}
+
+/** Shown for a few seconds after a blocked copy, cut or right-click. */
+function CopyNotice({ show }: { show: boolean }) {
+  if (!show) return null;
+  return (
+    <div role="status" className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-full bg-[#010131] px-4 py-2 text-xs font-medium text-white shadow-lg">
+      Copying is turned off during this assessment.
     </div>
   );
 }

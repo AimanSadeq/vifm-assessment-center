@@ -7,6 +7,7 @@ import { getAIClient, AI_MODEL } from "@/lib/ai/client";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "./framework";
 import { assembleFromBank } from "./bank";
 import { reorderOptions } from "@/lib/scoring/option-shuffle";
+import { permuteFigure } from "./figure";
 import type { PsyTest, PsyTestPublic, CognitiveItem } from "./scoring";
 
 type Lang = "en" | "ar";
@@ -191,7 +192,9 @@ export async function generatePsyTest(
 function shuffleCognitiveOptions(items: CognitiveItem[]): CognitiveItem[] {
   return items.map((it) => {
     const s = reorderOptions(it.options, it.correct);
-    return { ...it, options: s.options, correct: s.correctIndex, orig: s.origIndex };
+    // Drawn options move with their text, so the key still points at the right drawing.
+    const figure = it.figure ? permuteFigure(it.figure, s.origIndex) : undefined;
+    return { ...it, options: s.options, correct: s.correctIndex, orig: s.origIndex, ...(figure ? { figure } : {}) };
   });
 }
 
@@ -199,6 +202,9 @@ function shuffleCognitiveOptions(items: CognitiveItem[]): CognitiveItem[] {
 export function stripAnswerKey(test: PsyTest): PsyTestPublic {
   return {
     kind: "cognitive",
-    items: test.items.map((i) => ({ id: i.id, scale: i.scale, stem: i.stem, options: i.options, difficulty: i.difficulty })),
+    items: test.items.map((i) => ({
+      id: i.id, scale: i.scale, stem: i.stem, options: i.options, difficulty: i.difficulty,
+      ...(i.figure ? { figure: i.figure } : {}),
+    })),
   };
 }

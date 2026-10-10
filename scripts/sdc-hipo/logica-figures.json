@@ -1,0 +1,164 @@
+{
+  "_about": "Logica ind_matrix items redrawn as figures (Ali, 10 Oct 2026). Each entry replaces one seed_v1 item: the old row is retired, a new row is inserted with the figure, a short stem that no longer states the rule, and the same option text (kept as the accessible label of each drawing). options[i] in the figure is the drawing for options_en[i]. correct is the authored index. Items marked redesigned had to gain rows so the answer is decidable without the rule text; they need Ali's review in particular.",
+  "stem_en": "Look at the pattern in the grid. Which option belongs in the empty cell?",
+  "stem_ar": "انظر إلى النمط في الشبكة. أيّ خيار يناسب الخانة الفارغة؟",
+  "items": [
+    {
+      "replaces": "1c5a49ec-aa6a-4f30-a663-60b00cc90c5d",
+      "label": "Arrows rotating",
+      "difficulty": "easy",
+      "correct": 0,
+      "figure": {
+        "cols": 2,
+        "cells": [{ "arrow": "up" }, { "arrow": "right" }, { "arrow": "down" }, null],
+        "options": [{ "arrow": "left" }, { "arrow": "up" }, { "arrow": "down" }, { "arrow": "right" }]
+      }
+    },
+    {
+      "replaces": "9f631041-3fb6-463f-a979-39cec64cbd1b",
+      "label": "Circle shading cycle",
+      "difficulty": "easy",
+      "redesigned": "The 2x2 version (white, half, full, ?) has no single answer once the rule text is removed. Now a 3x3 grid: every row and every column holds white, left half and full once. Key changes from 'fully white' to 'left half shaded'.",
+      "correct": 2,
+      "rationale": "Every row and every column holds a white circle, a half-shaded circle and a fully shaded circle once each. Row 3 already has full and white, so the missing cell is the half-shaded circle; the third column (full, white, ?) confirms it. 'Fully white' and 'fully shaded' repeat a state already in the row. 'Right half shaded' never appears in the grid.",
+      "figure": {
+        "cols": 3,
+        "cells": [
+          { "shape": "circle", "fill": "none" }, { "shape": "circle", "fill": "left" }, { "shape": "circle", "fill": "full" },
+          { "shape": "circle", "fill": "left" }, { "shape": "circle", "fill": "full" }, { "shape": "circle", "fill": "none" },
+          { "shape": "circle", "fill": "full" }, { "shape": "circle", "fill": "none" }, null
+        ],
+        "options": [
+          { "shape": "circle", "fill": "none" }, { "shape": "circle", "fill": "full" },
+          { "shape": "circle", "fill": "left" }, { "shape": "circle", "fill": "right" }
+        ]
+      }
+    },
+    {
+      "replaces": "ef2960dc-a122-4321-9bdc-be21cbe6c4ca",
+      "label": "Dot count",
+      "difficulty": "easy",
+      "correct": 0,
+      "figure": {
+        "cols": 2,
+        "cells": [{ "dots": 1 }, { "dots": 2 }, { "dots": 3 }, null],
+        "options": [{ "dots": 4 }, { "dots": 3 }, { "dots": 2 }, { "dots": 5 }]
+      }
+    },
+    {
+      "replaces": "5b06229e-46f7-42df-9e01-0cd37b3dd002",
+      "label": "Shape and dot-count square",
+      "difficulty": "hard",
+      "correct": 0,
+      "figure": {
+        "cols": 3,
+        "cells": [
+          { "shape": "circle", "side": { "count": 1 } }, { "shape": "square", "side": { "count": 2 } }, { "shape": "triangle", "side": { "count": 3 } },
+          { "shape": "square", "side": { "count": 3 } }, { "shape": "triangle", "side": { "count": 1 } }, { "shape": "circle", "side": { "count": 2 } },
+          { "shape": "triangle", "side": { "count": 2 } }, { "shape": "circle", "side": { "count": 3 } }, null
+        ],
+        "options": [
+          { "shape": "square", "side": { "count": 1 } }, { "shape": "triangle", "side": { "count": 1 } },
+          { "shape": "square", "side": { "count": 3 } }, { "shape": "circle", "side": { "count": 1 } }
+        ]
+      }
+    },
+    {
+      "replaces": "cd15e7c9-9f40-4f43-9d44-d95945752a1a",
+      "label": "Four-cell shading",
+      "difficulty": "hard",
+      "redesigned": "The old text only described row 3; rows 1 and 2 are new. Row 1 shows the fill order (top-left, top-right, bottom-right, bottom-left), row 2 starts empty, row 3 is as before. Key unchanged.",
+      "correct": 0,
+      "rationale": "Along every row one more small cell is shaded at each step. Row 1 shows the order the cells fill in: top-left, top-right, then bottom-right, then bottom-left (clockwise). Row 3 has top-left, then top-left and top-right, so the next step adds bottom-right. The option ending in bottom-left goes counter-clockwise. 'Two shaded' fails to add a cell. 'Four shaded' adds two cells at once.",
+      "figure": {
+        "cols": 3,
+        "cells": [
+          { "quad": ["tl", "tr"] }, { "quad": ["tl", "tr", "br"] }, { "quad": ["tl", "tr", "br", "bl"] },
+          { "quad": [] }, { "quad": ["tl"] }, { "quad": ["tl", "tr"] },
+          { "quad": ["tl"] }, { "quad": ["tl", "tr"] }, null
+        ],
+        "options": [
+          { "quad": ["tl", "tr", "br"] }, { "quad": ["tl", "tr", "bl"] },
+          { "quad": ["tl", "br"] }, { "quad": ["tl", "tr", "br", "bl"] }
+        ]
+      }
+    },
+    {
+      "replaces": "eed66f1e-c04c-4980-9ae9-31a78494b63d",
+      "label": "Line count",
+      "difficulty": "hard",
+      "correct": 0,
+      "figure": {
+        "cols": 3,
+        "cells": [
+          { "lines": 1 }, { "lines": 2 }, { "lines": 3 },
+          { "lines": 2 }, { "lines": 3 }, { "lines": 4 },
+          { "lines": 3 }, { "lines": 4 }, null
+        ],
+        "options": [{ "lines": 5 }, { "lines": 4 }, { "lines": 6 }, { "lines": 3 }]
+      }
+    },
+    {
+      "replaces": "5d6ea32f-dda6-4d01-9b30-f4e1b257f5ee",
+      "label": "Clock hand",
+      "difficulty": "medium",
+      "correct": 0,
+      "figure": {
+        "cols": 2,
+        "cells": [{ "clock": 12 }, { "clock": 3 }, { "clock": 6 }, null],
+        "options": [{ "clock": 9 }, { "clock": 12 }, { "clock": 3 }, { "clock": 6 }]
+      }
+    },
+    {
+      "replaces": "8fa1a761-4b01-4fc0-879e-fba14a6cc75a",
+      "label": "Dot removed",
+      "difficulty": "medium",
+      "correct": 0,
+      "figure": {
+        "cols": 2,
+        "cells": [
+          { "shape": "circle", "inner": { "glyph": "dot", "count": 1 } }, { "shape": "circle" },
+          { "shape": "triangle", "inner": { "glyph": "dot", "count": 1 } }, null
+        ],
+        "options": [
+          { "shape": "triangle" }, { "shape": "triangle", "inner": { "glyph": "dot", "count": 1 } },
+          { "shape": "circle" }, { "shape": "square" }
+        ]
+      }
+    },
+    {
+      "replaces": "f1f8fe62-7e7d-4e20-9d5f-4bbe2614b334",
+      "label": "Size and shape",
+      "difficulty": "medium",
+      "correct": 0,
+      "figure": {
+        "cols": 2,
+        "cells": [
+          { "shape": "square", "size": "small" }, { "shape": "square", "size": "large" },
+          { "shape": "triangle", "size": "small" }, null
+        ],
+        "options": [
+          { "shape": "triangle", "size": "large" }, { "shape": "triangle", "size": "small" },
+          { "shape": "square", "size": "large" }, { "shape": "square", "size": "small" }
+        ]
+      }
+    },
+    {
+      "replaces": "f9ec2980-6227-4aa9-8f7b-7d6eed3b29d2",
+      "label": "Stars inside shapes",
+      "difficulty": "medium",
+      "correct": 0,
+      "figure": {
+        "cols": 2,
+        "cells": [
+          { "shape": "circle", "inner": { "glyph": "star", "count": 1 } }, { "shape": "circle", "inner": { "glyph": "star", "count": 2 } },
+          { "shape": "square", "inner": { "glyph": "star", "count": 1 } }, null
+        ],
+        "options": [
+          { "shape": "square", "inner": { "glyph": "star", "count": 2 } }, { "shape": "circle", "inner": { "glyph": "star", "count": 2 } },
+          { "shape": "square", "inner": { "glyph": "star", "count": 1 } }, { "shape": "square", "inner": { "glyph": "star", "count": 3 } }
+        ]
+      }
+    }
+  ]
+}

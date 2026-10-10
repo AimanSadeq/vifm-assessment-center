@@ -31,12 +31,14 @@ export default async function ObservationPage({ params }: Props) {
     .map((m) => m.competencies)
     .filter(Boolean) as unknown as { id: string; name: string; description: string | null; tags: string[] | null; qa_questions: string[] | null }[];
 
-  // Fetch behavioral indicators for these competencies
+  // Fetch behavioral indicators for these competencies. Indicators an SME rejected
+  // are never shown to assessors (sme_status is NOT NULL, default 'pending').
   const compIds = competencies.map((c) => c.id);
   const { data: indicators } = await supabase
     .from("behavioral_indicators")
     .select("id, competency_id, indicator_type, description, sort_order")
     .in("competency_id", compIds.length > 0 ? compIds : ["none"])
+    .neq("sme_status", "rejected")
     .order("sort_order");
 
   // B19: what each score means for these competencies (BPS 4.31) and what the

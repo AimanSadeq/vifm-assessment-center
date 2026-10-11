@@ -634,12 +634,12 @@
         "25°C"
       ],
       "stem_en": "The chart shows the high temperature on four days. What was the highest temperature recorded?",
-      "stem_ar": "يوضّح المخطط درجة الحرارة العليا في أربعة أيام. ما أعلى درجة حرارة سُجّلت؟",
+      "stem_ar": "يوضّح المخطط درجة الحرارة العظمى في أربعة أيام. ما أعلى درجة حرارة سُجّلت؟",
       "figure": {
         "kind": "data",
         "style": "bar",
         "title_en": "High temperature (°C)",
-        "title_ar": "درجة الحرارة العليا (درجة مئوية)",
+        "title_ar": "درجة الحرارة العظمى (درجة مئوية)",
         "label_head_en": "Day",
         "label_head_ar": "اليوم",
         "rows": [
@@ -717,12 +717,12 @@
         "4"
       ],
       "stem_en": "The chart shows the daily rainfall over four days. On how many days was the rainfall exactly 6 mm?",
-      "stem_ar": "يوضّح المخطط كمية الأمطار اليومية على مدى أربعة أيام. في كم يوم كانت كمية الأمطار 6 مم بالضبط؟",
+      "stem_ar": "يوضّح المخطط كمية الأمطار اليومية على مدى أربعة أيام. خلال كم يوم بلغت كمية الأمطار 6 ملم بالضبط؟",
       "figure": {
         "kind": "data",
         "style": "bar",
         "title_en": "Daily rainfall (mm)",
-        "title_ar": "كمية الأمطار اليومية (مم)",
+        "title_ar": "كمية الأمطار اليومية (ملم)",
         "label_head_en": "Day",
         "label_head_ar": "اليوم",
         "rows": [
@@ -761,7 +761,7 @@
         "10 s"
       ],
       "stem_en": "The table shows a runner's times for four laps. How much slower was the slowest lap than the average lap time?",
-      "stem_ar": "يوضّح الجدول أزمنة عدّاء في أربع لفّات. بكم كانت أبطأ لفة أبطأ من متوسط زمن اللفة؟",
+      "stem_ar": "يوضّح الجدول أزمنة عدّاء في أربع لفّات. كم ثانية يزيد زمن أبطأ لفة عن متوسط زمن اللفات الأربع؟",
       "figure": {
         "kind": "data",
         "style": "table",
@@ -849,7 +849,7 @@
         "16.0 km"
       ],
       "stem_en": "The table shows the length of four trails. A hiker walks Trails A, C and D. What is the total distance walked?",
-      "stem_ar": "يوضّح الجدول طول أربعة مسارات. يمشي متنزّه المسارات أ وج ود. ما المسافة الإجمالية المقطوعة؟",
+      "stem_ar": "يوضّح الجدول طول أربعة مسارات. سار أحد المتنزهين في المسارات أ وج ود. ما إجمالي المسافة التي قطعها؟",
       "figure": {
         "kind": "data",
         "style": "table",
@@ -981,7 +981,7 @@
         "12 km"
       ],
       "stem_en": "The chart shows the distance walked each day. How much farther was walked on Thursday than on Monday?",
-      "stem_ar": "يوضّح المخطط المسافة المقطوعة مشياً كل يوم. كم كانت المسافة المقطوعة يوم الخميس أكثر منها يوم الاثنين؟",
+      "stem_ar": "يوضّح المخطط المسافة المقطوعة مشياً كل يوم. بكم كيلومتر زادت المسافة المقطوعة يوم الخميس مقارنةً بيوم الاثنين؟",
       "figure": {
         "kind": "data",
         "style": "bar",
@@ -1520,5 +1520,6 @@
       }
     }
   ],
-  "_stem_note": "Matrix instruction as worded by Ali (10 Oct 2026); the English follows his Arabic. It gives no hint about counting, rotation, shading or direction."
+  "_stem_note": "Matrix instruction as worded by Ali (10 Oct 2026); the English follows his Arabic. It gives no hint about counting, rotation, shading or direction.",
+  "_arabic_review": "Arabic wording of the data items reviewed by Ali (11 Oct 2026, 07:14 KSA): items 1, 3, 4, 6 and 9 reworded as he wrote them; rainfall chart unit aligned to his 'ملم'; the other six unchanged."
 }

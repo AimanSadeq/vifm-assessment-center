@@ -4,7 +4,7 @@ import { Boxes } from "lucide-react";
 import { VoucherRedeemForm } from "@/components/shared/voucher-redeem-form";
 import { redeemBundleVoucherAction } from "./actions";
 
-// Branding wrapper + the shared bilingual redeem form. Name/email are prefilled
+// Branding wrapper + the shared redeem form (English only). Name/email are prefilled
 // from the voucher row server-side (page.tsx), never from URL params.
 export function RedeemClient({
   code,
@@ -42,6 +42,11 @@ export function RedeemClient({
                 initialEmail={emailPrefill}
                 companyField="hidden"
                 codePlaceholder="BND-XXXX-XXXX"
+                // Bundles run in English only (scenarios are authored in English and
+                // the reasoning stage is served in English), so no AR toggle: choosing
+                // Arabic here only translated the form (Ali, SDC pilot, 11 Oct 2026).
+                bilingual={false}
+                footerNote={{ en: "This assessment is in English.", ar: "This assessment is in English." }}
                 submitLabel={{ en: "Start assessment", ar: "ابدأ التقييم" }}
                 onRedeem={async (v) => {
                   const res = await redeemBundleVoucherAction({ code: v.code, fullName: v.name, email: v.email });

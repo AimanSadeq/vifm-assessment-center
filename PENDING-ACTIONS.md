@@ -3,6 +3,9 @@
 > Living checklist of open/deferred work. Claude: surface this whenever the user
 > asks "any pending actions?" (or similar), and keep it updated as items close.
 > Last updated: 2026-10-07.
+>
+> **Email style for Aiman's emails to the VIFM team (standing rule, 2026-10-12):** sign off with "A"
+> (not "Aiman", no title), and leave one blank line between the greeting and the first line of the body.
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 

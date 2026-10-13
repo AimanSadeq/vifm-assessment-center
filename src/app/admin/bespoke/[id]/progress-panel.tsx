@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   Activity, Download, Link2, Copy, MessageSquareText, PhoneCall, History, FlaskConical, Search,
-  CalendarClock, Save, Loader2, AlertTriangle, Mail, X, Send,
+  CalendarClock, Save, Loader2, AlertTriangle, Mail, X, Send, FileText, FolderArchive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -205,6 +205,9 @@ export function ProgressPanel({
               <Link2 className="h-4 w-4" /> Copy link
             </Button>
           )}
+          <a href={`/admin/bespoke/reports/filed`}>
+            <Button size="sm" variant="outline" className="gap-1.5"><FolderArchive className="h-4 w-4" /> Filed reports</Button>
+          </a>
           <a href={`/api/admin/bundle-progress/${bundleId}`}>
             <Button size="sm" className="gap-1.5"><Download className="h-4 w-4" /> Download Excel</Button>
           </a>
@@ -430,6 +433,18 @@ export function ProgressPanel({
                     )}
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right">
+                    {p.candidateId && (p.status === "completed" || p.status === "scored") && (
+                      <a
+                        href={`/api/admin/bundle/${p.candidateId}/report`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={p.status === "completed" ? "Generate report (files it and marks Scored)" : "Open report"}
+                        aria-label="Report"
+                        className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-[#5391D5] transition-colors hover:border-border hover:bg-muted"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                      </a>
+                    )}
                     <IconButton title="Copy reminder for this person" disabled={!sharedLink} onClick={() => copy(reminderFor(p), `Reminder for ${firstWord(p.name) || p.name} copied.`)}>
                       <Copy className="h-3.5 w-3.5" />
                     </IconButton>

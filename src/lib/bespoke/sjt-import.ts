@@ -88,6 +88,8 @@ export type ParsedScenarioWorkbook = {
   short: string[];
   /** Set when nothing in the file can be loaded at all (no sheet, duplicate IDs, unreadable file). */
   fatal: string | null;
+  /** Rows per Status value in the workbook, so the admin can choose which to load. */
+  statusCounts: Record<string, number>;
 };
 
 const clean = (v: string | undefined) => (v ? v.trim().replace(/[ \t]+/g, " ") : "");
@@ -98,7 +100,7 @@ export async function parseScenarioWorkbook(
   opts: { statuses?: string[] } = {},
 ): Promise<ParsedScenarioWorkbook> {
   const statuses = Array.from(new Set(opts.statuses?.length ? opts.statuses : DEFAULT_IMPORT_STATUSES)).sort();
-  const out: ParsedScenarioWorkbook = { statuses, competencies: sdcCompetencyRows(), items: [], report: [], perCompetency: {}, short: [], fatal: null };
+  const out: ParsedScenarioWorkbook = { statuses, competencies: sdcCompetencyRows(), items: [], report: [], perCompetency: {}, short: [], fatal: null, statusCounts: {} };
   let grid: string[][] | null;
   try {
     grid = await readXlsxSheet(buffer, SCENARIO_SHEET);
@@ -117,6 +119,7 @@ export async function parseScenarioWorkbook(
     const lvl = clean(cell(4));
     const situation = clean(cell(6));
     const status = clean(cell(22)) || "Draft";
+    out.statusCounts[status] = (out.statusCounts[status] ?? 0) + 1;
     const errors: string[] = [];
     const warnings: string[] = [];
     if (!statuses.includes(status)) {
@@ -253,4 +256,53 @@ export async function applyScenarioImport(
 
   const added = keyed.filter((it) => !existing.has(it.ref)).length;
   return { ok: true, competencies: parsed.competencies.length, added, updated: keyed.length - added, retired: retire.length };
+}
+
+export type ScenarioImportImpact = {
+  added: string[];
+  changed: string[];
+  unchanged: number;
+  retired: string[];
+  /** People (not testers) who have started the scenario section. */
+  startedCandidates: number;
+  startedTesters: number;
+};
+
+const sameItem = (
+  a: { competency_code: string; target_level: string; situation: string; options: unknown; sort_order: number },
+  b: { competency_code: string; target_level: string; situation: string; options: unknown; sort_order: number },
+) =>
+  a.competency_code === b.competency_code &&
+  a.target_level === b.target_level &&
+  a.situation === b.situation &&
+  a.sort_order === b.sort_order &&
+  JSON.stringify(a.options) === JSON.stringify(b.options);
+
+/** What a load would change in the live bundle, and who has already started. */
+export async function scenarioImportImpact(bundleId: string, parsed: ParsedScenarioWorkbook): Promise<ScenarioImportImpact> {
+  const bundle = bundleId.toLowerCase();
+  const sb = createServiceClient();
+  const [{ data: live }, { data: started }, { data: testers }] = await Promise.all([
+    sb.from("bundle_sjt_items").select("ref, competency_code, target_level, situation, options, sort_order, active").eq("bespoke_service_id", bundle),
+    sb.from("bundle_sjt_results").select("bundle_candidate_id").eq("bespoke_service_id", bundle),
+    sb.from("bundle_roster").select("bundle_candidate_id").eq("bespoke_service_id", bundle).eq("is_tester", true),
+  ]);
+  type Live = { ref: string; competency_code: string; target_level: string; situation: string; options: unknown; sort_order: number; active: boolean };
+  const byRef = new Map(((live ?? []) as Live[]).map((r) => [r.ref, r]));
+  const keyed = withOptionKeys(bundle, parsed.items);
+  const out: ScenarioImportImpact = { added: [], changed: [], unchanged: 0, retired: [], startedCandidates: 0, startedTesters: 0 };
+  for (const it of keyed) {
+    const cur = byRef.get(it.ref);
+    if (!cur) out.added.push(it.ref);
+    else if (!cur.active || !sameItem(cur, it)) out.changed.push(it.ref);
+    else out.unchanged += 1;
+  }
+  const refs = new Set(keyed.map((it) => it.ref));
+  for (const r of byRef.values()) if (r.active && !refs.has(r.ref)) out.retired.push(r.ref);
+  const testerIds = new Set(((testers ?? []) as Array<{ bundle_candidate_id: string | null }>).map((t) => t.bundle_candidate_id).filter(Boolean));
+  for (const s of (started ?? []) as Array<{ bundle_candidate_id: string }>) {
+    if (testerIds.has(s.bundle_candidate_id)) out.startedTesters += 1;
+    else out.startedCandidates += 1;
+  }
+  return out;
 }

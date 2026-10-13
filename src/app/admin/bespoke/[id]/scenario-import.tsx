@@ -19,21 +19,22 @@ const OUTCOME: Record<string, { label: string; tone: string }> = {
 export function ScenarioImport({ bundleId }: { bundleId: string }) {
   const [pending, start] = useTransition();
   const [file, setFile] = useState<File | null>(null);
-  const [includeReview, setIncludeReview] = useState(false);
+  // Which Status values to load; the workbook's own values are offered after a check.
+  const [chosen, setChosen] = useState<string[]>(["Approved"]);
   const [preview, setPreview] = useState<ScenarioImportPreview | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const form = (f: File) => {
+  const form = (f: File, statuses: string[] = chosen) => {
     const fd = new FormData();
     fd.set("file", f);
-    fd.set("includeReview", String(includeReview));
+    fd.set("statuses", statuses.join("\n"));
     return fd;
   };
 
-  const check = () =>
+  const check = (statuses: string[] = chosen) =>
     start(async () => {
       if (!file) return;
-      const res = await previewScenarioImportAction(bundleId, form(file));
+      const res = await previewScenarioImportAction(bundleId, form(file, statuses));
       if ("error" in res) {
         setPreview(null);
         toast.error(res.error);
@@ -77,7 +78,8 @@ export function ScenarioImport({ bundleId }: { bundleId: string }) {
         <FileSpreadsheet className="h-4 w-4 text-[#5391D5]" /> Load scenarios from the SME&apos;s workbook
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        The completed scenario template (.xlsx, sheet &apos;Scenarios&apos;). Rows marked Approved are loaded; rows with errors are left out. Loading again
+        The completed scenario template (.xlsx, sheet &apos;Scenarios&apos;). Rows with the Status values you tick are loaded (Approved to start
+        with); rows with errors are left out. Loading again
         updates scenarios by Scenario ID and keeps their response keys, so candidates who already started are not affected. Scenarios no longer in the
         workbook are retired.
       </p>
@@ -89,21 +91,31 @@ export function ScenarioImport({ bundleId }: { bundleId: string }) {
           className="max-w-full text-xs file:mr-2 file:rounded-md file:border file:bg-background file:px-2 file:py-1 file:text-xs"
           onChange={(e) => pick(e.target.files?.[0] ?? null)}
         />
-        <label className="flex items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={includeReview}
-            onChange={(e) => {
-              setIncludeReview(e.target.checked);
-              setPreview(null);
-            }}
-          />
-          Also load rows marked Ready for review (pilot)
-        </label>
-        <Button size="sm" variant="outline" disabled={pending || !file} onClick={check}>
+        <Button size="sm" variant="outline" disabled={pending || !file} onClick={() => check()}>
           {pending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Upload className="mr-1 h-4 w-4" />} Check workbook
         </Button>
       </div>
+
+      {preview && Object.keys(preview.statusCounts).length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 text-xs">
+          <span className="font-medium">Load rows with Status:</span>
+          {Array.from(new Set([...Object.keys(preview.statusCounts), ...chosen])).sort().map((st) => (
+            <label key={st} className="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={chosen.includes(st)}
+                disabled={pending}
+                onChange={(e) => {
+                  const next = e.target.checked ? [...chosen, st] : chosen.filter((x) => x !== st);
+                  setChosen(next);
+                  check(next);
+                }}
+              />
+              {st} <span className="text-muted-foreground">({preview.statusCounts[st] ?? 0})</span>
+            </label>
+          ))}
+        </div>
+      )}
 
       {preview && (
         <div className="mt-3">
@@ -157,7 +169,25 @@ export function ScenarioImport({ bundleId }: { bundleId: string }) {
               </table>
             </div>
           )}
-          {!preview.fatal && preview.loadable > 0 && (
+          {preview.impact && (
+            <div className="mt-2 rounded-lg border bg-muted/30 p-2 text-xs">
+              <div>
+                Compared with what is live now: <span className="font-medium">{preview.impact.added.length} new</span>
+                {" · "}<span className="font-medium">{preview.impact.changed.length} changed</span>
+                {" · "}{preview.impact.unchanged} unchanged
+                {" · "}<span className="font-medium">{preview.impact.retired.length} to retire</span>
+              </div>
+              {preview.impact.changed.length > 0 && <div className="mt-0.5 text-muted-foreground">Changed: {preview.impact.changed.join(", ")}</div>}
+              {preview.impact.retired.length > 0 && <div className="mt-0.5 text-muted-foreground">Retired: {preview.impact.retired.join(", ")}</div>}
+              {preview.impact.startedTesters > 0 && !preview.blocked && (
+                <div className="mt-0.5 text-amber-700">
+                  {preview.impact.startedTesters} tester sitting{preview.impact.startedTesters === 1 ? "" : "s"} already started; changed wording will show in their remaining scenarios.
+                </div>
+              )}
+            </div>
+          )}
+          {preview.blocked && <p className="mt-2 text-xs font-medium text-rose-700">{preview.blocked}</p>}
+          {!preview.fatal && preview.loadable > 0 && !preview.blocked && (
             <Button className="mt-3" size="sm" disabled={pending} onClick={load}>
               {pending ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null} Load {preview.loadable} scenario{preview.loadable === 1 ? "" : "s"}
             </Button>

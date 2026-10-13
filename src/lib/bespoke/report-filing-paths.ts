@@ -11,9 +11,11 @@
 export const REPORT_KIND_LABELS: Record<string, string> = {
   combined: "Combined report",
   hipo: "High-Potential Profile",
+  sdc_summary: "SDC Executive Summary",
+  sdc_idp: "SDC Individual Development Plan",
 };
 
-export type BundleReportKind = "combined" | "hipo";
+export type BundleReportKind = "combined" | "hipo" | "sdc_summary" | "sdc_idp";
 
 /** Matches the bundle_report_files.kind CHECK in 00237. */
 export const REPORT_KIND_RE = /^[a-z][a-z0-9_]{1,39}$/;

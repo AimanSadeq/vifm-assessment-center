@@ -20,6 +20,7 @@ import { ProgressPanel } from "./progress-panel";
 import { loadBundleProgress, bundleStageFlags } from "@/lib/bespoke/progress";
 import { formatCompleteBy } from "@/lib/bespoke/bundle-settings";
 import { siteOrigin } from "@/lib/site-url";
+import { isSdcFramework } from "@/lib/reports/sdc-hipo/rules";
 
 export const dynamic = "force-dynamic";
 
@@ -78,6 +79,8 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
   const sharedLink = pool[0] ? `${siteOrigin()}/bundle/redeem?code=${pool[0].code}` : null;
   const creator = creatorRes.data?.full_name || creatorRes.data?.email || null;
   const locked = usage.candidates > 0 || usage.vouchers > 0;
+  // SDC competency framework: the SDC executive summary, IDP and group report replace the combined report.
+  const sdcReports = isSdcFramework(sjtComps.map((c) => c.code));
 
   const cfg = bundle.service_config as { logica?: { subtests?: string[] }; persona?: { competencyIds?: string[] } };
   const logicaKeys = cfg.logica?.subtests && cfg.logica.subtests.length > 0 ? cfg.logica.subtests : [...COGNITIVE_SUBTEST_KEYS];
@@ -235,6 +238,7 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
         sharedLink={sharedLink}
         vouchers={pool.map((v) => ({ id: v.id, code: v.code, max_uses: v.max_uses, uses: v.uses, expires_at: v.expires_at }))}
         now={Date.now()}
+        sdcReports={sdcReports}
       />
 
       <DeliveryPanel bundleId={bundle.id} settings={deliverySettings} roster={roster} />

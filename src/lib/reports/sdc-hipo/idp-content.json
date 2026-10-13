@@ -1,0 +1,372 @@
+{
+ "_source": "scripts/sdc-hipo/idp_actions.py (regenerate with export-idp-json.py; do not edit by hand)",
+ "actions": {
+  "IN": {
+   "Basic": {
+    "job": "Pick one task you repeat every week, list two ways to simplify it, try one and note the time saved.",
+    "coaching": "Discuss with your coach one improvement idea you hesitated to raise, and plan how to propose it.",
+    "learning": "Module 3 session on innovation and problem solving; apply one idea-generation technique to a live task."
+   },
+   "Proficient": {
+    "job": "Lead a small improvement in your team's process: compare at least two options, pilot one for a month and measure the result.",
+    "coaching": "Review the pilot results with your coach, including what you would change and how you handled resistance.",
+    "learning": "Module 3 innovation and problem-solving content; use the business challenge to test a new approach."
+   },
+   "Advanced": {
+    "job": "Sponsor a cross-department pilot linked to an SDC priority, with agreed success measures and a decision point to scale or stop.",
+    "coaching": "Work with your coach on building support for experimentation among senior stakeholders.",
+    "learning": "Module 3 strategy and innovation sessions and the capstone project; share lessons with other departments."
+   }
+  },
+  "RO": {
+   "Basic": {
+    "job": "Agree three clear outcomes for the next quarter with your manager, track them weekly and flag any risk early.",
+    "coaching": "Review your weekly tracking with your coach and identify what most often delays your delivery.",
+    "learning": "Module 1 goal-setting session; apply it to your own quarterly outcomes."
+   },
+   "Proficient": {
+    "job": "Own a team deliverable with competing priorities; set milestones, track progress and adjust the plan when obstacles appear.",
+    "coaching": "Use coaching to work through one trade-off between priorities and how you communicated it.",
+    "learning": "Module 3 business acumen and decision-making sessions; apply one prioritisation tool to the deliverable."
+   },
+   "Advanced": {
+    "job": "Set a stretching outcome for a cross-team initiative, align resources around it and report progress to senior management monthly.",
+    "coaching": "Discuss with your coach how you sustain performance when conditions change mid-delivery.",
+    "learning": "Module 3 and the capstone business project; present results and lessons in the C-suite presentation."
+   }
+  },
+  "ECC": {
+   "Basic": {
+    "job": "In your next three meetings, summarise what others said before giving your view, and share notes with colleagues afterwards.",
+    "coaching": "Ask your coach for feedback on how clearly you communicate in writing, using two recent emails.",
+    "learning": "Module 2 communication and collaboration sessions; practise active listening in the workplace application."
+   },
+   "Proficient": {
+    "job": "Lead a joint task with another team: agree roles, hold regular check-ins and resolve one disagreement directly.",
+    "coaching": "Prepare with your coach for a conversation with a stakeholder who sees the work differently.",
+    "learning": "Module 2 sessions on influence, feedback and collaboration; apply them to the team-based challenge."
+   },
+   "Advanced": {
+    "job": "Bring together stakeholders from several functions around a shared outcome, and run the forum that keeps them aligned.",
+    "coaching": "Use coaching to map key stakeholders and plan how to build trust where relationships are weak.",
+    "learning": "Module 4 stakeholder management and Module 2 influence content; apply both in the capstone project."
+   }
+  },
+  "PI": {
+   "Basic": {
+    "job": "Review the policies that apply to your role with your manager and confirm how you handle confidential information.",
+    "coaching": "Discuss with your coach a time you made a mistake, how you acknowledged it and what you learned.",
+    "learning": "Module 1 sessions on personal accountability and leadership standards."
+   },
+   "Proficient": {
+    "job": "When you see a practice that conflicts with policy or values, raise it constructively with the right person and record the outcome.",
+    "coaching": "Work through a real ethical dilemma from your role with your coach, weighing the competing interests.",
+    "learning": "Module 1 leadership standards content; review SDC's code of conduct and its practical cases."
+   },
+   "Advanced": {
+    "job": "Act as the integrity reference point on a sensitive initiative, setting clear standards and holding others to them.",
+    "coaching": "Use coaching to prepare for addressing a complex ethical issue with senior stakeholders.",
+    "learning": "Module 4 executive presence content; share an ethics case with the cohort."
+   }
+  },
+  "AO": {
+   "Basic": {
+    "job": "Keep a commitment log for one month: what you promised, when, and whether it was delivered; tell people early about any slip.",
+    "coaching": "Review the log with your coach and agree one habit that improves follow-through.",
+    "learning": "Module 1 sessions on personal accountability and leadership mindset."
+   },
+   "Proficient": {
+    "job": "Take end-to-end ownership of one improvement, including follow-through after launch and correcting what does not work.",
+    "coaching": "Use coaching to plan the difficult conversations needed when commitments are at risk.",
+    "learning": "Module 1 accountability content; apply it to your stretch assignment."
+   },
+   "Advanced": {
+    "job": "Define clear ownership for every outcome in a team or project, and review accountability openly at each milestone.",
+    "coaching": "Discuss with your coach how to hold others to account while keeping trust.",
+    "learning": "Module 2 team leadership sessions; apply them in the team-based challenge."
+   }
+  },
+  "SM": {
+   "Basic": {
+    "job": "Read SDC's strategy and explain to your manager how your work contributes to two of its priorities.",
+    "coaching": "Discuss with your coach one decision where you considered the wider context, and what you would do differently.",
+    "learning": "Module 3 strategy session and its pre-reading."
+   },
+   "Proficient": {
+    "job": "Lead a short horizon-scan of external trends affecting your area and present the implications to your department head.",
+    "coaching": "Pair with a senior sponsor to test the assumptions behind your department's plan.",
+    "learning": "Module 3 strategy content and the business simulation."
+   },
+   "Advanced": {
+    "job": "Shape a two-to-three-year direction for your function, testing assumptions with scenarios and aligning stakeholders behind it.",
+    "coaching": "Use coaching to prepare how you will present and defend a long-term view to the executive team.",
+    "learning": "Module 3 strategy content and the capstone project with its C-suite presentation."
+   }
+  },
+  "DSP": {
+   "Basic": {
+    "job": "Hold a monthly check-in with your team on commitments and standards, and remove one obstacle each month.",
+    "coaching": "Review with your coach how you balance short-term delivery with your team's workload.",
+    "learning": "Module 2 team leadership sessions."
+   },
+   "Proficient": {
+    "job": "Set clear performance expectations for your team, review them with data each month and adjust resources where needed.",
+    "coaching": "Discuss with your coach a trade-off between short-term results and team capability, and how you decided.",
+    "learning": "Module 2 performance and feedback content; Module 3 business acumen sessions."
+   },
+   "Advanced": {
+    "job": "Design a system that sustains performance in your area, such as a capability plan or a performance rhythm, and track its effect.",
+    "coaching": "Use coaching to plan deliberate trade-offs between results, people and risk.",
+    "learning": "Module 3 business content and Module 4 succession readiness."
+   }
+  },
+  "EDP": {
+   "Basic": {
+    "job": "For your next three decisions, write down the information used, the options considered and a simple action plan.",
+    "coaching": "Review one of these decisions with your coach after it plays out.",
+    "learning": "Module 3 decision-making session; apply one decision tool to a live choice."
+   },
+   "Proficient": {
+    "job": "Lead a decision that involves other stakeholders: evaluate alternatives and risks, decide on time and adjust the plan as conditions change.",
+    "coaching": "Use coaching to review how you balanced speed and evidence in that decision.",
+    "learning": "Module 3 decision-making and problem-solving content and the business simulation."
+   },
+   "Advanced": {
+    "job": "Lead a high-impact decision under uncertainty, with a plan that sets priorities, contingencies and clear accountabilities.",
+    "coaching": "Discuss with your coach how you integrate conflicting views before deciding.",
+    "learning": "Module 3 decision-making content and the capstone project."
+   }
+  },
+  "IM": {
+   "Basic": {
+    "job": "Recognise one specific contribution from a colleague each week, and explain how it helped the team's goal.",
+    "coaching": "Discuss with your coach what motivates the people you work with most closely.",
+    "learning": "Module 2 sessions on team leadership and feedback."
+   },
+   "Proficient": {
+    "job": "In each team meeting, link current work to the team's purpose, and hold a development conversation with each team member this quarter.",
+    "coaching": "Use coaching to plan how to keep engagement up through a demanding period.",
+    "learning": "Module 2 coaching and motivation content; apply it in the team-based challenge."
+   },
+   "Advanced": {
+    "job": "Lead your team or project through a significant change, communicating purpose and adapting your approach to different people's needs.",
+    "coaching": "Work with your coach on how you build confidence when the path is uncertain.",
+    "learning": "Module 4 change management and executive presence content."
+   }
+  },
+  "LBE": {
+   "Basic": {
+    "job": "Choose two behaviours you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
+    "coaching": "Review that feedback with your coach and agree one change.",
+    "learning": "Module 1 sessions on personal leadership and leadership standards."
+   },
+   "Proficient": {
+    "job": "Under pressure, model the standards you set: note one difficult moment each week and how your conduct reinforced them.",
+    "coaching": "Use coaching to reflect on composure under pressure and how others read your behaviour.",
+    "learning": "Module 1 emotional intelligence content and Module 2 team leadership sessions."
+   },
+   "Advanced": {
+    "job": "Take visible responsibility for a difficult leadership decision, explain it openly and model the values it reflects.",
+    "coaching": "Discuss with your coach how your conduct sets the tone across the organisation.",
+    "learning": "Module 4 executive presence content and the capstone presentation."
+   }
+  }
+ },
+ "plan": {
+  "IN": {
+   "Proficient": {
+    "smart": "By day 90, pilot one improvement to a team process, chosen from at least two options, and show a measured gain in time, cost or quality.",
+    "day30": "Current process mapped; two improvement options compared and one agreed with the line manager.",
+    "day60": "Pilot running for at least four weeks, with a baseline and weekly measures.",
+    "day90": "Results reported to the team, with a decision to keep, change or stop the improvement.",
+    "evidence": "Pilot plan and before/after measures; written decision on next steps; line manager feedback on the result."
+   },
+   "Advanced": {
+    "smart": "By day 90, launch a cross-department pilot linked to an SDC priority, with agreed success measures and a scale-or-stop decision date.",
+    "day30": "SDC priority and partner departments confirmed; success measures agreed with the sponsor.",
+    "day60": "Pilot live in at least two departments; mid-point review held with stakeholders.",
+    "day90": "Scale-or-stop recommendation presented to senior management.",
+    "evidence": "Pilot charter with success measures; mid-point review notes; senior management decision on the recommendation."
+   }
+  },
+  "RO": {
+   "Proficient": {
+    "smart": "By day 90, deliver one team deliverable on time and to the agreed standard, with milestones tracked weekly and slippage flagged within one week.",
+    "day30": "Deliverable, standard and milestones agreed with the line manager; weekly tracker in use.",
+    "day60": "At least half the milestones met on time; any slippage raised with a recovery plan.",
+    "day90": "Deliverable completed and reviewed against the agreed standard.",
+    "evidence": "Milestone tracker; completed deliverable; line manager's written assessment against the standard."
+   },
+   "Advanced": {
+    "smart": "By day 90, lead a cross-team initiative to a stretching, measurable outcome, reporting progress to senior management every month.",
+    "day30": "Outcome and measures agreed with the sponsor; resources and owners assigned across teams.",
+    "day60": "First two monthly progress reports issued; at least one course correction documented.",
+    "day90": "Outcome achieved or a documented recovery plan approved by the sponsor.",
+    "evidence": "Monthly progress reports; documented course corrections; sponsor feedback on the outcome achieved."
+   }
+  },
+  "ECC": {
+   "Proficient": {
+    "smart": "By day 90, complete a joint task with another team with roles agreed in writing, fortnightly check-ins and at least one disagreement resolved directly.",
+    "day30": "Joint task, roles and check-in rhythm agreed with the other team in writing.",
+    "day60": "At least three check-ins held; one disagreement raised and resolved, with the outcome recorded.",
+    "day90": "Joint task delivered; both teams give feedback on the collaboration.",
+    "evidence": "Written role agreement; check-in notes; feedback from the other team's lead and the line manager."
+   },
+   "Advanced": {
+    "smart": "By day 90, set up and chair a cross-functional forum around a shared outcome, with agreed actions tracked between meetings.",
+    "day30": "Stakeholder map completed; forum purpose and members agreed with the sponsor.",
+    "day60": "At least two forum meetings held, with actions and owners recorded.",
+    "day90": "Shared outcome progressed as agreed; members rate the forum's usefulness.",
+    "evidence": "Stakeholder map; forum action log; stakeholder feedback collected at day 90."
+   }
+  },
+  "PI": {
+   "Proficient": {
+    "smart": "By day 90, raise at least one practice that conflicts with policy or values through the right channel, and record the outcome.",
+    "day30": "Policies and code of conduct relevant to the role reviewed with the line manager.",
+    "day60": "One real dilemma worked through with the coach, with the reasoning written down.",
+    "day90": "Issue raised constructively through the right channel; outcome recorded.",
+    "evidence": "Written dilemma analysis; record of the issue raised and its outcome; line manager feedback on how it was handled."
+   },
+   "Advanced": {
+    "smart": "By day 90, set and communicate clear integrity standards for one sensitive initiative and review compliance with them at each milestone.",
+    "day30": "Standards for the initiative written and agreed with the sponsor.",
+    "day60": "Standards communicated to everyone involved; first compliance review held.",
+    "day90": "Second review completed; any breaches addressed and lessons shared.",
+    "evidence": "Written standards; compliance review notes; sponsor feedback on how issues were handled."
+   }
+  },
+  "AO": {
+   "Proficient": {
+    "smart": "By day 90, own one improvement end to end, including follow-through after launch and correction of anything that does not work.",
+    "day30": "Improvement scope, owner role and success measures agreed with the line manager.",
+    "day60": "Improvement launched; first follow-up review completed.",
+    "day90": "Issues found after launch corrected; results reported.",
+    "evidence": "Improvement plan and measures; follow-up review notes; line manager feedback on ownership and follow-through."
+   },
+   "Advanced": {
+    "smart": "By day 90, assign a named owner to every outcome in a team or project and review accountability openly at each milestone.",
+    "day30": "Ownership map for all outcomes agreed with the team.",
+    "day60": "First accountability review held; slipped commitments addressed directly.",
+    "day90": "Second review held; on-time delivery compared with the start.",
+    "evidence": "Ownership map; accountability review notes; team and sponsor feedback."
+   }
+  },
+  "SM": {
+   "Basic": {
+    "smart": "By day 90, explain in writing how your work contributes to two SDC strategic priorities, and adjust one piece of work to fit them better.",
+    "day30": "SDC strategy read and discussed with the line manager.",
+    "day60": "One-page note linking your work to two priorities, reviewed with the coach.",
+    "day90": "One piece of work adjusted, and the change explained to the line manager.",
+    "evidence": "One-page note; the adjusted piece of work; line manager feedback on the link to strategy."
+   },
+   "Proficient": {
+    "smart": "By day 90, complete a horizon scan of external trends affecting your area and present the implications to your department head.",
+    "day30": "Scope of the scan and its sources agreed with the department head.",
+    "day60": "Trends analysed and implications drafted; assumptions tested with a senior sponsor.",
+    "day90": "Findings presented; at least one implication taken into the department plan.",
+    "evidence": "Horizon-scan report; presentation; department head's decision on the recommendations."
+   },
+   "Advanced": {
+    "smart": "By day 90, draft a two-to-three-year direction for your function, tested with scenarios and reviewed by the executive team.",
+    "day30": "Key assumptions and scenarios defined with the coach and a sponsor.",
+    "day60": "Draft direction shared with the main stakeholders and their input recorded.",
+    "day90": "Direction presented to the executive team and their decision recorded.",
+    "evidence": "Scenario analysis; draft direction paper; executive team feedback and decision."
+   }
+  },
+  "DSP": {
+   "Basic": {
+    "smart": "By day 90, hold a monthly check-in with your team on commitments and standards, and remove at least one obstacle each month.",
+    "day30": "First check-in held; commitments and standards written down.",
+    "day60": "Second check-in held; two obstacles removed and recorded.",
+    "day90": "Third check-in held; team feedback gathered on workload and support.",
+    "evidence": "Check-in notes; log of obstacles removed; team feedback."
+   },
+   "Proficient": {
+    "smart": "By day 90, set written performance expectations for your team and review them with data every month, adjusting resources where needed.",
+    "day30": "Expectations and measures written and agreed with each team member.",
+    "day60": "First monthly data review held; at least one resource adjustment made.",
+    "day90": "Second review held; changes in team performance reported.",
+    "evidence": "Written expectations; monthly performance data; line manager feedback on the team's results."
+   },
+   "Advanced": {
+    "smart": "By day 90, put in place one system that sustains performance in your area, such as a capability plan or performance rhythm, and track its effect.",
+    "day30": "Performance risk identified and the system designed with the sponsor.",
+    "day60": "System in use; first measures collected.",
+    "day90": "Effect reviewed and reported, with the trade-offs made documented.",
+    "evidence": "System design; performance measures before and after; sponsor feedback."
+   }
+  },
+  "EDP": {
+   "Basic": {
+    "smart": "By day 90, document your next three decisions (information used, options considered, action plan) and review the outcome of each.",
+    "day30": "First decision documented using a simple template.",
+    "day60": "Second and third decisions documented; first one reviewed after it played out.",
+    "day90": "All three reviewed with the coach; one lesson applied.",
+    "evidence": "Three decision records; post-decision reviews; line manager feedback on decision quality."
+   },
+   "Proficient": {
+    "smart": "By day 90, lead one decision involving other stakeholders, with alternatives and risks evaluated in writing and the decision made by the agreed date.",
+    "day30": "Decision, deadline and stakeholders agreed with the line manager.",
+    "day60": "Options and risks analysed in writing; stakeholders consulted.",
+    "day90": "Decision made on time; the plan adjusted as conditions changed, and the result reviewed.",
+    "evidence": "Decision paper with options and risks; record of stakeholder input; line manager feedback on the decision and its timing."
+   },
+   "Advanced": {
+    "smart": "By day 90, lead a high-impact decision under uncertainty with a written plan setting priorities, contingencies and accountabilities.",
+    "day30": "Decision framed with the sponsor; conflicting views gathered.",
+    "day60": "Decision made and the plan issued with contingencies and owners.",
+    "day90": "First results reviewed; contingencies used or adjusted as needed.",
+    "evidence": "Decision paper; implementation plan; sponsor review of the outcome."
+   }
+  },
+  "IM": {
+   "Basic": {
+    "smart": "By day 90, give specific recognition at least once a week, each time linking the contribution to a team goal.",
+    "day30": "Recognition habit started; motivators of close colleagues discussed with the coach.",
+    "day60": "At least eight recognitions given and noted.",
+    "day90": "Feedback gathered from colleagues on the effect.",
+    "evidence": "Recognition log; colleague feedback; coach review."
+   },
+   "Proficient": {
+    "smart": "By day 90, hold a development conversation with every team member and link current work to the team's purpose in each team meeting.",
+    "day30": "Development conversations scheduled; team purpose agreed and written down.",
+    "day60": "At least half the conversations held, each with an agreed action.",
+    "day90": "All conversations held; team engagement check completed.",
+    "evidence": "Record of conversations and agreed actions; short team engagement check; line manager feedback."
+   },
+   "Advanced": {
+    "smart": "By day 90, lead your team or project through a significant change with a written communication plan and two engagement checks.",
+    "day30": "Change and its purpose defined; communication plan written.",
+    "day60": "Change under way; first engagement check done and concerns addressed.",
+    "day90": "Change milestones met; second engagement check compared with the first.",
+    "evidence": "Communication plan; two engagement checks; sponsor feedback on how the change was led."
+   }
+  },
+  "LBE": {
+   "Basic": {
+    "smart": "By day 90, choose two behaviours you expect of others and get monthly feedback from a trusted colleague on whether you show them consistently.",
+    "day30": "Two behaviours chosen; colleague agreed to give feedback.",
+    "day60": "Two rounds of feedback received; one change agreed with the coach.",
+    "day90": "Third round of feedback shows the change in place.",
+    "evidence": "Monthly feedback notes; agreed change; colleague and line manager feedback."
+   },
+   "Proficient": {
+    "smart": "By day 90, keep a weekly record of one high-pressure moment and how your conduct reinforced the standards you set, and seek team feedback.",
+    "day30": "Standards written down; weekly record started.",
+    "day60": "Record reviewed with the coach; one pattern identified and addressed.",
+    "day90": "Team feedback gathered on consistency under pressure.",
+    "evidence": "Weekly record; coach review notes; team feedback."
+   },
+   "Advanced": {
+    "smart": "By day 90, take visible responsibility for one difficult leadership decision, explaining it openly and showing the values it reflects.",
+    "day30": "Decision identified and the communication approach planned with the coach.",
+    "day60": "Decision communicated openly; questions and concerns answered.",
+    "day90": "Follow-up held on the decision's effect; lessons shared with peers.",
+    "evidence": "Communication record; follow-up notes; senior stakeholder feedback."
+   }
+  }
+ }
+}

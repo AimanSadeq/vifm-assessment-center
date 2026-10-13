@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 import {
   Activity, Download, Link2, Copy, MessageSquareText, PhoneCall, History, FlaskConical, Search,
-  CalendarClock, Save, Loader2, AlertTriangle, Mail, X, Send, FileText, FolderArchive,
+  CalendarClock, Save, Loader2, AlertTriangle, Mail, X, Send, FileText, FolderArchive, ClipboardList, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,6 +70,7 @@ export function ProgressPanel({
   sharedLink,
   vouchers,
   now,
+  sdcReports = false,
 }: {
   bundleId: string;
   assessmentName: string;
@@ -83,6 +84,8 @@ export function ProgressPanel({
   sharedLink: string | null;
   vouchers: ProgressVoucher[];
   now: number;
+  /** SDC competency framework: per-person executive summary and IDP links, plus the group report. */
+  sdcReports?: boolean;
 }) {
   const [pending, start] = useTransition();
   const [filter, setFilter] = useState<Filter>("all");
@@ -204,6 +207,11 @@ export function ProgressPanel({
             <Button size="sm" variant="outline" className="gap-1.5" onClick={() => copy(sharedLink, "Link copied. People sign in with their work email and resume where they stopped.")}>
               <Link2 className="h-4 w-4" /> Copy link
             </Button>
+          )}
+          {sdcReports && (
+            <a href={`/api/admin/bundle-progress/${bundleId}/sdc-group`} target="_blank" rel="noopener noreferrer">
+              <Button size="sm" variant="outline" className="gap-1.5"><Users className="h-4 w-4" /> Group report</Button>
+            </a>
           )}
           <a href={`/admin/bespoke/reports/filed`}>
             <Button size="sm" variant="outline" className="gap-1.5"><FolderArchive className="h-4 w-4" /> Filed reports</Button>
@@ -433,7 +441,25 @@ export function ProgressPanel({
                     )}
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right">
-                    {p.candidateId && (p.status === "completed" || p.status === "scored") && (
+                    {sdcReports && p.candidateId && (p.status === "completed" || p.status === "scored") && (
+                      <>
+                        <ReportLink
+                          href={`/api/admin/bundle/${p.candidateId}/sdc-report?kind=summary`}
+                          label="Executive summary"
+                          title={p.status === "completed" ? "Executive summary (files it and marks Scored)" : "Executive summary"}
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                        </ReportLink>
+                        <ReportLink
+                          href={`/api/admin/bundle/${p.candidateId}/sdc-report?kind=idp`}
+                          label="IDP"
+                          title={p.status === "completed" ? "Individual development plan (files it and marks Scored)" : "Individual development plan"}
+                        >
+                          <ClipboardList className="h-3.5 w-3.5" />
+                        </ReportLink>
+                      </>
+                    )}
+                    {!sdcReports && p.candidateId && (p.status === "completed" || p.status === "scored") && (
                       <a
                         href={`/api/admin/bundle/${p.candidateId}/report`}
                         target="_blank"
@@ -501,6 +527,21 @@ export function ProgressPanel({
 
 function FragmentRow({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
+}
+
+function ReportLink({ href, label, title, children }: { href: string; label: string; title: string; children: React.ReactNode }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={title}
+      aria-label={label}
+      className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-md border border-transparent text-[#5391D5] transition-colors hover:border-border hover:bg-muted"
+    >
+      {children}
+    </a>
+  );
 }
 
 function IconButton({ title, onClick, disabled, active, children }: { title: string; onClick: () => void; disabled?: boolean; active?: boolean; children: React.ReactNode }) {

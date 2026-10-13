@@ -9,6 +9,8 @@ sent to candidates.
 | `build-idp-sheet.py` | `SDC_HiPo_IDP_Actions_v2.xlsx`, the sheet Ali reviews: one row per competency and target level an IDP can show (25), with goal behaviours from v3 and, from `idp_actions.py`, a SMART goal, 30/60/90-day milestones, on-the-job / coaching / learning actions (the 70-20-10 approach) and specific evidence of progress. The sample IDP reads the same file. |
 | `load-scenarios.py` | Checks Ali's completed scenario workbook against `v3.json` (each level once, indicator IDs of the right competency and level, word counts) and, with `--bundle UUID`, writes `out/sdc-scenarios.sql` to load the competencies and scenarios into Caliber (three statements, run one at a time). |
 | `build-reports.js` | The three one-page sample reports for SDC approval: executive summary, individual development plan, group report. All people and results are fictional (`data.js`). |
+| `export-idp-json.py` | `src/lib/reports/sdc-hipo/idp-content.json`, the IDP actions and plans Caliber's live SDC IDP reads, exported from `idp_actions.py`. |
+| `check-caliber-reports.ts` | Renders Caliber's live SDC reports (`src/lib/reports/sdc-hipo/`) from the fictional fixture to PDF, with an overflow check, so layout changes can be looked at without the database. |
 
 ```
 cd scripts/sdc-hipo
@@ -19,7 +21,16 @@ python3 load-scenarios.py Ali.xlsx --bundle <bundle uuid>             # loads ro
 python3 load-scenarios.py Ali.xlsx --bundle <uuid> --status "Ready for review"   # pilot load
 PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome node build-reports.js
                                           # writes out/SDC-HiPo-Sample-{1,2,3}-*.pdf
+python3 export-idp-json.py                # writes src/lib/reports/sdc-hipo/idp-content.json
+cd ../.. && PUPPETEER_EXECUTABLE_PATH=... npx tsx scripts/sdc-hipo/check-caliber-reports.ts /tmp/sdc-check 45
+                                          # writes Summary, IDP, Group (and Group-Large) PDFs
 ```
+
+- Caliber's SDC reports (admin only: Executive summary and IDP per person, Group report per
+  assessment, from the progress table) live in `src/lib/reports/sdc-hipo/`. The IDP text comes
+  from `idp-content.json`: **whenever Ali's IDP sheet changes, update `idp_actions.py`, run
+  `python3 export-idp-json.py` and commit the regenerated JSON**, or Caliber keeps the old text.
+  Grid rules, labels and the number of gaps the IDP plans (`IDP_MAX_GAPS`) are in `rules.ts`.
 
 - `v3.json`: the 10 SDC competencies, definitions and 160 indicators from Ali's
   `SDC_HiPo_Caliber_Detailed_Assessor_Indicators_v3.xlsx` (6 Oct 2026), plus SDC's grade mapping

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import type { BundleSettings } from "@/lib/bespoke/bundle-settings";
 import { LEVEL_NAMES, type BundleCompetency, type SjtItem } from "@/lib/bespoke/sjt-shared";
 import { saveScenarioSettingsAction } from "./delivery-actions";
+import { ScenarioImport } from "./scenario-import";
 
 const LEVEL_TONE: Record<string, string> = {
   Advanced: "bg-emerald-100 text-emerald-800",
@@ -17,8 +18,8 @@ const LEVEL_TONE: Record<string, string> = {
 };
 
 /** Scenario section (00234): switch it on, set order and cut-offs, and check the
- *  loaded scenarios. Scenarios are loaded from the SME's workbook with
- *  scripts/sdc-hipo/load-scenarios.py, never edited here. */
+ *  loaded scenarios. Scenarios are loaded from the SME's workbook (upload
+ *  below), never edited here. */
 export function ScenarioPanel({
   bundleId,
   settings,
@@ -108,11 +109,10 @@ export function ScenarioPanel({
       </Button>
 
       <div className="mt-6 border-t pt-4">
-        <h3 className="text-sm font-semibold">Loaded scenarios</h3>
+        <ScenarioImport bundleId={bundleId} />
+        <h3 className="mt-4 text-sm font-semibold">Loaded scenarios</h3>
         {items.length === 0 ? (
-          <p className="mt-1 text-xs text-muted-foreground">
-            None yet. Load the SME&apos;s approved workbook with <code>scripts/sdc-hipo/load-scenarios.py</code>.
-          </p>
+          <p className="mt-1 text-xs text-muted-foreground">None yet. Load the SME&apos;s approved workbook above.</p>
         ) : (
           <div className="mt-2 space-y-2">
             {unknown.length > 0 && (

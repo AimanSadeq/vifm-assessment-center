@@ -1,0 +1,1702 @@
+{
+ "indicators": [
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IN-B1",
+   "text": "Identifies practical opportunities to improve own work or existing processes.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IN-B2",
+   "text": "Suggests relevant ideas when problems or inefficiencies are identified.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IN-B3",
+   "text": "Shows openness to trying new approaches when there is a clear benefit.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IN-B4",
+   "text": "Uses feedback and lessons learned to refine an idea or approach.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IN-P1",
+   "text": "Constructively challenges existing approaches when evidence suggests improvement is possible.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IN-P2",
+   "text": "Generates and compares alternative solutions before selecting an approach.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IN-P3",
+   "text": "Tests or implements improvements and monitors whether they create value.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IN-P4",
+   "text": "Adapts ideas based on stakeholder feedback, evidence and implementation learning.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IN-A1",
+   "text": "Creates conditions that encourage experimentation, learning and responsible innovation.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IN-A2",
+   "text": "Connects emerging opportunities and new approaches to strategic priorities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IN-A3",
+   "text": "Evaluates the wider organizational value, risk and scalability of innovations.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IN-A4",
+   "text": "Champions and sponsors successful innovations beyond the immediate team or function.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IN-N1",
+   "text": "Relies on existing methods even when they are clearly ineffective.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IN-N2",
+   "text": "Dismisses new ideas without exploring their potential value or evidence.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IN-N3",
+   "text": "Introduces change without considering impact, feasibility or stakeholder needs.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Innovation",
+   "definition": "Generates, evaluates and applies new ideas and improved ways of working that create practical value for the organization and its stakeholders.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IN-N4",
+   "text": "Repeats unsuccessful approaches without applying lessons learned.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "RO-B1",
+   "text": "Clarifies expected outputs, deadlines and quality standards for assigned work.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "RO-B2",
+   "text": "Organizes own workload to meet agreed priorities and commitments.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "RO-B3",
+   "text": "Monitors progress on assigned tasks and follows through to completion.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "RO-B4",
+   "text": "Raises delivery risks early and seeks support when needed.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "RO-P1",
+   "text": "Prioritizes competing demands according to business importance and deadlines.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "RO-P2",
+   "text": "Tracks performance against agreed outcomes and takes corrective action when required.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "RO-P3",
+   "text": "Removes or escalates barriers that could prevent successful delivery.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "RO-P4",
+   "text": "Maintains quality and delivery focus when priorities or circumstances change.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "RO-A1",
+   "text": "Sets challenging but realistic outcome expectations aligned with organizational priorities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "RO-A2",
+   "text": "Aligns people and resources around the most important results.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "RO-A3",
+   "text": "Anticipates significant delivery risks and establishes mitigation before performance is affected.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "RO-A4",
+   "text": "Sustains strong performance across complex, ambiguous or changing conditions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "RO-N1",
+   "text": "Focuses on activity or effort without demonstrating progress toward outcomes.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "RO-N2",
+   "text": "Frequently misses commitments without early escalation or corrective action.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "RO-N3",
+   "text": "Allows lower-priority work to distract from critical outcomes.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Results Oriented",
+   "definition": "Maintains focus on agreed outcomes, translates priorities into action and follows through to deliver high-quality results.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "RO-N4",
+   "text": "Compromises quality or sustainability solely to achieve short-term targets.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "ECC-B1",
+   "text": "Listens attentively and checks understanding before responding.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "ECC-B2",
+   "text": "Communicates information clearly and respectfully using an appropriate channel.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "ECC-B3",
+   "text": "Shares relevant information with colleagues in a timely manner.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "ECC-B4",
+   "text": "Cooperates with others and contributes constructively to team activities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "ECC-P1",
+   "text": "Adapts communication style and level of detail to different stakeholders.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "ECC-P2",
+   "text": "Builds trust and productive relationships across teams or functions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "ECC-P3",
+   "text": "Addresses disagreements constructively while maintaining working relationships.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "ECC-P4",
+   "text": "Facilitates information sharing and joint working to achieve shared outcomes.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "ECC-A1",
+   "text": "Builds strategic relationships across organizational or stakeholder boundaries.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "ECC-A2",
+   "text": "Creates an environment where different perspectives can be expressed openly and respectfully.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "ECC-A3",
+   "text": "Communicates complex or sensitive issues clearly to diverse audiences.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "ECC-A4",
+   "text": "Aligns stakeholders with different interests around shared objectives and decisions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "ECC-N1",
+   "text": "Withholds relevant information or communicates it too late to support others.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "ECC-N2",
+   "text": "Uses the same communication approach regardless of audience or context.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "ECC-N3",
+   "text": "Avoids necessary difficult conversations or allows conflict to remain unresolved.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Effective Collaboration and Communication",
+   "definition": "Builds constructive relationships and exchanges information clearly, respectfully and inclusively to achieve shared outcomes.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "ECC-N4",
+   "text": "Dominates discussions or dismisses perspectives that differ from own views.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "PI-B1",
+   "text": "Follows relevant policies, procedures and professional standards.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "PI-B2",
+   "text": "Treats colleagues and stakeholders with respect and fairness.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "PI-B3",
+   "text": "Protects confidential or sensitive information appropriately.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "PI-B4",
+   "text": "Acknowledges mistakes and takes action to correct them.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "PI-P1",
+   "text": "Applies ethical judgment when policies or expectations are not straightforward.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "PI-P2",
+   "text": "Communicates transparently about issues, risks and potential conflicts of interest.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "PI-P3",
+   "text": "Addresses inappropriate conduct or raises concerns through appropriate channels.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "PI-P4",
+   "text": "Balances competing stakeholder interests fairly and consistently.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "PI-A1",
+   "text": "Role-models ethical conduct when facing pressure, ambiguity or competing priorities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "PI-A2",
+   "text": "Builds trust through consistency between stated values, decisions and actions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "PI-A3",
+   "text": "Guides others through complex ethical or professional dilemmas.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "PI-A4",
+   "text": "Reinforces high standards of integrity and professionalism across the wider organization.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "PI-N1",
+   "text": "Changes standards or behavior depending on personal convenience or pressure.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "PI-N2",
+   "text": "Conceals mistakes, risks or conflicts of interest.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "PI-N3",
+   "text": "Uses confidential information inappropriately or fails to protect it.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Professionalism and Integrity",
+   "definition": "Acts consistently with organizational values, ethical principles and professional standards, including when facing pressure or ambiguity.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "PI-N4",
+   "text": "Tolerates conduct that conflicts with organizational values or professional standards.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "AO-B1",
+   "text": "Takes responsibility for assigned work and agreed commitments.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "AO-B2",
+   "text": "Meets deadlines or communicates early when a commitment is at risk.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "AO-B3",
+   "text": "Corrects own errors rather than shifting responsibility to others.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "AO-B4",
+   "text": "Follows through on agreed actions until they are completed or formally handed over.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "AO-P1",
+   "text": "Owns outcomes end-to-end, including issues that cross immediate role boundaries.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "AO-P2",
+   "text": "Anticipates risks to commitments and acts before they become significant problems.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "AO-P3",
+   "text": "Follows through on corrective actions and verifies that issues are resolved.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "AO-P4",
+   "text": "Holds constructive conversations when responsibilities or commitments are unclear or at risk.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "AO-A1",
+   "text": "Creates clear accountability for outcomes across teams or workstreams.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "AO-A2",
+   "text": "Models ownership for difficult decisions and their consequences.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "AO-A3",
+   "text": "Holds self and others accountable consistently while maintaining constructive relationships.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "AO-A4",
+   "text": "Builds a culture where problems are surfaced early and ownership is taken for sustainable resolution.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "AO-N1",
+   "text": "Blames circumstances or others when commitments are not met.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "AO-N2",
+   "text": "Waits for others to resolve issues that fall within own responsibility.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "AO-N3",
+   "text": "Fails to follow through after agreeing to actions.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Core",
+   "competency": "Accountability & Ownership",
+   "definition": "Takes personal responsibility for decisions, actions and outcomes, follows through on commitments and addresses issues rather than passing responsibility.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "AO-N4",
+   "text": "Avoids accountability for difficult decisions or negative outcomes.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "SM-B1",
+   "text": "Understands the main organizational priorities relevant to own area.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "SM-B2",
+   "text": "Considers the wider business context when making routine decisions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "SM-B3",
+   "text": "Recognizes how own team's work contributes to broader organizational goals.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "SM-B4",
+   "text": "Identifies obvious future implications of current actions or decisions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "SM-P1",
+   "text": "Connects team plans and resource choices to strategic priorities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "SM-P2",
+   "text": "Identifies emerging risks, dependencies and opportunities beyond immediate operations.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "SM-P3",
+   "text": "Considers longer-term implications when evaluating alternatives.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "SM-P4",
+   "text": "Uses internal and external information to challenge assumptions and improve plans.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "SM-A1",
+   "text": "Shapes longer-term direction based on organizational priorities and external developments.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "SM-A2",
+   "text": "Anticipates significant shifts, opportunities and threats before they become immediate issues.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "SM-A3",
+   "text": "Tests strategic assumptions using multiple perspectives and evidence.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "SM-A4",
+   "text": "Aligns stakeholders and resources around strategic choices and longer-term priorities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "SM-N1",
+   "text": "Focuses only on immediate operational issues without considering wider implications.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "SM-N2",
+   "text": "Makes decisions that conflict with stated strategic priorities.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "SM-N3",
+   "text": "Relies on established assumptions despite evidence that circumstances are changing.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Strategic Mindset",
+   "definition": "Understands the wider environment, connects decisions to long-term organizational priorities and anticipates opportunities, risks and future implications.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "SM-N4",
+   "text": "Fails to anticipate material risks or opportunities visible in the wider environment.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "DSP-B1",
+   "text": "Clarifies expected team outputs and performance standards.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "DSP-B2",
+   "text": "Monitors progress and addresses immediate barriers affecting delivery.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "DSP-B3",
+   "text": "Uses available resources responsibly to support agreed results.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "DSP-B4",
+   "text": "Provides timely feedback when performance falls below expectations.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "DSP-P1",
+   "text": "Sets clear performance expectations linked to business priorities.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "DSP-P2",
+   "text": "Uses performance evidence to identify causes and improve delivery.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "DSP-P3",
+   "text": "Balances short-term delivery needs with team capability and resource sustainability.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "DSP-P4",
+   "text": "Develops people and processes to reduce recurring performance issues.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "DSP-A1",
+   "text": "Builds systems and conditions that sustain high performance over time.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "DSP-A2",
+   "text": "Makes deliberate trade-offs across results, people, resources and risk.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "DSP-A3",
+   "text": "Strengthens organizational capability to meet future performance requirements.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "DSP-A4",
+   "text": "Ensures performance improvements are scalable and do not create unacceptable long-term costs or risks.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "DSP-N1",
+   "text": "Drives short-term output at the expense of people, quality, risk or future capability.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "DSP-N2",
+   "text": "Accepts recurring performance problems without addressing root causes.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "DSP-N3",
+   "text": "Sets expectations without providing adequate resources, clarity or follow-up.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Drives Sustainable Performance",
+   "definition": "Creates the conditions for strong and enduring performance by balancing results, people, resources, risk and long-term organizational value.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "DSP-N4",
+   "text": "Relies on individual heroics rather than building repeatable performance systems.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "EDP-B1",
+   "text": "Gathers relevant information before making routine decisions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "EDP-B2",
+   "text": "Identifies practical options and considers obvious advantages and risks.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "EDP-B3",
+   "text": "Makes decisions within own authority in a timely manner.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "EDP-B4",
+   "text": "Translates decisions into clear actions, responsibilities and timelines.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "EDP-P1",
+   "text": "Evaluates alternatives using evidence, risks, dependencies and stakeholder impact.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "EDP-P2",
+   "text": "Involves the right stakeholders without unnecessarily delaying the decision.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "EDP-P3",
+   "text": "Makes timely decisions when information is incomplete but sufficient for action.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "EDP-P4",
+   "text": "Adjusts plans when evidence, priorities or conditions materially change.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "EDP-A1",
+   "text": "Makes high-impact decisions under complexity, ambiguity or uncertainty.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "EDP-A2",
+   "text": "Integrates multiple perspectives, data sources and strategic considerations.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "EDP-A3",
+   "text": "Establishes clear priorities, contingencies, decision points and accountabilities in major plans.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "EDP-A4",
+   "text": "Balances speed, risk and long-term implications when making consequential decisions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "EDP-N1",
+   "text": "Delays decisions unnecessarily despite having sufficient information.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "EDP-N2",
+   "text": "Makes decisions based mainly on assumption, preference or incomplete evidence.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "EDP-N3",
+   "text": "Creates plans without clear ownership, priorities, dependencies or timelines.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Makes Effective Decisions and Plans",
+   "definition": "Uses relevant evidence, judgment and stakeholder input to make timely decisions and translate them into clear, realistic and adaptable plans.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "EDP-N4",
+   "text": "Continues with an outdated plan despite material changes in evidence or conditions.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IM-B1",
+   "text": "Communicates expectations in a positive and respectful manner.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IM-B2",
+   "text": "Recognizes effort and contribution when it is demonstrated.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IM-B3",
+   "text": "Provides encouragement and practical support toward team objectives.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "IM-B4",
+   "text": "Shows confidence in colleagues' ability to contribute and develop.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IM-P1",
+   "text": "Connects individual contribution to team purpose and organizational goals.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IM-P2",
+   "text": "Provides meaningful recognition based on specific contribution or progress.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IM-P3",
+   "text": "Encourages development, autonomy and appropriate ownership.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "IM-P4",
+   "text": "Maintains engagement and confidence when the team faces setbacks or pressure.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IM-A1",
+   "text": "Creates a compelling shared sense of purpose that mobilizes people.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IM-A2",
+   "text": "Adapts leadership approach to different individuals, motivations and circumstances.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IM-A3",
+   "text": "Builds confidence and commitment during uncertainty or significant change.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "IM-A4",
+   "text": "Inspires sustained discretionary effort while maintaining realistic expectations and wellbeing.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IM-N1",
+   "text": "Relies primarily on authority or pressure to gain commitment.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IM-N2",
+   "text": "Provides little recognition or recognizes people inconsistently or unfairly.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IM-N3",
+   "text": "Communicates goals without helping people understand why they matter.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Inspires & Motivates",
+   "definition": "Creates commitment and energy by communicating purpose, recognizing contribution, enabling others and building confidence in shared goals.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "IM-N4",
+   "text": "Allows pressure, setbacks or change to erode team confidence without intervention.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "LBE-B1",
+   "text": "Demonstrates the workplace behaviors and standards expected from colleagues.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "LBE-B2",
+   "text": "Keeps commitments and follows agreed processes.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "LBE-B3",
+   "text": "Treats others consistently with respect and professionalism.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Basic",
+   "option_level": "Basic",
+   "id": "LBE-B4",
+   "text": "Shows reliability and composure in normal working situations.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "LBE-P1",
+   "text": "Demonstrates consistency between stated expectations and own actions.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "LBE-P2",
+   "text": "Maintains constructive behavior and judgment under pressure.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "LBE-P3",
+   "text": "Accepts responsibility openly when own decisions or actions contribute to a problem.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Proficient",
+   "option_level": "Proficient",
+   "id": "LBE-P4",
+   "text": "Reinforces expected standards through visible personal conduct.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "LBE-A1",
+   "text": "Sets the tone for expected behavior across teams or the wider organization.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "LBE-A2",
+   "text": "Models organizational values visibly in difficult or high-stakes situations.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "LBE-A3",
+   "text": "Builds trust by taking responsibility for leadership decisions and consequences.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "Advanced",
+   "option_level": "Advanced",
+   "id": "LBE-A4",
+   "text": "Demonstrates the standards expected even when doing so involves personal or short-term cost.",
+   "evidence": "Positive / expected evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "LBE-N1",
+   "text": "Expects standards from others that are not demonstrated personally.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "LBE-N2",
+   "text": "Behaves inconsistently with stated values when under pressure.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "LBE-N3",
+   "text": "Avoids responsibility for the consequences of own leadership decisions.",
+   "evidence": "Negative / counter-evidence"
+  },
+  {
+   "category": "Leadership",
+   "competency": "Leads by Example",
+   "definition": "Demonstrates the standards, behaviors and values expected from others through consistent personal conduct, decisions and follow-through.",
+   "level": "All levels / counter-evidence",
+   "option_level": "Counter-evidence",
+   "id": "LBE-N4",
+   "text": "Uses position or authority to justify behavior that would not be acceptable from others.",
+   "evidence": "Negative / counter-evidence"
+  }
+ ],
+ "grade_header": [
+  "Grade",
+  "Career Level",
+  "Organizational Level",
+  "Position Title",
+  "Innovation",
+  "Results Oriented",
+  "Effective Collaboration and Communication",
+  "Professionalism and Integrity",
+  "Accountability & Ownership",
+  "Strategic Mindset",
+  "Drives Sustainable Performance",
+  "Makes Effective Decisions and Plans",
+  "Inspires & Motivates",
+  "Leads by Example"
+ ],
+ "grades": [
+  [
+   "8",
+   "M2",
+   "Managerial",
+   "Senior manager / principal",
+   "Advanced",
+   "Advanced",
+   "Advanced",
+   "Advanced",
+   "Advanced",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Proficient"
+  ],
+  [
+   "7",
+   "M1",
+   "Managerial",
+   "Manager / associate principal",
+   "Proficient",
+   "Advanced",
+   "Proficient",
+   "Advanced",
+   "Advanced",
+   "Basic",
+   "Basic",
+   "Basic",
+   "Basic",
+   "Basic"
+  ],
+  [
+   "6",
+   "P4",
+   "Supervisory & Professionals",
+   "Senior specialist / lead engineer",
+   "Proficient",
+   "Advanced",
+   "Proficient",
+   "Advanced",
+   "Proficient",
+   "Not required",
+   "Not required",
+   "Not required",
+   "Not required",
+   "Not required"
+  ],
+  [
+   "5",
+   "P3",
+   "Supervisory & Professionals",
+   "Specialist / senior engineer",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Not required",
+   "Not required",
+   "Not required",
+   "Not required",
+   "Not required"
+  ],
+  [
+   "4",
+   "Grade 4",
+   "Professional / Analyst",
+   "Sr. Analyst",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Proficient",
+   "Not required",
+   "Not required",
+   "Not required",
+   "Not required",
+   "Not required"
+  ]
+ ]
+}

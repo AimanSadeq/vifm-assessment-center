@@ -27,6 +27,23 @@ export type DeleteStep = {
    * would take both.
    */
   matchNull?: string[];
+  /**
+   * Storage objects that belong to the rows being deleted. The child table's
+   * rows cascade away with the parent, so the object paths are read and the
+   * files removed FIRST, chunk by chunk, or the blobs would be orphaned in the
+   * bucket. Dry runs touch nothing.
+   */
+  storage?: StorageCleanup;
+};
+
+export type StorageCleanup = {
+  bucket: string;
+  /** Child table holding the object paths, e.g. bundle_report_files. */
+  table: string;
+  /** Its foreign key to the deleted rows' id. */
+  fkCol: string;
+  /** Its column holding the bucket path. */
+  pathCol: string;
 };
 
 /** Voucher redemptions: row kept for the seat ledger, person removed. */
@@ -91,7 +108,39 @@ class PartialDeleteError extends Error {
   constructor(message: string, readonly deleted: number) { super(message); }
 }
 
-async function runDelete(sb: Sb, step: DeleteStep, cutoff: string, dryRun: boolean): Promise<number> {
+/** PostgREST / Postgres "no such table": the migration that adds it is not applied yet. */
+function isMissingTable(message: string): boolean {
+  return /does not exist|could not find the table|schema cache/i.test(message);
+}
+
+/**
+ * Remove the Storage objects owned by `ids` (see DeleteStep.storage). Problems
+ * are reported, not thrown: the row delete is the compliance-critical part and
+ * still runs, but an orphaned file must show up in the run log.
+ */
+async function removeStorageFor(sb: Sb, spec: StorageCleanup, ids: string[], errors: string[]): Promise<void> {
+  let paths: string[];
+  try {
+    type Row = Record<string, string | null>;
+    const rows = await fetchAllPages<Row>((from, to) =>
+      sb.from(spec.table).select(`id, ${spec.pathCol}`).in(spec.fkCol, ids).order("id").range(from, to) as unknown as PromiseLike<{
+        data: Row[] | null;
+        error: { message: string } | null;
+      }>,
+    );
+    paths = rows.map((r) => r[spec.pathCol]).filter((p): p is string => !!p);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "read failed";
+    if (!isMissingTable(msg)) errors.push(`${spec.table}: storage paths not read (${msg}); files may be orphaned in ${spec.bucket}`);
+    return;
+  }
+  for (const batch of chunkIds(paths, 100)) {
+    const { error } = await sb.storage.from(spec.bucket).remove(batch);
+    if (error) errors.push(`${spec.bucket}: ${batch.length} file(s) not removed (${error.message})`);
+  }
+}
+
+async function runDelete(sb: Sb, step: DeleteStep, cutoff: string, dryRun: boolean, errors: string[]): Promise<number> {
   if (dryRun) return countStep(sb, step, cutoff);
 
   const rows = await fetchAllPages<{ id: string }>((from, to) =>
@@ -104,6 +153,7 @@ async function runDelete(sb: Sb, step: DeleteStep, cutoff: string, dryRun: boole
 
   let deleted = 0;
   for (const chunk of chunkIds(ids)) {
+    if (step.storage) await removeStorageFor(sb, step.storage, chunk, errors);
     const del = await sb.from(step.table).delete().in("id", chunk).select("id");
     // Report what WAS removed alongside the failure: reporting 0 while N rows
     // are already gone would make the run log untrustworthy exactly when it
@@ -163,7 +213,7 @@ export async function runRetentionForService(
   const out: RetentionOutcome = { key: spec.key, label: spec.label, deleted: 0, anonymised: 0, swept: 0, errors: [] };
 
   for (const step of spec.deletes ?? []) {
-    try { out.deleted += await runDelete(sb, step, cutoff, dryRun); }
+    try { out.deleted += await runDelete(sb, step, cutoff, dryRun, out.errors); }
     catch (e) {
       if (e instanceof PartialDeleteError) out.deleted += e.deleted;
       out.errors.push(e instanceof Error ? e.message : `${step.table}: delete failed`);

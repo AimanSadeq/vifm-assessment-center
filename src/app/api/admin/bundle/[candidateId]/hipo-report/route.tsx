@@ -5,6 +5,7 @@ import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { createServiceClient } from "@/lib/supabase/server";
 import { buildHipoPdfData } from "@/lib/reports/persona-hipo-data";
 import { HipoReportPdf } from "@/lib/reports/persona-hipo";
+import { fileBundleReport } from "@/lib/bespoke/report-filing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,8 +24,10 @@ export async function GET(_req: Request, { params }: { params: { candidateId: st
   }
 
   let clientMgrOrgId: string | null = null;
+  let staffId: string | null = null;
   try {
-    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+    const staff = await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+    staffId = staff.isDev ? null : staff.uid;
   } catch (e) {
     if (!isAuthorizationError(e)) throw e;
     const caller = await getCurrentCaller();
@@ -80,10 +83,19 @@ export async function GET(_req: Request, { params }: { params: { candidateId: st
 
   const buffer = await renderToBuffer(<HipoReportPdf d={built.data} />);
   const safe = (cand.full_name || "Candidate").replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_") || "Candidate";
+  const fileName = `VIFM_HighPotential_Profile_${safe}.pdf`;
+
+  // Staff generation files the PDF and moves Completed -> Scored. A client
+  // manager's download (rater name stripped above) is never filed and changes
+  // nothing. Filing never fails the download.
+  if (!clientMgrOrgId) {
+    await fileBundleReport({ candidateId: cand.id, kind: "hipo", fileName, buffer, actorId: staffId });
+  }
+
   return new NextResponse(new Uint8Array(buffer), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="VIFM_HighPotential_Profile_${safe}.pdf"`,
+      "Content-Disposition": `attachment; filename="${fileName}"`,
       "Cache-Control": "no-store",
     },
   });

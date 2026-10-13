@@ -76,8 +76,16 @@ export const RETENTION_SPECS: RetentionSpec[] = [
     // candidate) cascades from it (00196). The underlying Persona/Logica
     // records are governed by their own service specs above. bundle_vouchers
     // (00197) may carry a recipient email on individual codes - deleted with the
-    // candidate window (commercial code, but PII-bearing).
-    deletes: [{ table: "bundle_candidates" }, { table: "bundle_vouchers" }],
+    // candidate window (commercial code, but PII-bearing). Filed report PDFs
+    // (00237): bundle_report_files rows cascade, so their objects in the
+    // bundle-reports bucket are removed first.
+    deletes: [
+      {
+        table: "bundle_candidates",
+        storage: { bucket: "bundle-reports", table: "bundle_report_files", fkCol: "bundle_candidate_id", pathCol: "storage_path" },
+      },
+      { table: "bundle_vouchers" },
+    ],
   },
   {
     key: "ara",

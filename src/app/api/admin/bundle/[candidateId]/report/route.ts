@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireRole, isAuthorizationError, getCurrentCaller } from "@/lib/ara/auth-guards";
 import { getClientOrgId } from "@/lib/auth/get-org-id";
 import { buildBundleCombinedReport } from "@/lib/reports/bundle-combined";
+import { fileBundleReport } from "@/lib/bespoke/report-filing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,8 +22,10 @@ export async function GET(_req: Request, { params }: { params: { candidateId: st
   }
 
   let clientMgrOrgId: string | null = null;
+  let staffId: string | null = null;
   try {
-    await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+    const staff = await requireRole(["admin", "consultant", "lead_assessor", "associate_assessor"]);
+    staffId = staff.isDev ? null : staff.uid;
   } catch (e) {
     if (!isAuthorizationError(e)) throw e;
     const caller = await getCurrentCaller();
@@ -38,6 +41,18 @@ export async function GET(_req: Request, { params }: { params: { candidateId: st
   if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
   if (clientMgrOrgId && built.organizationId !== clientMgrOrgId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Staff generation files the PDF and moves Completed -> Scored. A client
+  // manager's download changes nothing. Filing never fails the download.
+  if (!clientMgrOrgId) {
+    await fileBundleReport({
+      candidateId: params.candidateId,
+      kind: "combined",
+      fileName: built.fileName,
+      buffer: built.buffer,
+      actorId: staffId,
+    });
   }
 
   return new NextResponse(new Uint8Array(built.buffer), {

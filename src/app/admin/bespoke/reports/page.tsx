@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { FolderOpen } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadPlatformClients } from "@/lib/clients/registry";
 import { createServiceClient } from "@/lib/supabase/server";
@@ -124,6 +126,13 @@ export default async function BespokeReportsPage() {
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
           Every completed Bespoke assessment, in one place. Open any candidate&apos;s report or search to find one.
         </p>
+        <Link
+          href="/admin/bespoke/reports/filed"
+          className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-[#5391D5] hover:underline"
+        >
+          <FolderOpen className="h-4 w-4" />
+          Filed reports by company
+        </Link>
       </div>
       <BundleReportsPanel reports={bundleReports} />
       <AllReportsPanel reports={reports} />

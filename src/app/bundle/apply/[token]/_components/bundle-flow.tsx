@@ -8,6 +8,7 @@ import type { DemographicField } from "@/lib/bespoke/bundle-settings";
 import { hasDrawnOptions, type LogicaFigure } from "@/lib/psychometrics/figure";
 import { FigureGrid, FigureCell, FigureData } from "@/components/shared/logica-figure";
 import { useNoCopy } from "@/components/shared/use-no-copy";
+import { ClientLogo } from "@/components/shared/client-logo";
 
 type Phase = "consent" | BundleStage | "done";
 type PersonaItem = { itemKey: string; competencyId: string; textEn: string; textAr: string };
@@ -37,6 +38,7 @@ async function postJson(url: string, body?: unknown) {
 export function BundleFlow({
   token,
   candidateName,
+  greetingName,
   bundleName,
   stages,
   hasConsent,
@@ -46,10 +48,13 @@ export function BundleFlow({
   timerMinutes,
   logicaLabel,
   welcomeMessage = null,
+  clientLogoUrl = null,
   demographicFields = [],
 }: {
   token: string;
   candidateName: string;
+  /** First name for the greeting ("Welcome, Sarah"); falls back to the full name. */
+  greetingName?: string;
   bundleName: string;
   stages: BundleStage[];
   hasConsent: boolean;
@@ -59,8 +64,10 @@ export function BundleFlow({
   timerMinutes: number | null;
   logicaLabel: string;
   welcomeMessage?: string | null;
+  clientLogoUrl?: string | null;
   demographicFields?: DemographicField[];
 }) {
+  const hello = greetingName?.trim() || candidateName;
   const base = `/api/bundle/${token}`;
   const doneByStage: Record<BundleStage, boolean> = { sjt: sjtDone, persona: personaDone, logica: cognitiveDone };
 
@@ -117,14 +124,17 @@ export function BundleFlow({
 
         {phase === "consent" && (
           <div className="rounded-xl border bg-card p-6">
-            <h1 className="text-xl font-semibold text-[#010131]">Welcome, {candidateName}</h1>
-            {welcomeMessage && (
-              <div className="mt-3 whitespace-pre-line rounded-lg border bg-[#FEFFF9] p-4 text-sm text-foreground">{welcomeMessage}</div>
+            {clientLogoUrl && <ClientLogo src={clientLogoUrl} className="mb-5" />}
+            <h1 className="text-xl font-semibold text-[#010131]">Welcome, {hello}</h1>
+            {welcomeMessage ? (
+              // The client's own text replaces the standard description (SDC, 13 Oct 2026).
+              <div className="mt-3 whitespace-pre-line text-sm leading-relaxed text-foreground">{welcomeMessage}</div>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">
+                You have been invited to complete <span className="font-medium text-foreground">{bundleName}</span>. It has{" "}
+                {stages.length === 1 ? "one section" : `${stages.length} sections`}: {sectionText}. Your responses produce a report for the sponsoring organisation.
+              </p>
             )}
-            <p className="mt-2 text-sm text-muted-foreground">
-              You have been invited to complete <span className="font-medium text-foreground">{bundleName}</span>. It has{" "}
-              {stages.length === 1 ? "one section" : `${stages.length} sections`}: {sectionText}. Your responses produce a report for the sponsoring organisation.
-            </p>
             {demographicFields.length > 0 && (
               <div className="mt-4 space-y-3 rounded-lg border p-4">
                 <div className="text-sm font-medium text-[#010131]">About you</div>
@@ -192,10 +202,11 @@ export function BundleFlow({
 
         {phase === "done" && (
           <div className="rounded-xl border bg-card p-8 text-center">
+            {clientLogoUrl && <ClientLogo src={clientLogoUrl} className="mb-5" />}
             <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
             <h1 className="mt-3 text-xl font-semibold text-[#010131]">Assessment complete</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Thank you, {candidateName} - your responses have been recorded and shared with the sponsoring organisation.
+              Thank you, {hello} - your responses have been recorded and shared with the sponsoring organisation.
             </p>
           </div>
         )}

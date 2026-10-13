@@ -2,6 +2,7 @@
 
 import { Boxes } from "lucide-react";
 import { VoucherRedeemForm } from "@/components/shared/voucher-redeem-form";
+import { ClientLogo } from "@/components/shared/client-logo";
 import { redeemBundleVoucherAction } from "./actions";
 
 // Branding wrapper + the shared redeem form (English only). Name/email are prefilled
@@ -10,10 +11,15 @@ export function RedeemClient({
   code,
   emailPrefill,
   namePrefill = "",
+  emailOnly = false,
+  clientLogoUrl = null,
 }: {
   code: string;
   emailPrefill: string;
   namePrefill?: string;
+  /** Approved-list link: the roster supplies the name, so ask for the email only. */
+  emailOnly?: boolean;
+  clientLogoUrl?: string | null;
 }) {
   return (
     <div className="min-h-screen bg-[#FEFFF9]">
@@ -33,14 +39,18 @@ export function RedeemClient({
           </div>
         ) : (
           <div className="rounded-xl border bg-card p-6">
+            {clientLogoUrl && <ClientLogo src={clientLogoUrl} className="mb-5" />}
             <h1 className="text-xl font-semibold text-[#010131]">Start your assessment</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Enter your details to begin.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {emailOnly ? "Enter your work email to begin." : "Enter your details to begin."}
+            </p>
             <div className="mt-4">
               <VoucherRedeemForm
                 initialCode={code}
                 initialName={namePrefill}
                 initialEmail={emailPrefill}
                 companyField="hidden"
+                nameField={emailOnly ? "hidden" : "required"}
                 codePlaceholder="BND-XXXX-XXXX"
                 // Bundles run in English only (scenarios are authored in English and
                 // the reasoning stage is served in English), so no AR toggle: choosing

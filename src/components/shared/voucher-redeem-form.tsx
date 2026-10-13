@@ -34,6 +34,9 @@ export type VoucherRedeemConfig = {
   initialLang?: "en" | "ar";
   /** company field behaviour: required (ARC/Fluent), optional, or hidden. */
   companyField?: "required" | "optional" | "hidden";
+  /** "hidden" when the server already knows the name (an approved-list link
+   *  takes it from the roster), so the taker gives only their email. */
+  nameField?: "required" | "hidden";
   codePlaceholder?: string;
   submitLabel?: { en: string; ar: string };
   /** Small print under the button (e.g. a practice-run disclaimer). */
@@ -66,6 +69,7 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
   const ar = lang === "ar";
   const tx = (en: string, arabic: string) => (ar ? arabic : en);
   const companyMode = cfg.companyField ?? "required";
+  const askName = cfg.nameField !== "hidden";
 
   // Require a valid email shape before enabling submit - a trial found an invalid
   // address ("not-an-email") was accepted and burned a voucher seat. The server
@@ -76,7 +80,7 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
 
   const ready =
     code.trim().length > 0 &&
-    name.trim().length > 1 &&
+    (!askName || name.trim().length > 1) &&
     emailValid &&
     (companyMode !== "required" || company.trim().length > 0);
 
@@ -134,13 +138,15 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
         />
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className={askName ? "grid gap-4 sm:grid-cols-2" : "grid gap-4"}>
+        {askName && (
+          <div className="space-y-1.5">
+            <Label htmlFor="vr-name">{tx("Full name", "الاسم الكامل")}</Label>
+            <Input id="vr-name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+        )}
         <div className="space-y-1.5">
-          <Label htmlFor="vr-name">{tx("Full name", "الاسم الكامل")}</Label>
-          <Input id="vr-name" name="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="vr-email">{tx("Email", "البريد الإلكتروني")}</Label>
+          <Label htmlFor="vr-email">{askName ? tx("Email", "البريد الإلكتروني") : tx("Work email", "البريد الإلكتروني للعمل")}</Label>
           <Input
             id="vr-email"
             name="email"
@@ -199,7 +205,7 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
       {!busy && !ready && (() => {
         const missing: string[] = [];
         if (code.trim().length === 0) missing.push(tx("voucher code", "رمز القسيمة"));
-        if (name.trim().length <= 1) missing.push(tx("full name", "الاسم الكامل"));
+        if (askName && name.trim().length <= 1) missing.push(tx("full name", "الاسم الكامل"));
         if (!emailValid) missing.push(tx("a valid email", "بريد إلكتروني صحيح"));
         if (companyMode === "required" && company.trim().length === 0) missing.push(tx("company", "جهة العمل"));
         if (missing.length === 0) return null;

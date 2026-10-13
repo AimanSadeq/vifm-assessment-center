@@ -105,10 +105,10 @@ export async function redeemBundleVoucher(input: {
   fullName: string;
   email: string;
 }): Promise<{ ok: true; token: string } | { error: string }> {
-  const name = (input.fullName || "").trim();
+  const typedName = (input.fullName || "").trim();
   const email = (input.email || "").trim().toLowerCase();
   if (!input.code.trim()) return { error: "Missing voucher code." };
-  if (name.length < 2 || !EMAIL_RE.test(email)) return { error: "Enter your name and a valid email." };
+  if (!EMAIL_RE.test(email)) return { error: "Enter a valid email." };
 
   // Roster gate + invitation hold (00233), checked BEFORE a seat is claimed so a
   // refused or returning person never burns a seat.
@@ -116,6 +116,10 @@ export async function redeemBundleVoucher(input: {
   if ("error" in gate) return { error: gate.error };
   if ("resumeToken" in gate) return { ok: true, token: gate.resumeToken };
   const rosterEntry = gate.entry;
+  // On a roster bundle the approved list is the source of the name, so the
+  // sign-in screen asks for the email only; elsewhere the typed name is required.
+  const name = rosterEntry?.full_name?.trim() || typedName;
+  if (name.length < 2) return { error: "Enter your name and a valid email." };
 
   const out = await redeemViaDescriptor<{ bespoke_service_id: string; organization_id: string | null }>(
     VOUCHER_DESCRIPTORS.bundle,
@@ -135,8 +139,7 @@ export async function redeemBundleVoucher(input: {
         .insert({
           bespoke_service_id: voucher.bespoke_service_id,
           organization_id: voucher.organization_id ?? null,
-          // On a roster bundle the approved list is the source of the name.
-          full_name: rosterEntry?.full_name || name,
+          full_name: name,
           email,
         })
         .select("id, access_token")

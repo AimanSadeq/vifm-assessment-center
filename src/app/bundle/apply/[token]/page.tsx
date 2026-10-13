@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { findBundleCandidateByToken, bundleStageState } from "@/lib/bespoke/candidates";
 import { bundleLogicaMinutes } from "@/lib/bespoke/sitting";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
+import { firstNameOf } from "@/lib/bespoke/bundle-settings";
+import { ClientLogo } from "@/components/shared/client-logo";
 import { BundleFlow } from "./_components/bundle-flow";
 
 export const dynamic = "force-dynamic";
@@ -21,6 +23,7 @@ export default async function BundleApplyPage({ params }: { params: { token: str
     return (
       <div className="min-h-screen bg-[#FEFFF9] px-6 py-16">
         <div className="mx-auto max-w-md rounded-xl border bg-card p-6 text-center">
+          {ctx.settings.clientLogoUrl && <ClientLogo src={ctx.settings.clientLogoUrl} className="mb-5" />}
           <h1 className="text-lg font-semibold text-[#010131]">This assessment is not open yet</h1>
           <p className="mt-1 text-sm text-muted-foreground">Your organisation will let you know when it opens. Please use the same link then.</p>
         </div>
@@ -41,6 +44,7 @@ export default async function BundleApplyPage({ params }: { params: { token: str
     <BundleFlow
       token={params.token}
       candidateName={ctx.candidate.full_name}
+      greetingName={firstNameOf(ctx.candidate.full_name)}
       bundleName={ctx.bundle.name_en}
       stages={ctx.stages}
       hasConsent={!!ctx.candidate.consent_at}
@@ -50,6 +54,7 @@ export default async function BundleApplyPage({ params }: { params: { token: str
       timerMinutes={timerMinutes}
       logicaLabel={logicaLabel}
       welcomeMessage={ctx.settings.welcomeMessage}
+      clientLogoUrl={ctx.settings.clientLogoUrl}
       demographicFields={ctx.settings.demographicFields}
     />
   );

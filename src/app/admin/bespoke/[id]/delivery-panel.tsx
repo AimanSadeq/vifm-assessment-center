@@ -6,6 +6,7 @@ import { Lock, Unlock, Users, Upload, Trash2, Loader2, Settings2 } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ClientLogo } from "@/components/shared/client-logo";
 import type { BundleSettings, DemographicField } from "@/lib/bespoke/bundle-settings";
 import type { RosterRow } from "@/lib/bespoke/roster";
 import {
@@ -59,6 +60,7 @@ export function DeliveryPanel({
   const [pending, start] = useTransition();
   const [rosterRequired, setRosterRequired] = useState(settings.rosterRequired);
   const [welcome, setWelcome] = useState(settings.welcomeMessage ?? "");
+  const [logo, setLogo] = useState(settings.clientLogoUrl ?? "");
   const [fieldsText, setFieldsText] = useState(fieldsToText(settings.demographicFields));
   const [minutes, setMinutes] = useState(settings.logicaMinutes ? String(settings.logicaMinutes) : "");
   const [paste, setPaste] = useState("");
@@ -135,6 +137,19 @@ export function DeliveryPanel({
           <div>
             <div className="text-sm font-medium">Welcome message</div>
             <Textarea className="mt-1" rows={4} value={welcome} onChange={(e) => setWelcome(e.target.value)} placeholder="Shown on the first screen, above the consent." />
+            <p className="mt-1 text-xs text-muted-foreground">
+              When set, it replaces the standard description of the sections. The greeting above it uses the candidate&apos;s first name.
+            </p>
+          </div>
+          <div>
+            <div className="text-sm font-medium">Client logo</div>
+            <Input className="mt-1" value={logo} onChange={(e) => setLogo(e.target.value)} placeholder="/client-logos/organisation.png" />
+            <p className="mt-1 text-xs text-muted-foreground">
+              A file shipped with the platform under /client-logos/. Shown on the sign-in and welcome screens. Leave empty for none.
+            </p>
+            {/^\/client-logos\/[A-Za-z0-9._-]+\.(png|svg|jpg|jpeg|webp)$/.test(logo.trim()) && (
+              <ClientLogo src={logo.trim()} align="start" className="mt-2 rounded-md border bg-white p-2" />
+            )}
           </div>
           <div>
             <div className="text-sm font-medium">Demographic questions</div>
@@ -159,6 +174,7 @@ export function DeliveryPanel({
               saveBundleDeliveryAction(bundleId, {
                 rosterRequired,
                 welcomeMessage: welcome,
+                clientLogoUrl: logo,
                 demographicFields: textToFields(fieldsText),
                 logicaMinutes: minutes ? Number(minutes) : null,
               }),

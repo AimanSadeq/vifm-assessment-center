@@ -1,12 +1,13 @@
 "use server";
 
 // Delivery controls for one bundle (00233): roster gate, invitation hold,
-// welcome message, demographic fields, reasoning time limit, roster import;
+// welcome message, client logo (00236), demographic fields, reasoning time
+// limit, roster import;
 // and the scenario section switch and scoring settings (00234).
 import { revalidatePath } from "next/cache";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadBundleService } from "@/lib/bespoke/services";
-import { saveBundleSettings, loadBundleSettings, sanitiseDemographicFields, type DemographicField } from "@/lib/bespoke/bundle-settings";
+import { saveBundleSettings, loadBundleSettings, sanitiseDemographicFields, sanitiseClientLogoUrl, type DemographicField } from "@/lib/bespoke/bundle-settings";
 import { loadSjtItems, sanitiseSjtConfig } from "@/lib/bespoke/sjt";
 import { parseRoster, upsertRoster, removeRosterEntry } from "@/lib/bespoke/roster";
 
@@ -26,10 +27,19 @@ const done = (bundleId: string) => revalidatePath(`/admin/bespoke/${bundleId}`);
 
 export async function saveBundleDeliveryAction(
   bundleId: string,
-  input: { rosterRequired: boolean; welcomeMessage: string; demographicFields: DemographicField[]; logicaMinutes: number | null },
+  input: {
+    rosterRequired: boolean;
+    welcomeMessage: string;
+    clientLogoUrl?: string;
+    demographicFields: DemographicField[];
+    logicaMinutes: number | null;
+  },
 ): Promise<{ ok: true } | { error: string }> {
   const g = await guard(bundleId);
   if (!g.ok) return { error: g.error };
+  const logoRaw = (input.clientLogoUrl ?? "").trim();
+  const logo = sanitiseClientLogoUrl(logoRaw);
+  if (logoRaw && !logo) return { error: "Client logo must be a file under /client-logos/ (png, svg, jpg or webp)." };
   const minutes = input.logicaMinutes == null || Number.isNaN(input.logicaMinutes) ? null : Math.round(input.logicaMinutes);
   if (minutes != null && (minutes < 1 || minutes > 600)) return { error: "Reasoning time limit must be between 1 and 600 minutes." };
   const res = await saveBundleSettings(
@@ -37,6 +47,7 @@ export async function saveBundleDeliveryAction(
     {
       rosterRequired: !!input.rosterRequired,
       welcomeMessage: input.welcomeMessage,
+      ...(input.clientLogoUrl !== undefined ? { clientLogoUrl: logo } : {}),
       demographicFields: sanitiseDemographicFields(input.demographicFields),
       logicaMinutes: minutes,
     },

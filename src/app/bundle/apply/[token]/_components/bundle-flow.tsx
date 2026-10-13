@@ -103,11 +103,11 @@ export function BundleFlow({
     sectionList.length <= 1 ? sectionList.join("") : `${sectionList.slice(0, -1).join(", ")} and ${sectionList[sectionList.length - 1]}`;
 
   // The scenario section is a wide, slide-style screen with four response cards in a row.
-  const width = phase === "sjt" ? "max-w-6xl" : "max-w-3xl";
+  const width = phase === "sjt" ? "max-w-7xl" : "max-w-3xl";
 
   return (
     <div className="min-h-screen bg-[#FEFFF9]">
-      <header className="border-b bg-[#010131] px-6 py-4 text-white">
+      <header className={`border-b bg-[#010131] px-6 text-white ${phase === "sjt" ? "py-3" : "py-4"}`}>
         <div className={`mx-auto flex ${width} items-center gap-2`}>
           <Boxes className="h-5 w-5 text-[#5391D5]" />
           <div>
@@ -117,7 +117,7 @@ export function BundleFlow({
         </div>
       </header>
 
-      <main className={`mx-auto ${width} px-6 py-8`}>
+      <main className={`mx-auto ${width} px-6 ${phase === "sjt" ? "pb-3 pt-4" : "py-8"}`}>
         {error && (
           <div className="mb-4 rounded-lg border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
         )}
@@ -285,6 +285,15 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
   const savedRef = useRef<Record<string, string>>({});
   const { guard, notice } = useNoCopy();
 
+  // Reserve the scrollbar's space so the screen does not shift sideways when a
+  // longer scenario on a small screen brings the scrollbar in.
+  useEffect(() => {
+    const html = document.documentElement;
+    const before = html.style.scrollbarGutter;
+    html.style.scrollbarGutter = "stable";
+    return () => { html.style.scrollbarGutter = before; };
+  }, []);
+
   useEffect(() => {
     let live = true;
     postJson(`${base}/sjt/start`)
@@ -369,23 +378,31 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
   return (
     <div {...guard} className="select-none">
       <CopyNotice show={notice} />
-      <SectionHeader icon={<Compass className="h-5 w-5" />} title={`Section ${number} · Workplace scenarios`}
-        sub="Read each situation. Mark the response you think is MOST effective and the one you think is LEAST effective. There is no time limit." />
-
+      {/* Compact by design: each scenario should fit one laptop screen without scrolling
+          (Ali, SDC pilot, 13 Oct 2026), so the section title sits in the card's top row. */}
       <div className="rounded-xl border bg-card shadow-sm">
-        <div className="flex items-center justify-between gap-3 border-b px-5 py-3">
-          <span className="text-xs text-muted-foreground">{answered} of {total} answered</span>
-          <span className="text-sm font-semibold text-[#010131]">Scenario {pad(idx + 1)} of {pad(total)}</span>
+        <div className="flex items-center justify-between gap-3 border-b px-5 py-2.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#010131] text-white"><Compass className="h-4 w-4" /></span>
+            <span className="truncate text-sm font-semibold text-[#010131]">Section {number} · Workplace scenarios</span>
+          </div>
+          <div className="flex shrink-0 items-baseline gap-3">
+            <span className="hidden text-xs text-muted-foreground sm:inline">{answered} of {total} answered</span>
+            <span className="text-sm font-semibold text-[#010131]">Scenario {pad(idx + 1)} of {pad(total)}</span>
+          </div>
         </div>
         <div className="h-1.5 bg-muted">
           <div className="h-full bg-[#5391D5] transition-all" style={{ width: `${total ? ((idx + 1) / total) * 100 : 0}%` }} />
         </div>
 
-        <div className="p-4 sm:p-5">
-          <div className="rounded-lg bg-[#5391D5]/5 px-4 py-3 sm:px-5 sm:py-4">
+        <div className="p-4 sm:px-5">
+          <div className="rounded-lg bg-[#5391D5]/5 px-4 py-3 sm:px-5">
             <div className="whitespace-pre-line text-[15px] leading-relaxed text-foreground">{it.situation}</div>
           </div>
-          <p className="mt-4 text-sm font-semibold text-[#010131]">Which response is the MOST effective? Which is the LEAST effective?</p>
+          <p className="mt-3 text-sm font-semibold text-[#010131]">
+            Which response is the MOST effective? Which is the LEAST effective?
+            <span className="ml-2 font-normal text-muted-foreground">There is no time limit.</span>
+          </p>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {it.options.map((o, oi) => {
@@ -399,9 +416,9 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#010131] text-xs font-semibold text-white">{letter}</span>
                     <p className="text-sm leading-relaxed text-foreground">{o.text}</p>
                   </div>
-                  <div className="mt-auto space-y-1.5 pt-3">
-                    <ChoiceButton label="MOST effective" selected={isMost} tone="most" aria={`Response ${letter} most effective`} onClick={() => choose("most", o.key)} />
-                    <ChoiceButton label="LEAST effective" selected={isLeast} tone="least" aria={`Response ${letter} least effective`} onClick={() => choose("least", o.key)} />
+                  <div className="mt-auto grid grid-cols-2 gap-1.5 pt-3">
+                    <ChoiceButton label="MOST" selected={isMost} tone="most" aria={`Response ${letter} most effective`} onClick={() => choose("most", o.key)} />
+                    <ChoiceButton label="LEAST" selected={isLeast} tone="least" aria={`Response ${letter} least effective`} onClick={() => choose("least", o.key)} />
                   </div>
                 </div>
               );
@@ -459,7 +476,7 @@ function ChoiceButton({ label, selected, tone, aria, onClick }: { label: string;
   const on = tone === "most" ? "border-emerald-600 bg-emerald-600 text-white hover:bg-emerald-600" : "border-rose-600 bg-rose-600 text-white hover:bg-rose-600";
   return (
     <button type="button" aria-label={aria} aria-pressed={selected} onClick={onClick}
-      className={`flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors ${selected ? on : "border-border text-muted-foreground hover:bg-muted"}`}>
+      className={`flex w-full items-center justify-center gap-2 rounded-md border px-2.5 py-1.5 text-xs font-semibold tracking-wide transition-colors ${selected ? on : "border-border text-muted-foreground hover:bg-muted"}`}>
       <span className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border ${selected ? "border-white" : "border-muted-foreground"}`}>
         {selected && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
       </span>

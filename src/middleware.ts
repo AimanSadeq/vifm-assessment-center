@@ -223,9 +223,21 @@ const isProposalClientRoute = (pathname: string) =>
 // short sha and branch, nothing else.
 const isVersionRoute = (pathname: string) => pathname === "/api/version";
 
+// Scheduled jobs (GitHub Actions) that call in with `Authorization: Bearer
+// <CRON_SECRET>` and no session cookie. Each route checks the secret itself in
+// constant time; without this bypass the session gate answered every run with a
+// redirect to /login, so these jobs silently did nothing. Exact paths only.
+const CRON_ROUTES = new Set([
+  "/api/reflect/admin/reminders/cron",
+  "/api/ara/admin/retention/cron",
+  "/api/admin/retention/cron",
+]);
+const isCronRoute = (pathname: string) => CRON_ROUTES.has(pathname);
+
 export async function middleware(request: NextRequest) {
   if (
     isVersionRoute(request.nextUrl.pathname) ||
+    isCronRoute(request.nextUrl.pathname) ||
     isProctorApiRoute(request.nextUrl.pathname) ||
     isAraRespondentRoute(request.nextUrl.pathname) ||
     isAraRedeemRoute(request.nextUrl.pathname) ||

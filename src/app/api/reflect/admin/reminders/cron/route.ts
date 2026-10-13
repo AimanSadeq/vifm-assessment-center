@@ -30,10 +30,16 @@ export async function POST(req: NextRequest) {
   }
 
   const sb = createServiceClient();
+  // Only real engagements still inside their field window: a sandbox has no real
+  // raters, and once the window has closed a reminder asks for a response the
+  // engagement no longer wants. An open-ended window (no end date) stays in.
+  const today = new Date().toISOString().slice(0, 10);
   const { data: engagements } = await sb
     .from("reflect_engagements")
     .select("id, name")
-    .eq("status", "live");
+    .eq("status", "live")
+    .eq("is_sandbox", false)
+    .or(`field_window_end.is.null,field_window_end.gte.${today}`);
 
   const summary: Array<{ engagement_id: string; name: string; sent: number; skipped: number }> = [];
   const failed: Array<{ engagement_id: string; name: string; error: string }> = [];

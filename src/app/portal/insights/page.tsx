@@ -179,7 +179,7 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
   // Headline numbers.
   const seatsTotal = active.reduce((a, x) => a + x.seats_total, 0);
   const seatsUsed = active.reduce((a, x) => a + x.seats_used, 0);
-  const totalCompleted = panels.reduce((a, p) => a + p.funnel.c, 0) + bundleCands.filter((c) => c.status === "completed").length;
+  const totalCompleted = panels.reduce((a, p) => a + p.funnel.c, 0) + bundleCands.filter((c) => c.status === "completed" || c.status === "scored").length;
   const generatedAt = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   const HEADLINE = [

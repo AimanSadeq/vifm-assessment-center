@@ -77,7 +77,7 @@ export default async function BespokeReportsPage() {
     const { data } = await sb
       .from("bundle_candidates")
       .select("id, full_name, email, completed_at, persona_session_id, bespoke_service_id, organization_id")
-      .eq("status", "completed")
+      .in("status", ["completed", "scored"])
       .order("completed_at", { ascending: false })
       .limit(200);
     bundleRows = (data ?? []) as BundleCandRow[];

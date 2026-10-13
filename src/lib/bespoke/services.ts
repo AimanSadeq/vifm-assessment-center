@@ -243,7 +243,7 @@ export async function loadBundleUsageMap(ids: string[]): Promise<Map<string, Bun
     const u = out.get(c.bespoke_service_id);
     if (!u) continue;
     u.candidates += 1;
-    if (c.status === "completed") u.completed += 1;
+    if (c.status === "completed" || c.status === "scored") u.completed += 1;
   }
   for (const v of (vou.data ?? []) as Array<{ bespoke_service_id: string; uses: number; max_uses: number }>) {
     const u = out.get(v.bespoke_service_id);

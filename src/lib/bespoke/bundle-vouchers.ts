@@ -196,7 +196,7 @@ async function checkBundleGate(rawCode: string, email: string): Promise<Gate> {
       .select("access_token, status")
       .eq("id", entry.bundle_candidate_id)
       .maybeSingle<{ access_token: string; status: string }>();
-    if (cand?.status === "completed") return { error: "You have already completed this assessment. Thank you." };
+    if (cand?.status === "completed" || cand?.status === "scored") return { error: "You have already completed this assessment. Thank you." };
     if (cand) return { resumeToken: cand.access_token };
   }
   return { entry };

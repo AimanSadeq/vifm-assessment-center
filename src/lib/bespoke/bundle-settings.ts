@@ -1,5 +1,6 @@
 // Per-bundle delivery settings (00233): roster gate, invitation hold, welcome
-// message, demographic fields, reasoning timer; client logo (00236). A bundle with no row keeps the
+// message, demographic fields, reasoning timer; client logo (00236); complete-by
+// date, follow-up threshold and email switch (00237). A bundle with no row keeps the
 // original behaviour (open, no roster, default copy, global Logica timer), and
 // every reader tolerates the table not being migrated yet.
 
@@ -27,6 +28,13 @@ export type BundleSettings = {
   /** Scenario-question stage (00234) runs first when enabled. */
   sjtEnabled: boolean;
   sjtConfig: SjtConfig;
+  /** Date candidates are asked to finish by, shown on the welcome screen (00237). */
+  completeBy: string | null;
+  /** Days without progress before a person shows in the follow-up list (00237). */
+  followupDays: number;
+  /** Invitation and reminder emails from the platform (00237). Off unless the
+   *  client has approved mail from the platform. */
+  emailsEnabled: boolean;
 };
 
 export const DEFAULT_BUNDLE_SETTINGS: BundleSettings = {
@@ -39,6 +47,9 @@ export const DEFAULT_BUNDLE_SETTINGS: BundleSettings = {
   logicaMinutes: null,
   sjtEnabled: false,
   sjtConfig: DEFAULT_SJT_CONFIG,
+  completeBy: null,
+  followupDays: 2,
+  emailsEnabled: false,
 };
 
 const KEY_RE = /^[a-z][a-z0-9_]{0,39}$/;
@@ -49,6 +60,20 @@ const LOGO_RE = /^\/client-logos\/[A-Za-z0-9._-]+\.(png|svg|jpg|jpeg|webp)$/;
 export function sanitiseClientLogoUrl(raw: unknown): string | null {
   const v = String(raw ?? "").trim();
   return LOGO_RE.test(v) ? v : null;
+}
+
+/** Follow-up threshold in days, 1 to 30 (default 2). */
+export function clampFollowupDays(raw: unknown): number {
+  const n = Math.round(Number(raw));
+  return Number.isFinite(n) && n >= 1 ? Math.min(30, n) : 2;
+}
+
+/** "Sunday 1 November 2026" in the bundle's local time (KSA). */
+export function formatCompleteBy(iso: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Riyadh" });
 }
 
 /** First word of a full name, for the greeting ("Welcome, Sarah"). */
@@ -90,6 +115,9 @@ type Row = {
   logica_minutes: number | null;
   sjt_enabled?: boolean;
   sjt_config?: unknown;
+  complete_by?: string | null;
+  followup_days?: number | null;
+  emails_enabled?: boolean | null;
 };
 
 export async function loadBundleSettings(bundleId: string): Promise<BundleSettings> {
@@ -111,6 +139,9 @@ export async function loadBundleSettings(bundleId: string): Promise<BundleSettin
       logicaMinutes: data.logica_minutes ?? null,
       sjtEnabled: !!data.sjt_enabled,
       sjtConfig: sanitiseSjtConfig(data.sjt_config),
+      completeBy: data.complete_by ?? null,
+      followupDays: clampFollowupDays(data.followup_days),
+      emailsEnabled: !!data.emails_enabled,
     };
   } catch {
     return DEFAULT_BUNDLE_SETTINGS;
@@ -138,6 +169,10 @@ export async function saveBundleSettings(
   // Written only when the caller sets it, so saving other settings keeps the
   // logo and still works before 00236 is applied.
   if ("clientLogoUrl" in patch) row.client_logo_url = sanitiseClientLogoUrl(patch.clientLogoUrl);
+  // 00237 columns, also written only when set, for the same reason.
+  if ("completeBy" in patch) row.complete_by = patch.completeBy || null;
+  if ("followupDays" in patch) row.followup_days = clampFollowupDays(patch.followupDays);
+  if ("emailsEnabled" in patch) row.emails_enabled = !!patch.emailsEnabled;
   // Releasing (held true -> false) stamps who and when; holding again clears it.
   if (patch.held === false && current.held) {
     row.released_at = new Date().toISOString();

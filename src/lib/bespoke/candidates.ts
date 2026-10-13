@@ -164,5 +164,6 @@ export async function rollBundleStatus(
   const patch: Record<string, unknown> = { status: allDone ? "completed" : "in_progress" };
   if (just.cognitiveResultId) patch.cognitive_result_id = just.cognitiveResultId;
   if (allDone) patch.completed_at = new Date().toISOString();
-  await svc.from("bundle_candidates").update(patch).eq("id", ctx.candidate.id);
+  // Never step a scored candidate (00237) back to completed or in progress.
+  await svc.from("bundle_candidates").update(patch).eq("id", ctx.candidate.id).neq("status", "scored");
 }

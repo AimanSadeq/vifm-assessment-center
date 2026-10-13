@@ -25,7 +25,11 @@ type BundleCand = {
   persona_session_id: string | null;
 };
 
+// Completed and scored (00237: a report has been generated) both count as done.
+const isDone = (s: string) => s === "completed" || s === "scored";
+
 const statusPill = (s: string) => {
+  if (s === "scored") return <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] font-semibold text-indigo-700">Scored</span>;
   if (s === "completed") return <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">Completed</span>;
   if (s === "in_progress") return <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-semibold text-sky-700">In progress</span>;
   return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">Invited</span>;
@@ -232,10 +236,10 @@ export default async function PortalBundlePage({
           <h2 className="text-sm font-semibold">
             Candidates{" "}
             <span className="font-normal text-muted-foreground">
-              ({candidates.length} · {candidates.filter((c) => c.status === "completed").length} completed)
+              ({candidates.length} · {candidates.filter((c) => isDone(c.status)).length} completed)
             </span>
           </h2>
-          {candidates.some((c) => c.status === "completed" && c.persona_session_id) && (
+          {candidates.some((c) => isDone(c.status) && c.persona_session_id) && (
             <p className="mt-1 text-xs text-muted-foreground">
               For the High-Potential Profile&apos;s Engagement pillar, use <span className="font-medium text-foreground">Invite
               manager</span> on a completed candidate&apos;s row to send their line manager a short (~5-minute) survey.
@@ -264,7 +268,7 @@ export default async function PortalBundlePage({
                       : "-"}
                   </td>
                   <td className="py-2 pr-3">
-                    {c.status === "completed" ? (
+                    {isDone(c.status) ? (
                       <div className="flex flex-col gap-0.5">
                         <a
                           href={`/api/admin/bundle/${c.id}/report`}

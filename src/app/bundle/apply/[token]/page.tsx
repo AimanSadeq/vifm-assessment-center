@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { findBundleCandidateByToken, bundleStageState } from "@/lib/bespoke/candidates";
 import { bundleLogicaMinutes } from "@/lib/bespoke/sitting";
 import { COGNITIVE_SUBTESTS, COGNITIVE_SUBTEST_KEYS } from "@/lib/psychometrics/framework";
-import { firstNameOf } from "@/lib/bespoke/bundle-settings";
+import { firstNameOf, formatCompleteBy } from "@/lib/bespoke/bundle-settings";
 import { ClientLogo } from "@/components/shared/client-logo";
 import { BundleFlow } from "./_components/bundle-flow";
 
@@ -55,6 +55,7 @@ export default async function BundleApplyPage({ params }: { params: { token: str
       logicaLabel={logicaLabel}
       welcomeMessage={ctx.settings.welcomeMessage}
       clientLogoUrl={ctx.settings.clientLogoUrl}
+      completeByLabel={formatCompleteBy(ctx.settings.completeBy)}
       demographicFields={ctx.settings.demographicFields}
     />
   );

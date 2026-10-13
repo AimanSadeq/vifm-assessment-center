@@ -30,6 +30,7 @@ export type RosterRow = {
   is_tester: boolean;
   extra: Record<string, string>;
   bundle_candidate_id: string | null;
+  created_at?: string | null;
 };
 
 /** Split pasted CSV or tab-separated text (Excel paste) into cells. */
@@ -154,7 +155,7 @@ export async function loadRoster(bundleId: string): Promise<RosterRow[]> {
     const sb = createServiceClient();
     const { data } = await sb
       .from("bundle_roster")
-      .select("id, email_norm, full_name, grade, position, business_unit, employee_id, is_tester, extra, bundle_candidate_id")
+      .select("id, email_norm, full_name, grade, position, business_unit, employee_id, is_tester, extra, bundle_candidate_id, created_at")
       .eq("bespoke_service_id", bundleId)
       .order("full_name");
     return (data ?? []) as RosterRow[];
@@ -198,4 +199,18 @@ export async function rosterEntryForCandidate(candidateId: string): Promise<Rost
   } catch {
     return null;
   }
+}
+
+/** Mark or unmark a pilot tester (a tester can sit while the bundle is on hold). */
+export async function setRosterTester(bundleId: string, rosterId: string, isTester: boolean): Promise<{ ok: true } | { error: string }> {
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("bundle_roster")
+    .update({ is_tester: isTester })
+    .eq("id", rosterId)
+    .eq("bespoke_service_id", bundleId)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "Person not found on this roster." };
+  return { ok: true };
 }

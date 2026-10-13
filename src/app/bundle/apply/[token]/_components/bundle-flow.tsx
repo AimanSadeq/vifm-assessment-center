@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, ClipboardList, Boxes, BrainCircuit, Clock, Compass } from "lucide-react";
+import { Loader2, ShieldCheck, CheckCircle2, ArrowRight, ArrowLeft, ClipboardList, Boxes, BrainCircuit, Clock, Compass, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { BundleStage } from "@/lib/bespoke/candidates";
 import type { DemographicField } from "@/lib/bespoke/bundle-settings";
@@ -49,6 +49,7 @@ export function BundleFlow({
   logicaLabel,
   welcomeMessage = null,
   clientLogoUrl = null,
+  completeByLabel = null,
   demographicFields = [],
 }: {
   token: string;
@@ -65,6 +66,8 @@ export function BundleFlow({
   logicaLabel: string;
   welcomeMessage?: string | null;
   clientLogoUrl?: string | null;
+  /** "Sunday 1 November 2026": the date to finish by (00237), shown on the welcome screen. */
+  completeByLabel?: string | null;
   demographicFields?: DemographicField[];
 }) {
   const hello = greetingName?.trim() || candidateName;
@@ -134,6 +137,11 @@ export function BundleFlow({
                 You have been invited to complete <span className="font-medium text-foreground">{bundleName}</span>. It has{" "}
                 {stages.length === 1 ? "one section" : `${stages.length} sections`}: {sectionText}. Your responses produce a report for the sponsoring organisation.
               </p>
+            )}
+            {completeByLabel && (
+              <div className="mt-3 inline-flex items-center gap-2 rounded-lg bg-[#5391D5]/10 px-3 py-1.5 text-sm font-medium text-[#010131]">
+                <CalendarDays className="h-4 w-4 text-[#5391D5]" /> Please complete by {completeByLabel}
+              </div>
             )}
             {demographicFields.length > 0 && (
               <div className="mt-4 space-y-3 rounded-lg border p-4">

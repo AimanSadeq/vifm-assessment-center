@@ -38,7 +38,9 @@ export type EmailTemplate =
   | "voucher_to_delegate"
   | "proposal_delivery"
   | "proposal_renewal_reminder"
-  | "platform_demo_request";
+  | "platform_demo_request"
+  | "bundle_invitation"
+  | "bundle_reminder";
 
 /** Optional file attachment (e.g. a generated PDF report). */
 export type EmailAttachment = {
@@ -206,6 +208,41 @@ Please find attached the pre-hire screening report for {{candidateName}}{{empCla
 The report summarises the advisory composite and the per-stage results. As always, this is a screening signal to support your process - VIFM does not make the hiring decision; your team does.
 
 Please treat the attached report as confidential.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
+  // Bespoke bundle (00237): sent only when the bundle's email switch is on.
+  // The link is the bundle's shared link; the person signs in with their work
+  // email and resumes where they stopped.
+  bundle_invitation: {
+    subject: "Your invitation: {{assessmentName}}",
+    body: `Dear {{firstName}},
+
+You are invited to complete the {{assessmentName}}.{{completeByLine}}
+
+Open this link and sign in with your work email ({{email}}):
+{{link}}
+
+You can stop at any time; your answers are saved and you will continue where you stopped.
+
+If the link does not open, copy and paste it into your browser.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+  },
+  bundle_reminder: {
+    subject: "Reminder: {{assessmentName}}",
+    body: `Dear {{firstName}},
+
+This is a friendly reminder to complete the {{assessmentName}}.{{completeByLine}}
+
+Open this link and sign in with your work email ({{email}}):
+{{link}}
+
+{{progressLine}}
+
+If you have any difficulty signing in, reply to this email and we will help.
 
 Best regards,
 Virginia Institute of Finance and Management`,

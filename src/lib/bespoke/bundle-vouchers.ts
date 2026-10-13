@@ -212,3 +212,19 @@ export async function loadBundleVouchers(bundleId: string): Promise<BundleVouche
     .order("created_at", { ascending: false });
   return (data ?? []) as BundleVoucherRow[];
 }
+
+/** Set or clear a bundle code's closing time. After it, nobody new can sign in;
+ *  people who already started still resume with their work email. */
+export async function setBundleVoucherExpiry(bundleId: string, voucherId: string, expiresAt: string | null): Promise<{ ok: true } | { error: string }> {
+  if (expiresAt && Number.isNaN(new Date(expiresAt).getTime())) return { error: "Invalid closing date." };
+  const sb = createServiceClient();
+  const { data, error } = await sb
+    .from("bundle_vouchers")
+    .update({ expires_at: expiresAt })
+    .eq("id", voucherId)
+    .eq("bespoke_service_id", bundleId)
+    .select("id");
+  if (error) return { error: error.message };
+  if (!data || data.length === 0) return { error: "Code not found for this assessment." };
+  return { ok: true };
+}

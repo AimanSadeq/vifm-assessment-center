@@ -16,6 +16,10 @@ import { loadRoster } from "@/lib/bespoke/roster";
 import { DeliveryPanel, type RosterView } from "./delivery-panel";
 import { loadSjtItems, loadBundleCompetencies } from "@/lib/bespoke/sjt";
 import { ScenarioPanel } from "./scenario-panel";
+import { ProgressPanel } from "./progress-panel";
+import { loadBundleProgress, bundleStageFlags } from "@/lib/bespoke/progress";
+import { formatCompleteBy } from "@/lib/bespoke/bundle-settings";
+import { siteOrigin } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -38,18 +42,12 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
   if (!bundle) notFound();
 
   const svc = createServiceClient();
-  const [usage, vouchers, orgRes, candRes, creatorRes] = await Promise.all([
+  const [usage, vouchers, orgRes, creatorRes] = await Promise.all([
     loadBundleUsage(bundle.id),
     loadBundleVouchers(bundle.id),
     bundle.organization_id
       ? svc.from("organizations").select("name").eq("id", bundle.organization_id).maybeSingle<{ name: string }>()
       : Promise.resolve({ data: null }),
-    svc
-      .from("bundle_candidates")
-      .select("id, full_name, email, status, consent_at, completed_at, created_at")
-      .eq("bespoke_service_id", bundle.id)
-      .order("created_at", { ascending: false })
-      .limit(200),
     bundle.created_by
       ? svc.from("profiles").select("full_name, email").eq("id", bundle.created_by).maybeSingle<{ full_name: string | null; email: string | null }>()
       : Promise.resolve({ data: null }),
@@ -72,7 +70,12 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
     status: (r.bundle_candidate_id ? statusById.get(r.bundle_candidate_id) ?? "invited" : "not_started") as RosterView["status"],
   }));
   const orgName = orgRes.data?.name ?? "Unassigned";
-  const candidates = (candRes.data ?? []) as Array<{ id: string; full_name: string; email: string; status: string; consent_at: string | null; completed_at: string | null; created_at: string }>;
+  // Progress and follow-up (Ali's recommendations, 13 Oct 2026).
+  const stageFlags = bundleStageFlags(bundle.service_keys, deliverySettings);
+  const people = await loadBundleProgress(bundle.id, rosterRows, deliverySettings, stageFlags);
+  // The shared link: the newest multi-seat code. Individual codes are personal.
+  const pool = vouchers.filter((v) => v.max_uses > 1);
+  const sharedLink = pool[0] ? `${siteOrigin()}/bundle/redeem?code=${pool[0].code}` : null;
   const creator = creatorRes.data?.full_name || creatorRes.data?.email || null;
   const locked = usage.candidates > 0 || usage.vouchers > 0;
 
@@ -219,6 +222,21 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
         </ol>
       </section>
 
+      <ProgressPanel
+        bundleId={bundle.id}
+        assessmentName={bundle.name_en}
+        people={people}
+        stages={stageFlags}
+        held={deliverySettings.held}
+        completeBy={deliverySettings.completeBy}
+        completeByLabel={formatCompleteBy(deliverySettings.completeBy)}
+        followupDays={deliverySettings.followupDays}
+        emailsEnabled={deliverySettings.emailsEnabled}
+        sharedLink={sharedLink}
+        vouchers={pool.map((v) => ({ id: v.id, code: v.code, max_uses: v.max_uses, uses: v.uses, expires_at: v.expires_at }))}
+        now={Date.now()}
+      />
+
       <DeliveryPanel bundleId={bundle.id} settings={deliverySettings} roster={roster} />
 
       <ScenarioPanel
@@ -230,30 +248,8 @@ export default async function BundleDesignSheetPage({ params }: { params: { id: 
         submitted={sjtResults.filter((r) => r.submitted_at).length}
       />
 
-      {/* Delivery so far */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-xl border bg-card p-5">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Users className="h-4 w-4 text-[#5391D5]" /> Candidates ({candidates.length})</h2>
-          {candidates.length === 0 ? (
-            <p className="mt-2 text-xs text-muted-foreground">Nobody has been invited to this bundle yet.</p>
-          ) : (
-            <table className="mt-3 w-full text-xs">
-              <thead className="text-muted-foreground">
-                <tr><th className="py-1 text-left font-medium">Name</th><th className="py-1 text-left font-medium">Status</th><th className="py-1 text-left font-medium">Invited</th><th className="py-1 text-left font-medium">Completed</th></tr>
-              </thead>
-              <tbody>
-                {candidates.map((c) => (
-                  <tr key={c.id} className="border-t">
-                    <td className="py-1.5"><div className="font-medium text-foreground">{c.full_name}</div><div className="text-muted-foreground">{c.email}</div></td>
-                    <td className="py-1.5">{c.status.replace("_", " ")}</td>
-                    <td className="py-1.5">{fmt(c.created_at)}</td>
-                    <td className="py-1.5">{fmt(c.completed_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
+      {/* Codes issued */}
+      <div>
         <section className="rounded-xl border bg-card p-5">
           <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Ticket className="h-4 w-4 text-[#5391D5]" /> Vouchers ({vouchers.length})</h2>
           {vouchers.length === 0 ? (

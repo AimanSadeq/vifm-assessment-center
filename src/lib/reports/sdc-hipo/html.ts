@@ -3,10 +3,10 @@
 // 8 Oct 2026 (scripts/sdc-hipo/build-reports.js). Pure string building: the
 // route renders the HTML to PDF with the shared Chromium launcher.
 
-import { esc, svg, vifmLogoDark, FONT_LINKS, BASE_CSS } from "./brand";
+import { esc, svg, vifmLogoColour, FONT_LINKS, BASE_CSS } from "./brand";
 import {
   GRID, GRADE_LABEL, MODULE, levelName, fit as fitOf, strengthsOf, gapsOf, selectIdp, idpItems,
-  reasoningTestsPhrase, numberWord, rankCohort, compareCodes, gapRates, leadershipFromGrade, gradeSpan, joinAnd,
+  reasoningTestsPhrase, numberWord, rankCohort, compareCodes, gapRates, fitOverReasoningNote, leadershipFromGrade, gradeSpan, joinAnd,
   type CompRow, type Reasoning, type SdcCompetency, type CohortPerson, type RankedPerson, type IdpItem,
 } from "./rules";
 
@@ -77,7 +77,10 @@ table.rk { table-layout:fixed; }
 .sig div { border-top:1px solid var(--text); padding-top:3px; font-size:8.5px; color:var(--muted); }
 .initials { display:flex; flex-wrap:wrap; gap:2px; margin-top:3px; }
 .initials span { font-size:7px; font-weight:700; background:var(--navy); color:#fff; border-radius:3px; padding:0 3px; }
-.hbar { display:grid; grid-template-columns:150px 1fr 40px; gap:6px; align-items:center; font-size:8.8px; margin:2px 0; }
+.hbar { display:grid; grid-template-columns:150px 1fr 74px; gap:6px; align-items:center; font-size:8.8px; margin:2px 0; }
+.hbar b span { font-weight:400; color:var(--muted); }
+.disclaimer { border:1px solid var(--line); border-left:3px solid var(--accent); background:var(--off); border-radius:5px; padding:5px 8px; font-size:8px; line-height:1.4; color:var(--mid); }
+.rk .why { display:block; font-size:7.4px; font-weight:400; color:var(--muted); }
 `;
 
 function doc(title: string, body: string): string {
@@ -87,7 +90,7 @@ function doc(title: string, body: string): string {
 const pfoot = (left: string) => `<div class="pfoot"><span>${esc(left)}</span><span>${esc(FOOT_RIGHT)}</span></div>`;
 
 function topBar(orgName: string | null): string {
-  const logo = vifmLogoDark();
+  const logo = vifmLogoColour();
   return `<div class="top">${logo ? `<img src="${logo}" style="height:38px" alt="VIFM">` : `<b style="color:var(--navy);font-size:16px">VIFM</b>`}<div class="tag">Caliber  |  ${esc(PROGRAMME)}${orgName ? `<br><span style="color:var(--muted);letter-spacing:1px">Prepared for ${esc(orgName)}</span>` : ""}</div></div>`;
 }
 
@@ -101,6 +104,10 @@ function gapPill(res: number, req: number): string {
   if (d === 0) return `<span class="gp eq">Meets</span>`;
   return `<span class="gp dn">Gap ${d}</span>`;
 }
+
+// SDC makes the final selection (RFP; agreed with Suzanne Salim). Wording from
+// Ali AlShouli, 13 Oct 2026, for his review with SDC.
+const DISCLAIMER = `<div class="disclaimer"><b>Final decisions rest with SDC.</b> High-potential classifications are preliminary, assessment-based indicators. Final identification and selection should also consider historical performance, demonstrated leadership capabilities, career achievements and leadership evaluations, with final decisions made by SDC's designated talent review committee.</div>`;
 
 const GRID_RULES = `<b>Placement rules.</b> Competency fit: <b>Above</b> = every required competency met and at least two exceeded; <b>Meets</b> = at least 80% of required competencies met, which includes candidates who meet all of them but exceed fewer than two; <b>Below</b> = fewer than 80% met. Reasoning performance: <b>Strong</b> = 70% or more; <b>Solid</b> = 50% to 69%; <b>Developing</b> = below 50%.`;
 
@@ -180,6 +187,7 @@ export function renderSdcSummaryHtml(r: SdcCandidateReport): string {
     <div class="card"><div class="eyebrow">${svg("brain")} Reasoning tests</div>
       ${G.tests.map((t) => `<div class="cogrow"><span>${esc(t.name)}</span><div class="bar"><div class="fill" style="width:${t.pct}%"></div></div><b>${t.pct}%</b></div>`).join("")}
     </div>
+    ${DISCLAIMER}
   </div>
 </div>
 <h2 style="margin-top:12px">Competency results against the Grade ${r.grade} requirement</h2>
@@ -188,7 +196,7 @@ export function renderSdcSummaryHtml(r: SdcCandidateReport): string {
   <div class="card"><div class="eyebrow">${svg("plus")} Strengths to build on</div>${strengths.length ? `<ul class="ind pos cp">${strengths.map((s) => li(s, "check")).join("")}</ul>` : `<p class="small muted" style="margin:0">No required competency is above the level for Grade ${r.grade} yet.</p>`}</div>
   <div class="card"><div class="eyebrow">${svg("trend")} Development priorities</div>${gaps.length ? `<ul class="ind neg cp">${gaps.map((s) => li(s, "target")).join("")}</ul>` : `<p class="small muted" style="margin:0">Every required competency is at or above the level for Grade ${r.grade}.</p>`}</div>
 </div>
-<p class="note" style="margin-top:8px"><b>How to read this.</b> Competency results come from ${esc(scenText)} that measure judgement in realistic SDC work situations; they are not observations of behaviour at work. Reasoning performance is the mean accuracy on ${esc(testsPhrase)}. Bands are indicative until an SDC cohort norm is available. This summary is one input to talent decisions, not a decision on its own.${leadFrom != null ? ` Leadership competencies are not required below Grade ${leadFrom} and are then shown for development only.` : ""}</p>
+<p class="note" style="margin-top:8px"><b>How to read this.</b> Competency results come from ${esc(scenText)} that measure judgement in realistic SDC work situations; they are not observations of behaviour at work. Reasoning performance is the mean accuracy on ${esc(testsPhrase)}. Bands are indicative until an SDC cohort norm is available.${leadFrom != null ? ` Leadership competencies are not required below Grade ${leadFrom} and are then shown for development only.` : ""}</p>
 ${pfoot(`${PROGRAMME}  |  Executive summary`)}</div>`;
   return doc(`${r.name}: SDC executive summary`, body);
 }
@@ -248,7 +256,7 @@ ${later}
 ${strengths.length ? `<div class="card soft" style="margin-top:5px;padding:5px 10px;display:flex;gap:6px;align-items:baseline"><span style="color:var(--accent)">${svg("star", 12)}</span>
 <p class="small" style="margin:0"><b>Strengths to use while developing:</b> ${strengths.map((s) => `<b>${esc(s.name)}</b> (${levelName(s.res)})`).join(", ")}. Look for roles in team projects that use these.</p></div>` : ""}
 <div class="sig" style="margin-top:18px"><div>Participant</div><div>VIFM coach</div><div>SDC Talent Development</div></div>
-<p class="note" style="margin-top:4px;font-size:7.6px">Goal behaviours are taken from the SDC behavioural indicators for the target level. Goals follow the SMART format (Doran, 1981). The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the Module 1 debrief and reviewed at each milestone; progress is measured again in the post-programme assessment.</p>
+<p class="note" style="margin-top:4px;font-size:7.6px">Goal behaviours are taken from the SDC behavioural indicators for the target level. Goals follow the SMART format (Doran, 1981). The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the Module 1 debrief and reviewed at each milestone; progress is measured again in the post-programme assessment. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p>
 ${pfoot(`${PROGRAMME}  |  Individual development plan`)}</div>`;
   return doc(`${r.name}: SDC individual development plan`, body);
 }
@@ -323,16 +331,17 @@ export function renderSdcGroupHtml(c: SdcCohortReport): string {
   for (const b of bands) {
     if (!b.people.length) continue;
     rows += `<tr class="cat"><td colspan="7">${esc(b.label)}</td></tr>`;
-    for (const p of b.people) {
-      rows += `<tr data-band="${esc(b.label)}"><td><b>${esc(p.code)}</b></td><td><b>${esc(p.name)}</b></td><td>G${p.grade}</td><td class="small">${esc(p.unit ?? "")}</td><td>${p.fit.met}/${p.fit.total}${p.fit.above ? ` <span class="small muted">(+${p.fit.above})</span>` : ""}</td><td>${p.reasoning.mean}%</td><td><span class="pill ${pill(p)}" style="font-size:8.5px;white-space:nowrap">${esc(p.place)}</span></td></tr>`;
-    }
+    b.people.forEach((p, i) => {
+      const why = fitOverReasoningNote(b.people, i);
+      rows += `<tr data-band="${esc(b.label)}"><td><b>${esc(p.code)}</b></td><td><b>${esc(p.name)}</b>${why ? `<span class="why">${esc(why)}</span>` : ""}</td><td>G${p.grade}</td><td class="small">${esc(p.unit ?? "")}</td><td>${p.fit.met}/${p.fit.total}${p.fit.above ? ` <span class="small muted">(+${p.fit.above})</span>` : ""}</td><td>${p.reasoning.mean}%</td><td><span class="pill ${pill(p)}" style="font-size:8.5px;white-space:nowrap">${esc(p.place)}</span></td></tr>`;
+    });
   }
   const table = (body: string) =>
     `<table class="t rk"><colgroup><col style="width:36px"><col><col style="width:42px"><col style="width:178px"><col style="width:66px"><col style="width:64px"><col style="width:130px"></colgroup><thead><tr><th>Rank</th><th>Candidate</th><th>Grade</th><th>Business unit</th><th>Required met</th><th>Reasoning</th><th>Placement</th></tr></thead><tbody>${body}</tbody></table>`;
   // The page number is filled in by the layout script once the page count is known.
   const foot = `<div class="pfoot"><span>${esc(`${PROGRAMME}  |  Group report`)}<span class="pno"></span></span><span>${esc(FOOT_RIGHT)}</span></div>`;
 
-  const note = `<p class="note" id="rk-note" style="margin-top:8px"><b>How the ranking works.</b> Candidates are ranked within their grade band, because required levels differ by grade: first by position on the grid (competency fit plus reasoning performance), then by competency fit, share of required competencies met and number exceeded, then by reasoning accuracy. "(+n)" is the number of required competencies exceeded. Rankings support the cohort selection discussion with SDC; they are not a selection decision on their own.${c.incomplete ? ` ${c.incomplete} completed ${c.incomplete === 1 ? "person is" : "people are"} not shown because a scenario or reasoning result is missing.` : ""}</p>`;
+  const note = `<p class="note" id="rk-note" style="margin-top:8px"><b>How the ranking works.</b> Candidates are ranked within their grade band, because required levels differ by grade: first by position on the grid (competency fit plus reasoning performance), then by competency fit, share of required competencies met and number exceeded, then by reasoning accuracy. "(+n)" is the number of required competencies exceeded. <b>Why this order:</b> within the same box, candidates are ordered by competency fit first (required competencies met, then the number exceeded), then by reasoning accuracy, so a candidate can rank above someone in the same box with a higher reasoning score; the note under the name shows why. Reasoning scores within a band are close: about 6 points is one question out of 18. Rankings support the cohort selection discussion with SDC; they are not a selection decision on their own.${c.incomplete ? ` ${c.incomplete} completed ${c.incomplete === 1 ? "person is" : "people are"} not shown because a scenario or reasoning result is missing.` : ""}</p>`;
 
   const first = `<div class="page rk-first">${topBar(c.orgName)}
 <div class="band"><div class="eyebrow">Group report</div><h1>HiPo cohort overview</h1><div class="sub">${c.people.length} candidate${c.people.length === 1 ? "" : "s"} assessed${grades.length ? `  |  ${esc(gradeSpan(grades))}` : ""}  |  Ranked within grade band</div></div>
@@ -344,11 +353,11 @@ export function renderSdcGroupHtml(c: SdcCohortReport): string {
       <div class="kpi"><div class="l">High potential</div><div class="v">${hi}</div><div class="small muted">above requirement and strong reasoning</div></div>
     </div>
     <div class="card"><div class="eyebrow">${svg("trend")} Where the cohort falls below the requirement</div>
-      ${rates.map((g) => `<div class="hbar"><span>${esc(g.name)}</span><div class="bar"><div class="fill" style="width:${g.pct}%;background:var(--amber)"></div></div><b>${g.pct}%</b></div>`).join("")}
-      <p class="note" style="margin:4px 0 0">Share of candidates for whom the competency is required who are below their grade's level. Use it to set group learning priorities.</p></div>
+      ${rates.map((g) => `<div class="hbar"><span>${esc(g.name)}</span><div class="bar"><div class="fill" style="width:${g.pct}%;background:var(--amber)"></div></div><b>${g.pct}% <span>(${g.below} of ${g.n})</span></b></div>`).join("")}
+      <p class="note" style="margin:4px 0 0">Share of candidates for whom the competency is required who are below their grade's level, with the count in brackets. Use it to set group learning priorities.</p></div>
   </div>
 </div>
-<div class="rk-wrap"><h2 style="margin-top:12px">Ranking</h2>
+<div class="rk-wrap"><div style="margin-top:10px">${DISCLAIMER}</div><h2 style="margin-top:8px">Ranking</h2>
 ${table(rows)}
 ${note}</div>
 ${foot}</div>`;

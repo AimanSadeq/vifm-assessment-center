@@ -283,6 +283,27 @@ export function rankCohort(people: CohortPerson[], comps: SdcCompetency[]): Grad
   });
 }
 
+/**
+ * Why a person ranks above someone in the same grid box who has higher
+ * reasoning (Ali, 13 Oct 2026: "how will a reader understand this?"): the
+ * competency-fit tie-break that decided it, e.g. "+4 vs +2 exceeded". Null
+ * when nobody below them in the same box has higher reasoning.
+ */
+export function fitOverReasoningNote(band: RankedPerson[], i: number): string | null {
+  const p = band[i];
+  const q = band.slice(i + 1).find(
+    (x) => x.fit.band === p.fit.band && x.reasoning.band === p.reasoning.band && x.reasoning.mean > p.reasoning.mean,
+  );
+  if (!q) return null;
+  const why =
+    p.fit.met * q.fit.total !== q.fit.met * p.fit.total
+      ? `${p.fit.met}/${p.fit.total} vs ${q.fit.met}/${q.fit.total} met`
+      : p.fit.above !== q.fit.above
+        ? `+${p.fit.above} vs +${q.fit.above} exceeded`
+        : null;
+  return why ? `Above ${q.code} on competency fit (${why})` : null;
+}
+
 /** Order for the codes inside a grid cell: M before P, then by number. */
 export function compareCodes(a: string, b: string): number {
   return a[0] === b[0] ? parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10) : a < b ? -1 : 1;

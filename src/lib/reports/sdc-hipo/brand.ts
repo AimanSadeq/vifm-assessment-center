@@ -27,11 +27,11 @@ export const svg = (name: IconName, size = 14) =>
   `<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[name]}</svg>`;
 
 let logoCache: string | null | undefined;
-/** The VIFM logo for light backgrounds, as a data URI (setContent cannot load /public URLs). Null if the file is missing. */
-export function vifmLogoDark(): string | null {
+/** The full-colour VIFM logo (navy and blue, for light backgrounds), as a data URI (setContent cannot load /public URLs). Null if the file is missing. */
+export function vifmLogoColour(): string | null {
   if (logoCache !== undefined) return logoCache;
   try {
-    const buf = readFileSync(join(process.cwd(), "public", "images", "vifm-logo-dark.png"));
+    const buf = readFileSync(join(process.cwd(), "public", "images", "vifm-logo-light.png"));
     logoCache = `data:image/png;base64,${buf.toString("base64")}`;
   } catch {
     logoCache = null;

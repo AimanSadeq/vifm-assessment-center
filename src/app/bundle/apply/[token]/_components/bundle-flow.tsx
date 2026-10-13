@@ -372,7 +372,7 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
       <SectionHeader icon={<Compass className="h-5 w-5" />} title={`Section ${number} · Workplace scenarios`}
         sub="Read each situation. Mark the response you think is MOST effective and the one you think is LEAST effective. There is no time limit." />
 
-      <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      <div className="rounded-xl border bg-card shadow-sm">
         <div className="flex items-center justify-between gap-3 border-b px-5 py-3">
           <span className="text-xs text-muted-foreground">{answered} of {total} answered</span>
           <span className="text-sm font-semibold text-[#010131]">Scenario {pad(idx + 1)} of {pad(total)}</span>
@@ -381,11 +381,11 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
           <div className="h-full bg-[#5391D5] transition-all" style={{ width: `${total ? ((idx + 1) / total) * 100 : 0}%` }} />
         </div>
 
-        <div className="p-5 sm:p-6">
-          <div className="rounded-lg bg-[#5391D5]/5 p-4 sm:p-5">
+        <div className="p-4 sm:p-5">
+          <div className="rounded-lg bg-[#5391D5]/5 px-4 py-3 sm:px-5 sm:py-4">
             <div className="whitespace-pre-line text-[15px] leading-relaxed text-foreground">{it.situation}</div>
           </div>
-          <p className="mt-5 text-sm font-semibold text-[#010131]">Which response is the MOST effective? Which is the LEAST effective?</p>
+          <p className="mt-4 text-sm font-semibold text-[#010131]">Which response is the MOST effective? Which is the LEAST effective?</p>
 
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {it.options.map((o, oi) => {
@@ -394,12 +394,12 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
               const isLeast = pick.least === o.key;
               return (
                 <div key={o.key}
-                  className={`flex flex-col rounded-lg border bg-background p-4 transition-shadow ${isMost || isLeast ? "border-[#010131]/40 shadow-sm" : "border-border"}`}>
+                  className={`flex flex-col rounded-lg border bg-background p-3.5 transition-shadow ${isMost || isLeast ? "border-[#010131]/40 shadow-sm" : "border-border"}`}>
                   <div className="flex items-start gap-2.5">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#010131] text-xs font-semibold text-white">{letter}</span>
                     <p className="text-sm leading-relaxed text-foreground">{o.text}</p>
                   </div>
-                  <div className="mt-auto space-y-1.5 pt-4">
+                  <div className="mt-auto space-y-1.5 pt-3">
                     <ChoiceButton label="MOST effective" selected={isMost} tone="most" aria={`Response ${letter} most effective`} onClick={() => choose("most", o.key)} />
                     <ChoiceButton label="LEAST effective" selected={isLeast} tone="least" aria={`Response ${letter} least effective`} onClick={() => choose("least", o.key)} />
                   </div>
@@ -409,7 +409,9 @@ function SjtSection({ base, number, onError, onDone }: { base: string; number: n
           </div>
         </div>
 
-        <div className="flex items-center justify-between gap-2 border-t bg-muted/30 px-5 py-3">
+        {/* Pinned to the bottom of the window so Next is always in view, however long the
+            scenario or small the screen (Ali, SDC pilot, 13 Oct 2026: "the Next button is cut off"). */}
+        <div className="sticky bottom-0 z-10 flex items-center justify-between gap-2 rounded-b-xl border-t bg-card/95 px-5 py-3 shadow-[0_-4px_12px_-8px_rgba(1,1,49,0.25)] backdrop-blur">
           <Button variant="outline" className="gap-2" disabled={idx === 0 || busy} onClick={() => go(idx - 1)}>
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>

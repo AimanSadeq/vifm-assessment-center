@@ -10,8 +10,9 @@
 ## Scheduled jobs fix (2026-10-13)
 - [x] **Cause found:** the Reflect rater reminders, ARA retention purge and platform retention purge (GitHub Actions, daily) have failed on every run since early July (last success May): the middleware redirected their cookieless Bearer CRON_SECRET calls to /login. Proctor retention and proposal renewals were unaffected (their paths were already allowed).
 - [x] **8 live Reflect engagements archived** (all tests, Aiman's ruling 13 Oct, incl. "Najm Capital - Senior Leaders 360" which is a dummy client): status archived + archived_at, one reflect_audit_log row each. No live engagements remain.
-- [ ] **Branch `fix/cron-auth-gate` (14e59241), merge + deploy on Aiman's word:** exact-path bypass for the 3 cron routes (each checks the secret itself); reminder sweep skips sandbox engagements and closed field windows. tsc and eslint clean.
-- [ ] **After deploy:** run the platform purge once as a dry run (workflow_dispatch, dryRun=true) and review; retention is 24 months, so little or nothing should qualify. Then confirm the next scheduled runs go green.
+- [x] **Branch `fix/cron-auth-gate` (14e59241) merged to master and deployed 13 Oct:** exact-path bypass for the 3 cron routes (each checks the secret itself); reminder sweep skips sandbox engagements and closed field windows. tsc and eslint clean.
+- [x] **Verified 13 Oct (manual runs, all green):** platform purge dry run: 0 deleted, 0 anonymised, 25 expired sessions to sweep (18 Logica, 7 Fluent; 7 of the Logica ones are SDC pilot sittings, safe: per-question answers live in psy_item_responses keyed by result, and the bundle link is ON DELETE SET NULL). Reflect reminders: 0 engagements processed. ARA purge: 0 deleted.
+- [ ] **Confirm the next scheduled runs are green** (platform 03:30 UTC, ARA and reminders daily).
 
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 

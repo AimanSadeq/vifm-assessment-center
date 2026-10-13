@@ -7,6 +7,12 @@
 > **Email style for Aiman's emails to the VIFM team (standing rule, 2026-10-12):** sign off with "A"
 > (not "Aiman", no title), and leave one blank line between the greeting and the first line of the body.
 
+## Scheduled jobs fix (2026-10-13)
+- [x] **Cause found:** the Reflect rater reminders, ARA retention purge and platform retention purge (GitHub Actions, daily) have failed on every run since early July (last success May): the middleware redirected their cookieless Bearer CRON_SECRET calls to /login. Proctor retention and proposal renewals were unaffected (their paths were already allowed).
+- [x] **8 live Reflect engagements archived** (all tests, Aiman's ruling 13 Oct, incl. "Najm Capital - Senior Leaders 360" which is a dummy client): status archived + archived_at, one reflect_audit_log row each. No live engagements remain.
+- [ ] **Branch `fix/cron-auth-gate` (14e59241), merge + deploy on Aiman's word:** exact-path bypass for the 3 cron routes (each checks the secret itself); reminder sweep skips sandbox engagements and closed field windows. tsc and eslint clean.
+- [ ] **After deploy:** run the platform purge once as a dry run (workflow_dispatch, dryRun=true) and review; retention is 24 months, so little or nothing should qualify. Then confirm the next scheduled runs go green.
+
 ## ⭐ Priority 1 - SDAIA (Saudi Data & AI Authority)
 
 Live client = **SDAIA**, Saudi Arabia's national AI authority. Per the 17 Jun 2026

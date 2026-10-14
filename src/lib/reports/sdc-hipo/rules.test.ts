@@ -6,12 +6,13 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   isSdcFramework, SDC_CODES, compRows, fit, reasoning, reasoningTestsPhrase, selectIdp, idpItems, gapsOf,
-  strengthsOf, compareCohort, rankCohort, gapRates, requiredLevel, IDP_MAX_GAPS, type CompRow, type CohortPerson,
+  strengthsOf, compareCohort, rankCohort, gapRates, requiredLevel, IDP_MAX_GAPS, MODULE, type CompRow, type CohortPerson,
 } from "./rules.ts";
+import idpContent from "./idp-content.json";
 import { assembleCandidate, assembleCohort, formatAssessed, scenarioCounts } from "./assemble.ts";
 import { renderSdcSummaryHtml, renderSdcIdpHtml, renderSdcGroupHtml } from "./html.ts";
 import {
-  FIXTURE_COMPETENCIES as COMPS, FIXTURE_CANDIDATES, FIXTURE_ROSTER, FIXTURE_SJT, FIXTURE_PSY, FIXTURE_ORG,
+  FIXTURE_COMPETENCIES as COMPS, FIXTURE_CANDIDATES, FIXTURE_ROSTER, FIXTURE_SJT, FIXTURE_PSY, FIXTURE_SESSIONS, FIXTURE_ORG,
 } from "./fixture.ts";
 import { reportKindLabel, buildReportStoragePath } from "../../bespoke/report-filing-paths.ts";
 
@@ -129,6 +130,17 @@ test("IDP items: gaps target the required level, the strength one level up, with
   }
 });
 
+test("IDP content: every Learning action starts with the competency's programme module", () => {
+  // Ali, 14 Oct 2026: the card header (MODULE) and the Learning line must name the same module.
+  const actions = (idpContent as unknown as { actions: Record<string, Record<string, { learning: string }>> }).actions;
+  for (const code of SDC_CODES) {
+    const want = MODULE[code].match(/^M(\d)/)![1];
+    for (const [level, a] of Object.entries(actions[code])) {
+      assert.equal(a.learning.match(/Module (\d)/)?.[1], want, `${code} ${level}: "${a.learning}" should start with Module ${want}`);
+    }
+  }
+});
+
 // ---------------------------------------------------------------- ranking
 
 const person = (name: string, grade: number, fitBand: 0 | 1 | 2, met: number, total: number, above: number, mean: number): CohortPerson => ({
@@ -242,6 +254,49 @@ test("reports: a Grade 5 summary shows leadership as development only", () => {
   assert.equal(html.match(/Development only/g)?.length, 5);
   assert.match(html, /Leadership competencies are not required below Grade 7/);
   assert.ok(!html.includes("Prepared for"), "no organisation line without an organisation");
+});
+
+test("Ali's review, 14 Oct: top three priorities, direction not a promise, baseline, target and owner, a rushed sitting flagged", () => {
+  const i = FIXTURE_CANDIDATES.findIndex((c) => c.full_name === "Joud Al-Balawi");
+  const built = assembleCandidate({
+    cand: FIXTURE_CANDIDATES[i], roster: FIXTURE_ROSTER[i], sjt: FIXTURE_SJT[i], psy: FIXTURE_PSY[i],
+    session: FIXTURE_SESSIONS.find((s) => s.id === FIXTURE_CANDIDATES[i].cognitive_session_id) ?? null, comps: COMPS, orgName: FIXTURE_ORG,
+  });
+  assert.ok(built.ok);
+  if (!built.ok) return;
+  assert.equal(built.data.reasoning.check?.rushed, true);
+  const summary = renderSdcSummaryHtml(built.data);
+  assert.match(summary, /Check before use\.<\/b> Finished in 2 minutes \(about 7 seconds a question\), with 2 of 18 questions unanswered/);
+  assert.ok(!/class="pill gray cnt"/.test(summary), "no count when every gap is listed");
+  assert.equal(summary.match(/<li><svg[^>]*>.*?<\/svg><span><b>[^<]+<\/b>: [A-Za-z ]+, required/g)?.length, 3, "three priorities (no strengths at this level)");
+
+  const idp = renderSdcIdpHtml(built.data);
+  assert.match(idp, /Development direction \(Proficient behaviours\)/);
+  assert.ok(!/Goal behaviours \(/.test(idp), "no 'goal behaviours' label");
+  assert.match(idp, /Below Basic now, developing towards Basic, the level required for Grade 5|Basic now, developing towards Proficient, the level required for Grade 5/);
+  assert.match(idp, /Baseline<\/div>(Below Basic|Basic) on the Caliber scenarios, 1[0-8] October 2026/);
+  assert.match(idp, /90-day target<\/div>By day 90/);
+  assert.match(idp, /Evidence owner<\/div>Line manager confirms; VIFM coach records/);
+  assert.match(idp, /a change of level is confirmed only by the post-programme reassessment/);
+  assert.match(idp, /Check before use/);
+
+  // A normal sitting carries no note; the group report marks only the rushed one.
+  const huda = assembleCandidate({
+    cand: FIXTURE_CANDIDATES[0], roster: FIXTURE_ROSTER[0], sjt: FIXTURE_SJT[0], psy: FIXTURE_PSY[0],
+    session: FIXTURE_SESSIONS[0], comps: COMPS, orgName: FIXTURE_ORG,
+  });
+  assert.ok(huda.ok && huda.data.reasoning.check?.note === null);
+  if (huda.ok) {
+    const hs = renderSdcSummaryHtml(huda.data);
+    assert.match(hs, />Top 3 of 5</);
+    assert.ok(!/Check before use/.test(hs));
+  }
+  const group = renderSdcGroupHtml(assembleCohort({
+    cands: FIXTURE_CANDIDATES, roster: FIXTURE_ROSTER, sjt: FIXTURE_SJT, psy: FIXTURE_PSY, sessions: FIXTURE_SESSIONS, comps: COMPS, orgName: FIXTURE_ORG,
+  }));
+  assert.equal(group.match(/class="chk">check</g)?.length, 1);
+  assert.match(group, /Reasoning finished in 2 minutes; check before use/);
+  assert.match(group, /"check" marks a reasoning section finished at under 10 seconds a question on average/);
 });
 
 test("filed report kinds for the SDC reports", () => {

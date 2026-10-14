@@ -427,7 +427,19 @@ export function ProgressPanel({
                       )}
                     </td>
                   )}
-                  {stages.logica && <td className={`px-2 py-2 ${SECTION_TONE[p.logica ?? "not_started"]}`}>{SECTION_LABEL[p.logica ?? "not_started"]}</td>}
+                  {stages.logica && (
+                    <td className={`px-2 py-2 ${SECTION_TONE[p.logica ?? "not_started"]}`}>
+                      {SECTION_LABEL[p.logica ?? "not_started"]}
+                      {p.reasoningCheck?.short && (
+                        <div
+                          title={p.reasoningCheck.note ?? undefined}
+                          className={`mt-0.5 inline-flex items-center gap-1 whitespace-nowrap rounded px-1 text-[10px] font-semibold ${p.reasoningCheck.rushed ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}
+                        >
+                          {p.reasoningCheck.rushed && <AlertTriangle className="h-3 w-3" />} {p.reasoningCheck.short}
+                        </div>
+                      )}
+                    </td>
+                  )}
                   {stages.persona && <td className={`px-2 py-2 ${SECTION_TONE[p.persona ?? "not_started"]}`}>{SECTION_LABEL[p.persona ?? "not_started"]}</td>}
                   <td className="whitespace-nowrap px-2 py-2">{ago(p.lastActivityAt, now)}</td>
                   <td className="px-2 py-2">

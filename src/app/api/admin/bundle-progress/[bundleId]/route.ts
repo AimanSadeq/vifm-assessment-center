@@ -39,7 +39,7 @@ export async function GET(_req: Request, { params }: { params: { bundleId: strin
     "Name", "Email", "Employee ID", "Grade", "Position", "Business unit", "Tester", "On approved list",
     "Status", "Signed in", "Consent given",
     ...(stages.sjt ? ["Scenarios answered", "Scenarios total", "Scenarios"] : []),
-    ...(stages.logica ? ["Reasoning"] : []),
+    ...(stages.logica ? ["Reasoning", "Reasoning minutes", "Reasoning questions answered", "Reasoning check"] : []),
     ...(stages.persona ? ["Persona"] : []),
     "Last activity", "Days since last activity", "Completed", "Scored", "Times contacted", "Last contacted", "Needs follow-up",
   ];
@@ -47,7 +47,14 @@ export async function GET(_req: Request, { params }: { params: { bundleId: strin
     p.name, p.email, p.employeeId, p.grade, p.position, p.businessUnit, p.isTester ? "Yes" : "", p.onRoster ? "Yes" : "No",
     PERSON_STATUS_LABEL[p.status], fmtKsa(p.startedAt), fmtKsa(p.consentAt),
     ...(stages.sjt ? [p.sjt?.answered ?? 0, p.sjt?.total || null, SECTION_LABEL[p.sjt?.state ?? "not_started"]] : []),
-    ...(stages.logica ? [SECTION_LABEL[p.logica ?? "not_started"]] : []),
+    ...(stages.logica
+      ? [
+          SECTION_LABEL[p.logica ?? "not_started"],
+          p.reasoningCheck?.seconds != null ? Math.round(p.reasoningCheck.seconds / 6) / 10 : null,
+          p.reasoningCheck?.total != null && p.reasoningCheck.answered != null ? `${p.reasoningCheck.answered} of ${p.reasoningCheck.total}` : null,
+          p.reasoningCheck?.note ?? "",
+        ]
+      : []),
     ...(stages.persona ? [SECTION_LABEL[p.persona ?? "not_started"]] : []),
     fmtKsa(p.lastActivityAt), daysSince(p.lastActivityAt), fmtKsa(p.completedAt), fmtKsa(p.scoredAt),
     p.contacts, fmtKsa(p.lastContactAt), p.followUp ? FOLLOW_UP_LABEL[p.followUp] : "",

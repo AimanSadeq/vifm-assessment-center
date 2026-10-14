@@ -4,7 +4,7 @@
 
 import v3 from "../../bespoke/frameworks/sdc-v3.json";
 import { SDC_CODES, type SdcCompetency } from "./rules";
-import type { CandidateRow, RosterLite, SjtResultLite, PsyLite } from "./assemble";
+import type { CandidateRow, RosterLite, SjtResultLite, PsyLite, SessionLite } from "./assemble";
 
 const LV: Record<string, number> = { Basic: 1, Proficient: 2, Advanced: 3 };
 const CODE: Record<string, string> = {
@@ -45,6 +45,8 @@ type Spec = {
   res: number[]; // IN RO ECC PI AO SM DSP EDP IM LBE
   num: number; ind: number;
   status?: string; tester?: boolean;
+  /** Reasoning section time in seconds (default 22 minutes) and questions answered (default all 18). */
+  secs?: number; answered?: number;
 };
 
 // The individual-report candidate first: Grade 7 with five gaps (PI -2; RO, AO, DSP, IM -1).
@@ -58,7 +60,7 @@ const SPECS: Spec[] = [
   { name: "Bandar Al-Anazi", grade: 6, unit: "Corporate Services", position: "Senior Specialist, Procurement", res: [2, 2, 2, 2, 2, 1, 1, 1, 0, 1], num: 69, ind: 72 },
   { name: "Yousef Al-Shamrani", grade: 5, unit: "Development & Asset Management", position: "Specialist, Planning", res: [3, 2, 3, 2, 3, 2, 1, 2, 1, 1], num: 74, ind: 79 },
   { name: "Rawan Al-Malki", grade: 5, unit: "Finance", position: "Specialist, Reporting", res: [2, 2, 2, 2, 2, 1, 1, 1, 1, 1], num: 63, ind: 58 },
-  { name: "Joud Al-Balawi", grade: 5, unit: "Strategy", position: "Specialist, Research", res: [1, 1, 2, 2, 1, 0, 0, 1, 0, 1], num: 47, ind: 52 },
+  { name: "Joud Al-Balawi", grade: 5, unit: "Strategy", position: "Specialist, Research", res: [1, 1, 2, 2, 1, 0, 0, 1, 0, 1], num: 47, ind: 52, secs: 130, answered: 16 },
   { name: "Areej Al-Saadi", grade: 4, unit: "Commercial", position: "Senior Analyst, Sales", res: [3, 2, 2, 3, 3, 1, 1, 1, 1, 1], num: 77, ind: 71 },
   { name: "Dana Al-Hazmi", grade: 4, unit: "Finance", position: "Senior Analyst, Budgeting", res: [2, 2, 2, 2, 1, 1, 0, 1, 0, 1], num: 58, ind: 63 },
   // Left out of the group report: a tester, someone still in progress.
@@ -77,6 +79,7 @@ export const FIXTURE_CANDIDATES: CandidateRow[] = SPECS.map((s, i) => ({
   bespoke_service_id: BUNDLE,
   organization_id: uuid(1, "0aa"),
   cognitive_result_id: s.status === "in_progress" ? null : uuid(i + 1, "002"),
+  cognitive_session_id: s.status === "in_progress" ? null : uuid(i + 1, "003"),
 }));
 
 export const FIXTURE_ROSTER: RosterLite[] = [
@@ -96,5 +99,14 @@ export const FIXTURE_SJT: SjtResultLite[] = SPECS.flatMap((s, i) =>
 export const FIXTURE_PSY: PsyLite[] = SPECS.flatMap((s, i) =>
   s.status === "in_progress"
     ? []
-    : [{ id: uuid(i + 1, "002"), scales: [{ key: "numerical", raw: s.num, band: "x" }, { key: "inductive", raw: s.ind, band: "x" }] }],
+    : [{
+        id: uuid(i + 1, "002"),
+        scales: [{ key: "numerical", raw: s.num, band: "x" }, { key: "inductive", raw: s.ind, band: "x" }],
+        created_at: "2026-10-12T09:00:00Z",
+        result: { answeredCount: s.answered ?? 18, totalCount: 18 },
+      }],
+);
+
+export const FIXTURE_SESSIONS: SessionLite[] = SPECS.flatMap((s, i) =>
+  s.status === "in_progress" ? [] : [{ id: uuid(i + 1, "003"), created_at: new Date(Date.parse("2026-10-12T09:00:00Z") - (s.secs ?? 22 * 60) * 1000).toISOString() }],
 );

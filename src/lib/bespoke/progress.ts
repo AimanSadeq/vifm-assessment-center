@@ -6,6 +6,7 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import type { BundleSettings } from "./bundle-settings";
 import type { RosterRow } from "./roster";
+import { reasoningCheck } from "./reasoning-check";
 
 import {
   followUpReason,
@@ -32,6 +33,7 @@ type CandRow = {
 };
 type SjtRow = { bundle_candidate_id: string; item_order: unknown; answers: unknown; submitted_at: string | null; updated_at: string | null };
 type ContactRow = { roster_id: string | null; email_norm: string; created_at: string };
+type PsyResultRow = { id: string; created_at: string; result: { answeredCount?: unknown; totalCount?: unknown } | null };
 
 const candStatus = (c: CandRow | undefined): PersonStatus => {
   if (!c) return "not_started";
@@ -62,7 +64,7 @@ export async function loadBundleProgress(
   }
   const ids = cands.map((c) => c.id);
 
-  const [sjtRows, psyRows, personaRows, contactRows] = await Promise.all([
+  const [sjtRows, psyRows, personaRows, contactRows, psyResultRows] = await Promise.all([
     stages.sjt && ids.length
       ? sb.from("bundle_sjt_results").select("bundle_candidate_id, item_order, answers, submitted_at, updated_at").eq("bespoke_service_id", bundleId)
           .then((r) => (r.data ?? []) as SjtRow[], () => [] as SjtRow[])
@@ -85,11 +87,20 @@ export async function loadBundleProgress(
       : Promise.resolve([] as Array<{ id: string; status: string; updated_at: string | null }>),
     sb.from("bundle_contact_log").select("roster_id, email_norm, created_at").eq("bespoke_service_id", bundleId).order("created_at", { ascending: false })
       .then((r) => (r.error ? [] : (r.data ?? [])) as ContactRow[], () => [] as ContactRow[]),
+    stages.logica
+      ? (async () => {
+          const ids = cands.map((c) => c.cognitive_result_id).filter((x): x is string => !!x);
+          if (!ids.length) return [] as PsyResultRow[];
+          const r = await sb.from("psy_results").select("id, created_at, result").in("id", ids);
+          return (r.data ?? []) as unknown as PsyResultRow[];
+        })()
+      : Promise.resolve([] as PsyResultRow[]),
   ]);
 
   const candById = new Map(cands.map((c) => [c.id, c]));
   const sjtByCand = new Map(sjtRows.map((s) => [s.bundle_candidate_id, s]));
   const psyById = new Map(psyRows.map((p) => [p.id, p]));
+  const psyResultById = new Map(psyResultRows.map((p) => [p.id, p]));
   const personaById = new Map(personaRows.map((p) => [p.id, p]));
   const contactsByEmail = new Map<string, ContactRow[]>();
   for (const c of contactRows) {
@@ -109,6 +120,7 @@ export async function loadBundleProgress(
     const total = Array.isArray(sjt?.item_order) ? (sjt!.item_order as unknown[]).length : 0;
     const psy = c?.cognitive_session_id ? psyById.get(c.cognitive_session_id) : undefined;
     const persona = c?.persona_session_id ? personaById.get(c.persona_session_id) : undefined;
+    const psyResult = c?.cognitive_result_id ? psyResultById.get(c.cognitive_result_id) : undefined;
     const contacts = contactsByEmail.get(email) ?? [];
     const status = candStatus(c);
     const p: PersonProgress = {
@@ -131,6 +143,9 @@ export async function loadBundleProgress(
       lastActivityAt: c ? latest(c.created_at, c.consent_at, c.completed_at, c.updated_at, sjt?.updated_at, sjt?.submitted_at, psy?.created_at, persona?.updated_at) : null,
       sjt: stages.sjt ? { state: sjt?.submitted_at ? "done" : sjt ? "in_progress" : "not_started", answered, total } : null,
       logica: stages.logica ? (c?.cognitive_result_id ? "done" : c?.cognitive_session_id ? "in_progress" : "not_started") : null,
+      reasoningCheck: psyResult
+        ? reasoningCheck({ startedAt: psy?.created_at, submittedAt: psyResult.created_at, answered: psyResult.result?.answeredCount, total: psyResult.result?.totalCount })
+        : null,
       persona: stages.persona ? (persona?.status === "submitted" ? "done" : persona ? "in_progress" : "not_started") : null,
       contacts: contacts.length,
       lastContactAt: contacts[0]?.created_at ?? null,

@@ -5,6 +5,7 @@
 
 import v3 from "../../bespoke/frameworks/sdc-v3.json";
 import idpContent from "./idp-content.json";
+import type { ReasoningCheck } from "../../bespoke/reasoning-check";
 
 /** The ten SDC competency codes. A bundle with exactly these is an SDC report bundle. */
 export const SDC_CODES = ["IN", "RO", "ECC", "PI", "AO", "SM", "DSP", "EDP", "IM", "LBE"] as const;
@@ -102,7 +103,14 @@ export function fit(rows: CompRow[]): Fit {
 // ---------------------------------------------------------------- Reasoning
 
 export type ReasoningTest = { key: string; name: string; pct: number };
-export type Reasoning = { tests: ReasoningTest[]; mean: number; band: 0 | 1 | 2; label: string };
+export type Reasoning = {
+  tests: ReasoningTest[];
+  mean: number;
+  band: 0 | 1 | 2;
+  label: string;
+  /** Time taken and unanswered questions, when the sitting is known (assemble.ts). */
+  check?: ReasoningCheck | null;
+};
 
 const TEST_ORDER = ["numerical", "verbal", "inductive", "deductive"];
 const TEST_NAME: Record<string, string> = { numerical: "Numerical", verbal: "Verbal", inductive: "Inductive", deductive: "Deductive" };

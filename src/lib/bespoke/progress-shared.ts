@@ -1,6 +1,8 @@
 // Bundle progress: the parts safe for client components (labels, types, the
 // follow-up rule and the reminder text). The loader lives in ./progress.
 
+import type { ReasoningCheck } from "./reasoning-check";
+
 export type PersonStatus = "not_started" | "signed_in" | "in_progress" | "completed" | "scored";
 
 export const PERSON_STATUS_LABEL: Record<PersonStatus, string> = {
@@ -42,6 +44,8 @@ export type PersonProgress = {
   lastActivityAt: string | null;
   sjt: { state: SectionState; answered: number; total: number } | null;
   logica: SectionState | null;
+  /** Time taken and unanswered questions once the reasoning section is submitted. */
+  reasoningCheck: ReasoningCheck | null;
   persona: SectionState | null;
   contacts: number;
   lastContactAt: string | null;

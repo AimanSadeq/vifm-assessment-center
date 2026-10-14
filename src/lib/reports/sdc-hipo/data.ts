@@ -9,11 +9,13 @@ import { fetchAllPages, fetchAllByIdChunks } from "@/lib/ara/paginate";
 import { isSdcFramework, type SdcCompetency } from "./rules";
 import {
   assembleCandidate, assembleCohort, DONE_STATUSES,
-  type AssembleResult, type CandidateRow, type RosterLite, type SjtResultLite, type PsyLite,
+  type AssembleResult, type CandidateRow, type RosterLite, type SjtResultLite, type PsyLite, type SessionLite,
 } from "./assemble";
 import type { SdcCandidateReport, SdcCohortReport } from "./html";
 
-const CAND_COLS = "id, full_name, email, completed_at, status, bespoke_service_id, organization_id, cognitive_result_id";
+const CAND_COLS = "id, full_name, email, completed_at, status, bespoke_service_id, organization_id, cognitive_result_id, cognitive_session_id";
+// Submission time and question counts for the reasoning sitting check.
+const PSY_COLS = "id, scales, created_at, result";
 const ROSTER_COLS = "bundle_candidate_id, grade, position, business_unit, is_tester";
 
 type BundleInfo = { id: string; name: string | null; orgName: string | null; comps: SdcCompetency[] };
@@ -55,7 +57,7 @@ export async function loadSdcCandidateReport(
   const bundle = await loadSdcBundle(cand.bespoke_service_id);
   if (!bundle.ok) return bundle;
 
-  const [roster, sjt, psy] = await Promise.all([
+  const [roster, sjt, psy, session] = await Promise.all([
     sb
       .from("bundle_roster")
       .select(ROSTER_COLS)
@@ -68,7 +70,10 @@ export async function loadSdcCandidateReport(
       .eq("bundle_candidate_id", cand.id)
       .maybeSingle<SjtResultLite>(),
     cand.cognitive_result_id
-      ? sb.from("psy_results").select("id, scales").eq("id", cand.cognitive_result_id).maybeSingle<PsyLite>()
+      ? sb.from("psy_results").select(PSY_COLS).eq("id", cand.cognitive_result_id).maybeSingle<PsyLite>()
+      : Promise.resolve({ data: null }),
+    cand.cognitive_session_id
+      ? sb.from("psy_sessions").select("id, created_at").eq("id", cand.cognitive_session_id).maybeSingle<SessionLite>()
       : Promise.resolve({ data: null }),
   ]);
 
@@ -77,6 +82,7 @@ export async function loadSdcCandidateReport(
     roster: roster.data ?? null,
     sjt: sjt.data ?? null,
     psy: psy.data ?? null,
+    session: session.data ?? null,
     comps: bundle.data.comps,
     orgName: bundle.data.orgName,
   });
@@ -99,15 +105,19 @@ export async function loadSdcCohortReport(bundleId: string): Promise<AssembleRes
   ]);
   const candIds = cands.map((c) => c.id);
   const psyIds = cands.map((c) => c.cognitive_result_id).filter((x): x is string => !!x);
-  const [sjt, psy] = await Promise.all([
+  const sessionIds = cands.map((c) => c.cognitive_session_id).filter((x): x is string => !!x);
+  const [sjt, psy, sessions] = await Promise.all([
     fetchAllByIdChunks<SjtResultLite>(candIds, (chunk, from, to) =>
       sb.from("bundle_sjt_results").select("bundle_candidate_id, scores, submitted_at").in("bundle_candidate_id", chunk).order("bundle_candidate_id").range(from, to),
     ),
     fetchAllByIdChunks<PsyLite>(psyIds, (chunk, from, to) =>
-      sb.from("psy_results").select("id, scales").in("id", chunk).order("id").range(from, to),
+      sb.from("psy_results").select(PSY_COLS).in("id", chunk).order("id").range(from, to),
+    ),
+    fetchAllByIdChunks<SessionLite>(sessionIds, (chunk, from, to) =>
+      sb.from("psy_sessions").select("id, created_at").in("id", chunk).order("id").range(from, to),
     ),
   ]);
 
-  const report = assembleCohort({ cands, roster, sjt, psy, comps: bundle.data.comps, orgName: bundle.data.orgName });
+  const report = assembleCohort({ cands, roster, sjt, psy, sessions, comps: bundle.data.comps, orgName: bundle.data.orgName });
   return { ok: true, data: { ...report, bundleName: bundle.data.name } };
 }

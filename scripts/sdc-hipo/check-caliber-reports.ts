@@ -1,6 +1,8 @@
 // Local render check for the in-app SDC reports: builds the executive summary,
-// IDP and group report from the fictional fixture through the same assemble +
-// html code as the routes, and prints them to PDF with a local Chromium.
+// IDP and group report from the fictional fixture (plus a worst case: every
+// competency below the Grade 8 requirement and a rushed reasoning section)
+// through the same assemble + html code as the routes, and prints them to PDF
+// with a local Chromium.
 //
 //   PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome \
 //     npx tsx scripts/sdc-hipo/check-caliber-reports.ts /tmp/sdc-reports-check [bigCohortSize]
@@ -14,7 +16,7 @@ import puppeteer from "puppeteer";
 import { assembleCandidate, assembleCohort } from "../../src/lib/reports/sdc-hipo/assemble";
 import { renderSdcSummaryHtml, renderSdcIdpHtml, renderSdcGroupHtml } from "../../src/lib/reports/sdc-hipo/html";
 import {
-  FIXTURE_CANDIDATES, FIXTURE_ROSTER, FIXTURE_SJT, FIXTURE_PSY, FIXTURE_COMPETENCIES, FIXTURE_ORG,
+  FIXTURE_CANDIDATES, FIXTURE_ROSTER, FIXTURE_SJT, FIXTURE_PSY, FIXTURE_SESSIONS, FIXTURE_COMPETENCIES, FIXTURE_ORG,
 } from "../../src/lib/reports/sdc-hipo/fixture";
 
 async function main() {
@@ -28,14 +30,29 @@ async function main() {
     roster: FIXTURE_ROSTER.find((r) => r.bundle_candidate_id === cand.id) ?? null,
     sjt: FIXTURE_SJT.find((s) => s.bundle_candidate_id === cand.id) ?? null,
     psy: FIXTURE_PSY.find((p) => p.id === cand.cognitive_result_id) ?? null,
+    session: FIXTURE_SESSIONS.find((s) => s.id === cand.cognitive_session_id) ?? null,
     comps: FIXTURE_COMPETENCIES,
     orgName: FIXTURE_ORG,
   });
   if (!one.ok) throw new Error(one.error);
-  const base = { roster: FIXTURE_ROSTER, sjt: FIXTURE_SJT, psy: FIXTURE_PSY, comps: FIXTURE_COMPETENCIES, orgName: FIXTURE_ORG };
+  // Worst case for space: every competency below the Grade 8 requirement, a long
+  // name and position, and a rushed reasoning section with blanks.
+  const worst = assembleCandidate({
+    cand: { ...cand, full_name: "Abdulrahman Mohammed Abdullah Al-Qahtani", cognitive_session_id: "ws" },
+    roster: { bundle_candidate_id: cand.id, grade: 8, position: "Senior Manager, Development and Asset Management Programmes", business_unit: "Development & Asset Management", is_tester: false },
+    sjt: { bundle_candidate_id: cand.id, scores: Object.fromEntries(FIXTURE_COMPETENCIES.map((c) => [c.code, { level: 0, items: 3 }])), submitted_at: "2026-10-12T08:00:00Z" },
+    psy: { id: "w", scales: [{ key: "numerical", raw: 0 }, { key: "inductive", raw: 11 }], created_at: "2026-10-12T09:00:59Z", result: { answeredCount: 14, totalCount: 18 } },
+    session: { id: "ws", created_at: "2026-10-12T09:00:00Z" },
+    comps: FIXTURE_COMPETENCIES,
+    orgName: FIXTURE_ORG,
+  });
+  if (!worst.ok) throw new Error(worst.error);
+  const base = { roster: FIXTURE_ROSTER, sjt: FIXTURE_SJT, psy: FIXTURE_PSY, sessions: FIXTURE_SESSIONS, comps: FIXTURE_COMPETENCIES, orgName: FIXTURE_ORG };
   const docs: Array<[string, string]> = [
     ["Summary", renderSdcSummaryHtml(one.data)],
     ["IDP", renderSdcIdpHtml(one.data)],
+    ["Summary-Worst", renderSdcSummaryHtml(worst.data)],
+    ["IDP-Worst", renderSdcIdpHtml(worst.data)],
     ["Group", renderSdcGroupHtml(assembleCohort({ ...base, cands: FIXTURE_CANDIDATES }))],
   ];
   if (big > 0) {

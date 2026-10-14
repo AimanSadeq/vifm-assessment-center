@@ -4,6 +4,7 @@
 // route renders the HTML to PDF with the shared Chromium launcher.
 
 import { esc, svg, vifmLogoColour, FONT_LINKS, BASE_CSS } from "./brand";
+import { durationText, RUSHED_SECONDS_PER_QUESTION } from "../../bespoke/reasoning-check";
 import {
   GRID, GRADE_LABEL, MODULE, levelName, fit as fitOf, strengthsOf, gapsOf, selectIdp, idpItems,
   reasoningTestsPhrase, numberWord, rankCohort, compareCodes, gapRates, fitOverReasoningNote, leadershipFromGrade, gradeSpan, joinAnd,
@@ -70,8 +71,27 @@ table.rk { table-layout:fixed; }
 .ms { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:3px; }
 .ms div { border:1px solid var(--line); border-radius:5px; padding:2px 5px; font-size:8px; line-height:1.3; }
 .ms b { font-size:7.2px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-right:3px; }
-.idp { margin-top:5px; padding:5px 10px; }
-.idp .small { font-size:8.5px; line-height:1.36; }
+.idp { padding:11px 14px; }
+.idp .small { font-size:8.5px; line-height:1.45; }
+.idp > * + * { margin-top:7px; }
+.idp .act td { padding:2px 6px; } .idp .ms div { padding:4px 7px; }
+.idph { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.idp .dir { color:var(--mid); margin-top:3px; }
+.mbox { display:grid; grid-template-columns:1fr 1.7fr 1fr; gap:5px; }
+.mbox > div { background:var(--off); border:1px solid var(--gray); border-radius:5px; padding:5px 8px; font-size:8.3px; line-height:1.35; }
+.mbox .k { display:flex; align-items:center; gap:4px; font-size:7.2px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:1px; }
+.flow > * + * { margin-top:14px; }
+.flow > .closing { margin-top:16px; }
+.contband { border-bottom:2px solid var(--navy); padding:0 0 5px; margin:4px 0 12px; font-size:10px; color:var(--mid); }
+.stack { display:flex; flex-direction:column; gap:10px; }
+.blk { margin-top:14px; }
+.eyebrow .cnt { margin-left:auto; font-size:7.6px; letter-spacing:0; text-transform:none; padding:0 6px; }
+.fit1.snug .blk { margin-top:11px; } .fit1.snug .stack { gap:8px; }
+.fit1.tight .blk { margin-top:9px; } .fit1.tight .stack { gap:7px; } .fit1.tight .card { padding:8px 11px; } .fit1.tight table.t.cp td { padding:2px 6px; }
+.fit1.tighter .grid9 .cell { min-height:38px; padding:3px 5px; } .fit1.tighter .note, .fit1.tighter .disclaimer { font-size:7.6px; line-height:1.35; } .fit1.tighter ul.ind.cp li { line-height:1.3; }
+.flag { display:flex; gap:6px; align-items:flex-start; border:1px solid #F5D9A8; border-left:3px solid var(--amber); background:var(--amberbg); border-radius:5px; padding:5px 8px; font-size:8.2px; line-height:1.4; color:#78350F; }
+.flag .ic { flex:0 0 auto; margin-top:1px; color:var(--amber); }
+.rk .chk { display:inline-block; margin-left:3px; font-size:7px; font-weight:700; background:var(--amberbg); color:var(--amber); border-radius:3px; padding:0 3px; vertical-align:middle; }
 .idpk .kpi { padding:5px 10px; } .idpk .kpi .v { font-size:15px; }
 .sig { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:4px; }
 .sig div { border-top:1px solid var(--text); padding-top:3px; font-size:8.5px; color:var(--muted); }
@@ -148,12 +168,37 @@ function header(r: SdcCandidateReport, title: string): string {
 
 // ---------------------------------------------------------------- 1. Executive summary
 
+/** How many development priorities the one-page summary lists; the table marks every gap. */
+const SUMMARY_MAX_GAPS = 3;
+
+/** The reasoning sitting check: an amber box when rushed, a plain note for unanswered questions. */
+function checkNote(r: Reasoning, style = ""): string {
+  const c = r.check;
+  if (!c?.note) return "";
+  return c.rushed
+    ? `<div class="flag"${style ? ` style="${style}"` : ""}>${svg("alert", 11)}<span><b>Check before use.</b> ${esc(c.note)}</span></div>`
+    : `<p class="note"${style ? ` style="${style}"` : ""}>${esc(c.note)}</p>`;
+}
+
+/** Tightens a one-page report step by step until its last block clears the footer. */
+const FIT_ONE_PAGE_JS = `
+window.__sdcLayout = function () {
+  var page = document.querySelector(".page.fit1");
+  if (!page) return 0;
+  function over() { return page.querySelector(".fitend").getBoundingClientRect().bottom > page.querySelector(".pfoot").getBoundingClientRect().top - 6; }
+  var steps = ["snug", "tight", "tighter"];
+  for (var i = 0; i < steps.length && over(); i++) page.classList.add(steps[i]);
+  return 1;
+};`;
+
 export function renderSdcSummaryHtml(r: SdcCandidateReport): string {
   const F = fitOf(r.rows);
   const G = r.reasoning;
   const P = GRID[G.band][F.band];
   const strengths = strengthsOf(r.rows).slice(0, 3);
-  const gaps = gapsOf(r.rows);
+  const allGaps = gapsOf(r.rows);
+  const gaps = allGaps.slice(0, SUMMARY_MAX_GAPS);
+  const moreGaps = allGaps.length - gaps.length;
   const testsPhrase = reasoningTestsPhrase(G);
 
   let comp = "";
@@ -173,55 +218,104 @@ export function renderSdcSummaryHtml(r: SdcCandidateReport): string {
     : "scenario questions";
   const leadFrom = leadershipFromGrade(r.comps);
 
-  const body = `<div class="page">${header(r, "Executive summary")}
-<div style="display:grid;grid-template-columns:1.15fr 1fr;gap:12px;margin-top:10px">
+  // One page: the reasoning check and a long name can push it over, so the
+  // layout script tightens the spacing only when the page would overflow.
+  const body = `<div class="page fit1">${header(r, "Executive summary")}
+<div class="blk" style="display:grid;grid-template-columns:1.15fr 1fr;gap:12px">
   <div class="card"><div class="eyebrow">${svg("target")} Potential placement</div>${grid9(G.band, F.band, { rules: true })}</div>
-  <div style="display:flex;flex-direction:column;gap:8px">
+  <div class="stack">
     <div class="card soft"><div class="eyebrow">${svg("star")} Headline</div>
-      <div style="font-size:16px;font-weight:700;color:var(--navy)">${esc(P.t)}</div>
-      <p style="margin:3px 0 0">${esc(P.d)} Meets ${F.met} of ${F.total} competencies required for Grade ${r.grade}, exceeding ${F.above}, with ${esc(G.label.toLowerCase())} reasoning.</p></div>
+      <div style="font-size:16px;font-weight:700;color:var(--navy);line-height:1.25">${esc(P.t)}</div>
+      <p style="margin:3px 0 0">${esc(P.d)}</p></div>
     <div class="grid2">
       <div class="kpi"><div class="l">Competency fit</div><div class="v">${F.met} / ${F.total}</div><div class="small muted">required competencies met, ${F.above} above</div></div>
       <div class="kpi"><div class="l">Reasoning performance</div><div class="v">${G.mean}%</div><div class="small muted">${esc(G.label)} (mean of ${numberWord(G.tests.length)} Logica test${G.tests.length === 1 ? "" : "s"})</div></div>
     </div>
     <div class="card"><div class="eyebrow">${svg("brain")} Reasoning tests</div>
       ${G.tests.map((t) => `<div class="cogrow"><span>${esc(t.name)}</span><div class="bar"><div class="fill" style="width:${t.pct}%"></div></div><b>${t.pct}%</b></div>`).join("")}
+      ${checkNote(G, "margin:5px 0 0")}
     </div>
     ${DISCLAIMER}
   </div>
 </div>
-<h2 style="margin-top:12px">Competency results against the Grade ${r.grade} requirement</h2>
-<table class="t cp"><tr><th>Competency</th><th style="width:78px">Required</th><th style="width:120px">Result</th><th style="width:90px">Required vs result</th><th style="width:118px">Programme module</th></tr>${comp}</table>
-<div class="grid2" style="margin-top:10px">
+<div class="card blk"><div class="eyebrow">${svg("grid")} Competency results against the Grade ${r.grade} requirement</div>
+<table class="t cp"><tr><th>Competency</th><th style="width:74px">Required</th><th style="width:118px">Result</th><th style="width:82px">Vs required</th><th style="width:122px">Module</th></tr>${comp}</table></div>
+<div class="grid2 blk">
   <div class="card"><div class="eyebrow">${svg("plus")} Strengths to build on</div>${strengths.length ? `<ul class="ind pos cp">${strengths.map((s) => li(s, "check")).join("")}</ul>` : `<p class="small muted" style="margin:0">No required competency is above the level for Grade ${r.grade} yet.</p>`}</div>
-  <div class="card"><div class="eyebrow">${svg("trend")} Development priorities</div>${gaps.length ? `<ul class="ind neg cp">${gaps.map((s) => li(s, "target")).join("")}</ul>` : `<p class="small muted" style="margin:0">Every required competency is at or above the level for Grade ${r.grade}.</p>`}</div>
+  <div class="card"><div class="eyebrow">${svg("trend")} Development priorities${moreGaps > 0 ? `<span class="pill gray cnt">Top ${gaps.length} of ${allGaps.length}</span>` : ""}</div>${gaps.length ? `<ul class="ind neg cp">${gaps.map((s) => li(s, "target")).join("")}</ul>` : `<p class="small muted" style="margin:0">Every required competency is at or above the level for Grade ${r.grade}.</p>`}</div>
 </div>
-<p class="note" style="margin-top:8px"><b>How to read this.</b> Competency results come from ${esc(scenText)} that measure judgement in realistic SDC work situations; they are not observations of behaviour at work. Reasoning performance is the mean accuracy on ${esc(testsPhrase)}. Bands are indicative until an SDC cohort norm is available.${leadFrom != null ? ` Leadership competencies are not required below Grade ${leadFrom} and are then shown for development only.` : ""}</p>
+<div class="card soft blk fitend" style="padding:7px 12px"><p class="note" style="margin:0"><b>How to read this.</b> Competency results come from ${esc(scenText)} that measure judgement in realistic SDC work situations; they are not observations of behaviour at work. Reasoning performance is the mean accuracy on ${esc(testsPhrase)}. Bands are indicative until an SDC cohort norm is available.${leadFrom != null ? ` Leadership competencies are not required below Grade ${leadFrom} and are then shown for development only.` : ""}</p></div>
 ${pfoot(`${PROGRAMME}  |  Executive summary`)}</div>`;
-  return doc(`${r.name}: SDC executive summary`, body);
+  return doc(`${r.name}: SDC executive summary`, `${body}<script>${FIT_ONE_PAGE_JS}</script>`);
 }
 
 // ---------------------------------------------------------------- 2. Individual development plan
 
-function idpCard(p: IdpItem, i: number): string {
+/**
+ * Who confirms the evidence for each IDP item. A default until Ali confirms
+ * with Suzanne how line managers take part (Ali, 14 Oct 2026: record the
+ * baseline, target and evidence owner).
+ */
+export const EVIDENCE_OWNER = "Line manager confirms; VIFM coach records";
+
+function idpCard(p: IdpItem, i: number, r: SdcCandidateReport): string {
   const isGap = p.type === "gap";
   const label = isGap ? "Close the gap" : "Build on a strength";
+  // Ali, 14 Oct 2026: the target level is a development direction, not a promise of a new level in 90 days.
+  const now = levelName(p.row.res);
+  const direction = isGap
+    ? `${now} now, developing towards ${p.target}, the level required for Grade ${r.grade}`
+    : `${now} now (Grade ${r.grade} requires ${p.row.req ? levelName(p.row.req) : "no level"}), developing towards ${p.target}`;
   const parts: string[] = [];
-  if (p.goals.length) parts.push(`<div class="small" style="margin:2px 0 1px"><b>Goal behaviours (${p.target}):</b> ${p.goals.map(esc).join("; ")}.</div>`);
-  if (p.plan) parts.push(`<div class="small" style="margin:0 0 2px"><b>SMART goal:</b> ${esc(p.plan.smart)}</div>`);
+  parts.push(`<div class="mbox">
+    <div><div class="k">${svg("pin", 10)} Baseline</div>${esc(now)} on the Caliber scenarios${r.assessedOn ? `, ${esc(r.assessedOn)}` : ""}</div>
+    <div><div class="k">${svg("flag", 10)} 90-day target</div>${p.plan ? esc(p.plan.smart) : "Agreed with the participant at the Module 1 debrief."}</div>
+    <div><div class="k">${svg("user", 10)} Evidence owner</div>${esc(EVIDENCE_OWNER)}</div>
+  </div>`);
+  if (p.goals.length) parts.push(`<div class="small"><b>Development direction (${p.target} behaviours):</b> ${p.goals.map(esc).join("; ")}.</div>`);
   if (p.actions) {
     parts.push(`<table class="act"><tr><td class="h">On the job</td><td>${esc(p.actions.job)}</td></tr><tr><td class="h">Coaching</td><td>${esc(p.actions.coaching)}</td></tr><tr><td class="h">Learning</td><td>${esc(p.actions.learning)}</td></tr></table>`);
   }
   if (p.plan) {
     parts.push(`<div class="ms"><div><b>Day 30</b>${esc(p.plan.day30)}</div><div><b>Day 60</b>${esc(p.plan.day60)}</div><div><b>Day 90</b>${esc(p.plan.day90)}</div></div>`);
-    parts.push(`<div class="small" style="margin-top:2px"><b>Evidence of progress:</b> ${esc(p.plan.evidence)}</div>`);
+    parts.push(`<div class="small"><b>Evidence of progress:</b> ${esc(p.plan.evidence)}</div>`);
   }
   if (!p.plan && !p.actions) parts.push(`<div class="small muted">Actions and milestones for this level are agreed with the participant at the Module 1 debrief.</div>`);
   return `<div class="card idp">
-  <div style="display:flex;justify-content:space-between;align-items:center"><div><span class="pill ${isGap ? "amber" : "green"}">${i + 1}. ${label}</span> <b style="font-size:12px;color:var(--navy);margin-left:4px">${esc(p.row.name)}</b></div>
-  <div class="small muted">${levelName(p.row.res)} now, target ${p.target}  |  ${esc(MODULE[p.row.code] ?? "")}</div></div>
+  <div class="idph"><div><span class="pill ${isGap ? "amber" : "green"}">${i + 1}. ${label}</span> <b style="font-size:12.5px;color:var(--navy);margin-left:4px">${esc(p.row.name)}</b></div>
+  <div class="small muted" style="white-space:nowrap">${esc(MODULE[p.row.code] ?? "")}</div></div>
+  <div class="small dir">${esc(direction)}</div>
   ${parts.join("\n  ")}</div>`;
 }
+
+/**
+ * Flows the IDP blocks over as many pages as they need once fonts are loaded:
+ * a block that runs into a page's footer moves, whole, to a continuation page.
+ * The PDF renderer calls window.__sdcLayout() before printing.
+ */
+const IDP_LAYOUT_JS = `
+window.__sdcLayout = function () {
+  var tpl = document.getElementById("flow-cont");
+  var page = document.querySelector(".page.flow-first");
+  if (!tpl || !page) return 0;
+  var GAP = 6;
+  function limit(pg) { return pg.querySelector(".pfoot").getBoundingClientRect().top - GAP; }
+  var guard = 0;
+  while (guard++ < 20) {
+    var flow = page.querySelector(".flow");
+    var last = flow.lastElementChild;
+    if (!last || last.getBoundingClientRect().bottom <= limit(page)) break;
+    var next = tpl.content.firstElementChild.cloneNode(true);
+    page.parentNode.insertBefore(next, page.nextSibling);
+    var nflow = next.querySelector(".flow");
+    while (flow.children.length > 1 && flow.lastElementChild.getBoundingClientRect().bottom > limit(page)) nflow.insertBefore(flow.lastElementChild, nflow.firstChild);
+    if (flow.children.length === 1 && flow.lastElementChild.getBoundingClientRect().bottom > limit(page)) break;
+    page = next;
+  }
+  var nums = document.querySelectorAll(".page .pno");
+  for (var i = 0; i < nums.length; i++) nums[i].textContent = nums.length > 1 ? "  |  Page " + (i + 1) + " of " + nums.length : "";
+  return nums.length;
+};`;
 
 export function renderSdcIdpHtml(r: SdcCandidateReport): string {
   const F = fitOf(r.rows);
@@ -239,26 +333,38 @@ export function renderSdcIdpHtml(r: SdcCandidateReport): string {
       : sel.strength ? "strength to build" : "no gaps against the grade";
 
   const later = sel.later.length
-    ? `<p class="small" style="margin:4px 0 0"><b>Also below the requirement, to plan after day 90:</b> ${esc(joinAnd(sel.later.map((x) => x.name)))}.</p>`
+    ? `<p class="small" style="margin:0"><b>Also below the requirement, to plan after day 90:</b> ${esc(joinAnd(sel.later.map((x) => x.name)))}.</p>`
     : "";
   const empty = items.length === 0
-    ? `<div class="card soft" style="margin-top:8px"><p style="margin:0">Every required competency meets the level for Grade ${r.grade}. Agree stretch goals with the participant at the Module 1 debrief.</p></div>`
+    ? `<div class="card soft"><p style="margin:0">Every required competency meets the level for Grade ${r.grade}. Agree stretch goals with the participant at the Module 1 debrief.</p></div>`
     : "";
+  const strengthsBlock = strengths.length
+    ? `<div class="card soft" style="padding:6px 10px;display:flex;gap:6px;align-items:baseline"><span style="color:var(--accent)">${svg("star", 12)}</span>
+<p class="small" style="margin:0"><b>Strengths to use while developing:</b> ${strengths.map((s) => `<b>${esc(s.name)}</b> (${levelName(s.res)})`).join(", ")}. Look for roles in team projects that use these.</p></div>`
+    : "";
+  const closing = `<div class="closing"><div class="sig"><div>Participant</div><div>VIFM coach</div><div>SDC Talent Development</div></div>
+<p class="note" style="margin:6px 0 0;font-size:7.6px">Goal behaviours are taken from the SDC behavioural indicators for the target level, which is shown as a development direction. Each 90-day target is written in the SMART format (Doran, 1981) and records a baseline and an evidence owner. Behaviour change takes time (new habits took a median of 66 days to form in Lally et al., 2010), so a change of level is confirmed only by the post-programme reassessment, not by completing the plan. The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the Module 1 debrief and reviewed at each milestone. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p></div>`;
 
-  const body = `<div class="page">${header(r, "Individual development plan")}
-<div class="grid3 idpk" style="margin-top:8px">
+  const foot = `<div class="pfoot"><span>${esc(`${PROGRAMME}  |  Individual development plan`)}<span class="pno"></span></span><span>${esc(FOOT_RIGHT)}</span></div>`;
+  const blocks = [
+    `<div class="grid3 idpk">
   <div class="kpi"><div class="l">Placement</div><div class="v">${esc(P.t)}</div><div class="small muted">${esc(F.label)}, ${esc(G.label.toLowerCase())} reasoning</div></div>
   <div class="kpi"><div class="l">Priorities</div><div class="v">${prioV}</div><div class="small muted">${prioSub}</div></div>
   <div class="kpi"><div class="l">Review points</div><div class="v">Day 30, 60, 90</div><div class="small muted">milestones, then post-programme reassessment</div></div>
-</div>
-${items.map(idpCard).join("")}${empty}
-${later}
-${strengths.length ? `<div class="card soft" style="margin-top:5px;padding:5px 10px;display:flex;gap:6px;align-items:baseline"><span style="color:var(--accent)">${svg("star", 12)}</span>
-<p class="small" style="margin:0"><b>Strengths to use while developing:</b> ${strengths.map((s) => `<b>${esc(s.name)}</b> (${levelName(s.res)})`).join(", ")}. Look for roles in team projects that use these.</p></div>` : ""}
-<div class="sig" style="margin-top:18px"><div>Participant</div><div>VIFM coach</div><div>SDC Talent Development</div></div>
-<p class="note" style="margin-top:4px;font-size:7.6px">Goal behaviours are taken from the SDC behavioural indicators for the target level. Goals follow the SMART format (Doran, 1981). The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the Module 1 debrief and reviewed at each milestone; progress is measured again in the post-programme assessment. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p>
-${pfoot(`${PROGRAMME}  |  Individual development plan`)}</div>`;
-  return doc(`${r.name}: SDC individual development plan`, body);
+</div>`,
+    G.check?.rushed ? checkNote(G) : "",
+    ...items.map((it, i) => idpCard(it, i, r)),
+    empty,
+    later,
+    strengthsBlock,
+    closing,
+  ].filter(Boolean);
+
+  const first = `<div class="page flow-first">${header(r, "Individual development plan")}
+<div class="flow" style="margin-top:12px">${blocks.join("\n")}</div>
+${foot}</div>`;
+  const cont = `<template id="flow-cont"><div class="page">${topBar(r.orgName)}<div class="contband"><b>${esc(r.name)}</b>  |  Individual development plan (continued)</div><div class="flow"></div>${foot}</div></template>`;
+  return doc(`${r.name}: SDC individual development plan`, `${first}${cont}<script>${IDP_LAYOUT_JS}</script>`);
 }
 
 // ---------------------------------------------------------------- 3. Group report
@@ -332,8 +438,9 @@ export function renderSdcGroupHtml(c: SdcCohortReport): string {
     if (!b.people.length) continue;
     rows += `<tr class="cat"><td colspan="7">${esc(b.label)}</td></tr>`;
     b.people.forEach((p, i) => {
-      const why = fitOverReasoningNote(b.people, i);
-      rows += `<tr data-band="${esc(b.label)}"><td><b>${esc(p.code)}</b></td><td><b>${esc(p.name)}</b>${why ? `<span class="why">${esc(why)}</span>` : ""}</td><td>G${p.grade}</td><td class="small">${esc(p.unit ?? "")}</td><td>${p.fit.met}/${p.fit.total}${p.fit.above ? ` <span class="small muted">(+${p.fit.above})</span>` : ""}</td><td>${p.reasoning.mean}%</td><td><span class="pill ${pill(p)}" style="font-size:8.5px;white-space:nowrap">${esc(p.place)}</span></td></tr>`;
+      const check = p.reasoning.check?.rushed && p.reasoning.check.seconds != null ? `Reasoning finished in ${durationText(p.reasoning.check.seconds)}; check before use` : null;
+      const why = [fitOverReasoningNote(b.people, i), check].filter(Boolean).join(". ");
+      rows += `<tr data-band="${esc(b.label)}"><td><b>${esc(p.code)}</b></td><td><b>${esc(p.name)}</b>${why ? `<span class="why">${esc(why)}</span>` : ""}</td><td>G${p.grade}</td><td class="small">${esc(p.unit ?? "")}</td><td>${p.fit.met}/${p.fit.total}${p.fit.above ? ` <span class="small muted">(+${p.fit.above})</span>` : ""}</td><td>${p.reasoning.mean}%${p.reasoning.check?.rushed ? `<span class="chk">check</span>` : ""}</td><td><span class="pill ${pill(p)}" style="font-size:8.5px;white-space:nowrap">${esc(p.place)}</span></td></tr>`;
     });
   }
   const table = (body: string) =>
@@ -341,7 +448,7 @@ export function renderSdcGroupHtml(c: SdcCohortReport): string {
   // The page number is filled in by the layout script once the page count is known.
   const foot = `<div class="pfoot"><span>${esc(`${PROGRAMME}  |  Group report`)}<span class="pno"></span></span><span>${esc(FOOT_RIGHT)}</span></div>`;
 
-  const note = `<p class="note" id="rk-note" style="margin-top:8px"><b>How the ranking works.</b> Candidates are ranked within their grade band, because required levels differ by grade: first by position on the grid (competency fit plus reasoning performance), then by competency fit, share of required competencies met and number exceeded, then by reasoning accuracy. "(+n)" is the number of required competencies exceeded. <b>Why this order:</b> within the same box, candidates are ordered by competency fit first (required competencies met, then the number exceeded), then by reasoning accuracy, so a candidate can rank above someone in the same box with a higher reasoning score; the note under the name shows why. Reasoning scores within a band are close: about 6 points is one question out of 18. Rankings support the cohort selection discussion with SDC; they are not a selection decision on their own.${c.incomplete ? ` ${c.incomplete} completed ${c.incomplete === 1 ? "person is" : "people are"} not shown because a scenario or reasoning result is missing.` : ""}</p>`;
+  const note = `<p class="note" id="rk-note" style="margin-top:8px"><b>How the ranking works.</b> Candidates are ranked within their grade band, because required levels differ by grade: first by position on the grid (competency fit plus reasoning performance), then by competency fit, share of required competencies met and number exceeded, then by reasoning accuracy. "(+n)" is the number of required competencies exceeded. <b>Why this order:</b> within the same box, candidates are ordered by competency fit first (required competencies met, then the number exceeded), then by reasoning accuracy, so a candidate can rank above someone in the same box with a higher reasoning score; the note under the name shows why. Reasoning scores within a band are close: about 6 points is one question out of 18. Rankings support the cohort selection discussion with SDC; they are not a selection decision on their own.${ranked.some((p) => p.reasoning.check?.rushed) ? ` "check" marks a reasoning section finished at under ${RUSHED_SECONDS_PER_QUESTION} seconds a question on average; confirm with the candidate before relying on that score.` : ""}${c.incomplete ? ` ${c.incomplete} completed ${c.incomplete === 1 ? "person is" : "people are"} not shown because a scenario or reasoning result is missing.` : ""}</p>`;
 
   const first = `<div class="page rk-first">${topBar(c.orgName)}
 <div class="band"><div class="eyebrow">Group report</div><h1>HiPo cohort overview</h1><div class="sub">${c.people.length} candidate${c.people.length === 1 ? "" : "s"} assessed${grades.length ? `  |  ${esc(gradeSpan(grades))}` : ""}  |  Ranked within grade band</div></div>

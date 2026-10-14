@@ -2,7 +2,8 @@
 // imports) so the fixture renders and unit tests take the same path as the
 // routes. data.ts does the reads.
 
-import { compRows, fit, reasoning, requiredLevel, type SdcCompetency, type CohortPerson } from "./rules";
+import { compRows, fit, reasoning, requiredLevel, type SdcCompetency, type CohortPerson, type Reasoning } from "./rules";
+import { reasoningCheck } from "../../bespoke/reasoning-check";
 import type { SdcCandidateReport, SdcCohortReport } from "./html";
 
 export type CandidateRow = {
@@ -14,6 +15,8 @@ export type CandidateRow = {
   bespoke_service_id: string;
   organization_id: string | null;
   cognitive_result_id: string | null;
+  /** The reasoning session, for the time taken (00233; older sittings have none). */
+  cognitive_session_id?: string | null;
 };
 export type RosterLite = {
   bundle_candidate_id: string | null;
@@ -23,7 +26,14 @@ export type RosterLite = {
   is_tester: boolean;
 };
 export type SjtResultLite = { bundle_candidate_id: string; scores: unknown; submitted_at: string | null };
-export type PsyLite = { id: string; scales: unknown };
+export type PsyLite = {
+  id: string;
+  scales: unknown;
+  /** Submission time, and psy_results.result for its question counts, for the sitting check. */
+  created_at?: string | null;
+  result?: unknown;
+};
+export type SessionLite = { id: string; created_at: string };
 
 export const DONE_STATUSES = ["completed", "scored"];
 
@@ -63,6 +73,25 @@ const gradeOf = (r: RosterLite | null | undefined): number | null => {
   return r?.grade != null && Number.isFinite(g) ? g : null;
 };
 
+/** psy_results.result.answeredCount / totalCount. */
+export function resultCounts(result: unknown): { answered: unknown; total: unknown } {
+  const r = result && typeof result === "object" ? (result as { answeredCount?: unknown; totalCount?: unknown }) : {};
+  return { answered: r.answeredCount, total: r.totalCount };
+}
+
+/** Reasoning performance plus the sitting check (time taken, unanswered questions). */
+function reasoningWithCheck(cand: CandidateRow, psy: PsyLite | null | undefined, session: SessionLite | null | undefined): Reasoning | null {
+  const r = reasoning(psy?.scales);
+  if (!r || !psy) return r;
+  const check = reasoningCheck({
+    startedAt: session && session.id === cand.cognitive_session_id ? session.created_at : null,
+    submittedAt: psy.created_at,
+    answered: resultCounts(psy.result).answered,
+    total: resultCounts(psy.result).total,
+  });
+  return { ...r, check };
+}
+
 export type AssembleResult<T> = { ok: true; data: T } | { ok: false; status: number; error: string };
 
 export function assembleCandidate(input: {
@@ -70,6 +99,7 @@ export function assembleCandidate(input: {
   roster: RosterLite | null;
   sjt: SjtResultLite | null;
   psy: PsyLite | null;
+  session?: SessionLite | null;
   comps: SdcCompetency[];
   orgName: string | null;
 }): AssembleResult<SdcCandidateReport> {
@@ -83,7 +113,7 @@ export function assembleCandidate(input: {
     return { ok: false, status: 400, error: `The framework has no required levels for Grade ${grade}.` };
   }
   if (!sjt?.submitted_at) return { ok: false, status: 400, error: "The scenario section has not been submitted for this person." };
-  const reas = reasoning(psy?.scales);
+  const reas = reasoningWithCheck(cand, psy, input.session);
   if (!reas) return { ok: false, status: 400, error: "No Logica reasoning result for this person." };
 
   return {
@@ -113,12 +143,14 @@ export function assembleCohort(input: {
   roster: RosterLite[];
   sjt: SjtResultLite[];
   psy: PsyLite[];
+  sessions?: SessionLite[];
   comps: SdcCompetency[];
   orgName: string | null;
 }): SdcCohortReport {
   const rosterByCand = new Map(input.roster.filter((r) => r.bundle_candidate_id).map((r) => [r.bundle_candidate_id as string, r]));
   const sjtByCand = new Map(input.sjt.map((s) => [s.bundle_candidate_id, s]));
   const psyById = new Map(input.psy.map((p) => [p.id, p]));
+  const sessionById = new Map((input.sessions ?? []).map((s) => [s.id, s]));
   const people: CohortPerson[] = [];
   let incomplete = 0;
   for (const c of input.cands) {
@@ -127,7 +159,9 @@ export function assembleCohort(input: {
     if (!r || r.is_tester) continue;
     const grade = gradeOf(r);
     const s = sjtByCand.get(c.id);
-    const reas = reasoning(c.cognitive_result_id ? psyById.get(c.cognitive_result_id)?.scales : null);
+    const reas = c.cognitive_result_id
+      ? reasoningWithCheck(c, psyById.get(c.cognitive_result_id), c.cognitive_session_id ? sessionById.get(c.cognitive_session_id) : null)
+      : null;
     if (grade == null || !s?.submitted_at || !reas || !input.comps.some((x) => requiredLevel(x, grade) > 0)) {
       incomplete += 1;
       continue;

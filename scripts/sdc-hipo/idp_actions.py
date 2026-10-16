@@ -28,7 +28,7 @@ ACTIONS = {
  "RO": {
   "Basic": ("Agree three clear outcomes for the next quarter with your manager, track them weekly and flag any risk early.",
             "Review your weekly tracking with your coach and identify what most often delays your delivery.",
-            "Module 3 business acumen session on priorities; set your own quarterly outcomes with the Module 1 goal-setting tool."),
+            "Apply Module 3 business acumen to translate business priorities into measurable quarterly outcomes, using Module 1 goal-setting techniques to track progress."),
   "Proficient": ("Own a team deliverable with competing priorities; set milestones, track progress and adjust the plan when obstacles appear.",
             "Use coaching to work through one trade-off between priorities and how you communicated it.",
             "Module 3 business acumen and decision-making sessions; apply one prioritisation tool to the deliverable."),
@@ -45,7 +45,7 @@ ACTIONS = {
             "Module 2 sessions on influence, feedback and collaboration; apply them to the team-based challenge."),
   "Advanced": ("Bring together stakeholders from several functions around a shared outcome, and run the forum that keeps them aligned.",
             "Use coaching to map key stakeholders and plan how to build trust where relationships are weak.",
-            "Module 2 influence content and Module 4 stakeholder management; apply both in the capstone project."),
+            "Apply Module 2 influence and collaboration techniques, supported by Module 4 stakeholder management, during the capstone project. Document stakeholder alignment and agreed outcomes."),
  },
  "PI": {
   "Basic": ("Review the policies that apply to your role with your manager and confirm how you handle confidential information.",
@@ -56,7 +56,7 @@ ACTIONS = {
             "Module 1 leadership standards content; review SDC's code of conduct and its practical cases."),
   "Advanced": ("Act as the integrity reference point on a sensitive initiative, setting clear standards and holding others to them.",
             "Use coaching to prepare for addressing a complex ethical issue with senior stakeholders.",
-            "Module 1 leadership standards content, then Module 4 executive presence; share an ethics case with the cohort."),
+            "Apply Module 1 leadership standards, reinforced by Module 4 executive presence. Demonstrate ethical judgement through a workplace situation and document the decision and rationale."),
  },
  "AO": {
   "Basic": ("Keep a commitment log for one month: what you promised, when, and whether it was delivered; tell people early about any slip.",
@@ -67,7 +67,7 @@ ACTIONS = {
             "Module 1 accountability content; apply it to your stretch assignment."),
   "Advanced": ("Define clear ownership for every outcome in a team or project, and review accountability openly at each milestone.",
             "Discuss with your coach how to hold others to account while keeping trust.",
-            "Module 1 accountability content, then the Module 2 team leadership sessions; apply both in the team-based challenge."),
+            "Apply Module 1 accountability principles, supported by Module 2 team leadership. Take ownership of a defined team deliverable and demonstrate follow-through against agreed commitments."),
  },
  "SM": {
   "Basic": ("Read SDC's strategy and explain to your manager how your work contributes to two of its priorities.",
@@ -89,7 +89,7 @@ ACTIONS = {
             "Module 2 performance and feedback content; Module 3 business acumen sessions."),
   "Advanced": ("Design a system that sustains performance in your area, such as a capability plan or a performance rhythm, and track its effect.",
             "Use coaching to plan deliberate trade-offs between results, people and risk.",
-            "Module 2 performance and team leadership content, then Module 3 business content and Module 4 succession readiness."),
+            "Apply Module 2 performance management and coaching, supported by Module 3 business performance concepts and Module 4 succession readiness. Develop a measurable team performance improvement plan."),
  },
  "EDP": {
   "Basic": ("For your next three decisions, write down the information used, the options considered and a simple action plan.",
@@ -111,15 +111,15 @@ ACTIONS = {
             "Module 2 coaching and motivation content; apply it in the team-based challenge."),
   "Advanced": ("Lead your team or project through a significant change, communicating purpose and adapting your approach to different people's needs.",
             "Work with your coach on how you build confidence when the path is uncertain.",
-            "Module 2 coaching and motivation content, then Module 4 change management and executive presence."),
+            "Apply Module 2 coaching and motivation techniques, reinforced by Module 4 change management. Lead a team engagement activity and gather feedback on its impact."),
  },
  "LBE": {
   "Basic": ("Choose two behaviours you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
             "Review that feedback with your coach and agree one change.",
-            "Module 4 executive presence session on role-modelling, building on the Module 1 leadership standards content."),
+            "Apply Module 4 executive presence and role-modelling, building on Module 1 leadership standards. Demonstrate consistent professional behaviours and seek feedback on their impact."),
   "Proficient": ("Under pressure, model the standards you set: note one difficult moment each week and how your conduct reinforced them.",
             "Use coaching to reflect on composure under pressure and how others read your behaviour.",
-            "Module 4 executive presence content, building on Module 1 emotional intelligence and the Module 2 team leadership sessions."),
+            "Apply Module 4 executive presence, supported by Module 1 emotional intelligence and Module 2 team leadership. Model expected behaviours during a team challenge and document feedback."),
   "Advanced": ("Take visible responsibility for a difficult leadership decision, explain it openly and model the values it reflects.",
             "Discuss with your coach how your conduct sets the tone across the organisation.",
             "Module 4 executive presence content and the capstone presentation."),

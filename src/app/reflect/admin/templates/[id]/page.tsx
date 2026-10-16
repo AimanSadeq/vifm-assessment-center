@@ -22,6 +22,7 @@ type CompetencyWithBehaviors = {
     text_ar: string | null;
     display_order: number;
     source: "manual" | "ai_proposed" | "ai_accepted";
+    sme_status: string;
   }>;
 };
 
@@ -31,7 +32,7 @@ async function fetchTemplate(id: string) {
     .from("reflect_frameworks")
     .select(
       "id, name_en, name_ar, description_en, description_ar, is_template, is_active, created_at, " +
-      "reflect_competencies(id, name_en, name_ar, description_en, description_ar, display_order, reflect_behaviors(id, text_en, text_ar, display_order, source))"
+      "reflect_competencies(id, name_en, name_ar, description_en, description_ar, display_order, reflect_behaviors(id, text_en, text_ar, display_order, source, sme_status))"
     )
     .eq("id", id)
     .eq("is_template", true)
@@ -55,11 +56,21 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
   if (!framework) return notFound();
   const t = await getServerT();
 
+  // Statements retired by SME review (sme_status = 'rejected') stay in the table
+  // for the record but are no longer part of the template; engagement clones
+  // skip them too.
   const competencies = framework.reflect_competencies
-    .slice()
+    .map((c) => ({
+      ...c,
+      reflect_behaviors: c.reflect_behaviors.filter((b) => b.sme_status !== "rejected"),
+    }))
     .sort((a, b) => a.display_order - b.display_order);
 
   const totalBehaviors = competencies.reduce((s, c) => s + c.reflect_behaviors.length, 0);
+  const retiredBehaviors = framework.reflect_competencies.reduce(
+    (s, c) => s + c.reflect_behaviors.filter((b) => b.sme_status === "rejected").length,
+    0
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,6 +99,9 @@ export default async function ReflectTemplateDetailPage({ params }: Params) {
           <div className="mt-3 inline-flex items-center gap-4 text-xs text-muted-foreground">
             <span><strong className="text-primary">{competencies.length}</strong> {t("reflectAdmin.templates.competencies")}</span>
             <span><strong className="text-primary">{totalBehaviors}</strong> {t("reflectAdmin.templates.behaviours")}</span>
+            {retiredBehaviors > 0 && (
+              <span><strong className="text-primary">{retiredBehaviors}</strong> {t("reflectAdmin.templateDetail.retiredHidden")}</span>
+            )}
           </div>
         </div>
       </header>

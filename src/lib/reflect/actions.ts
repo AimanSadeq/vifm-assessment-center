@@ -529,10 +529,13 @@ async function cloneTemplateInternal(
         .single<{ id: string }>();
       if (!newComp) continue;
 
+      // Statements retired by SME review (sme_status = 'rejected') stay in the
+      // library for the record but never reach a new engagement.
       const { data: behs } = await sb
         .from("reflect_behaviors")
         .select("level_tier, text_en, text_ar, display_order")
         .eq("competency_id", c.id)
+        .neq("sme_status", "rejected")
         .order("display_order");
 
       if (behs && behs.length > 0) {
@@ -1522,7 +1525,8 @@ export async function createReflectReassessmentFromPrior(input: {
       const { data: priorBehs } = await sb
         .from("reflect_behaviors")
         .select("competency_id, level_tier, text_en, text_ar, source, ai_rationale, display_order")
-        .in("competency_id", priorCompIds);
+        .in("competency_id", priorCompIds)
+        .neq("sme_status", "rejected");
       if (priorBehs && priorBehs.length > 0) {
         const behaviorRows = priorBehs
           .map((b) => {

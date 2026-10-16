@@ -145,10 +145,12 @@ async function cloneTemplateIntoEngagement(
       .single<{ id: string }>();
     if (!newComp) continue;
 
+    // Retired statements (sme_status = 'rejected') never reach a new engagement.
     const { data: behs } = await sb
       .from("reflect_behaviors")
       .select("level_tier, text_en, text_ar, display_order")
       .eq("competency_id", c.id)
+      .neq("sme_status", "rejected")
       .order("display_order");
 
     const rows = ((behs ?? []) as Array<{

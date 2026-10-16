@@ -52,7 +52,8 @@ async function loadCounts(): Promise<Record<string, number | null>> {
   counts.competencies = (await headCount("competencies", (q) => (q as unknown as { is: (c: string, v: null) => unknown }).is("retired_at", null))) ?? COMPETENCY_COUNT;
   counts.fluent_items = await headCount("eng_fluent_items");
   counts.technical_tasks = await headCount("technical_skill_blocks");
-  counts.reflect_behaviors = await headCount("reflect_behaviors");
+  // Statements retired by SME review are not part of the library any more.
+  counts.reflect_behaviors = await headCount("reflect_behaviors", (q) => (q as unknown as { neq: (c: string, v: unknown) => unknown }).neq("sme_status", "rejected"));
 
   // ARA: questions on the currently-active bank version (layer-1, active).
   try {

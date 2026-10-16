@@ -279,6 +279,7 @@ async function cloneTemplateFramework(
             .from("reflect_behaviors")
             .select("competency_id, text_en, text_ar, display_order")
             .in("competency_id", compIds)
+            .neq("sme_status", "rejected")
             .order("display_order");
     const behList = (behs.data ?? []) as Array<{
       competency_id: string;

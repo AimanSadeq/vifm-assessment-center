@@ -49,7 +49,8 @@ async function fetchTemplates(): Promise<TemplateRow[]> {
       : await sb
           .from("reflect_behaviors")
           .select("id, competency_id")
-          .in("competency_id", compIds);
+          .in("competency_id", compIds)
+          .neq("sme_status", "rejected");
 
   const competencyToFramework = new Map<string, string>();
   const compCountByFramework = new Map<string, number>();

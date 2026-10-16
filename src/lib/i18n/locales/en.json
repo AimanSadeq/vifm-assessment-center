@@ -3620,6 +3620,7 @@
     },
     "templateDetail": {
       "noCompetencies": "No competencies in this template.",
+      "retiredHidden": "retired by SME review, not shown",
       "footerNoteBefore": "Templates are clone-only from the wizard. To edit the seed itself, write a follow-up migration that updates the rows under",
       "footerNoteAfter": "."
     },

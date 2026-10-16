@@ -99,7 +99,7 @@ export async function gatherEvidenceMetrics(): Promise<EvidenceMetrics> {
     count(sb, "tech_assessment_items", proposedFilter),
     // Reflect
     count(sb, "reflect_competencies"),
-    count(sb, "reflect_behaviors"),
+    count(sb, "reflect_behaviors", (q: any) => q.neq("sme_status", "rejected")),
     count(sb, "reflect_behaviors", (q: any) => q.eq("source", "ai_generated")),
     count(sb, "reflect_responses"),
     count(sb, "reflect_competencies", verifiedFilter),

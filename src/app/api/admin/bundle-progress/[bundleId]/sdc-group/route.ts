@@ -3,6 +3,7 @@ import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadSdcCohortReport } from "@/lib/reports/sdc-hipo/data";
 import { renderSdcGroupHtml } from "@/lib/reports/sdc-hipo/html";
 import { renderSdcPdf, safeFilePart } from "@/lib/reports/sdc-hipo/pdf";
+import { problemPage } from "@/lib/reports/sdc-hipo/problem-page";
 
 // Puppeteer needs the Node runtime, not Edge.
 export const runtime = "nodejs";
@@ -31,11 +32,12 @@ export async function GET(_req: Request, { params }: { params: { bundleId: strin
     built = await loadSdcCohortReport(params.bundleId);
   } catch (err) {
     console.error("[sdc group] load failed", err);
-    return NextResponse.json({ error: "Could not load the cohort results." }, { status: 500 });
+    return problemPage("The cohort results could not be loaded. Please try again in a minute; if it persists, tell Aiman.", 500);
   }
-  if (!built.ok) return NextResponse.json({ error: built.error }, { status: built.status });
+  // The link opens in a new tab, so refusals are pages a person can read (see problemPage).
+  if (!built.ok) return problemPage(built.error, built.status);
   if (built.data.people.length === 0) {
-    return NextResponse.json({ error: "Nobody on the approved list has completed the assessment yet." }, { status: 400 });
+    return problemPage("Nobody on the approved list has completed the assessment yet. Testers are not included in the group report.", 400);
   }
 
   let buffer: Buffer;
@@ -43,7 +45,7 @@ export async function GET(_req: Request, { params }: { params: { bundleId: strin
     buffer = await renderSdcPdf(renderSdcGroupHtml(built.data));
   } catch (err) {
     console.error("[sdc group pdf]", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "PDF generation failed" }, { status: 500 });
+    return problemPage("The PDF could not be generated. Please try again in a minute; if it persists, tell Aiman.", 500);
   }
   const stamp = new Date().toISOString().slice(0, 10);
   const fileName = `SDC_HiPo_Group_Report_${safeFilePart(built.data.bundleName, "Assessment")}_${stamp}.pdf`;

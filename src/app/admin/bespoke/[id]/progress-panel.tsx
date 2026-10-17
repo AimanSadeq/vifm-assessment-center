@@ -454,22 +454,37 @@ export function ProgressPanel({
                   </td>
                   <td className="whitespace-nowrap px-2 py-2 text-right">
                     {sdcReports && p.candidateId && (p.status === "completed" || p.status === "scored") && (
-                      <>
-                        <ReportLink
-                          href={`/api/admin/bundle/${p.candidateId}/sdc-report?kind=summary`}
-                          label="Executive summary"
-                          title={p.status === "completed" ? "Executive summary (files it and marks Scored)" : "Executive summary"}
+                      p.onRoster && p.grade != null ? (
+                        <>
+                          <ReportLink
+                            href={`/api/admin/bundle/${p.candidateId}/sdc-report?kind=summary`}
+                            label="Executive summary"
+                            title={p.status === "completed" ? "Executive summary (files it and marks Scored)" : "Executive summary"}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                          </ReportLink>
+                          <ReportLink
+                            href={`/api/admin/bundle/${p.candidateId}/sdc-report?kind=idp`}
+                            label="IDP"
+                            title={p.status === "completed" ? "Individual development plan (files it and marks Scored)" : "Individual development plan"}
+                          >
+                            <ClipboardList className="h-3.5 w-3.5" />
+                          </ReportLink>
+                        </>
+                      ) : (
+                        // SDC reports assess against the grade on the roster, so a sitting
+                        // that is not on the list (or has no grade) cannot have one.
+                        <span
+                          className="ml-1 inline-flex h-7 cursor-help items-center rounded-md px-1.5 text-[10px] font-semibold text-muted-foreground"
+                          title={
+                            p.onRoster
+                              ? "No report: this person has no grade on the roster."
+                              : "No report: this sitting is not on the roster, so there is no grade to assess against."
+                          }
                         >
-                          <FileText className="h-3.5 w-3.5" />
-                        </ReportLink>
-                        <ReportLink
-                          href={`/api/admin/bundle/${p.candidateId}/sdc-report?kind=idp`}
-                          label="IDP"
-                          title={p.status === "completed" ? "Individual development plan (files it and marks Scored)" : "Individual development plan"}
-                        >
-                          <ClipboardList className="h-3.5 w-3.5" />
-                        </ReportLink>
-                      </>
+                          no report
+                        </span>
+                      )
                     )}
                     {!sdcReports && p.candidateId && (p.status === "completed" || p.status === "scored") && (
                       <a

@@ -67,19 +67,19 @@ table.t tr.cat td { background:var(--off); font-size:8px; letter-spacing:1.5px; 
 table.rk { table-layout:fixed; }
 .cogrow { display:grid; grid-template-columns:78px 1fr 34px; gap:6px; align-items:center; margin:3px 0; font-size:9.5px; }
 .note { font-size:8px; color:var(--muted); line-height:1.4; }
-.act { margin-top:1px; } .act td { font-size:8.3px; padding:1px 5px; line-height:1.3; } .act td.h { font-weight:700; color:var(--navy); width:70px; }
+.act { margin-top:1px; } .act td { font-size:8.8px; padding:1px 5px; line-height:1.35; } .act td.h { font-weight:700; color:var(--navy); width:72px; }
 .ms { display:grid; grid-template-columns:repeat(3,1fr); gap:4px; margin-top:3px; }
-.ms div { border:1px solid var(--line); border-radius:5px; padding:2px 5px; font-size:8px; line-height:1.3; }
-.ms b { font-size:7.2px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-right:3px; }
+.ms div { border:1px solid var(--line); border-radius:5px; padding:2px 5px; font-size:8.6px; line-height:1.35; }
+.ms b { font-size:7.4px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-right:3px; }
 .idp { padding:11px 14px; }
-.idp .small { font-size:8.5px; line-height:1.45; }
+.idp .small { font-size:9px; line-height:1.45; }
 .idp > * + * { margin-top:7px; }
 .idp .act td { padding:2px 6px; } .idp .ms div { padding:4px 7px; }
 .idph { display:flex; justify-content:space-between; align-items:center; gap:8px; }
 .idp .dir { color:var(--mid); margin-top:3px; }
 .mbox { display:grid; grid-template-columns:1fr 1.7fr 1fr; gap:5px; }
-.mbox > div { background:var(--off); border:1px solid var(--gray); border-radius:5px; padding:5px 8px; font-size:8.3px; line-height:1.35; }
-.mbox .k { display:flex; align-items:center; gap:4px; font-size:7.2px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:1px; }
+.mbox > div { background:var(--off); border:1px solid var(--gray); border-radius:5px; padding:5px 8px; font-size:8.8px; line-height:1.35; }
+.mbox .k { display:flex; align-items:center; gap:4px; font-size:7.4px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:1px; }
 .flow > * + * { margin-top:14px; }
 .flow > .closing { margin-top:16px; }
 .contband { border-bottom:2px solid var(--navy); padding:0 0 5px; margin:4px 0 12px; font-size:10px; color:var(--mid); }
@@ -93,8 +93,25 @@ table.rk { table-layout:fixed; }
 .flag .ic { flex:0 0 auto; margin-top:1px; color:var(--amber); }
 .rk .chk { display:inline-block; margin-left:3px; font-size:7px; font-weight:700; background:var(--amberbg); color:var(--amber); border-radius:3px; padding:0 3px; vertical-align:middle; }
 .idpk .kpi { padding:5px 10px; } .idpk .kpi .v { font-size:15px; }
-.sig { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:4px; }
+.sig { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:4px; }
 .sig div { border-top:1px solid var(--text); padding-top:3px; font-size:8.5px; color:var(--muted); }
+.fnote { font-size:7.6px; }
+/* Roomy IDP: larger type when the plan still fits the two pages of the approved
+   layout (the layout script decides; see IDP_LAYOUT_JS). Ali, 17 Oct 2026. */
+.roomy .idp { padding:12px 15px; } .roomy .idp > * + * { margin-top:8px; } .roomy .flow > * + * { margin-top:14px; }
+.roomy .idp .small { font-size:9.4px; line-height:1.45; } .roomy .idph b { font-size:13.5px !important; }
+.roomy .act td { font-size:9.4px; line-height:1.38; padding:2px 6px; } .roomy .act td.h { width:76px; }
+.roomy .mbox > div { font-size:9.2px; line-height:1.38; padding:5px 8px; } .roomy .mbox .k { font-size:7.6px; }
+.roomy .ms div { font-size:9px; line-height:1.38; padding:4px 7px; } .roomy .ms b { font-size:7.6px; }
+.roomy .fnote { font-size:8.4px; line-height:1.45; } .roomy .sig div { font-size:9px; }
+.roomy .idpk .kpi .v { font-size:16px; } .roomy .idpk .kpi .small { font-size:9px; }
+/* Second step, for plans with room to spare (typically three gaps and no flag). */
+.roomy.xl .idp { padding:14px 16px; } .roomy.xl .idp > * + * { margin-top:10px; } .roomy.xl .flow > * + * { margin-top:16px; }
+.roomy.xl .idp .small { font-size:10px; line-height:1.5; } .roomy.xl .idph b { font-size:14.5px !important; }
+.roomy.xl .act td { font-size:10px; line-height:1.42; padding:3px 6px; } .roomy.xl .act td.h { width:80px; }
+.roomy.xl .mbox > div { font-size:9.8px; line-height:1.42; padding:6px 9px; } .roomy.xl .mbox .k { font-size:7.8px; }
+.roomy.xl .ms div { font-size:9.6px; line-height:1.42; padding:5px 8px; } .roomy.xl .ms b { font-size:7.8px; }
+.roomy.xl .fnote { font-size:8.8px; line-height:1.5; } .roomy.xl .sig div { font-size:9.5px; }
 .initials { display:flex; flex-wrap:wrap; gap:2px; margin-top:3px; }
 .initials span { font-size:7px; font-weight:700; background:var(--navy); color:#fff; border-radius:3px; padding:0 3px; }
 .hbar { display:grid; grid-template-columns:150px 1fr 74px; gap:6px; align-items:center; font-size:8.8px; margin:2px 0; }
@@ -150,8 +167,9 @@ function grid9(cogBand: number, fitBand: number, opts: { people?: RankedPerson[]
     }
   }
   h += `<div></div>${["Below", "Meets", "Above"].map((x) => `<div class="ax">${x}</div>`).join("")}</div>`;
-  h += `<div style="display:flex;justify-content:space-between" class="note"><span>Vertical: reasoning performance (Logica)</span><span>Horizontal: competency fit against the required level for the grade</span></div>`;
-  if (opts.rules) h += `<p class="note" style="margin:4px 0 0">${GRID_RULES}</p>`;
+  // Breathing space between the grid, its axis legend and the placement rules (Ali, 17 Oct 2026).
+  h += `<div style="display:flex;justify-content:space-between;gap:12px;margin-top:7px" class="note"><span>Vertical: reasoning performance (Logica)</span><span style="text-align:right">Horizontal: competency fit against the required level for the grade</span></div>`;
+  if (opts.rules) h += `<p class="note" style="margin:7px 0 0">${GRID_RULES}</p>`;
   return h;
 }
 
@@ -269,7 +287,7 @@ function idpCard(p: IdpItem, i: number, r: SdcCandidateReport): string {
   const parts: string[] = [];
   parts.push(`<div class="mbox">
     <div><div class="k">${svg("pin", 10)} Baseline</div>${esc(now)} on the Caliber scenarios${r.assessedOn ? `, ${esc(r.assessedOn)}` : ""}</div>
-    <div><div class="k">${svg("flag", 10)} 90-day target</div>${p.plan ? esc(p.plan.smart) : "Agreed with the participant at the Module 1 debrief."}</div>
+    <div><div class="k">${svg("flag", 10)} 90-day target</div>${p.plan ? esc(p.plan.smart) : "Agreed with the participant at the start of Module 1."}</div>
     <div><div class="k">${svg("user", 10)} Evidence owner</div>${esc(EVIDENCE_OWNER)}</div>
   </div>`);
   if (p.goals.length) parts.push(`<div class="small"><b>Development direction (${p.target} behaviours):</b> ${p.goals.map(esc).join("; ")}.</div>`);
@@ -280,7 +298,7 @@ function idpCard(p: IdpItem, i: number, r: SdcCandidateReport): string {
     parts.push(`<div class="ms"><div><b>Day 30</b>${esc(p.plan.day30)}</div><div><b>Day 60</b>${esc(p.plan.day60)}</div><div><b>Day 90</b>${esc(p.plan.day90)}</div></div>`);
     parts.push(`<div class="small"><b>Evidence of progress:</b> ${esc(p.plan.evidence)}</div>`);
   }
-  if (!p.plan && !p.actions) parts.push(`<div class="small muted">Actions and milestones for this level are agreed with the participant at the Module 1 debrief.</div>`);
+  if (!p.plan && !p.actions) parts.push(`<div class="small muted">Actions and milestones for this level are agreed with the participant at the start of Module 1.</div>`);
   return `<div class="card idp">
   <div class="idph"><div><span class="pill ${isGap ? "amber" : "green"}">${i + 1}. ${label}</span> <b style="font-size:12.5px;color:var(--navy);margin-left:4px">${esc(p.row.name)}</b></div>
   <div class="small muted" style="white-space:nowrap">${esc(MODULE[p.row.code] ?? "")}</div></div>
@@ -291,26 +309,57 @@ function idpCard(p: IdpItem, i: number, r: SdcCandidateReport): string {
 /**
  * Flows the IDP blocks over as many pages as they need once fonts are loaded:
  * a block that runs into a page's footer moves, whole, to a continuation page.
- * The PDF renderer calls window.__sdcLayout() before printing.
+ * It first tries the larger "roomy" type (Ali, 17 Oct 2026: the card text was
+ * small while the second page sat largely empty) and keeps it whenever the
+ * plan still fits the two pages of the approved layout; otherwise it reflows
+ * in the compact type. The PDF renderer calls window.__sdcLayout() before
+ * printing.
  */
+const IDP_MAX_PAGES = 2;
 const IDP_LAYOUT_JS = `
 window.__sdcLayout = function () {
   var tpl = document.getElementById("flow-cont");
-  var page = document.querySelector(".page.flow-first");
-  if (!tpl || !page) return 0;
+  var first = document.querySelector(".page.flow-first");
+  if (!tpl || !first) return 0;
   var GAP = 6;
   function limit(pg) { return pg.querySelector(".pfoot").getBoundingClientRect().top - GAP; }
-  var guard = 0;
-  while (guard++ < 20) {
-    var flow = page.querySelector(".flow");
-    var last = flow.lastElementChild;
-    if (!last || last.getBoundingClientRect().bottom <= limit(page)) break;
-    var next = tpl.content.firstElementChild.cloneNode(true);
-    page.parentNode.insertBefore(next, page.nextSibling);
-    var nflow = next.querySelector(".flow");
-    while (flow.children.length > 1 && flow.lastElementChild.getBoundingClientRect().bottom > limit(page)) nflow.insertBefore(flow.lastElementChild, nflow.firstChild);
-    if (flow.children.length === 1 && flow.lastElementChild.getBoundingClientRect().bottom > limit(page)) break;
-    page = next;
+  function flow() {
+    var page = first, guard = 0;
+    while (guard++ < 20) {
+      var f = page.querySelector(".flow");
+      var last = f.lastElementChild;
+      if (!last || last.getBoundingClientRect().bottom <= limit(page)) break;
+      var next = tpl.content.firstElementChild.cloneNode(true);
+      page.parentNode.insertBefore(next, page.nextSibling);
+      var nf = next.querySelector(".flow");
+      while (f.children.length > 1 && f.lastElementChild.getBoundingClientRect().bottom > limit(page)) nf.insertBefore(f.lastElementChild, nf.firstChild);
+      if (f.children.length === 1 && f.lastElementChild.getBoundingClientRect().bottom > limit(page)) break;
+      page = next;
+    }
+    return document.querySelectorAll(".page").length;
+  }
+  function reset() {
+    var f = first.querySelector(".flow");
+    var pages = document.querySelectorAll(".page.flow-cont");
+    for (var i = 0; i < pages.length; i++) {
+      var nf = pages[i].querySelector(".flow");
+      while (nf.firstElementChild) f.appendChild(nf.firstElementChild);
+      pages[i].parentNode.removeChild(pages[i]);
+    }
+  }
+  // Compact first, to learn how many blocks the first page holds; then the larger
+  // types from the largest down, keeping the first that needs no extra page and
+  // pushes nothing off the first page.
+  var n = flow();
+  var keep = first.querySelector(".flow").children.length;
+  var steps = [["roomy", "xl"], ["roomy"]];
+  for (var s = 0; s < steps.length; s++) {
+    reset();
+    document.body.classList.add.apply(document.body.classList, steps[s]);
+    n = flow();
+    if (n <= ${IDP_MAX_PAGES} && first.querySelector(".flow").children.length >= keep) break;
+    document.body.classList.remove.apply(document.body.classList, steps[s]);
+    if (s === steps.length - 1) { reset(); n = flow(); }
   }
   var nums = document.querySelectorAll(".page .pno");
   for (var i = 0; i < nums.length; i++) nums[i].textContent = nums.length > 1 ? "  |  Page " + (i + 1) + " of " + nums.length : "";
@@ -336,14 +385,15 @@ export function renderSdcIdpHtml(r: SdcCandidateReport): string {
     ? `<p class="small" style="margin:0"><b>Also below the requirement, to plan after day 90:</b> ${esc(joinAnd(sel.later.map((x) => x.name)))}.</p>`
     : "";
   const empty = items.length === 0
-    ? `<div class="card soft"><p style="margin:0">Every required competency meets the level for Grade ${r.grade}. Agree stretch goals with the participant at the Module 1 debrief.</p></div>`
+    ? `<div class="card soft"><p style="margin:0">Every required competency meets the level for Grade ${r.grade}. Agree stretch goals with the participant at the start of Module 1.</p></div>`
     : "";
   const strengthsBlock = strengths.length
     ? `<div class="card soft" style="padding:6px 10px;display:flex;gap:6px;align-items:baseline"><span style="color:var(--accent)">${svg("star", 12)}</span>
 <p class="small" style="margin:0"><b>Strengths to use while developing:</b> ${strengths.map((s) => `<b>${esc(s.name)}</b> (${levelName(s.res)})`).join(", ")}. Look for roles in team projects that use these.</p></div>`
     : "";
-  const closing = `<div class="closing"><div class="sig"><div>Participant</div><div>VIFM coach</div><div>SDC Talent Development</div></div>
-<p class="note" style="margin:6px 0 0;font-size:7.6px">Goal behaviours are taken from the SDC behavioural indicators for the target level, which is shown as a development direction. Each 90-day target is written in the SMART format (Doran, 1981) and records a baseline and an evidence owner. Behaviour change takes time (new habits took a median of 66 days to form in Lally et al., 2010), so a change of level is confirmed only by the post-programme reassessment, not by completing the plan. The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the Module 1 debrief and reviewed at each milestone. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p></div>`;
+  // Line manager added to the sign-off (Ali, 17 Oct 2026: the line manager is the evidence owner).
+  const closing = `<div class="closing"><div class="sig"><div>Participant</div><div>Line manager</div><div>VIFM coach</div><div>SDC Talent Development</div></div>
+<p class="note fnote" style="margin:6px 0 0">Goal behaviours are taken from the SDC behavioural indicators for the target level, which is shown as a development direction. Each 90-day target is written in the SMART format (Doran, 1981) and records a baseline and an evidence owner. Behaviour change takes time (new habits took a median of 66 days to form in Lally et al., 2010), so a change of level is confirmed only by the post-programme reassessment, not by completing the plan. The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the start of Module 1 and reviewed at each milestone. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p></div>`;
 
   const foot = `<div class="pfoot"><span>${esc(`${PROGRAMME}  |  Individual development plan`)}<span class="pno"></span></span><span>${esc(FOOT_RIGHT)}</span></div>`;
   const blocks = [
@@ -363,7 +413,7 @@ export function renderSdcIdpHtml(r: SdcCandidateReport): string {
   const first = `<div class="page flow-first">${header(r, "Individual development plan")}
 <div class="flow" style="margin-top:12px">${blocks.join("\n")}</div>
 ${foot}</div>`;
-  const cont = `<template id="flow-cont"><div class="page">${topBar(r.orgName)}<div class="contband"><b>${esc(r.name)}</b>  |  Individual development plan (continued)</div><div class="flow"></div>${foot}</div></template>`;
+  const cont = `<template id="flow-cont"><div class="page flow-cont">${topBar(r.orgName)}<div class="contband"><b>${esc(r.name)}</b>  |  Individual development plan (continued)</div><div class="flow"></div>${foot}</div></template>`;
   return doc(`${r.name}: SDC individual development plan`, `${first}${cont}<script>${IDP_LAYOUT_JS}</script>`);
 }
 

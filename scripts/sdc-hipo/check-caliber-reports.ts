@@ -47,12 +47,25 @@ async function main() {
     orgName: FIXTURE_ORG,
   });
   if (!worst.ok) throw new Error(worst.error);
+  // Three gaps, no strength, no rushed flag (Ali's own case, 17 Oct 2026): the IDP
+  // should take the roomy type and keep two cards on the first page.
+  const three = assembleCandidate({
+    cand: { ...cand, full_name: "Ali AlShouli", cognitive_session_id: "ts" },
+    roster: { bundle_candidate_id: cand.id, grade: 7, position: "Pilot tester", business_unit: "VIFM", is_tester: true },
+    sjt: { bundle_candidate_id: cand.id, scores: Object.fromEntries(FIXTURE_COMPETENCIES.map((c) => [c.code, { level: 0, items: 3 }])), submitted_at: "2026-10-11T10:57:00Z" },
+    psy: { id: "t", scales: [{ key: "numerical", raw: 22 }, { key: "inductive", raw: 22 }], created_at: "2026-10-11T10:50:00Z", result: { answeredCount: 18, totalCount: 18 } },
+    session: { id: "ts", created_at: "2026-10-11T10:30:00Z" },
+    comps: FIXTURE_COMPETENCIES,
+    orgName: FIXTURE_ORG,
+  });
+  if (!three.ok) throw new Error(three.error);
   const base = { roster: FIXTURE_ROSTER, sjt: FIXTURE_SJT, psy: FIXTURE_PSY, sessions: FIXTURE_SESSIONS, comps: FIXTURE_COMPETENCIES, orgName: FIXTURE_ORG };
   const docs: Array<[string, string]> = [
     ["Summary", renderSdcSummaryHtml(one.data)],
     ["IDP", renderSdcIdpHtml(one.data)],
     ["Summary-Worst", renderSdcSummaryHtml(worst.data)],
     ["IDP-Worst", renderSdcIdpHtml(worst.data)],
+    ["IDP-Three", renderSdcIdpHtml(three.data)],
     ["Group", renderSdcGroupHtml(assembleCohort({ ...base, cands: FIXTURE_CANDIDATES }))],
   ];
   if (big > 0) {
@@ -83,7 +96,11 @@ async function main() {
       await page.evaluate(async () => { if (document.fonts && document.fonts.ready) await document.fonts.ready; });
       const fontOk = await page.evaluate(() => document.fonts.check('700 12px "Open Sans"'));
       // Same step as the route: the group report lays its ranking table out over pages.
-      await page.evaluate(() => (window as unknown as { __sdcLayout?: () => number }).__sdcLayout?.());
+      const pages = await page.evaluate(() => (window as unknown as { __sdcLayout?: () => number }).__sdcLayout?.());
+      // The IDP keeps its larger type only when the plan still fits two pages without
+      // pushing a card off the first page; report which type the layout chose.
+      const roomy = await page.evaluate(() => (document.body.classList.contains("xl") ? "roomy xl" : document.body.classList.contains("roomy") ? "roomy" : ""));
+      const firstBlocks = await page.evaluate(() => document.querySelector(".page.flow-first .flow")?.children.length ?? null);
       // Overflow check: nothing on a page may reach its footer or run past the right edge.
       const problems = await page.evaluate(() => {
         const out: string[] = [];
@@ -105,7 +122,8 @@ async function main() {
         return out;
       });
       await page.pdf({ path: path.join(out, `${name}.pdf`), format: "A4", printBackground: true, preferCSSPageSize: true });
-      console.log(`${name}.pdf written (Open Sans loaded: ${fontOk}; overflow: ${problems.length ? `\n  ${problems.slice(0, 8).join("\n  ")}` : "none"})`);
+      const layout = name.startsWith("IDP") ? `; ${pages} page${pages === 1 ? "" : "s"}, ${roomy || "compact"} type, ${firstBlocks} blocks on page 1` : "";
+      console.log(`${name}.pdf written (Open Sans loaded: ${fontOk}${layout}; overflow: ${problems.length ? `\n  ${problems.slice(0, 8).join("\n  ")}` : "none"})`);
       await page.close();
     }
   } finally {

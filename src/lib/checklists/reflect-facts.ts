@@ -83,7 +83,7 @@ export async function loadReflectChecklistFacts(
     "reflect.anonymity": { done: minN >= 3, detail: `${minN} raters per group before scores show${minN < 3 ? " (below the usual 3)" : ""}` },
     "reflect.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organization" },
     "reflect.sandbox": { done: !e.is_sandbox, detail: e.is_sandbox ? "Marked as sandbox: results will be purged" : "Live engagement" },
-    "reflect.framework": { done: compIds.length > 0 && behaviours.length > 0, detail: compIds.length ? `${count(compIds.length, "competency", "competencies")}, ${count(behaviours.length, "behaviour")}` : "No framework yet" },
+    "reflect.framework": { done: compIds.length > 0 && behaviours.length > 0, detail: compIds.length ? `${count(compIds.length, "competency", "competencies")}, ${count(behaviours.length, "behavior")}` : "No framework yet" },
     "reflect.framework_approved": { done: approved, detail: approved ? "Approved" : "Not approved: launch is blocked" },
     "reflect.participants": { done: nP > 0, detail: count(nP, "participant") + (e.participant_target_count ? ` of ${String(e.participant_target_count)} planned` : "") },
     "reflect.raters": { done: nP > 0 && short === 0, detail: nP === 0 ? "No participants" : short === 0 ? `${count(nR, "rater")}; every participant has self, manager and at least ${minN} others` : `${short} of ${nP} participants short of self + manager + ${minN} others` },

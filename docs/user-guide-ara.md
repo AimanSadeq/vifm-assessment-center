@@ -55,7 +55,7 @@ The end-to-end path for a VIFM consultant running an organizational AI Readiness
 
 ```mermaid
 flowchart LR
-  A[Client intake<br/>brief + scope] --> B[Create organisation<br/>region · sector]
+  A[Client intake<br/>brief + scope] --> B[Create organization<br/>region · sector]
   B --> C[Create assessment<br/>stage · weights · tier]
   C --> D[Add respondents<br/>roles · pillars]
   D --> E[Issue invitations<br/>tokens · email]

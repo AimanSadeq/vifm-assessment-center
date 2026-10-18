@@ -25,7 +25,7 @@ export const AC_CHECKLIST: ChecklistDef = {
     { key: "ac.dpa", phase: "before", owner: "bd", label: "Data protection law and the parties' roles confirmed with counsel", hint: "Agreement section 9. UAE Decree-Law 45/2021, Saudi PDPL or GDPR." },
     // ── The agreement ──
     { key: "ac.purpose", phase: "agreement", owner: "consultant", label: "Purpose recorded: selection, development or succession", auto: "ac.purpose", link: (id) => `/admin/engagements/${id}` },
-    { key: "ac.agreement", phase: "agreement", owner: "bd", label: "Center agreement completed from the design and signed by both parties", hint: "Download the pre-filled Word file from the design record, complete the yellow fields, sign before any implementation work.", link: (id) => `/api/admin/engagements/${id}/center-agreement` },
+    { key: "ac.agreement", phase: "agreement", owner: "bd", label: "Center agreement completed from the design and signed by both parties", hint: "Download the pre-filled Word file from the design record, complete the yellow fields, sign before any implementation work.", link: (id) => `/api/admin/engagements/${id}/centre-agreement` },
     { key: "ac.plan_approved", phase: "agreement", owner: "client", label: "Center plan agreed with the client", auto: "ac.plan_approved", link: (id) => `/admin/engagements/${id}` },
     { key: "ac.weights", phase: "agreement", owner: "client", label: "Competency weights confirmed before the center", auto: "ac.weights", when: selection, hint: "A selection center's overall rating is calculated from these." },
     { key: "ac.recipients", phase: "agreement", owner: "client", label: "Report recipients agreed and named", auto: "ac.recipients", hint: "Joining pack: who receives reports." },

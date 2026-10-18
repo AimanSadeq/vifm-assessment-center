@@ -98,11 +98,11 @@ export function DesignRecordPanel({
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`/api/admin/engagements/${engagementId}/center-plan`}>Center plan (PDF)</a>
+            <a href={`/api/admin/engagements/${engagementId}/centre-plan`}>Center plan (PDF)</a>
           </Button>
           <Button size="sm" variant="outline" asChild>
             <a
-              href={`/api/admin/engagements/${engagementId}/center-agreement`}
+              href={`/api/admin/engagements/${engagementId}/centre-agreement`}
               title="The agreement and statement of work, pre-filled from this design. Complete the yellow fields in Word."
             >
               Center agreement (Word)

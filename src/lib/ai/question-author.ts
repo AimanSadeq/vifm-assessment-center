@@ -45,7 +45,7 @@ const FRAMEWORK_LIST = [
   "UAE Charter for AI Development (June 2024, 12 Principles)",
   "UAE AI Ethics Guide (2022)",
   "TDRA Digital Government Regulations",
-  "Dubai Center for AI (DCAI) Guidelines",
+  "Dubai Centre for AI (DCAI) Guidelines",
   "Abu Dhabi Digital Authority (ADDA) Standards",
   "Saudi Personal Data Protection Law (Royal Decree M/19, M/148)",
   "SDAIA National Data Governance Framework",

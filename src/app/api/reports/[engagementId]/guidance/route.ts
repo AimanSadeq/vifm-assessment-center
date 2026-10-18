@@ -47,7 +47,7 @@ export async function GET(_req: Request, { params }: { params: { engagementId: s
   try {
     const html = buildReportGuidanceHtml(buildAgreementPrefill(loaded.input), generatedAt);
     const pdf = await renderHtmlToPdfBuffer(html);
-    const safeName = String(loaded.engagement.name ?? "centre").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    const safeName = String(loaded.engagement.name ?? "center").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",

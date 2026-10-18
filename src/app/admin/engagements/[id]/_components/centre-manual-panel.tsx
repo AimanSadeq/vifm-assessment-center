@@ -89,7 +89,7 @@ export function CentreManualPanel({
         </CardTitle>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`/api/admin/engagements/${engagementId}/center-manual?variant=full`}>Full manual (PDF)</a>
+            <a href={`/api/admin/engagements/${engagementId}/centre-manual?variant=full`}>Full manual (PDF)</a>
           </Button>
           <Button size="sm" variant="outline" onClick={() => setIssuing((v) => !v)}>
             {issuing ? "Cancel" : "Record an issue"}
@@ -108,7 +108,7 @@ export function CentreManualPanel({
         <div className="flex flex-wrap gap-2">
           {CENTRE_ROLES.filter((r) => holdersOf(r.key).length > 0).map((r) => (
             <Button key={r.key} size="sm" variant="outline" asChild>
-              <a href={`/api/admin/engagements/${engagementId}/center-manual?variant=${r.key}`}>
+              <a href={`/api/admin/engagements/${engagementId}/centre-manual?variant=${r.key}`}>
                 {r.name} ({holdersOf(r.key).length})
               </a>
             </Button>

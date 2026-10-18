@@ -27,7 +27,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   try {
     const generatedAt = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
     const pdf = await renderHtmlToPdfBuffer(buildEvidencePackHtml(evidence, generatedAt));
-    const safeName = String(evidence.engagement.name ?? "centre").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    const safeName = String(evidence.engagement.name ?? "center").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",

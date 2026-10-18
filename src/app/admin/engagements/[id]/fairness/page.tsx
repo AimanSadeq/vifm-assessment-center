@@ -206,7 +206,7 @@ export default async function EngagementFairnessPage({
             {(Object.keys(AC_FAVOURABLE_LABELS) as AcFavourableOutcome[]).map((k) => (
               <Link
                 key={k}
-                href={`/admin/engagements/${params.id}/fairness?favorable=${k}`}
+                href={`/admin/engagements/${params.id}/fairness?favourable=${k}`}
                 className={`rounded border px-2 py-1 text-xs ${
                   favourable === k ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}

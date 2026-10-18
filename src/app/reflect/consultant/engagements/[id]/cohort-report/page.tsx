@@ -707,25 +707,25 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .cd-missing { grid-column: 2 / -1; text-align: right; font-size: 9pt; }
 
 /* Cohort training plan - program cards mirror the per-participant report */
-.program-list { padding: 0; margin: 0; list-style: none; }
-.program-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
-.program-list > li:last-child { border-bottom: 0; }
-.program-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
-.program-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
-.program-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
-.program-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
-.program-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
-.program-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
-.program-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
-.program-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
-.program-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
-.program-cta { margin: 2.5mm 0 0 9mm; }
-.program-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
+.programme-list { padding: 0; margin: 0; list-style: none; }
+.programme-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
+.programme-list > li:last-child { border-bottom: 0; }
+.programme-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
+.programme-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
+.programme-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
+.programme-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
+.programme-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
+.programme-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
+.programme-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
+.programme-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
+.programme-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
+.programme-cta { margin: 2.5mm 0 0 9mm; }
+.programme-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
 .unmapped-detail { margin-top: 3mm; color: var(--vifm-muted); font-size: 9pt; }
-.reflect-pdf[dir="rtl"] .program-meta,
-.reflect-pdf[dir="rtl"] .program-drivers,
-.reflect-pdf[dir="rtl"] .program-rationale,
-.reflect-pdf[dir="rtl"] .program-cta { margin-left: 0; margin-right: 9mm; }
+.reflect-pdf[dir="rtl"] .programme-meta,
+.reflect-pdf[dir="rtl"] .programme-drivers,
+.reflect-pdf[dir="rtl"] .programme-rationale,
+.reflect-pdf[dir="rtl"] .programme-cta { margin-left: 0; margin-right: 9mm; }
 
 /* Distribution stacked-bars */
 .dist-bars { display: grid; gap: 2mm; margin-bottom: 4mm; }

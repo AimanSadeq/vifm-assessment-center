@@ -216,7 +216,7 @@ export function EqReportPdf({ data, provisional }: { data: EqPdfData; provisiona
         <Text style={s.h2}>4 · Development Focus</Text>
         <Text style={[s.para, { marginBottom: 8 }]}>
           Emotional intelligence develops with deliberate practice. Start with the priority quadrant
-          ({EQ_META[p.priority].label}) - concrete, GCC-contextualised actions for a 30/60/90-day cycle, ideally with a
+          ({EQ_META[p.priority].label}) - concrete, GCC-contextualized actions for a 30/60/90-day cycle, ideally with a
           manager or coach, and re-test after the cycle.
         </Text>
         <DevBlock

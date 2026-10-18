@@ -86,7 +86,7 @@ flowchart LR
   A[Receive assignment<br/>email or dashboard] --> B[Open assignment<br/>/assessor/assignments]
   B --> C[Read briefing<br/>4 tabs]
   C --> D[Live or video<br/>observe candidate]
-  D --> E[Behavioural notes<br/>AI-classifier per competency]
+  D --> E[Behavioral notes<br/>AI-classifier per competency]
   E --> F[BARS rating<br/>1-5 or NE]
   F --> G[Q&A capture<br/>3 questions per competency]
   G --> H[Integration worksheet<br/>consolidate across exercises]

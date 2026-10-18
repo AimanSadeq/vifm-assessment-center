@@ -18,5 +18,5 @@ The six competencies: Critical Analysis & Judgement (target 4.0), Strategic & Co
 Delivery & Accountability (4.0), Influence & Agreement (3.5), Coaching & Talent Growth (3.5),
 Resilience & Composure (3.5). Targets are illustrative.
 
-A productised Interview service in Caliber (guide generator per role profile, interviewer console,
+A productized Interview service in Caliber (guide generator per role profile, interviewer console,
 CBI report, question bank with probes in EN and AR) is scoped but not built.

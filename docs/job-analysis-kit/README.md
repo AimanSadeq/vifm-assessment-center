@@ -66,7 +66,7 @@ For each role family:
   6. Capture into role profile (05)
 After all SMEs:
   7. Aggregate + apply decision rules (§5)
-  8. Update v2 framework set + behavioural indicators
+  8. Update v2 framework set + behavioral indicators
 ```
 
 ## 5. Decision rules for the final competency set

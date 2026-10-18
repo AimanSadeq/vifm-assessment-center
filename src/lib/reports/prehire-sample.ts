@@ -108,7 +108,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         name: "Analytical Reasoning", nameAr: "التفكير التحليلي", priority: "critical",
         definition: ar
           ? "يحلّل المعلومات بدقّة، ويفكّك المشكلات المعقّدة إلى عناصرها، ويصل إلى استنتاجات مبنيّة على الأدلة."
-          : "Analyses information rigorously, breaks complex problems into parts, and reaches evidence-based conclusions.",
+          : "Analyzes information rigorously, breaks complex problems into parts, and reaches evidence-based conclusions.",
         indicators: ar
           ? ["يفكّك المشكلات المعقّدة إلى عناصرها", "يميّز الأنماط والعلاقات في البيانات", "يستند في استنتاجاته إلى الأدلة"]
           : ["Breaks complex problems into their parts", "Spots patterns and relationships in data", "Grounds conclusions in evidence"],

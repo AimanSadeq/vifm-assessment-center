@@ -32,7 +32,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   try {
     const buf = await buildCentreAgreementDocx(prefill, generatedAt);
-    const safeName = String(engagement.name ?? "centre").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    const safeName = String(engagement.name ?? "center").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
     return new NextResponse(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

@@ -117,7 +117,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       /* font CDN slow or blocked; render with the fallback face */
     }
     const out = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
-    const safeName = String(engagement.name ?? "centre").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
+    const safeName = String(engagement.name ?? "center").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "");
     return new NextResponse(new Uint8Array(out), {
       headers: {
         "Content-Type": "application/pdf",

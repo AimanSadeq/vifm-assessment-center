@@ -25,7 +25,7 @@ const BRITISH = /\b(?:[a-z]*(?:organis|realis|recognis|prioritis|summaris|custom
 
 // Names of stored framework entities and published titles: spelled as stored or published.
 // prettier-ignore
-const STORED_NAMES = /British Psychological Society|Design and Delivery of Assessment Centres|Granada Centre|Managing Successful Programmes|UAE Labour Law|Demo Organisation|Mobilising Around Purpose|Planning & Prioritisation|Sound Judgement|Process Optimisation|Resource Mobilisation|Financial Modelling|Forecasting & Modelling|Data Modelling|Predictive Modelling|Critical Analysis & Judgement/g; // keep-british
+const STORED_NAMES = /British Psychological Society|Design and Delivery of Assessment Centres|Granada Centre|Dubai Centre for AI|Managing Successful Programmes|UAE Labour Law|Demo Organisation|Mobilising Around Purpose|Planning & Prioritisation|Sound Judgement|Process Optimisation|Resource Mobilisation|Financial Modelling|Forecasting & Modelling|Data Modelling|Predictive Modelling|Critical Analysis & Judgement/g; // keep-british
 
 function offenders(text: string): string[] {
   const cleaned = text

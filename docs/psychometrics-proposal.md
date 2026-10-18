@@ -41,7 +41,7 @@ A first-pass "quadrant" framing buckets the constructs but blurs *how they relat
 ```
  OUTCOMES        Readiness · Performance · Potential  (OAR)
                         ▲  drives
- COMPETENCIES    38 behavioural (THINKING · RESULTS · PEOPLE · SELF)
+ COMPETENCIES    38 behavioral (THINKING · RESULTS · PEOPLE · SELF)
    measured by → AC exercises · CBI · Reflect 360        ── MANIFESTS  (direct — this IS the score)
                         ▲ enables             ▲ predicts
  ATTAINMENTS     Technical knowledge · English

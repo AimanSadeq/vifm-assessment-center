@@ -242,7 +242,7 @@ export function DareReportPdf({ data, provisional }: { data: DarePdfData; provis
         <Text style={s.h2}>4 · Development Focus</Text>
         <Text style={[s.para, { marginBottom: 8 }]}>
           Two targeted moves: sharpen the primary role ({DARE_META[p.primary].label}) where it is weakest, and build the
-          foundations of the least-developed role ({DARE_META[data.weakestRole].label}). Concrete, GCC-contextualised
+          foundations of the least-developed role ({DARE_META[data.weakestRole].label}). Concrete, GCC-contextualized
           actions for a 30/60/90-day cycle, ideally with a manager or coach.
         </Text>
         <DevBlock

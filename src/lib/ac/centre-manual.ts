@@ -19,7 +19,7 @@
  * not seen them, and a centre reuses its exercises.
  */
 
-import type { CentreRoleKey } from "./centre-roles";
+import { centreRoleName, type CentreRoleKey } from "./centre-roles";
 
 export type ManualVariant = "full" | CentreRoleKey;
 
@@ -286,7 +286,7 @@ export function buildCentreManual(input: ManualInput): {
       items: [
         { label: "Center manual (full)", detail: "Center manager", fromDesign: true },
         ...Array.from(new Set(input.roles.map((r) => r.roleKey))).map((k) => ({
-          label: `Role manual: ${k.replace(/_/g, " ")}`,
+          label: `Role manual: ${centreRoleName(k).toLowerCase()}`,
           detail: input.roles.filter((r) => r.roleKey === k).map((r) => r.name).join(", "),
           fromDesign: true,
         })),

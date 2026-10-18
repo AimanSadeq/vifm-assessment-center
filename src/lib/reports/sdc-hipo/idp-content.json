@@ -10,12 +10,12 @@
    "Proficient": {
     "job": "Lead a small improvement in your team's process: compare at least two options, pilot one for a month and measure the result.",
     "coaching": "Review the pilot results with your coach, including what you would change and how you handled resistance.",
-    "learning": "Apply Module 3 innovation and problem-solving techniques, practised in the business challenge, to a team process improvement. Compare at least two options and document the measured result."
+    "learning": "Apply Module 3 innovation and problem-solving techniques, practiced in the business challenge, to a team process improvement. Compare at least two options and document the measured result."
    },
    "Advanced": {
     "job": "Sponsor a cross-department pilot linked to an SDC priority, with agreed success measures and a decision point to scale or stop.",
     "coaching": "Work with your coach on building support for experimentation among senior stakeholders.",
-    "learning": "Apply Module 3 strategy and innovation techniques, practised in the capstone project, to a cross-department pilot. Share the lessons with other departments and record which are adopted."
+    "learning": "Apply Module 3 strategy and innovation techniques, practiced in the capstone project, to a cross-department pilot. Share the lessons with other departments and record which are adopted."
    }
   },
   "RO": {
@@ -27,7 +27,7 @@
    "Proficient": {
     "job": "Own a team deliverable with competing priorities; set milestones, track progress and adjust the plan when obstacles appear.",
     "coaching": "Use coaching to work through one trade-off between priorities and how you communicated it.",
-    "learning": "Apply Module 3 business acumen and decision-making techniques to a team deliverable with competing priorities. Use one prioritisation tool and record the milestone decisions it shaped."
+    "learning": "Apply Module 3 business acumen and decision-making techniques to a team deliverable with competing priorities. Use one prioritization tool and record the milestone decisions it shaped."
    },
    "Advanced": {
     "job": "Set a stretching outcome for a cross-team initiative, align resources around it and report progress to senior management monthly.",
@@ -37,14 +37,14 @@
   },
   "ECC": {
    "Basic": {
-    "job": "In your next three meetings, summarise what others said before giving your view, and share notes with colleagues afterwards.",
+    "job": "In your next three meetings, summarize what others said before giving your view, and share notes with colleagues afterwards.",
     "coaching": "Ask your coach for feedback on how clearly you communicate in writing, using two recent emails.",
-    "learning": "Apply Module 2 communication and collaboration techniques in the workplace application. Practise active listening with colleagues and note the feedback they give on how well they felt heard."
+    "learning": "Apply Module 2 communication and collaboration techniques in the workplace application. Practice active listening with colleagues and note the feedback they give on how well they felt heard."
    },
    "Proficient": {
     "job": "Lead a joint task with another team: agree roles, hold regular check-ins and resolve one disagreement directly.",
     "coaching": "Prepare with your coach for a conversation with a stakeholder who sees the work differently.",
-    "learning": "Apply Module 2 influence, feedback and collaboration techniques, practised in the team-based challenge, to a joint task with another team. Document which technique you used when a disagreement arose."
+    "learning": "Apply Module 2 influence, feedback and collaboration techniques, practiced in the team-based challenge, to a joint task with another team. Document which technique you used when a disagreement arose."
    },
    "Advanced": {
     "job": "Bring together stakeholders from several functions around a shared outcome, and run the forum that keeps them aligned.",
@@ -56,7 +56,7 @@
    "Basic": {
     "job": "Review the policies that apply to your role with your manager and confirm how you handle confidential information.",
     "coaching": "Discuss with your coach a time you made a mistake, how you acknowledged it and what you learned.",
-    "learning": "Apply Module 1 leadership standards to your responsibilities. Review relevant policies with your line manager and demonstrate appropriate handling of confidential information, using an anonymised example without disclosing sensitive details."
+    "learning": "Apply Module 1 leadership standards to your responsibilities. Review relevant policies with your line manager and demonstrate appropriate handling of confidential information, using an anonymized example without disclosing sensitive details."
    },
    "Proficient": {
     "job": "When you see a practice that conflicts with policy or values, raise it constructively with the right person and record the outcome.",
@@ -66,7 +66,7 @@
    "Advanced": {
     "job": "Act as the integrity reference point on a sensitive initiative, setting clear standards and holding others to them.",
     "coaching": "Use coaching to prepare for addressing a complex ethical issue with senior stakeholders.",
-    "learning": "Apply Module 1 leadership standards, reinforced by Module 4 executive presence. Demonstrate ethical judgement through a workplace situation and document the decision and rationale."
+    "learning": "Apply Module 1 leadership standards, reinforced by Module 4 executive presence. Demonstrate ethical judgment through a workplace situation and document the decision and rationale."
    }
   },
   "AO": {
@@ -95,7 +95,7 @@
    "Proficient": {
     "job": "Lead a short horizon-scan of external trends affecting your area and present the implications to your department head.",
     "coaching": "Pair with a senior sponsor to test the assumptions behind your department's plan.",
-    "learning": "Apply Module 3 strategy tools, practised in the business simulation, to a horizon scan of your area. Structure the scan with one framework from the module and document the trends it surfaced."
+    "learning": "Apply Module 3 strategy tools, practiced in the business simulation, to a horizon scan of your area. Structure the scan with one framework from the module and document the trends it surfaced."
    },
    "Advanced": {
     "job": "Shape a two-to-three-year direction for your function, testing assumptions with scenarios and aligning stakeholders behind it.",
@@ -129,7 +129,7 @@
    "Proficient": {
     "job": "Lead a decision that involves other stakeholders: evaluate alternatives and risks, decide on time and adjust the plan as conditions change.",
     "coaching": "Use coaching to review how you balanced speed and evidence in that decision.",
-    "learning": "Apply Module 3 decision-making and problem-solving tools, practised in the business simulation, to a decision involving other stakeholders. Evaluate the alternatives and risks in writing and record the decision date."
+    "learning": "Apply Module 3 decision-making and problem-solving tools, practiced in the business simulation, to a decision involving other stakeholders. Evaluate the alternatives and risks in writing and record the decision date."
    },
    "Advanced": {
     "job": "Lead a high-impact decision under uncertainty, with a plan that sets priorities, contingencies and clear accountabilities.",
@@ -139,14 +139,14 @@
   },
   "IM": {
    "Basic": {
-    "job": "Recognise one specific contribution from a colleague each week, and explain how it helped the team's goal.",
+    "job": "Recognize one specific contribution from a colleague each week, and explain how it helped the team's goal.",
     "coaching": "Discuss with your coach what motivates the people you work with most closely.",
-    "learning": "Apply Module 2 feedback and motivation techniques by recognising specific contributions linked to team goals. Record the recognition provided and gather feedback on its relevance and motivational impact."
+    "learning": "Apply Module 2 feedback and motivation techniques by recognizing specific contributions linked to team goals. Record the recognition provided and gather feedback on its relevance and motivational impact."
    },
    "Proficient": {
     "job": "In each team meeting, link current work to the team's purpose, and hold a development conversation with each team member this quarter.",
     "coaching": "Use coaching to plan how to keep engagement up through a demanding period.",
-    "learning": "Apply Module 2 coaching and motivation techniques, practised in the team-based challenge, to a development conversation with each team member. Record the agreed actions and complete a short team engagement check."
+    "learning": "Apply Module 2 coaching and motivation techniques, practiced in the team-based challenge, to a development conversation with each team member. Record the agreed actions and complete a short team engagement check."
    },
    "Advanced": {
     "job": "Lead your team or project through a significant change, communicating purpose and adapting your approach to different people's needs.",
@@ -156,19 +156,19 @@
   },
   "LBE": {
    "Basic": {
-    "job": "Choose two behaviours you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
+    "job": "Choose two behaviors you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
     "coaching": "Review that feedback with your coach and agree one change.",
-    "learning": "Apply Module 4 executive presence and role-modelling, building on Module 1 leadership standards. Demonstrate consistent professional behaviours and seek feedback on their impact."
+    "learning": "Apply Module 4 executive presence and role-modeling, building on Module 1 leadership standards. Demonstrate consistent professional behaviors and seek feedback on their impact."
    },
    "Proficient": {
     "job": "Under pressure, model the standards you set: note one difficult moment each week and how your conduct reinforced them.",
-    "coaching": "Use coaching to reflect on composure under pressure and how others read your behaviour.",
-    "learning": "Apply Module 4 executive presence, supported by Module 1 emotional intelligence and Module 2 team leadership. Model expected behaviours during a team challenge and document feedback."
+    "coaching": "Use coaching to reflect on composure under pressure and how others read your behavior.",
+    "learning": "Apply Module 4 executive presence, supported by Module 1 emotional intelligence and Module 2 team leadership. Model expected behaviors during a team challenge and document feedback."
    },
    "Advanced": {
     "job": "Take visible responsibility for a difficult leadership decision, explain it openly and model the values it reflects.",
-    "coaching": "Discuss with your coach how your conduct sets the tone across the organisation.",
-    "learning": "Apply Module 4 executive presence and leadership principles to a challenging workplace decision. Communicate the rationale, demonstrate consistency with organisational values and gather feedback on how your actions influenced others."
+    "coaching": "Discuss with your coach how your conduct sets the tone across the organization.",
+    "learning": "Apply Module 4 executive presence and leadership principles to a challenging workplace decision. Communicate the rationale, demonstrate consistency with organizational values and gather feedback on how your actions influenced others."
    }
   }
  },
@@ -264,7 +264,7 @@
    "Proficient": {
     "smart": "By day 90, complete a horizon scan of external trends affecting your area and present the implications to your department head.",
     "day30": "Scope of the scan and its sources agreed with the department head.",
-    "day60": "Trends analysed and implications drafted; assumptions tested with a senior sponsor.",
+    "day60": "Trends analyzed and implications drafted; assumptions tested with a senior sponsor.",
     "day90": "Findings presented; at least one implication taken into the department plan.",
     "evidence": "Horizon-scan report; presentation; department head's decision on the recommendations."
    },
@@ -310,7 +310,7 @@
    "Proficient": {
     "smart": "By day 90, lead one decision involving other stakeholders, with alternatives and risks evaluated in writing and the decision made by the agreed date.",
     "day30": "Decision, deadline and stakeholders agreed with the line manager.",
-    "day60": "Options and risks analysed in writing; stakeholders consulted.",
+    "day60": "Options and risks analyzed in writing; stakeholders consulted.",
     "day90": "Decision made on time; the plan adjusted as conditions changed, and the result reviewed.",
     "evidence": "Decision paper with options and risks; record of stakeholder input; line manager feedback on the decision and its timing."
    },
@@ -347,8 +347,8 @@
   },
   "LBE": {
    "Basic": {
-    "smart": "By day 90, choose two behaviours you expect of others and get monthly feedback from a trusted colleague on whether you show them consistently.",
-    "day30": "Two behaviours chosen; colleague agreed to give feedback.",
+    "smart": "By day 90, choose two behaviors you expect of others and get monthly feedback from a trusted colleague on whether you show them consistently.",
+    "day30": "Two behaviors chosen; colleague agreed to give feedback.",
     "day60": "Two rounds of feedback received; one change agreed with the coach.",
     "day90": "Third round of feedback shows the change in place.",
     "evidence": "Monthly feedback notes; agreed change; colleague and line manager feedback."

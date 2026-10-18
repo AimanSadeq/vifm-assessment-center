@@ -423,7 +423,7 @@ export function ProposalBuilder({
         <h2 className="font-medium text-foreground">Proposal basics</h2>
         <label className="block text-sm">
           <span className="text-muted-foreground">Proposal title</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Leadership Assessment Programme 2026"
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Leadership Assessment Program 2026"
             className="mt-1 w-full rounded-md border border-border bg-card px-3 py-2 text-sm" />
         </label>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -514,17 +514,17 @@ export function ProposalBuilder({
             <h2 className="font-medium text-foreground">Pricing model</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {isLicence
-                ? "Annual all-access licence to the Caliber platform (SaaS build-up)."
+                ? "Annual all-access license to the Caliber platform (SaaS build-up)."
                 : isEngagement
                   ? "Bespoke professional-services engagement (e.g. Assessment Center): fixed fees + per-participant + consultant-days + feedback."
                   : isCombined
-                    ? "Combined: per-seat services (or an annual licence) PLUS one or more consultant engagements, itemised together with a single grand total."
+                    ? "Combined: per-seat services (or an annual license) PLUS one or more consultant engagements, itemized together with a single grand total."
                     : "One-off project fee: participants x the per-service rate."}
             </p>
           </div>
           <div className="inline-flex rounded-md border border-border p-0.5">
             <button type="button" onClick={() => switchMode("licence")}
-              className={`rounded px-3 py-1.5 text-sm font-medium ${isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
+              className={`rounded px-3 py-1.5 text-sm font-medium ${isLicence ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual license</button>
             <button type="button" onClick={() => switchMode("per_project")}
               className={`rounded px-3 py-1.5 text-sm font-medium ${pricingMode === "per_project" ? "bg-[#010131] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
             <button type="button" onClick={() => switchMode("combined")}
@@ -541,7 +541,7 @@ export function ProposalBuilder({
               <button type="button" onClick={() => setCombinedServicesMode("per_project")}
                 className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "per_project" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Per project</button>
               <button type="button" onClick={() => setCombinedServicesMode("licence")}
-                className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "licence" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual licence</button>
+                className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "licence" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Annual license</button>
               <button type="button" onClick={() => setCombinedServicesMode("none")}
                 className={`rounded px-3 py-1 text-sm font-medium ${combinedServicesMode === "none" ? "bg-[#5391D5] text-white" : "text-muted-foreground hover:bg-muted"}`}>Engagement only</button>
             </div>
@@ -560,7 +560,7 @@ export function ProposalBuilder({
         </div>
         <p className="text-xs text-muted-foreground">
           {servicesAsLicence
-            ? "Set the committed annual volume per service (0 excludes it) and its unit price. The a-la-carte total feeds the licence build-up below."
+            ? "Set the committed annual volume per service (0 excludes it) and its unit price. The a-la-carte total feeds the license build-up below."
             : "Set participants per service (0 excludes it). Pricing = participants x the per-service rate."}
         </p>
 
@@ -611,7 +611,7 @@ export function ProposalBuilder({
           </p>
         )}
         {servicesAsLicence && !licensing && (
-          <p className="text-xs text-amber-700">Add at least one service with an annual volume and a unit price above 0 to price the licence.</p>
+          <p className="text-xs text-amber-700">Add at least one service with an annual volume and a unit price above 0 to price the license.</p>
         )}
         </>)}
 
@@ -693,10 +693,10 @@ export function ProposalBuilder({
       {/* Licence parameters */}
       {servicesAsLicence && (
         <section className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <h2 className="font-medium text-foreground">Licence parameters</h2>
+          <h2 className="font-medium text-foreground">License parameters</h2>
           <div className="grid gap-3 sm:grid-cols-3">
             <label className="block text-sm">
-              <span className="text-muted-foreground">Committed-licence discount %</span>
+              <span className="text-muted-foreground">Committed-license discount %</span>
               <input type="number" min={0} max={100} value={bundleDiscountPct}
                 onChange={(e) => setBundleDiscountPct(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} className={numInput} />
             </label>
@@ -782,7 +782,7 @@ export function ProposalBuilder({
             <div>
               <h2 className="font-medium text-foreground">Bespoke service bundles</h2>
               <p className="text-xs text-muted-foreground">
-                One price for a shared licence pool - one seat lets a participant complete every service in the bundle in a single sitting.
+                One price for a shared license pool - one seat lets a participant complete every service in the bundle in a single sitting.
                 The proposal lists each bundle&apos;s assessments, what they measure, and the reports they produce.
               </p>
             </div>
@@ -791,7 +791,7 @@ export function ProposalBuilder({
           </div>
 
           {licenceBundles.length === 0 && (
-            <p className="text-xs text-muted-foreground">No bespoke bundles yet. Add one to package several services under a single licence price.</p>
+            <p className="text-xs text-muted-foreground">No bespoke bundles yet. Add one to package several services under a single license price.</p>
           )}
 
           {licenceBundles.map((b, bi) => {
@@ -813,7 +813,7 @@ export function ProposalBuilder({
                       onChange={(e) => setB({ name: e.target.value })} className={numInput} />
                   </label>
                   <label className="block text-sm">
-                    <span className="text-muted-foreground">Licences (seats)</span>
+                    <span className="text-muted-foreground">Licenses (seats)</span>
                     <input type="number" min={0} value={b.licenses}
                       onChange={(e) => setB({ licenses: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} className={numInput} />
                   </label>
@@ -862,7 +862,7 @@ export function ProposalBuilder({
             <div className="sm:col-span-3 rounded-md border border-border bg-muted/40 p-3 text-sm">
               <div className="space-y-1">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>{combinedServicesMode === "licence" ? "Platform licence (Year-1)" : combinedServicesMode === "per_project" ? "Platform services" : "Platform services"}</span>
+                  <span>{combinedServicesMode === "licence" ? "Platform license (Year-1)" : combinedServicesMode === "per_project" ? "Platform services" : "Platform services"}</span>
                   <span className="tabular-nums">{money(combinedServicesTotal)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
@@ -881,9 +881,9 @@ export function ProposalBuilder({
                 <div className="space-y-1">
                   <div className="flex justify-between text-muted-foreground"><span>A-la-carte retail</span><span className="tabular-nums">{money(licensing.alaCarteTotal)}</span></div>
                   {licensing.hasBundleDiscount && (
-                    <div className="flex justify-between text-muted-foreground"><span>Committed-licence discount ({bundleDiscountPct}%)</span><span className="tabular-nums">- {money(licensing.discountAmount)}</span></div>
+                    <div className="flex justify-between text-muted-foreground"><span>Committed-license discount ({bundleDiscountPct}%)</span><span className="tabular-nums">- {money(licensing.discountAmount)}</span></div>
                   )}
-                  <div className="flex justify-between text-foreground"><span>Committed annual licence</span><span className="tabular-nums">{money(licensing.annualLicence)}</span></div>
+                  <div className="flex justify-between text-foreground"><span>Committed annual license</span><span className="tabular-nums">{money(licensing.annualLicence)}</span></div>
                   {licensing.hasSupport && (
                     <div className="flex justify-between text-muted-foreground"><span>Support &amp; SLA ({supportPct}%)</span><span className="tabular-nums">{money(licensing.supportAmount)}</span></div>
                   )}
@@ -911,7 +911,7 @@ export function ProposalBuilder({
                   )}
                 </div>
               ) : (
-                <p className="text-muted-foreground">Price at least one service above to see the licence build-up.</p>
+                <p className="text-muted-foreground">Price at least one service above to see the license build-up.</p>
               )}
             </div>
           ) : isEngagement ? (

@@ -41,7 +41,7 @@ export default async function BespokeRolesPage() {
       <div>
         <h1 className="text-2xl font-bold">Role Readiness roles</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Configure a job family, then a role: pick behavioural competencies with per-competency targets, attach
+          Configure a job family, then a role: pick behavioral competencies with per-competency targets, attach
           technical areas + items, set the pass thresholds, and publish it to the Bespoke Services section. No code
           changes - everything here is data-driven.
         </p>

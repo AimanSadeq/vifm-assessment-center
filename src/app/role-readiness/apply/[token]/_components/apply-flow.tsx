@@ -116,12 +116,12 @@ function ConsentCard({ name, roleName, busy, onAgree }: { name: string; roleName
       <h1 className="text-xl font-semibold text-[#010131]">Welcome, {name}</h1>
       <p className="mt-2 text-sm text-muted-foreground">
         You have been invited to complete the <span className="font-medium text-foreground">{roleName}</span> readiness
-        assessment. It has two short sections: a behavioural self-assessment (Persona) and a technical knowledge check.
-        Your responses are processed to produce a readiness report for the sponsoring organisation.
+        assessment. It has two short sections: a behavioral self-assessment (Persona) and a technical knowledge check.
+        Your responses are processed to produce a readiness report for the sponsoring organization.
       </p>
       <div className="mt-4 flex items-start gap-2 rounded-lg bg-[#5391D5]/5 p-3 text-xs text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#5391D5]" />
-        <span>By continuing you consent to taking this assessment and to your results being shared with the sponsoring organisation.</span>
+        <span>By continuing you consent to taking this assessment and to your results being shared with the sponsoring organization.</span>
       </div>
       <Button onClick={onAgree} disabled={busy} className="mt-5 gap-2">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />} I agree - start
@@ -143,13 +143,13 @@ function PersonaSection({ base, onError, onDone }: { base: string; onError: (m: 
     return () => { live = false; };
   }, [base, onError]);
 
-  if (!items) return <Loading label="Preparing the behavioural section…" />;
+  if (!items) return <Loading label="Preparing the behavioral section…" />;
   const answered = items.filter((i) => answers[i.itemKey]).length;
   const allAnswered = answered === items.length;
 
   return (
     <div>
-      <SectionHeader icon={<ClipboardList className="h-5 w-5" />} title="Section 1 · Behavioural (Persona)"
+      <SectionHeader icon={<ClipboardList className="h-5 w-5" />} title="Section 1 · Behavioral (Persona)"
         sub={`Rate how much each statement describes you. ${answered}/${items.length} answered.`} />
       <div className="space-y-3">
         {items.map((it, idx) => (
@@ -182,7 +182,7 @@ function PersonaSection({ base, onError, onDone }: { base: string; onError: (m: 
           finally { setBusy(false); }
         }}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-        {allAnswered ? "Submit behavioural section" : `Answer all (${answered}/${items.length})`}
+        {allAnswered ? "Submit behavioral section" : `Answer all (${answered}/${items.length})`}
       </Button>
     </div>
   );
@@ -278,7 +278,7 @@ function DoneCard({ base, token, initialVerdict }: { base: string; token: string
 
       {data && (
         <div className="mt-5 grid gap-3 text-left sm:grid-cols-2">
-          <ScoreTile label="Behavioural (Persona)" pct={data.persona.scorePct} passed={data.persona.passed} threshold={data.persona.threshold} />
+          <ScoreTile label="Behavioral (Persona)" pct={data.persona.scorePct} passed={data.persona.passed} threshold={data.persona.threshold} />
           <ScoreTile label="Technical" pct={data.technical.scorePct} passed={data.technical.passed} threshold={data.technical.threshold} />
         </div>
       )}

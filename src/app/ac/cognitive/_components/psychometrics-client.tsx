@@ -616,7 +616,7 @@ export function PsychometricsClient({
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
             {lang === "ar"
               ? "تمت مشاركة نتائجك مع الجهة الطالبة ولا تُعرض هنا. شكرًا لك."
-              : "Your results have been shared with the requesting organisation and are not shown here. Thank you."}
+              : "Your results have been shared with the requesting organization and are not shown here. Thank you."}
           </p>
           <button onClick={reset} className="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50">
             <RotateCcw className="h-4 w-4" /> {lang === "ar" ? "البدء من جديد" : "Start over"}

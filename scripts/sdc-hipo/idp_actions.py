@@ -1,7 +1,7 @@
 """Draft IDP development actions per SDC competency and target level (70/20/10).
 
 DRAFTS for Ali AlShouli (SDC lead and subject-matter expert) to review or rewrite.
-Module names and activities follow the SDC programme in proposal 20260809-SDC-02-HPHLD
+Module names and activities follow the SDC program in proposal 20260809-SDC-02-HPHLD
 (M1 Leading Self, M2 Leading Others, M3 Leading the Business, M4 Leading for the Future).
 """
 
@@ -10,7 +10,7 @@ MODULE = {"IN": "M3 Leading the Business", "RO": "M3 Leading the Business", "ECC
           "DSP": "M2 Leading Others", "EDP": "M3 Leading the Business", "IM": "M2 Leading Others",
           "LBE": "M4 Leading for the Future"}
 
-EVIDENCE = "Examples of the goal behaviours, reviewed at each coaching touchpoint and in the post-programme assessment."
+EVIDENCE = "Examples of the goal behaviors, reviewed at each coaching touchpoint and in the post-program assessment."
 
 # ACTIONS[code][level] = (on the job 70%, coaching 20%, learning 10%)
 ACTIONS = {
@@ -20,10 +20,10 @@ ACTIONS = {
             "Apply Module 3 innovation and problem-solving techniques to a recurring task. Generate at least two improvement ideas, test one, and record the impact on time, quality or efficiency."),
   "Proficient": ("Lead a small improvement in your team's process: compare at least two options, pilot one for a month and measure the result.",
             "Review the pilot results with your coach, including what you would change and how you handled resistance.",
-            "Apply Module 3 innovation and problem-solving techniques, practised in the business challenge, to a team process improvement. Compare at least two options and document the measured result."),
+            "Apply Module 3 innovation and problem-solving techniques, practiced in the business challenge, to a team process improvement. Compare at least two options and document the measured result."),
   "Advanced": ("Sponsor a cross-department pilot linked to an SDC priority, with agreed success measures and a decision point to scale or stop.",
             "Work with your coach on building support for experimentation among senior stakeholders.",
-            "Apply Module 3 strategy and innovation techniques, practised in the capstone project, to a cross-department pilot. Share the lessons with other departments and record which are adopted."),
+            "Apply Module 3 strategy and innovation techniques, practiced in the capstone project, to a cross-department pilot. Share the lessons with other departments and record which are adopted."),
  },
  "RO": {
   "Basic": ("Agree three clear outcomes for the next quarter with your manager, track them weekly and flag any risk early.",
@@ -31,18 +31,18 @@ ACTIONS = {
             "Apply Module 3 business acumen to translate business priorities into measurable quarterly outcomes, using Module 1 goal-setting techniques to track progress."),
   "Proficient": ("Own a team deliverable with competing priorities; set milestones, track progress and adjust the plan when obstacles appear.",
             "Use coaching to work through one trade-off between priorities and how you communicated it.",
-            "Apply Module 3 business acumen and decision-making techniques to a team deliverable with competing priorities. Use one prioritisation tool and record the milestone decisions it shaped."),
+            "Apply Module 3 business acumen and decision-making techniques to a team deliverable with competing priorities. Use one prioritization tool and record the milestone decisions it shaped."),
   "Advanced": ("Set a stretching outcome for a cross-team initiative, align resources around it and report progress to senior management monthly.",
             "Discuss with your coach how you sustain performance when conditions change mid-delivery.",
             "Apply Module 3 business acumen through the capstone business project to deliver a measurable cross-team outcome. Present achievements, challenges and lessons learned to the C-suite, documenting feedback and agreed next steps."),
  },
  "ECC": {
-  "Basic": ("In your next three meetings, summarise what others said before giving your view, and share notes with colleagues afterwards.",
+  "Basic": ("In your next three meetings, summarize what others said before giving your view, and share notes with colleagues afterwards.",
             "Ask your coach for feedback on how clearly you communicate in writing, using two recent emails.",
-            "Apply Module 2 communication and collaboration techniques in the workplace application. Practise active listening with colleagues and note the feedback they give on how well they felt heard."),
+            "Apply Module 2 communication and collaboration techniques in the workplace application. Practice active listening with colleagues and note the feedback they give on how well they felt heard."),
   "Proficient": ("Lead a joint task with another team: agree roles, hold regular check-ins and resolve one disagreement directly.",
             "Prepare with your coach for a conversation with a stakeholder who sees the work differently.",
-            "Apply Module 2 influence, feedback and collaboration techniques, practised in the team-based challenge, to a joint task with another team. Document which technique you used when a disagreement arose."),
+            "Apply Module 2 influence, feedback and collaboration techniques, practiced in the team-based challenge, to a joint task with another team. Document which technique you used when a disagreement arose."),
   "Advanced": ("Bring together stakeholders from several functions around a shared outcome, and run the forum that keeps them aligned.",
             "Use coaching to map key stakeholders and plan how to build trust where relationships are weak.",
             "Apply Module 2 influence and collaboration techniques, supported by Module 4 stakeholder management, during the capstone project. Document stakeholder alignment and agreed outcomes."),
@@ -50,13 +50,13 @@ ACTIONS = {
  "PI": {
   "Basic": ("Review the policies that apply to your role with your manager and confirm how you handle confidential information.",
             "Discuss with your coach a time you made a mistake, how you acknowledged it and what you learned.",
-            "Apply Module 1 leadership standards to your responsibilities. Review relevant policies with your line manager and demonstrate appropriate handling of confidential information, using an anonymised example without disclosing sensitive details."),
+            "Apply Module 1 leadership standards to your responsibilities. Review relevant policies with your line manager and demonstrate appropriate handling of confidential information, using an anonymized example without disclosing sensitive details."),
   "Proficient": ("When you see a practice that conflicts with policy or values, raise it constructively with the right person and record the outcome.",
             "Work through a real ethical dilemma from your role with your coach, weighing the competing interests.",
             "Apply Module 1 leadership standards to a realistic ethical dilemma aligned with SDC's applicable policies. Document the options, appropriate escalation route and rationale for your recommended action."),
   "Advanced": ("Act as the integrity reference point on a sensitive initiative, setting clear standards and holding others to them.",
             "Use coaching to prepare for addressing a complex ethical issue with senior stakeholders.",
-            "Apply Module 1 leadership standards, reinforced by Module 4 executive presence. Demonstrate ethical judgement through a workplace situation and document the decision and rationale."),
+            "Apply Module 1 leadership standards, reinforced by Module 4 executive presence. Demonstrate ethical judgment through a workplace situation and document the decision and rationale."),
  },
  "AO": {
   "Basic": ("Keep a commitment log for one month: what you promised, when, and whether it was delivered; tell people early about any slip.",
@@ -75,7 +75,7 @@ ACTIONS = {
             "Apply Module 3 strategy tools and the pre-reading to SDC's strategy. Map how your area supports two SDC priorities and record what the map changed in your own work."),
   "Proficient": ("Lead a short horizon-scan of external trends affecting your area and present the implications to your department head.",
             "Pair with a senior sponsor to test the assumptions behind your department's plan.",
-            "Apply Module 3 strategy tools, practised in the business simulation, to a horizon scan of your area. Structure the scan with one framework from the module and document the trends it surfaced."),
+            "Apply Module 3 strategy tools, practiced in the business simulation, to a horizon scan of your area. Structure the scan with one framework from the module and document the trends it surfaced."),
   "Advanced": ("Shape a two-to-three-year direction for your function, testing assumptions with scenarios and aligning stakeholders behind it.",
             "Use coaching to prepare how you will present and defend a long-term view to the executive team.",
             "Apply Module 3 strategy and scenario-planning techniques through the capstone project to develop a two-to-three-year strategic direction for your function. Present alternative scenarios, implications and recommendations, recording leadership feedback and agreed next steps."),
@@ -97,32 +97,32 @@ ACTIONS = {
             "Apply Module 3 decision-making techniques to a real workplace decision. Document the alternatives, selection criteria and rationale, then reflect on how the technique improved your decision-making process."),
   "Proficient": ("Lead a decision that involves other stakeholders: evaluate alternatives and risks, decide on time and adjust the plan as conditions change.",
             "Use coaching to review how you balanced speed and evidence in that decision.",
-            "Apply Module 3 decision-making and problem-solving tools, practised in the business simulation, to a decision involving other stakeholders. Evaluate the alternatives and risks in writing and record the decision date."),
+            "Apply Module 3 decision-making and problem-solving tools, practiced in the business simulation, to a decision involving other stakeholders. Evaluate the alternatives and risks in writing and record the decision date."),
   "Advanced": ("Lead a high-impact decision under uncertainty, with a plan that sets priorities, contingencies and clear accountabilities.",
             "Discuss with your coach how you integrate conflicting views before deciding.",
             "Apply Module 3 decision-making techniques through the capstone project to evaluate a high-impact decision under uncertainty. Develop contingency options, document key assumptions and review their validity as new information becomes available."),
  },
  "IM": {
-  "Basic": ("Recognise one specific contribution from a colleague each week, and explain how it helped the team's goal.",
+  "Basic": ("Recognize one specific contribution from a colleague each week, and explain how it helped the team's goal.",
             "Discuss with your coach what motivates the people you work with most closely.",
-            "Apply Module 2 feedback and motivation techniques by recognising specific contributions linked to team goals. Record the recognition provided and gather feedback on its relevance and motivational impact."),
+            "Apply Module 2 feedback and motivation techniques by recognizing specific contributions linked to team goals. Record the recognition provided and gather feedback on its relevance and motivational impact."),
   "Proficient": ("In each team meeting, link current work to the team's purpose, and hold a development conversation with each team member this quarter.",
             "Use coaching to plan how to keep engagement up through a demanding period.",
-            "Apply Module 2 coaching and motivation techniques, practised in the team-based challenge, to a development conversation with each team member. Record the agreed actions and complete a short team engagement check."),
+            "Apply Module 2 coaching and motivation techniques, practiced in the team-based challenge, to a development conversation with each team member. Record the agreed actions and complete a short team engagement check."),
   "Advanced": ("Lead your team or project through a significant change, communicating purpose and adapting your approach to different people's needs.",
             "Work with your coach on how you build confidence when the path is uncertain.",
             "Apply Module 2 coaching and motivation techniques, reinforced by Module 4 change management. Lead a team engagement activity and gather feedback on its impact."),
  },
  "LBE": {
-  "Basic": ("Choose two behaviours you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
+  "Basic": ("Choose two behaviors you expect of others and ask a trusted colleague to tell you monthly whether you show them consistently.",
             "Review that feedback with your coach and agree one change.",
-            "Apply Module 4 executive presence and role-modelling, building on Module 1 leadership standards. Demonstrate consistent professional behaviours and seek feedback on their impact."),
+            "Apply Module 4 executive presence and role-modeling, building on Module 1 leadership standards. Demonstrate consistent professional behaviors and seek feedback on their impact."),
   "Proficient": ("Under pressure, model the standards you set: note one difficult moment each week and how your conduct reinforced them.",
-            "Use coaching to reflect on composure under pressure and how others read your behaviour.",
-            "Apply Module 4 executive presence, supported by Module 1 emotional intelligence and Module 2 team leadership. Model expected behaviours during a team challenge and document feedback."),
+            "Use coaching to reflect on composure under pressure and how others read your behavior.",
+            "Apply Module 4 executive presence, supported by Module 1 emotional intelligence and Module 2 team leadership. Model expected behaviors during a team challenge and document feedback."),
   "Advanced": ("Take visible responsibility for a difficult leadership decision, explain it openly and model the values it reflects.",
-            "Discuss with your coach how your conduct sets the tone across the organisation.",
-            "Apply Module 4 executive presence and leadership principles to a challenging workplace decision. Communicate the rationale, demonstrate consistency with organisational values and gather feedback on how your actions influenced others."),
+            "Discuss with your coach how your conduct sets the tone across the organization.",
+            "Apply Module 4 executive presence and leadership principles to a challenging workplace decision. Communicate the rationale, demonstrate consistency with organizational values and gather feedback on how your actions influenced others."),
  },
 }
 
@@ -200,7 +200,7 @@ PLAN = {
             "One-page note; the adjusted piece of work; line manager feedback on the link to strategy."),
   "Proficient": ("By day 90, complete a horizon scan of external trends affecting your area and present the implications to your department head.",
                  "Scope of the scan and its sources agreed with the department head.",
-                 "Trends analysed and implications drafted; assumptions tested with a senior sponsor.",
+                 "Trends analyzed and implications drafted; assumptions tested with a senior sponsor.",
                  "Findings presented; at least one implication taken into the department plan.",
                  "Horizon-scan report; presentation; department head's decision on the recommendations."),
   "Advanced": ("By day 90, draft a two-to-three-year direction for your function, tested with scenarios and reviewed by the executive team.",
@@ -234,7 +234,7 @@ PLAN = {
             "Three decision records; post-decision reviews; line manager feedback on decision quality."),
   "Proficient": ("By day 90, lead one decision involving other stakeholders, with alternatives and risks evaluated in writing and the decision made by the agreed date.",
                  "Decision, deadline and stakeholders agreed with the line manager.",
-                 "Options and risks analysed in writing; stakeholders consulted.",
+                 "Options and risks analyzed in writing; stakeholders consulted.",
                  "Decision made on time; the plan adjusted as conditions changed, and the result reviewed.",
                  "Decision paper with options and risks; record of stakeholder input; line manager feedback on the decision and its timing."),
   "Advanced": ("By day 90, lead a high-impact decision under uncertainty with a written plan setting priorities, contingencies and accountabilities.",
@@ -261,8 +261,8 @@ PLAN = {
                "Communication plan; two engagement checks; sponsor feedback on how the change was led."),
  },
  "LBE": {
-  "Basic": ("By day 90, choose two behaviours you expect of others and get monthly feedback from a trusted colleague on whether you show them consistently.",
-            "Two behaviours chosen; colleague agreed to give feedback.",
+  "Basic": ("By day 90, choose two behaviors you expect of others and get monthly feedback from a trusted colleague on whether you show them consistently.",
+            "Two behaviors chosen; colleague agreed to give feedback.",
             "Two rounds of feedback received; one change agreed with the coach.",
             "Third round of feedback shows the change in place.",
             "Monthly feedback notes; agreed change; colleague and line manager feedback."),

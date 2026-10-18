@@ -12,10 +12,10 @@ Succession decisions answer one question: who can step into a critical role, and
 
 ## 2. Construct definitions
 
-**The framework.** Readiness is measured against the VIFM behavioural competency framework: 4 domains (Thinking, Results, People, Self), 8 clusters, and 38 competencies, each scored on a 5-point behaviourally anchored scale (1 Significant Gap to 5 Role Model, with 3 Meets Requirement as the working bar). The framework is VIFM-authored and owned.
+**The framework.** Readiness is measured against the VIFM behavioral competency framework: 4 domains (Thinking, Results, People, Self), 8 clusters, and 38 competencies, each scored on a 5-point behaviorally anchored scale (1 Significant Gap to 5 Role Model, with 3 Meets Requirement as the working bar). The framework is VIFM-authored and owned.
 
 **Two instruments, one spine.** Two instruments measure the same 38 competencies, so their scores are directly comparable:
-- a **behavioural self-assessment** (the candidate, first-person), and
+- a **behavioral self-assessment** (the candidate, first-person), and
 - a **360** (manager, peer, direct-report, and other observers, third-person).
 
 Both draw on a single shared item bank, served self-perspective in the assessment and observer-perspective in the 360.
@@ -34,7 +34,7 @@ Both draw on a single shared item bank, served self-perspective in the assessmen
 
 **Gap to the role, not an absolute.** Readiness is the distance between the candidate's weighted Others profile and the **target role profile**: the role's critical competencies, each weighted by importance, benchmarked to the role's target proficiency. Competencies the role does not require do not dilute the result.
 
-**Tiers.** The weighted gap maps to four tiers: Ready Now (at or above the bar), Ready Soon (just short), Developing (moderate gaps), Not Ready (substantial gaps). An optional year-horizon layer (for example 0 to 2 years, 3 to 5 years) can be switched on per client; it is a presentation label derived from the tier, not a measured quantity, and is deliberately separated from the maths to avoid implying false precision.
+**Tiers.** The weighted gap maps to four tiers: Ready Now (at or above the bar), Ready Soon (just short), Developing (moderate gaps), Not Ready (substantial gaps). An optional year-horizon layer (for example 0 to 2 years, 3 to 5 years) can be switched on per client; it is a presentation label derived from the tier, not a measured quantity, and is deliberately separated from the math to avoid implying false precision.
 
 **Guardrails.** A high-priority "knockout" caps the tier when a must-have competency sits well below target, so a strong average never fast-tracks someone failing an essential. A coverage floor returns "Insufficient Data" rather than a verdict when too few competencies were rated. Advisory flags mark borderline cases (a gap sitting on a tier boundary) and low rater agreement (observers disagreeing sharply), so near-calls and noisy evidence are visible rather than hidden behind a clean label.
 
@@ -79,8 +79,8 @@ Two kinds of evidence: **(A)** established coefficients for the *methods* combin
 **A. Established coefficients for the methods (published literature)**
 
 - **Self-other agreement** (Persona self vs Reflect 360 others): meta-analytic **r ≈ .35** (Harris & Schaubroeck, 1988) - the gap between self and others is the informative signal.
-- **Behavioural self-report → performance:** Five-Factor operational validities **ρ ≈ .10-.23** (Barrick, Mount & Judge, 2001).
-- **Potential identification:** combining performance, behaviour and role-fit follows the applied potential / succession literature (Silzer & Church, 2009).
+- **Behavioral self-report → performance:** Five-Factor operational validities **ρ ≈ .10-.23** (Barrick, Mount & Judge, 2001).
+- **Potential identification:** combining performance, behavior and role-fit follows the applied potential / succession literature (Silzer & Church, 2009).
 
 **B. VIFM's own reliability - method, threshold, and current status**
 

@@ -44,7 +44,7 @@ export default async function PortalHomePage({ searchParams }: { searchParams?: 
     }
     return (
       <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
-        No programme has been allocated to your organisation yet. Please contact your VIFM consultant.
+        No program has been allocated to your organization yet. Please contact your VIFM consultant.
       </p>
     );
   }

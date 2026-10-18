@@ -50,15 +50,15 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
       "لم نعثر على هذا الرمز. يرجى التحقق منه في رسالة الدعوة.",
     ],
     disabled: [
-      "This code has been deactivated. Please contact the organisation that invited you.",
+      "This code has been deactivated. Please contact the organization that invited you.",
       "تم إيقاف هذا الرمز. يرجى التواصل مع الجهة التي دعتك.",
     ],
     expired: [
-      "This code has expired. Please contact the organisation that invited you.",
+      "This code has expired. Please contact the organization that invited you.",
       "انتهت صلاحية هذا الرمز. يرجى التواصل مع الجهة التي دعتك.",
     ],
     used_up: [
-      "All places on this code have been taken. Please contact the organisation that invited you.",
+      "All places on this code have been taken. Please contact the organization that invited you.",
       "تم استخدام جميع المقاعد المتاحة لهذا الرمز. يرجى التواصل مع الجهة التي دعتك.",
     ],
   };
@@ -150,7 +150,7 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
           </div>
           <div className="space-y-2">
             <Label htmlFor="company">{tx("Company", "جهة العمل")}</Label>
-            <Input id="company" name="company" ref={companyRef} placeholder={tx("Your organisation", "مؤسستك")} defaultValue={initialCompany} required />
+            <Input id="company" name="company" ref={companyRef} placeholder={tx("Your organization", "مؤسستك")} defaultValue={initialCompany} required />
           </div>
 
           {error && (
@@ -168,7 +168,7 @@ export function RedeemForm({ initialCode = "", initialCompany = "", initialLang 
                   "هذه نسخة تدريبية لأغراض التطوير - وليست تقييماً رسمياً معتمداً.",
                 )
               : tx(
-                  "Your responses are shared with the organisation that invited you, who will follow up on next steps.",
+                  "Your responses are shared with the organization that invited you, who will follow up on next steps.",
                   "تُشارَك إجاباتك مع الجهة التي دعتك، وستتابع معك الخطوات التالية.",
                 )}
           </p>

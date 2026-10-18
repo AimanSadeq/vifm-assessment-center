@@ -18,7 +18,7 @@ const base = (engagement: Record<string, unknown> = {}, over: Partial<AgreementI
   ...over,
 });
 
-test("a selection centre with no explicit method is calculated", () => {
+test("a selection center with no explicit method is calculated", () => {
   const p = buildAgreementPrefill(base({ purpose: "selection" }));
   assert.equal(p.purpose, "selection");
   assert.equal(p.ratingRule, "calculated");
@@ -55,7 +55,7 @@ test("feedback is mandatory for development and succession, and 'none' reads as 
   assert.equal(sel.feedback.form, null);
 });
 
-test("fairness monitoring is off only for development centres", () => {
+test("fairness monitoring is off only for development centers", () => {
   assert.equal(buildAgreementPrefill(base({ purpose: "development" })).fairnessApplies, false);
   assert.equal(buildAgreementPrefill(base({ purpose: "succession" })).fairnessApplies, true);
 });
@@ -79,7 +79,7 @@ test("content status reports partial review honestly", () => {
   assert.equal(buildAgreementPrefill(base({}, { contentApproved: null })).contentStatus, null);
 });
 
-test("people outside VIFM are labelled as such, not as the Client", () => {
+test("people outside VIFM are labeled as such, not as the Client", () => {
   const p = buildAgreementPrefill(base({}, {
     roles: [
       { roleKey: "assessor", name: "A", isExternal: false },

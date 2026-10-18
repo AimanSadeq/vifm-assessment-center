@@ -6,7 +6,7 @@
 
 ## 1. Why this exists
 
-Whenever an assessment informs a hiring decision, three questions follow it into the room: *What does the instrument actually measure? How is a single number derived from a candidate's answers? And what weight should the number be allowed to carry?* This brief answers those questions for VIFM Pre-Hire, the commercial pre-employment screening service that lets VIFM sell the Assessment Center instruments to client organisations as a structured, defensible shortlisting layer.
+Whenever an assessment informs a hiring decision, three questions follow it into the room: *What does the instrument actually measure? How is a single number derived from a candidate's answers? And what weight should the number be allowed to carry?* This brief answers those questions for VIFM Pre-Hire, the commercial pre-employment screening service that lets VIFM sell the Assessment Center instruments to client organizations as a structured, defensible shortlisting layer.
 
 Pre-Hire produces a screening signal that supports a human decision. It is deliberately not a hiring decision, not an auto-reject, and not a standalone verdict on a candidate. The single most important design choice in the entire module is this: **the scoring code has no reject path.** A candidate is never declined by software. VIFM is the assessor and delivers a report; the engaged client makes the actual hiring call. Every other design choice documented below flows from that positioning.
 
@@ -18,7 +18,7 @@ Pre-Hire produces a screening signal that supports a human decision. It is delib
 
 Pre-Hire does not invent a new test. It is an orchestration layer over instruments that already exist on the VIFM platform, assembled into a client-scoped, role-specific hiring funnel. Each stage in a requisition reuses an existing engine verbatim and soft-links back to that engine's own native result record rather than duplicating it. The three interactive screening stages are:
 
-- **Quiz** - a competency and knowledge screen built by the VIFM quiz generator, bilingual, with the answer key stripped from the client payload so grading happens server-side. The normalised stage score is `round(100 * correct / total)`.
+- **Quiz** - a competency and knowledge screen built by the VIFM quiz generator, bilingual, with the answer key stripped from the client payload so grading happens server-side. The normalized stage score is `round(100 * correct / total)`.
 - **Fluent** - the full four-skill English placement (reading, listening, writing, speaking). Reading and listening are auto-scored; writing and speaking are scored against a CEFR rubric, optionally blended with pronunciation assessment. The CEFR outcome maps to a 0-100 scale (A1 toward 0, C2 toward 100).
 - **CBI** - a structured competency-based interview run by the AI interviewer, capped at four candidate answers, producing a BARS 1-5 rating that maps to `round(((bars - 1) / 4) * 100)`.
 
@@ -34,13 +34,13 @@ What counts as a strong screening signal is defined per role, not globally. Each
 
 ### From stages to a composite
 
-Each completed stage contributes a normalised 0-100 score. The composite is a weighted average of those stage scores, computed in `computeComposite` ([src/lib/prehire/scoring.ts](../src/lib/prehire/scoring.ts)). Only stages with a positive weight contribute. Weights are normalised against the total weight of the weighted stages, so the applied weight for a stage is `weight / totalWeight`, and the composite is the sum of each weighted stage's `normalized * appliedWeight`, clamped to 0-100 and rounded to one decimal place.
+Each completed stage contributes a normalized 0-100 score. The composite is a weighted average of those stage scores, computed in `computeComposite` ([src/lib/prehire/scoring.ts](../src/lib/prehire/scoring.ts)). Only stages with a positive weight contribute. Weights are normalized against the total weight of the weighted stages, so the applied weight for a stage is `weight / totalWeight`, and the composite is the sum of each weighted stage's `normalized * appliedWeight`, clamped to 0-100 and rounded to one decimal place.
 
 The composite is **null until every weighted stage has been scored.** A partial profile produces no headline number. This is deliberate: a weighted average over an incomplete set of stages would understate or overstate a candidate, so the module shows no composite at all until the picture is complete.
 
 ### Per-stage pass and fail against the cut-score
 
-Each stage is independently marked against its cut-score. A stage with no cut-score always passes; a scored stage passes when its normalised score is at or above the cut-score, and is `null` (not yet evaluated) until it has been scored. A stage marked `required` that falls below its cut-score is recorded as a required failure.
+Each stage is independently marked against its cut-score. A stage with no cut-score always passes; a scored stage passes when its normalized score is at or above the cut-score, and is `null` (not yet evaluated) until it has been scored. A stage marked `required` that falls below its cut-score is recorded as a required failure.
 
 ### The advisory recommendation (and the absence of "reject")
 
@@ -61,8 +61,8 @@ There is no fifth band. A failed required stage caps the advisory signal at "rev
 
 The primary deliverable is a per-candidate screening report ([src/lib/reports/prehire-candidate-html.ts](../src/lib/reports/prehire-candidate-html.ts)), rendered as bilingual HTML and produced as a PDF. VIFM is the assessor, not the client, so this is the document VIFM downloads or emails to the engaged client. It surfaces:
 
-- The advisory composite and the recommendation band, colour-toned for quick reading.
-- A by-stage table: each stage's weight, normalised score, cut-score, and pass / below-cut / not-taken outcome.
+- The advisory composite and the recommendation band, color-toned for quick reading.
+- A by-stage table: each stage's weight, normalized score, cut-score, and pass / below-cut / not-taken outcome.
 - A "How this score is calculated" section that states the composite formula and lists all four advisory bands with the exact condition that triggers each one. Because the signal is derived automatically, the client is told precisely how.
 - An explicit disclaimer on the face of the report: this is an advisory screening signal, not a hiring decision; a qualified VIFM reviewer interprets it alongside other evidence; no decision is ever made automatically.
 
@@ -76,7 +76,7 @@ A self-describing JSON or CSV export is available to administrators for handing 
 
 ## 5. What Pre-Hire is, and what it is not
 
-- **It is a screening signal that supports a human decision.** It combines several existing instruments into a transparent, role-weighted composite to help a reviewer prioritise attention. That is genuinely useful, and it is all it is.
+- **It is a screening signal that supports a human decision.** It combines several existing instruments into a transparent, role-weighted composite to help a reviewer prioritize attention. That is genuinely useful, and it is all it is.
 - **It is not a hiring decision and not an auto-reject.** The scoring code has no reject path. The advisory band caps how a screening conversation starts; it never closes one. A person makes every decision, and VIFM delivers a report - the client decides.
 - **It does not duplicate the underlying instruments.** Each stage soft-links to its native record (quiz attempt, Fluent result, CBI session). Pre-Hire orchestrates; it does not re-implement.
 - **Fluent is a screening signal until it is calibrated and proctored.** Per the build blueprint, the English placement is treated as an indicative screen, not a hard gate, until calibration evidence (target QWK at or above 0.70 against human raters) and a proctoring decision are in place.
@@ -116,7 +116,7 @@ Candidates have no platform account. Identity is always derived server-side from
 
 ### Standards the service is held to
 
-Pre-Hire is designed and operated in line with the recognised standards for the proper use of assessment in selection:
+Pre-Hire is designed and operated in line with the recognized standards for the proper use of assessment in selection:
 
 - **ITC Guidelines on Test Use** - on the responsibilities of those who select, administer and interpret assessments.
 - **Standards for Educational and Psychological Testing** (AERA / APA / NCME, 2014) - for the discipline of matching claims to evidence and for the validity and fairness evidence the pilot is built to gather.
@@ -140,7 +140,7 @@ Pre-Hire is fully bilingual. The candidate-facing stages run in English or Arabi
 
 ## 9. Contact
 
-For methodology questions or research-collaboration enquiries, contact the VIFM consulting team: `contact@viftraining.com`.
+For methodology questions or research-collaboration inquiries, contact the VIFM consulting team: `contact@viftraining.com`.
 
 ---
 
@@ -150,7 +150,7 @@ Two kinds of evidence: **(A)** established coefficients for the *methods* combin
 
 **A. Established coefficients for the methods (published literature)**
 
-- **Structured / behavioural interview** (the CBI stage): operational validity **ρ ≈ .44** for structured interviews (McDaniel, Whetzel, Schmidt & Maurer, 1994), up to **ρ ≈ .51** in the classic table (Schmidt & Hunter, 1998) - structured formats roughly double the validity of unstructured ones.
+- **Structured / behavioral interview** (the CBI stage): operational validity **ρ ≈ .44** for structured interviews (McDaniel, Whetzel, Schmidt & Maurer, 1994), up to **ρ ≈ .51** in the classic table (Schmidt & Hunter, 1998) - structured formats roughly double the validity of unstructured ones.
 - **Composite validity:** combining a cognitive measure, a structured interview and a work sample yields **incremental validity above any single predictor** (Schmidt & Hunter, 1998).
 - The component instruments (competency quiz, Fluent placement, CBI) each carry the coefficients cited in their own briefs.
 

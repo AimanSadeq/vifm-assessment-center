@@ -104,7 +104,7 @@ export async function ensureArcShell(
 ): Promise<{ shellId: string } | { error: string }> {
   void orgId; // ARC binds to the ARA org; the AC org id is not stored on the shell.
   if (!araOrgId) {
-    return { error: "This client is not set up for AI Readiness yet. Ask VIFM to link an AI Readiness organisation." };
+    return { error: "This client is not set up for AI Readiness yet. Ask VIFM to link an AI Readiness organization." };
   }
 
   const cfg = resolveShellConfig(alloc.service_config ?? {});
@@ -410,7 +410,7 @@ export async function arcSeatActivity(orgId: string, araOrgId: string | null): P
             id: shell.id,
             name: "Cohort AI Readiness report",
             date: lastCompletedAt,
-            summary: `${completed} of ${invited} respondent(s) completed - organisation-level report`,
+            summary: `${completed} of ${invited} respondent(s) completed - organization-level report`,
             reportPath,
           }]
         : [];
@@ -445,7 +445,7 @@ export async function issueArcVouchers(opts: {
   seats?: number;
 }): Promise<IssueArcVouchersResult> {
   if (!opts.araOrgId) {
-    return { error: "This client is not set up for AI Readiness yet. Ask VIFM to link an AI Readiness organisation." };
+    return { error: "This client is not set up for AI Readiness yet. Ask VIFM to link an AI Readiness organization." };
   }
   const cfg = resolveShellConfig(opts.alloc.service_config ?? {});
   // Individual ARC readiness defaults to the snapshot tier; a paid allocation

@@ -129,7 +129,7 @@ export function EvidencePanel({
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`/api/admin/engagements/${engagementId}/evidence-pack`} title="What VIFM can show a client about this centre: reliability, validity, fairness, participant impact and utility, with the sample behind each number.">
+            <a href={`/api/admin/engagements/${engagementId}/evidence-pack`} title="What VIFM can show a client about this center: reliability, validity, fairness, participant impact and utility, with the sample behind each number.">
               Evidence pack (PDF)
             </a>
           </Button>
@@ -141,7 +141,7 @@ export function EvidencePanel({
 
       <CardContent className="space-y-5 text-sm">
         <p className="text-muted-foreground">
-          What this centre can show about whether it works. Reliability and fairness are computed from the ratings;
+          What this center can show about whether it works. Reliability and fairness are computed from the ratings;
           validity needs the client to say how the people it rated actually did, which is what the follow-ups collect.
           Every number carries the sample behind it (BPS 9.10): a small sample is shown as an early indication, not
           as evidence.
@@ -177,7 +177,7 @@ export function EvidencePanel({
           {!plan && !planOpen && (
             <p className="text-muted-foreground">
               Nothing agreed yet. The agreement template (clause 11.3 and 14) asks the client whether VIFM may collect
-              outcome data after the centre; record the answer here.
+              outcome data after the center; record the answer here.
             </p>
           )}
           {plan && !planOpen && (
@@ -194,7 +194,7 @@ export function EvidencePanel({
           )}
           {planOpen && (
             <div className="space-y-3 rounded border p-3">
-              {([["validation", "Validation study: compare centre ratings with later performance"], ["reaction", "Participant reaction study"], ["utility", "Business-outcome (utility) evaluation"]] as const).map(([k, label]) => (
+              {([["validation", "Validation study: compare center ratings with later performance"], ["reaction", "Participant reaction study"], ["utility", "Business-outcome (utility) evaluation"]] as const).map(([k, label]) => (
                 <label key={k} className="flex items-center gap-2">
                   <input type="checkbox" checked={planForm[k]} onChange={(e) => setPlanForm((p) => ({ ...p, [k]: e.target.checked }))} />
                   {label}
@@ -232,7 +232,7 @@ export function EvidencePanel({
           {followups.length === 0 ? (
             <p className="text-muted-foreground">
               {ratedCount === 0
-                ? "Follow-ups are scheduled once participants have a finalised overall rating."
+                ? "Follow-ups are scheduled once participants have a finalized overall rating."
                 : `${ratedCount} rated participant${ratedCount === 1 ? "" : "s"}. Schedule the 6- and 12-month follow-ups so the client is asked how each one did.`}
             </p>
           ) : (
@@ -301,8 +301,8 @@ export function EvidencePanel({
           <p className="text-xs text-muted-foreground">
             {calendar.annualDueOn
               ? <>Next annual evaluation due {formatLocalDate(calendar.annualDueOn, { dateOnly: true })}{calendar.majorDueOn ? <>; major review due {formatLocalDate(calendar.majorDueOn, { dateOnly: true })}</> : null}.</>
-              : "Set the centre's dates to start the evaluation calendar."}
-            {seriesName ? ` This centre is part of the series "${seriesName}"; an evaluation can cover the series.` : ""}
+              : "Set the center's dates to start the evaluation calendar."}
+            {seriesName ? ` This center is part of the series "${seriesName}"; an evaluation can cover the series.` : ""}
           </p>
           {evaluations.length === 0 && !evalOpen && <p className="text-muted-foreground">No evaluation recorded yet.</p>}
           {evaluations.map((e) => (
@@ -330,7 +330,7 @@ export function EvidencePanel({
                 <Input type="date" className="max-w-[11rem]" value={ev.periodEnd} onChange={(e) => setEv((p) => ({ ...p, periodEnd: e.target.value }))} title="Period end" />
                 <Input type="number" min={0} className="max-w-[9rem]" value={ev.participants} onChange={(e) => setEv((p) => ({ ...p, participants: e.target.value }))} placeholder="Participants" />
               </div>
-              {([["reliability", "Reliability: did assessors agree, and how consistent was the rating?"], ["validity", "Validity: what do the follow-ups show, and what is the sample?"], ["diversity", "Diversity: did outcomes fall evenly across groups?"], ["participantImpact", "Participant impact: what did participants report, and any wellbeing concerns?"], ["utility", "Utility: what did the centre contribute against its cost?"], ["recommendations", "Recommendations for the next centre"]] as const).map(([k, ph]) => (
+              {([["reliability", "Reliability: did assessors agree, and how consistent was the rating?"], ["validity", "Validity: what do the follow-ups show, and what is the sample?"], ["diversity", "Diversity: did outcomes fall evenly across groups?"], ["participantImpact", "Participant impact: what did participants report, and any wellbeing concerns?"], ["utility", "Utility: what did the center contribute against its cost?"], ["recommendations", "Recommendations for the next center"]] as const).map(([k, ph]) => (
                 <Textarea key={k} rows={2} value={ev[k]} onChange={(e) => setEv((p) => ({ ...p, [k]: e.target.value }))} placeholder={ph} />
               ))}
               <div className="flex flex-wrap items-center gap-2">

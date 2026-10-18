@@ -30,7 +30,7 @@ type Lang = "en" | "ar";
 const STAGE_LABELS: Record<string, { en: string; ar: string }> = {
   quiz: { en: "Competency Quiz", ar: "اختبار الكفاءات" },
   fluent: { en: "English (Fluent®)", ar: "الإنجليزية (Fluent®)" },
-  cbi: { en: "Behavioural Interview", ar: "المقابلة السلوكية" },
+  cbi: { en: "Behavioral Interview", ar: "المقابلة السلوكية" },
   assessment_center: { en: "Assessment Center", ar: "مركز التقييم" },
 };
 
@@ -46,11 +46,11 @@ const STAGE_DEFINITIONS: Record<string, { en: string; ar: string }> = {
     ar: "تقييم للإنجليزية مصحَّح بالذكاء الاصطناعي وفق مقياس CEFR (قراءة، استماع، كتابة، تحدث).",
   },
   cbi: {
-    en: "An AI-led structured behavioural (STAR) interview, AI-scored. The full transcript and the AI's assessment are included below for your review.",
+    en: "An AI-led structured behavioral (STAR) interview, AI-scored. The full transcript and the AI's assessment are included below for your review.",
     ar: "مقابلة سلوكية منظَّمة (STAR) يقودها الذكاء الاصطناعي ويصحّحها آليًا. النص الكامل وتقييم الذكاء الاصطناعي مُدرَجان أدناه للمراجعة.",
   },
   assessment_center: {
-    en: "Assessment-centre exercises observed and scored by trained assessors.",
+    en: "Assessment-center exercises observed and scored by trained assessors.",
     ar: "تمارين مركز تقييم يلاحظها ويصحّحها مقيّمون مدرَّبون.",
   },
 };

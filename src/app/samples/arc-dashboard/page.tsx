@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "AI Readiness Compass - Sample Dashboard | VIFM",
-  description: "Interactive organisation-to-person drill-down on a sample organisation, rendered live from the AI Readiness Compass engine.",
+  description: "Interactive organization-to-person drill-down on a sample organization, rendered live from the AI Readiness Compass engine.",
 };
 
 export default async function SampleDashboardPage({ searchParams }: { searchParams?: { lang?: string } }) {

@@ -45,7 +45,7 @@ export const CLUSTER_DEFINITIONS: Record<string, string> = {
     "Generating original solutions and making sense of complex, interconnected and digital problems across the wider system.",
   // RESULTS
   "Delivery & Execution":
-    "Turning intent into measurable outcomes - taking initiative, owning commitments, and planning and optimising work to deliver.",
+    "Turning intent into measurable outcomes - taking initiative, owning commitments, and planning and optimizing work to deliver.",
   "Adaptability & Change":
     "Staying effective through uncertainty - experimenting, recovering from setbacks, and rallying people around a clear purpose.",
   "Customer & Stakeholder Focus":
@@ -59,7 +59,7 @@ export const CLUSTER_DEFINITIONS: Record<string, string> = {
   "Integrity & Character":
     "Acting with self-awareness, ethics, courage and inclusion - doing the right thing in the spirit as well as the letter of the rules.",
   "Growth & Personal Effectiveness":
-    "Learning continuously, staying composed under pressure, sustaining wellbeing, and marshalling the resources to perform.",
+    "Learning continuously, staying composed under pressure, sustaining wellbeing, and marshaling the resources to perform.",
 };
 
 // ─────────────────────────────────────────────────────────────

@@ -66,7 +66,7 @@ export default async function AraRootPage({ searchParams }: { searchParams?: { l
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                Training catalogue
+                Training catalog
               </Link>
             </div>
           </div>
@@ -164,7 +164,7 @@ export default async function AraRootPage({ searchParams }: { searchParams?: { l
               tone="teal"
               title="Personal snapshot"
               subtitle="Self-served, complimentary"
-              description="A short bilingual self-assessment for individuals - 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps."
+              description="A short bilingual self-assessment for individuals - 5-7 minutes, four VIFM factors, plus personalized VIFM training recommendations to act on the gaps."
               cta="Take the snapshot"
             />
           </FadeIn>
@@ -189,7 +189,7 @@ export default async function AraRootPage({ searchParams }: { searchParams?: { l
         <div className="max-w-6xl mx-auto px-6">
           <span className="ara-eyebrow">Inside the platform</span>
           <h2 className="text-3xl font-semibold text-primary mt-3 mb-12 max-w-2xl">
-            Built for Big-4 calibre engagements, priced for VIFM&apos;s GCC market.
+            Built for Big-4 caliber engagements, priced for VIFM&apos;s GCC market.
           </h2>
 
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">

@@ -87,7 +87,7 @@ export function CompetencyEvidencePanel({ competencyId, reviewerEmail, initialEv
       <PanelShell>
         <p className="text-sm text-muted-foreground">
           No research provenance recorded yet. Generate an AI suggestion from the curated
-          assessment-centre bibliography (you verify before it reaches any client), or add
+          assessment-center bibliography (you verify before it reaches any client), or add
           anchors manually.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">

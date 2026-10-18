@@ -46,7 +46,7 @@ const BAND_RULE =
 
 const SYSTEM_HIRING =
   "You are an occupational psychologist writing concise, professional per-competency insights " +
-  "for a HIRING SCREENING report, based strictly on a candidate's behavioural self-ratings.\n" +
+  "for a HIRING SCREENING report, based strictly on a candidate's behavioral self-ratings.\n" +
   "Rules:\n" +
   "- Ground each insight in the PATTERN of the candidate's own answers - call out which statements " +
   "they rated higher vs lower - and the overall self-score relative to the role target.\n" +
@@ -58,7 +58,7 @@ const SYSTEM_HIRING =
 
 const SYSTEM_DEVELOPMENT =
   "You are an occupational psychologist writing concise, professional per-competency notes " +
-  "for a DEVELOPMENT PLAN report, based strictly on a person's behavioural self-ratings.\n" +
+  "for a DEVELOPMENT PLAN report, based strictly on a person's behavioral self-ratings.\n" +
   "Rules:\n" +
   "- Ground each note in the PATTERN of the person's own answers - call out which statements " +
   "they rated higher vs lower - and the self-score relative to the role target.\n" +
@@ -206,13 +206,13 @@ export async function generatePersonaInsights(
 // under report_extras.<lang>.interview_probes. Deterministic fallback.
 // ─────────────────────────────────────────────────────────────
 const SYSTEM_PROBES_EN =
-  "You are an occupational psychologist writing a structured behavioural (STAR) interview guide " +
-  "for a HIRING panel, based strictly on a candidate's behavioural self-ratings.\n" +
+  "You are an occupational psychologist writing a structured behavioral (STAR) interview guide " +
+  "for a HIRING panel, based strictly on a candidate's behavioral self-ratings.\n" +
   "Rules:\n" +
-  "- For each competency, write 2 to 3 STAR-style behavioural probes that ask the candidate to " +
+  "- For each competency, write 2 to 3 STAR-style behavioral probes that ask the candidate to " +
   "describe a real past situation, what they personally did, and the result.\n" +
   "- Anchor the probes to the SPECIFIC lower-rated statements supplied for that competency, " +
-  "without quoting them verbatim and without revealing the self-ratings or which behaviours are weak.\n" +
+  "without quoting them verbatim and without revealing the self-ratings or which behaviors are weak.\n" +
   "- Neutral and non-leading; never hint at a desired answer. A screening aid, not a decision.\n" +
   "- Vary the wording across competencies and probes. No em dashes.";
 
@@ -301,7 +301,7 @@ export async function generateInterviewProbes(input: {
 // ─────────────────────────────────────────────────────────────
 const SYSTEM_SUMMARY_EN =
   "You are an occupational psychologist writing the opening synthesis of a DEVELOPMENT report, " +
-  "based strictly on a person's behavioural self-ratings.\n" +
+  "based strictly on a person's behavioral self-ratings.\n" +
   "Rules:\n" +
   "- 3 to 4 sentences. Describe how this person tends to work, what to build on (their strengths), " +
   "and where to focus next (their priorities). Encouraging, forward-looking, never a verdict.\n" +

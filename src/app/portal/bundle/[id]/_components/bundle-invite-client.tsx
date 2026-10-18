@@ -56,7 +56,7 @@ export function BundleInviteClient({
         <UserPlus className="h-4 w-4 text-[#5391D5]" /> Invite a candidate (one sitting)
       </h2>
       <p className="mt-1 text-xs text-muted-foreground">
-        The candidate gets a single link covering every section of this programme in order. {seatNote}
+        The candidate gets a single link covering every section of this program in order. {seatNote}
       </p>
       <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Candidate name" />

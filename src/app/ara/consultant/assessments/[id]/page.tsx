@@ -582,7 +582,7 @@ export default async function AraAssessmentDetailPage({
                 variant="outline"
                 destructive={false}
                 title="Mark complete"
-                description="Finalise this assessment. Scores are recalculated and locked as the baseline for next year's comparison. You can still generate reports."
+                description="Finalize this assessment. Scores are recalculated and locked as the baseline for next year's comparison. You can still generate reports."
                 confirmLabel="Mark complete"
                 successMessage="Assessment marked complete."
               >

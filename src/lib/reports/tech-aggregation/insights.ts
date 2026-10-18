@@ -72,7 +72,7 @@ export function deriveTrainingRecommendations(gaps: SkillGap[], limit = 5): Insi
   return gaps.slice(0, limit).map((g) => ({
     kind: "recommendation" as const,
     title: `Targeted ${g.domainLabel} training`,
-    detail: `${g.domainLabel} averages ${g.averagePct}% (below the ${g.baselinePct}% baseline). Prioritise a focused ${g.domainLabel} programme to close the ${g.gapPct}-point gap.`,
+    detail: `${g.domainLabel} averages ${g.averagePct}% (below the ${g.baselinePct}% baseline). Prioritize a focused ${g.domainLabel} program to close the ${g.gapPct}-point gap.`,
     domainKey: g.domainKey,
     courseCodes: [],
   }));

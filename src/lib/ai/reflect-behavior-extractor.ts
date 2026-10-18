@@ -15,10 +15,10 @@ export type ExtractedBehaviorProposal = {
 const SYSTEM_PROMPT =
   `You are an assessment designer for Reflect 360, a leadership feedback platform calibrated for the GCC. ` +
   `Given a client's Corporate Values and/or Leadership Competencies in English or Arabic, you decompose each into ` +
-  `3 to 5 observable behaviours that raters can score on a 5-point frequency scale ` +
+  `3 to 5 observable behaviors that raters can score on a 5-point frequency scale ` +
   `(Almost never → Almost always). ` +
-  `Every behaviour must be: specific, observable, framed positively (no negations), and start with a verb in the present tense. ` +
-  `Output is BILINGUAL: every behaviour rendered in both English and Modern Standard Arabic suitable for Gulf readers.`;
+  `Every behavior must be: specific, observable, framed positively (no negations), and start with a verb in the present tense. ` +
+  `Output is BILINGUAL: every behavior rendered in both English and Modern Standard Arabic suitable for Gulf readers.`;
 
 type Input = {
   sourceText: string;
@@ -32,7 +32,7 @@ function buildPrompt(input: Input) {
     `Source content from the client (may be EN, AR, or mixed):\n` +
     `"""\n${input.sourceText.trim()}\n"""\n\n` +
     `Identify the competencies and/or values mentioned in the source. Treat each value or competency as a top-level item. ` +
-    `For each top-level item, produce 3-5 observable behaviours.\n\n` +
+    `For each top-level item, produce 3-5 observable behaviors.\n\n` +
     `Return ONLY a JSON array (no markdown fences, no preamble). Each element matches:\n` +
     `{\n` +
     `  "competency_name_en": "<title-case English name>",\n` +
@@ -41,14 +41,14 @@ function buildPrompt(input: Input) {
     `  "description_ar": "<1 sentence in Arabic>",\n` +
     `  "behaviors": [\n` +
     `    {\n` +
-    `      "text_en": "<observable behaviour, English>",\n` +
-    `      "text_ar": "<same behaviour, Modern Standard Arabic>",\n` +
-    `      "rationale": "<1 short sentence on why this behaviour ladders to the competency>"\n` +
+    `      "text_en": "<observable behavior, English>",\n` +
+    `      "text_ar": "<same behavior, Modern Standard Arabic>",\n` +
+    `      "rationale": "<1 short sentence on why this behavior ladders to the competency>"\n` +
     `    }\n` +
     `  ]\n` +
     `}\n\n` +
-    `Hard constraints: 3-5 behaviours per item; 3-8 items total. Behaviours must be 8-25 words. ` +
-    `If the source is sparse, infer reasonable behaviours; if the source is rich, stay faithful to the client's own phrasing.`
+    `Hard constraints: 3-5 behaviors per item; 3-8 items total. Behaviors must be 8-25 words. ` +
+    `If the source is sparse, infer reasonable behaviors; if the source is rich, stay faithful to the client's own phrasing.`
   );
 }
 

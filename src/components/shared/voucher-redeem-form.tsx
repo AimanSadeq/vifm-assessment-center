@@ -178,7 +178,7 @@ export function VoucherRedeemForm(cfg: VoucherRedeemConfig) {
             autoComplete="organization"
             value={company}
             onChange={(e) => setCompany(e.target.value)}
-            placeholder={tx("Your organisation", "مؤسستك")}
+            placeholder={tx("Your organization", "مؤسستك")}
           />
         </div>
       )}

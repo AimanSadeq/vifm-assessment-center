@@ -18,7 +18,7 @@ const LOGO = '/images/vifm-logo-light.png'
 const STATS = [
   { value: '10', label: 'Assessment services' },
   { value: '4', label: 'Competency domains' },
-  { value: '100+', label: 'Training programmes' },
+  { value: '100+', label: 'Training programs' },
 ]
 
 type Family = 'selection' | 'development'
@@ -27,15 +27,15 @@ interface Product { icon: typeof Sparkles; category: string; name: string; desc:
 
 const PRODUCTS: Product[] = [
   { icon: ClipboardList, category: 'Competency assessment', name: 'Assessment Center', desc: 'Design assessment centers, run exercises and observations, reach scoring consensus in the live wash-up engine, and issue competency reports and learning plans.', families: ['selection', 'development'], diagram: 'matrix' },
-  { icon: Sparkles, category: 'AR COMPASS® diagnostic', name: 'AI Readiness', desc: 'An eight-pillar organisational AI-readiness diagnostic, calibrated for the GCC, with bilingual board-ready reports and a complimentary personal snapshot.', families: ['selection', 'development'], diagram: 'compass' },
+  { icon: Sparkles, category: 'AR COMPASS® diagnostic', name: 'AI Readiness', desc: 'An eight-pillar organizational AI-readiness diagnostic, calibrated for the GCC, with bilingual board-ready reports and a complimentary personal snapshot.', families: ['selection', 'development'], diagram: 'compass' },
   { icon: Wrench, category: 'Technical proficiency', name: 'Techno®', desc: 'Performance-based, function-specific assessment: candidates do real work in live sandboxes, graded against master answers and banded Basic / Intermediate / Advanced.', families: ['selection', 'development'], diagram: 'bands' },
   { icon: Brain, category: 'Reasoning aptitude', name: 'Logica®', desc: 'Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.', families: ['selection', 'development'], diagram: 'sequence' },
-  { icon: UserCircle, category: 'Behavioural self-assessment', name: 'Persona®', desc: 'Self-ratings across the VIFM behavioural framework - the same framework as the 360, and the "self" view that feeds Succession Readiness.', families: ['selection', 'development'], diagram: 'radar' },
+  { icon: UserCircle, category: 'Behavioral self-assessment', name: 'Persona®', desc: 'Self-ratings across the VIFM behavioral framework - the same framework as the 360, and the "self" view that feeds Succession Readiness.', families: ['selection', 'development'], diagram: 'radar' },
   { icon: Languages, category: 'AI English placement', name: 'Fluent®', desc: 'A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level in minutes.', families: ['selection', 'development'], diagram: 'cefr' },
-  { icon: UserSearch, category: 'Pre-employment screening', name: 'Pre-Hire®', desc: 'A configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail.', families: ['selection'], diagram: 'funnel' },
-  { icon: RefreshCw, category: 'Leadership feedback', name: 'Reflect 360®', desc: '360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide culture view.', families: ['development'], diagram: 'threesixty' },
+  { icon: UserSearch, category: 'Pre-employment screening', name: 'Pre-Hire®', desc: 'A configurable funnel of competency quiz, English placement and an AI behavioral interview, with a weighted composite, adverse-impact monitoring and an audit trail.', families: ['selection'], diagram: 'funnel' },
+  { icon: RefreshCw, category: 'Leadership feedback', name: 'Reflect 360®', desc: '360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organization-wide culture view.', families: ['development'], diagram: 'threesixty' },
   { icon: TrendingUp, category: 'Self + 360 vs the role', name: 'Succession Readiness', desc: 'Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.', families: ['development'], diagram: 'tiers' },
-  { icon: GraduationCap, category: 'Learning & delivery', name: 'VIFM Academy', desc: 'Self-paced finance & management programmes that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.', families: ['development'], diagram: 'academy' },
+  { icon: GraduationCap, category: 'Learning & delivery', name: 'VIFM Academy', desc: 'Self-paced finance & management programs that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.', families: ['development'], diagram: 'academy' },
 ]
 
 const DA = '#a78bfa', DL = '#c4b5fd', DM = 'rgba(255,255,255,0.16)'
@@ -253,8 +253,8 @@ export function CaliberLandingPage() {
           <p className="mt-4 max-w-2xl text-lg text-white/65">Two solution families cover the full talent lifecycle - pick where to focus, and the platform takes it from diagnosis to development.</p>
           <div className="mt-10 grid gap-5 sm:grid-cols-2">
             {[
-              { tag: 'For selection', name: 'Talent Acquisition', desc: 'Screen, assess and select with confidence - aptitude, technical proficiency, English, behavioural and pre-hire screening, with audit-ready signals.', icon: UserSearch },
-              { tag: 'For development', name: 'Talent Development', desc: 'Grow and retain - 360 feedback, succession readiness, and learning programmes mapped to the exact gaps your diagnostics reveal.', icon: TrendingUp },
+              { tag: 'For selection', name: 'Talent Acquisition', desc: 'Screen, assess and select with confidence - aptitude, technical proficiency, English, behavioral and pre-hire screening, with audit-ready signals.', icon: UserSearch },
+              { tag: 'For development', name: 'Talent Development', desc: 'Grow and retain - 360 feedback, succession readiness, and learning programs mapped to the exact gaps your diagnostics reveal.', icon: TrendingUp },
             ].map((fam, i) => (
               <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.04] p-7 transition-colors hover:border-[#a78bfa]/40">
                 <div className="flex items-center gap-3">
@@ -272,7 +272,7 @@ export function CaliberLandingPage() {
         <section id="suite" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-16 sm:px-6">
           <p className="text-sm font-semibold uppercase tracking-wider text-[#c4b5fd]">The suite</p>
           <h2 className="mt-3 text-3xl font-bold sm:text-4xl">Ten services, one talent platform</h2>
-          <p className="mt-4 max-w-2xl text-lg text-white/65">Each diagnosis flows into development - assessments and learning that share one behavioural framework across four domains: Thinking, Results, People and Self.</p>
+          <p className="mt-4 max-w-2xl text-lg text-white/65">Each diagnosis flows into development - assessments and learning that share one behavioral framework across four domains: Thinking, Results, People and Self.</p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {PRODUCTS.map((p, i) => (
               <div key={i} className="group rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-all hover:-translate-y-0.5 hover:border-[#a78bfa]/40 hover:bg-white/[0.05]">
@@ -298,7 +298,7 @@ export function CaliberLandingPage() {
           <div className="mx-auto grid max-w-7xl items-center gap-10 px-4 sm:px-6 lg:grid-cols-2">
             <div>
               <p className="text-sm font-semibold uppercase tracking-wider text-[#c4b5fd]">Featured · AR COMPASS®</p>
-              <h2 className="mt-3 text-3xl font-bold sm:text-4xl">An organisational AI-readiness diagnostic, built for the GCC</h2>
+              <h2 className="mt-3 text-3xl font-bold sm:text-4xl">An organizational AI-readiness diagnostic, built for the GCC</h2>
               <p className="mt-4 text-lg leading-relaxed text-white/65">Eight pillars, calibrated for Saudi Arabia, the UAE and the wider GCC, with bilingual board-ready reports - plus a complimentary personal AI-readiness snapshot for every leader.</p>
               <button onClick={() => setDemoOpen(true)} className="group mt-7 inline-flex items-center gap-2 rounded-xl bg-[#8b7bf0] px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-[#7c6ae8]">
                 See AR COMPASS® <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -324,7 +324,7 @@ export function CaliberLandingPage() {
           <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-7">
             <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#a78bfa]/15 text-[#c4b5fd]"><GraduationCap className="h-5 w-5" /></div>
             <h3 className="mt-4 text-xl font-bold">VIFM Academy</h3>
-            <p className="mt-2 text-sm leading-relaxed text-white/60">Self-paced finance &amp; management programmes that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.</p>
+            <p className="mt-2 text-sm leading-relaxed text-white/60">Self-paced finance &amp; management programs that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.</p>
           </div>
         </section>
 
@@ -363,7 +363,7 @@ export function CaliberLandingPage() {
               <p className="mt-3 max-w-sm text-xs text-white/50">Virginia Institute of Finance and Management · Confidential - for VIFM and engaged clients only.</p>
             </div>
             <div className="flex gap-6 text-sm text-white/50">
-              <a href="/courses" className="hover:text-white/80">Training catalogue</a>
+              <a href="/courses" className="hover:text-white/80">Training catalog</a>
             </div>
           </div>
         </footer>

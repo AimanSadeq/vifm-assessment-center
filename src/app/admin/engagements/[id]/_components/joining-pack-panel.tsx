@@ -171,7 +171,7 @@ export function JoiningPackPanel({
 
         {!publishedAt && startDate === null && (
           <p className="text-xs text-muted-foreground">
-            Set the centre start date to check the notice participants get. VIFM&apos;s rule is at least{" "}
+            Set the center start date to check the notice participants get. VIFM&apos;s rule is at least{" "}
             {PACK_NOTICE_DAYS} days (BPS 5.40).
           </p>
         )}
@@ -186,8 +186,8 @@ export function JoiningPackPanel({
             <div className="font-medium">Short notice</div>
             <p className="mt-1">
               {noticeNow !== null && noticeNow < 0
-                ? "The centre has already started."
-                : `The centre starts in ${noticeNow} day${noticeNow === 1 ? "" : "s"}.`}{" "}
+                ? "The center has already started."
+                : `The center starts in ${noticeNow} day${noticeNow === 1 ? "" : "s"}.`}{" "}
               VIFM&apos;s rule is at least {PACK_NOTICE_DAYS} days&apos; notice so participants can prepare (BPS
               5.40). You can still publish, but the reason is recorded with the pack.
             </p>
@@ -196,7 +196,7 @@ export function JoiningPackPanel({
               rows={2}
               value={lateReason}
               onChange={(e) => setLateReason(e.target.value)}
-              placeholder="Why the notice is shorter, for example: selection centre set by the client's hiring timetable."
+              placeholder="Why the notice is shorter, for example: selection center set by the client's hiring timetable."
             />
           </div>
         )}
@@ -227,14 +227,14 @@ export function JoiningPackPanel({
 
         {open && (
           <div className="space-y-3 rounded border p-3">
-            <Field label="What this centre is for, in words a participant reads" clause="5.41.1">
-              <Textarea rows={2} value={form.purposeStatement} onChange={(e) => set("purposeStatement", e.target.value)} placeholder="Why this centre is being run, and what it will be used for." />
+            <Field label="What this center is for, in words a participant reads" clause="5.41.1">
+              <Textarea rows={2} value={form.purposeStatement} onChange={(e) => set("purposeStatement", e.target.value)} placeholder="Why this center is being run, and what it will be used for." />
             </Field>
             <Field label="Where it takes place" clause="5.39">
               <Textarea rows={2} value={form.location} onChange={(e) => set("location", e.target.value)} placeholder="Venue and address, or the joining arrangements if it is online." />
             </Field>
             <Field label="How to prepare, and any practice materials" clause="5.41.3">
-              <Textarea rows={2} value={form.preparation} onChange={(e) => set("preparation", e.target.value)} placeholder="What to read or bring, and anything they can practise on." />
+              <Textarea rows={2} value={form.preparation} onChange={(e) => set("preparation", e.target.value)} placeholder="What to read or bring, and anything they can practice on." />
             </Field>
             <Field label="How the results will be used" clause="5.41.4">
               <Textarea rows={2} value={form.resultsUse} onChange={(e) => set("resultsUse", e.target.value)} />
@@ -243,10 +243,10 @@ export function JoiningPackPanel({
               <Textarea rows={2} value={form.decisions} onChange={(e) => set("decisions", e.target.value)} />
             </Field>
             <Field label="When they will hear" clause="5.12">
-              <Input value={form.decisionTiming} onChange={(e) => set("decisionTiming", e.target.value)} placeholder="For example: within two weeks of the centre." />
+              <Input value={form.decisionTiming} onChange={(e) => set("decisionTiming", e.target.value)} placeholder="For example: within two weeks of the center." />
             </Field>
-            <Field label="Who receives reports from this centre" clause="5.13">
-              <Textarea rows={2} value={form.reportRecipients} onChange={(e) => set("reportRecipients", e.target.value)} placeholder="Name the roles, not just the organisation. Participants are asked to agree to this list." />
+            <Field label="Who receives reports from this center" clause="5.13">
+              <Textarea rows={2} value={form.reportRecipients} onChange={(e) => set("reportRecipients", e.target.value)} placeholder="Name the roles, not just the organization. Participants are asked to agree to this list." />
             </Field>
             <Field label="Feedback" clause="5.11">
               <div className="flex flex-wrap gap-2">
@@ -279,7 +279,7 @@ export function JoiningPackPanel({
                     checked={form.researchUse}
                     onChange={(e) => set("researchUse", e.target.checked)}
                   />
-                  Anonymised results may be used for validation or research, with separate consent
+                  Anonymized results may be used for validation or research, with separate consent
                 </label>
               </div>
             </Field>
@@ -321,7 +321,7 @@ export function JoiningPackPanel({
                       [c.id as string]: { text: e.target.value, minutes: p[c.id as string]?.minutes ?? "" },
                     }))
                   }
-                  placeholder="What will actually be put in place, in words the participant and the centre staff can both act on."
+                  placeholder="What will actually be put in place, in words the participant and the center staff can both act on."
                 />
                 <div className="flex flex-wrap items-center gap-2">
                   <Input

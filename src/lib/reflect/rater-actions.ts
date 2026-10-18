@@ -134,9 +134,9 @@ export async function saveReflectResponse(
       };
     }>();
 
-  if (!beh) return { ok: false, error: "Behaviour not found" };
+  if (!beh) return { ok: false, error: "Behavior not found" };
   if (beh.reflect_competencies.reflect_frameworks.engagement_id !== ctx.engagementId) {
-    return { ok: false, error: "Behaviour does not belong to this engagement" };
+    return { ok: false, error: "Behavior does not belong to this engagement" };
   }
 
   const { error } = await sb

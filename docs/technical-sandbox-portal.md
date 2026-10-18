@@ -1,7 +1,7 @@
 # Technical Assessment Portal — Performance-Based Sandbox Model
 
 > Status: **IN BUILD (2026-06-13)**. Replaces the MCQ technical module per the
-> "Technical Assessment Portal Master Blueprint" SRS. Behavioural, ARA/ARC,
+> "Technical Assessment Portal Master Blueprint" SRS. Behavioral, ARA/ARC,
 > Fluent, CBI, auth, vouchers and reporting shell are untouched — this swaps the
 > **technical** module only.
 

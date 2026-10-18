@@ -31,13 +31,13 @@ export const GRADE_LABEL: Record<number, string> = { 8: "Senior Manager", 7: "Ma
 
 /** GRID[reasoningBand][fitBand]: the placement title and its one-line reading. */
 export const GRID: ReadonlyArray<ReadonlyArray<{ t: string; d: string }>> = [
-  [{ t: "Foundational development", d: "Build core behaviours and reasoning before stretch roles." },
+  [{ t: "Foundational development", d: "Build core behaviors and reasoning before stretch roles." },
    { t: "Steady contributor", d: "Meets today's requirement; strengthen reasoning for bigger roles." },
    { t: "Effective in role", d: "Strong in role; build reasoning before accelerating." }],
-  [{ t: "Develop competencies", d: "Capable thinker with clear behavioural gaps to close first." },
+  [{ t: "Develop competencies", d: "Capable thinker with clear behavioral gaps to close first." },
    { t: "Core talent", d: "Solid on both; grow steadily with targeted development." },
    { t: "Strong contributor", d: "Above the bar today; broaden scope and exposure." }],
-  [{ t: "Untapped ability", d: "High reasoning ability; behaviours not yet at the required level." },
+  [{ t: "Untapped ability", d: "High reasoning ability; behaviors not yet at the required level." },
    { t: "Emerging potential", d: "Meets the requirement with strong reasoning; stretch with support." },
    { t: "High potential", d: "Above requirement with strong reasoning; accelerate." }],
 ];

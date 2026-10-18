@@ -83,7 +83,7 @@ export function CentreRolesPanel({
     <Card className="mt-6">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">
-          Who is running this centre
+          Who is running this center
           {blocking.length > 0 && (
             <span className="ms-2 rounded bg-rose-100 px-1.5 py-0.5 text-xs font-normal text-rose-900">
               {blocking.length} to resolve
@@ -95,7 +95,7 @@ export function CentreRolesPanel({
       <CardContent className="space-y-4 text-sm">
         {blocking.length > 0 && (
           <div className="rounded border border-rose-300 bg-rose-50 p-3 text-rose-900">
-            <div className="font-medium">This centre cannot be activated yet</div>
+            <div className="font-medium">This center cannot be activated yet</div>
             <ul className="mt-1 list-disc space-y-0.5 ps-5">
               {blocking.map((b) => (
                 <li key={b}>{b}</li>
@@ -367,7 +367,7 @@ export function CentreRolesPanel({
         {otherRoles.length > 0 && (
           <details>
             <summary className="cursor-pointer text-xs text-muted-foreground">
-              Other centre roles this centre does not require ({otherRoles.length})
+              Other center roles this center does not require ({otherRoles.length})
             </summary>
             <div className="mt-2 space-y-2">
               {otherRoles.map((role) => (

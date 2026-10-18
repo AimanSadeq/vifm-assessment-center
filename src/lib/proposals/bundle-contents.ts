@@ -26,8 +26,8 @@ const T = {
   en: {
     heading: "What each bespoke bundle includes",
     intro:
-      "Each bespoke bundle is one licence covering every assessment listed below - one seat lets a participant complete all of the bundle's assessments in a single sitting. The assessments, and the reports each produces, are detailed here.",
-    licenses: (n: number) => `${n} licence${n === 1 ? "" : "s"}`,
+      "Each bespoke bundle is one license covering every assessment listed below - one seat lets a participant complete all of the bundle's assessments in a single sitting. The assessments, and the reports each produces, are detailed here.",
+    licenses: (n: number) => `${n} license${n === 1 ? "" : "s"}`,
     assessments: "Assessments included",
     reports: "Reports produced",
   },

@@ -245,6 +245,6 @@ async function partnerEnglishCourses(
       c.description_en?.trim() ||
       (c.focus_skill
         ? `English development with a focus on ${SKILL_LABEL[c.focus_skill] ?? c.focus_skill}.`
-        : "English-language development programme."),
+        : "English-language development program."),
   }));
 }

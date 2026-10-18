@@ -277,8 +277,8 @@ export function PsychometricReport({ data, provisional }: { data: PsyReportData;
           <Text style={s.panelTitle}>What this is - and isn&apos;t</Text>
           <Text style={s.panelBody}>
             This instrument sits in the Foundations layer of the VIFM measurement model: reasoning ability is a
-            disposition that <Text style={{ fontFamily: "Helvetica-Bold" }}>predicts</Text> behavioural competency - it does not measure it directly. Use this result as
-            one input that informs a human judgement (development planning, selection short-listing, succession discussion), never as an automatic decision. It
+            disposition that <Text style={{ fontFamily: "Helvetica-Bold" }}>predicts</Text> behavioral competency - it does not measure it directly. Use this result as
+            one input that informs a human judgment (development planning, selection short-listing, succession discussion), never as an automatic decision. It
             yields a score and a profile - <Text style={{ fontFamily: "Helvetica-Bold" }}>not</Text> a pass/fail credential.
           </Text>
         </View>

@@ -148,7 +148,7 @@ export function UnitRollupPanel({
           >
             <option value="">
               {available.length === 0
-                ? "No unlinked assessments in this organisation"
+                ? "No unlinked assessments in this organization"
                 : "Add a unit..."}
             </option>
             {available.map((u) => (

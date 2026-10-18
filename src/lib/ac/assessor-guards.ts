@@ -115,6 +115,6 @@ export async function assertEngagementUnlocked(
     .maybeSingle<{ status: string }>();
   if (!data) throw new AuthorizationError("Engagement not found.");
   if (LOCKED_STATUSES.has(data.status)) {
-    throw new AuthorizationError("This engagement is finalised - its ratings can no longer be changed.");
+    throw new AuthorizationError("This engagement is finalized - its ratings can no longer be changed.");
   }
 }

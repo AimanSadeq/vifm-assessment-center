@@ -195,7 +195,7 @@ export function ProctorCapture({
                 <p className="mt-2 text-sm text-slate-600">{CONSENT_TEXT}</p>
                 <ul className="mt-3 space-y-1 text-xs text-slate-500">
                   <li>- Snapshots only: no continuous video or audio is recorded.</li>
-                  <li>- Used solely for integrity review by an authorised reviewer.</li>
+                  <li>- Used solely for integrity review by an authorized reviewer.</li>
                   <li>- Automatically deleted after 90 days.</li>
                 </ul>
                 <div className="mt-5">

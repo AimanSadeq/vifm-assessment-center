@@ -67,8 +67,8 @@ export default async function PersonaTakePage({
           <div className="space-y-4 rounded-xl border bg-card p-6 text-sm text-muted-foreground">
             <p>
               {displayName ? `${displayName}, this` : "This"} assessment has already been completed and your
-              results have been shared with the organisation that invited you. It can only be taken once, so it
-              cannot be started again. If you believe this is a mistake, please contact the organisation that
+              results have been shared with the organization that invited you. It can only be taken once, so it
+              cannot be started again. If you believe this is a mistake, please contact the organization that
               invited you.
             </p>
             <p dir="rtl" className="border-t border-border pt-4">
@@ -116,7 +116,7 @@ export default async function PersonaTakePage({
           <VifmLogo variant="color" size="md" />
           <h1 className="mt-6 text-xl font-semibold text-[#010131]">This assessment link is no longer active</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            The voucher for this Persona® assessment has expired or been withdrawn. Please contact the organisation
+            The voucher for this Persona® assessment has expired or been withdrawn. Please contact the organization
             that invited you for a new link.
           </p>
         </div>

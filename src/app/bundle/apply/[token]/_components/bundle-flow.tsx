@@ -98,7 +98,7 @@ export function BundleFlow({
   const stageNumber = (s: BundleStage) => stages.indexOf(s) + 1;
   const sectionNames: Record<BundleStage, string> = {
     sjt: "workplace scenarios",
-    persona: "a behavioural self-assessment (Persona)",
+    persona: "a behavioral self-assessment (Persona)",
     logica: `a reasoning section (${logicaLabel})`,
   };
   const sectionList = stages.map((s) => sectionNames[s]);
@@ -135,7 +135,7 @@ export function BundleFlow({
             ) : (
               <p className="mt-2 text-sm text-muted-foreground">
                 You have been invited to complete <span className="font-medium text-foreground">{bundleName}</span>. It has{" "}
-                {stages.length === 1 ? "one section" : `${stages.length} sections`}: {sectionText}. Your responses produce a report for the sponsoring organisation.
+                {stages.length === 1 ? "one section" : `${stages.length} sections`}: {sectionText}. Your responses produce a report for the sponsoring organization.
               </p>
             )}
             {completeByLabel && (
@@ -172,7 +172,7 @@ export function BundleFlow({
             )}
             <div className="mt-4 flex items-start gap-2 rounded-lg bg-[#5391D5]/5 p-3 text-xs text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#5391D5]" />
-              <span>By continuing you consent to taking this assessment and to your results being shared with the sponsoring organisation.</span>
+              <span>By continuing you consent to taking this assessment and to your results being shared with the sponsoring organization.</span>
             </div>
             <Button
               onClick={async () => {
@@ -214,7 +214,7 @@ export function BundleFlow({
             <CheckCircle2 className="mx-auto h-12 w-12 text-emerald-600" />
             <h1 className="mt-3 text-xl font-semibold text-[#010131]">Assessment complete</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Thank you, {hello} - your responses have been recorded and shared with the sponsoring organisation.
+              Thank you, {hello} - your responses have been recorded and shared with the sponsoring organization.
             </p>
           </div>
         )}
@@ -236,13 +236,13 @@ function PersonaSection({ base, number, onError, onDone }: { base: string; numbe
     return () => { live = false; };
   }, [base, onError]);
 
-  if (!items) return <Loading label="Preparing the behavioural section…" />;
+  if (!items) return <Loading label="Preparing the behavioral section…" />;
   const answered = items.filter((i) => answers[i.itemKey]).length;
   const allAnswered = answered === items.length;
 
   return (
     <div>
-      <SectionHeader icon={<ClipboardList className="h-5 w-5" />} title={`Section ${number} · Behavioural (Persona)`}
+      <SectionHeader icon={<ClipboardList className="h-5 w-5" />} title={`Section ${number} · Behavioral (Persona)`}
         sub={`Rate how much each statement describes you. ${answered}/${items.length} answered.`} />
       <div className="space-y-3">
         {items.map((it, idx) => (
@@ -275,7 +275,7 @@ function PersonaSection({ base, number, onError, onDone }: { base: string; numbe
           finally { setBusy(false); }
         }}>
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
-        {allAnswered ? "Submit behavioural section" : `Answer all (${answered}/${items.length})`}
+        {allAnswered ? "Submit behavioral section" : `Answer all (${answered}/${items.length})`}
       </Button>
     </div>
   );

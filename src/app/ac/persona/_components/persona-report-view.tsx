@@ -195,7 +195,7 @@ export function PersonaReportView({
 
           <p className={`mt-3 rounded-md px-3 py-2 text-[11px] ${dev ? "bg-[#5391D5]/10 text-[#010131]" : "bg-amber-50 text-amber-800"}`}>
             {dev
-              ? tx("A self-report development plan - pair it with a Reflect 360 (others) and the recommended VIFM programmes to turn priorities into progress.", "خطة تطوير قائمة على تقييم ذاتي - اقرنها بتقييم ريفلكت 360 وببرامج VIFM الموصى بها لتحويل الأولويات إلى تقدّم.")
+              ? tx("A self-report development plan - pair it with a Reflect 360 (others) and the recommended VIFM programs to turn priorities into progress.", "خطة تطوير قائمة على تقييم ذاتي - اقرنها بتقييم ريفلكت 360 وببرامج VIFM الموصى بها لتحويل الأولويات إلى تقدّم.")
               : tx("A self-report screening signal - corroborate with a structured interview and work evidence before any hiring decision.", "إشارة فرز قائمة على تقييم ذاتي - تحقّق منها بمقابلة منظّمة وأدلة عمل قبل أي قرار توظيف.")}
           </p>
 
@@ -347,8 +347,8 @@ export function PersonaReportView({
           that close the gaps after the analysis + the development plan. */}
       {dev && data.courses && data.courses.length > 0 ? (
         <div className="rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-4">
-          <p className="text-sm font-semibold text-[#010131]">{tx("Recommended VIFM Academy programmes", "برامج أكاديمية VIFM الموصى بها")}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{tx("Mapped to the development priorities, ranked by gap and programme fit.", "مرتبطة بأولويات التطوير، مرتّبة حسب الفجوة وملاءمة البرنامج.")}</p>
+          <p className="text-sm font-semibold text-[#010131]">{tx("Recommended VIFM Academy programs", "برامج أكاديمية VIFM الموصى بها")}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{tx("Mapped to the development priorities, ranked by gap and program fit.", "مرتبطة بأولويات التطوير، مرتّبة حسب الفجوة وملاءمة البرنامج.")}</p>
           <div className="mt-2 space-y-2">
             {data.courses.map((c, i) => (
               <div key={`c-${i}`} className="rounded-md border border-slate-200 bg-white p-2.5">
@@ -381,7 +381,7 @@ export function PersonaReportView({
       {hiring && data.interviewProbes && data.interviewProbes.length > 0 ? (
         <div className="rounded-lg border border-slate-200 p-4">
           <p className="text-sm font-semibold text-[#010131]">{tx("Interview guide", "دليل المقابلة")}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{tx("Behavioural (STAR) probes for the role-critical competencies, grounded in lower-rated answers. A screening aid; record evidence and your own rating.", "أسئلة سلوكية (STAR) للجدارات الحسّاسة للدور، مبنية على الإجابات الأقل تقييمًا. أداة فرز؛ سجّل الأدلة وتقييمك.")}</p>
+          <p className="mt-0.5 text-xs text-slate-500">{tx("Behavioral (STAR) probes for the role-critical competencies, grounded in lower-rated answers. A screening aid; record evidence and your own rating.", "أسئلة سلوكية (STAR) للجدارات الحسّاسة للدور، مبنية على الإجابات الأقل تقييمًا. أداة فرز؛ سجّل الأدلة وتقييمك.")}</p>
           <div className="mt-2 space-y-3">
             {data.interviewProbes.map((grp) => (
               <div key={grp.competencyId}>

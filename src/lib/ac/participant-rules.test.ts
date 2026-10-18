@@ -44,7 +44,7 @@ test("exactly three weeks is enough; one day less is short", () => {
   assert.equal(packNoticeShort("2026-10-21", "2026-10-01T15:00:00Z"), true);
 });
 
-test("a centre that has already started is short notice; no start date is not", () => {
+test("a center that has already started is short notice; no start date is not", () => {
   assert.equal(packNoticeShort("2026-09-30", "2026-10-01T15:00:00Z"), true);
   assert.equal(packNoticeShort(null, "2026-10-01T15:00:00Z"), false);
 });

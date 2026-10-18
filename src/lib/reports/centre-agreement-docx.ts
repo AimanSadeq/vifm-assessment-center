@@ -178,11 +178,11 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   // ── Cover ─────────────────────────────────────────────────────────────────
   b.children.push(new Paragraph({ children: [], spacing: { before: cm(3) } }));
   b.para("VIRGINIA INSTITUTE OF FINANCE AND MANAGEMENT", { size: 9, bold: true, color: ACCENT, after: 4 });
-  b.para("Assessment Centre Agreement", { size: 24, bold: true, color: NAVY, after: 0 });
+  b.para("Assessment Center Agreement", { size: 24, bold: true, color: NAVY, after: 0 });
   b.para("and Statement of Work", { size: 16, color: NAVY, after: 24 });
   b.table(null, [
     ["Client", client],
-    ["Centre", val(p.centreName, "Centre name")],
+    ["Center", val(p.centreName, "Center name")],
     ["Accepted proposal", "{{Proposal reference}} dated {{date}}"],
     ["Agreement reference", "{{Agreement reference}}"],
     ["Version and date", "Version {{n}}, {{date}}"],
@@ -198,15 +198,15 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.pageBreak();
   b.h1("Drafting notes for VIFM staff (delete this page before issue)");
   for (const t of [
-    "This agreement must be signed before any implementation work on the centre starts.",
+    "This agreement must be signed before any implementation work on the center starts.",
     "Blue text was taken from the engagement in Caliber when this file was produced. If it is wrong, correct it in " +
-      "Caliber and download the agreement again, so the agreement and the centre stay the same.",
-    "Attach the centre plan PDF from the engagement's design record as Schedule 1.",
-    "House defaults: the joining pack goes out at least 21 days (three weeks) before the centre (8.1), and " +
+      "Caliber and download the agreement again, so the agreement and the center stay the same.",
+    "Attach the center plan PDF from the engagement's design record as Schedule 1.",
+    "House defaults: the joining pack goes out at least 21 days (three weeks) before the center (8.1), and " +
       "Participants have 21 days to appeal a result once it is communicated (8.4). Change them only for a stated " +
-      "reason, such as a selection centre that cannot give three weeks' notice.",
-    "The agreement records what both parties commit to. Clauses about running the centre (materials, contingency, " +
-      "technical support, sending the joining pack) are only met when the centre is run that way.",
+      "reason, such as a selection center that cannot give three weeks' notice.",
+    "The agreement records what both parties commit to. Clauses about running the center (materials, contingency, " +
+      "technical support, sending the joining pack) are only met when the center is run that way.",
     "Do not claim more than section 11 allows. If the content used has not finished expert review, it says so there.",
     "The proposal's terms and conditions cover fees, payment, liability, intellectual property and termination. Do " +
       "not restate them here; if the commercial terms change, change the proposal.",
@@ -218,15 +218,15 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.pageBreak();
   b.h1("1. About this agreement");
   b.clause("1.1", `This agreement is between Virginia Institute of Finance and Management ("VIFM") and ${client} ("the Client"). ` +
-    "It is the statement of work for the assessment centre described below and sits under the accepted proposal " +
+    "It is the statement of work for the assessment center described below and sits under the accepted proposal " +
     "{{Proposal reference}}. The proposal's terms and conditions apply to this work. Where this agreement and the " +
     "proposal differ, this agreement prevails, as the proposal provides.");
-  b.clause("1.2", "The centre plan in Schedule 1 forms part of this agreement. The plan in force is the one generated from " +
+  b.clause("1.2", "The center plan in Schedule 1 forms part of this agreement. The plan in force is the one generated from " +
     `Caliber on {{date}}${p.planApproval ? `, [[${p.planApproval}]]` : ""}. When the design changes under section 13, ` +
     "VIFM issues an updated plan, and the latest version accepted by both parties applies.");
   b.clause("1.3", "No implementation work starts until both parties have signed this agreement.");
-  b.clause("1.4", 'In this agreement, a "Participant" is a person assessed at the centre, an "Assessor" is a person who ' +
-    'observes and rates Participants, and "Caliber" is VIFM\'s assessment platform, through which the centre is ' +
+  b.clause("1.4", 'In this agreement, a "Participant" is a person assessed at the center, an "Assessor" is a person who ' +
+    'observes and rates Participants, and "Caliber" is VIFM\'s assessment platform, through which the center is ' +
     "designed, run and reported.");
 
   // ── 2 ─────────────────────────────────────────────────────────────────────
@@ -236,22 +236,22 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.boxes([
     { label: `Job descriptions or role profiles for ${val(p.targetRole, "roles")}` },
     { label: "The Client's competency or leadership framework" },
-    { label: "Organisational context (strategy, structure, change programme)" },
+    { label: "Organizational context (strategy, structure, change program)" },
     { label: "Results of earlier assessments of this group" },
     { label: "Other: {{describe}}" },
   ]);
-  if (p.jobAnalysis) b.para(`How the role was analysed: ${val(p.jobAnalysis, "")}`, { indent: 1 });
+  if (p.jobAnalysis) b.para(`How the role was analyzed: ${val(p.jobAnalysis, "")}`, { indent: 1 });
   b.clause("2.3", "VIFM's advice on the approach (tick one):");
   b.boxes([
-    { label: "VIFM advises that an assessment centre is an appropriate response to this need." },
+    { label: "VIFM advises that an assessment center is an appropriate response to this need." },
     { label: "VIFM advised that {{alternative approach}} may meet {{part / all}} of the need better. The Client has " +
-      "chosen to proceed with an assessment centre because {{reason}}." },
+      "chosen to proceed with an assessment center because {{reason}}." },
   ]);
   if (p.alternativesConsidered) b.para(`Alternatives considered in the design: ${val(p.alternativesConsidered, "")}`, { indent: 1 });
 
   // ── 3 ─────────────────────────────────────────────────────────────────────
   b.h1("3. Purpose and use of the results");
-  b.clause("3.1", "The purpose of the centre is (tick one):");
+  b.clause("3.1", "The purpose of the center is (tick one):");
   b.boxes([
     { label: "Selection: choosing among candidates for a role or promotion.", on: p.purpose === "selection" },
     { label: "Development: identifying each Participant's strengths and development needs.", on: p.purpose === "development" },
@@ -265,7 +265,7 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
     "section 13 and, where personal data is involved, the Participants' consent.");
   b.clause("3.4", "Decisions remain the Client's. VIFM provides evidence to inform a decision; it does not make the " +
     "decision. Every report states this.");
-  b.clause("3.5", "Decision makers will be supported by a person trained to interpret assessment centre results (tick one):");
+  b.clause("3.5", "Decision makers will be supported by a person trained to interpret assessment center results (tick one):");
   b.boxes([
     { label: "The Client names {{name, role}}, who is trained to interpret the results." },
     { label: "VIFM provides this support, through {{name}}, as part of the service." },
@@ -276,14 +276,14 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.table(["Item", "Detail"], [
     ["Target role or roles", val(p.targetRole, "roles")],
     ["Participants", `${val(p.participants, "number")} Participants at {{level}}`],
-    ["Number of centres", "{{number}}, each lasting {{hours or days}}"],
+    ["Number of centers", "{{number}}, each lasting {{hours or days}}"],
     ["Project start and end", "{{start date}} to {{end date}}"],
-    ["Centre dates", val(p.centreDates, "dates")],
+    ["Center dates", val(p.centreDates, "dates")],
     ["Delivery", val(p.delivery, "In person at venue / virtual / hybrid")],
     ["Languages", "{{English / Arabic / both}}"],
     ["Deliverables", "Individual reports; {{group report}}; {{development plans}}; {{other}}"],
   ], [5.0, 11.6]);
-  b.clause("4.1", "The competencies assessed, and where each is observed, are set out in the centre plan. Each " +
+  b.clause("4.1", "The competencies assessed, and where each is observed, are set out in the center plan. Each " +
     "competency is assessed in at least two exercises.");
   b.clause("4.2", "Each exercise and why it is included:");
   const exRows = p.exercises.length
@@ -304,7 +304,7 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
         ? `{{instrument}} is used. Its result is converted onto the rating scale by this rule: ${val(p.otherInstruments.note, "rule")}.`
         : p.otherInstruments?.kind === "context_only"
           ? "{{instrument}} is used. Its result informs the discussion but never moves a rating."
-          : "{{instrument}} is used. How its result is used, and whether it contributes to any rating, is set out in the centre plan." },
+          : "{{instrument}} is used. How its result is used, and whether it contributes to any rating, is set out in the center plan." },
   ]);
 
   // ── 5 ─────────────────────────────────────────────────────────────────────
@@ -312,37 +312,37 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.para("Each activity has one party that leads it. Where the other party has a part, it is shown.");
   b.table(["Activity", "VIFM", "Client"], [
     ["Supply information and documents about the need", "Supports", "Leads"],
-    ["Design the centre and write the centre plan", "Leads", "Approves"],
-    ["Propose competency weights; approve them before the centre", "Proposes", "Approves"],
-    ["Brief sponsors, line managers and Participants to build commitment to the centre", "Supports", "Leads"],
-    ["Adopt a centre policy statement (template in Schedule 4) and share it with Participants", "Supports", "Leads"],
+    ["Design the center and write the center plan", "Leads", "Approves"],
+    ["Propose competency weights; approve them before the center", "Proposes", "Approves"],
+    ["Brief sponsors, line managers and Participants to build commitment to the center", "Supports", "Leads"],
+    ["Adopt a center policy statement (template in Schedule 4) and share it with Participants", "Supports", "Leads"],
     ["Nominate Participants and supply their contact details", "-", "Leads"],
     ["Issue the joining pack and collect consent through Caliber", "Leads", "-"],
     ["Provide the venue and rooms, or the virtual platform", "{{Leads / -}}", "{{Leads / -}}"],
-    ["Prepare materials and check them against the materials checklist before the centre", "Leads", "-"],
-    ["Provide technical support during the centre", "Leads", "{{Supports}}"],
+    ["Prepare materials and check them against the materials checklist before the center", "Leads", "-"],
+    ["Provide technical support during the center", "Leads", "{{Supports}}"],
     ["Supply assessors and role-players", "Leads", "{{Supports, see 6.2}}"],
-    ["Brief any Client representative or observer attending the centre on how to behave", "Leads", "-"],
-    ["Run the centre and the integration meeting; write the reports", "Leads", "-"],
+    ["Brief any Client representative or observer attending the center on how to behave", "Leads", "-"],
+    ["Run the center and the integration meeting; write the reports", "Leads", "-"],
     ["Release reports to the named recipients", "Leads", "-"],
     ["Give feedback to Participants", "{{Leads}}", "{{Supports}}"],
     ["Make decisions and tell Participants the outcome", "-", "Leads"],
     ["Receive concerns and appeals about the assessment", "Leads", "Supports"],
-    ["Post-centre review and evaluation", "Leads", "Supports"],
+    ["Post-center review and evaluation", "Leads", "Supports"],
   ], [9.6, 3.5, 3.5]);
   b.h2("Named contacts");
   b.table(["Role", "Name", "Email and phone"], [
     ["VIFM engagement lead", "{{name}}", "{{contact}}"],
-    ["VIFM centre manager", val(p.centreManager, "name"), "{{contact}}"],
+    ["VIFM center manager", val(p.centreManager, "name"), "{{contact}}"],
     ["Client sponsor", "{{name}}", "{{contact}}"],
     ["Client day-to-day contact", "{{name}}", "{{contact}}"],
     ["Contact for Participants' questions and concerns", val(p.participantContact.name, "name"), val(p.participantContact.email, "contact")],
   ], [6.0, 4.6, 6.0]);
 
   // ── 6 ─────────────────────────────────────────────────────────────────────
-  b.h1("6. Centre staff and competence");
-  b.clause("6.1", "VIFM is responsible for making sure that everyone who contributes to the centre is competent in their " +
-    "role. VIFM trains its own staff and records their competence in Caliber. Nobody is assigned to a centre role " +
+  b.h1("6. Center staff and competence");
+  b.clause("6.1", "VIFM is responsible for making sure that everyone who contributes to the center is competent in their " +
+    "role. VIFM trains its own staff and records their competence in Caliber. Nobody is assigned to a center role " +
     "until their competence for that role is recorded as current.");
   b.clause("6.2", "Where Client staff act as assessors, role-players or administrators, VIFM specifies the competence " +
     "required, and the Client makes sure its staff meet it. Training for Client staff is provided by {{VIFM / the " +
@@ -350,12 +350,12 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.clause("6.3", "Every Participant is rated by at least two different assessors, and there is at least one assessor for " +
     "every three Participants. Assessors declare any conflict of interest, and no assessor rates a Participant they " +
     "have declared a conflict with.");
-  b.clause("6.4", "Centre roles for this centre:");
+  b.clause("6.4", "Center roles for this center:");
   b.table(["Role", "Provided by", "Number"], p.roleCounts.length
     ? p.roleCounts.map((r) => [val(r.role, "role"), val(r.providedBy, "provider"), val(r.count, "n")])
     : [
-        ["Centre manager", "VIFM", "{{n}}"], ["Assessors", "{{VIFM / Client / both}}", "{{n}}"],
-        ["Role-players", "{{VIFM / Client}}", "{{n}}"], ["Centre administrator", "{{VIFM / Client}}", "{{n}}"],
+        ["Center manager", "VIFM", "{{n}}"], ["Assessors", "{{VIFM / Client / both}}", "{{n}}"],
+        ["Role-players", "{{VIFM / Client}}", "{{n}}"], ["Center administrator", "{{VIFM / Client}}", "{{n}}"],
         ["Integration meeting chair", "VIFM", "1"], ["Feedback provider", "{{VIFM / Client}}", "{{n}}"],
       ], [7.0, 6.0, 3.6]);
 
@@ -375,14 +375,14 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
       "rating by discussion of the evidence." },
   ]);
   b.para("In both cases the panel also records a readiness recommendation: Ready Now, Ready with Development or Not Ready.", { indent: 1 });
-  b.clause("7.4", "Competency weights (for a calculated overall rating). The Client approves these before the centre. " +
+  b.clause("7.4", "Competency weights (for a calculated overall rating). The Client approves these before the center. " +
     "Caliber does not calculate an overall rating until the weights are confirmed, and the weights do not change once " +
     `any Participant has been assessed.${p.weightsConfirmedOn ? ` Weights confirmed in Caliber on [[${p.weightsConfirmedOn}]].` : ""}`);
   b.table(["Competency", "Weight"], p.weights.length
     ? p.weights.map((w) => [val(w.competency, "competency"), val(w.weight, "weight")])
     : [["{{competency}}", "{{weight}}"], ["{{competency}}", "{{weight}}"], ["{{competency}}", "{{weight}}"]],
     [12.6, 4.0]);
-  b.clause("7.5", "Evidence from outside the centre, such as performance reviews (tick one):");
+  b.clause("7.5", "Evidence from outside the center, such as performance reviews (tick one):");
   b.boxes([
     { on: p.externalEvidence?.permitted === false, label: "Is not used." },
     { on: p.externalEvidence?.permitted === true, label: "May be used under these conditions: " +
@@ -391,30 +391,30 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.clause("7.6", 'Every individual report includes a "Using this report" section. It explains what the report may be ' +
     "used for, how the ratings were reached, the limitations of the evidence, the review status of the content, and " +
     "how to raise a question or challenge. VIFM checks each report before release and records who checked it. " +
-    "Reports are released within {{n}} working days of the centre.");
+    "Reports are released within {{n}} working days of the center.");
   b.clause("7.7", `Reports go only to these recipients: ${val(p.recipients, "names or roles")}. Anyone else needs the ` +
     "Participant's express permission, which VIFM requests with a stated reason. If a Participant refuses, the report " +
     "is not released to that person.");
   b.h2("7.8 Feedback to Participants");
   b.table(["Question", "Agreed position"], [
-    ["Is feedback provided?", `${val(p.feedback.provided, "Yes / No")}. For development and succession centres feedback ` +
+    ["Is feedback provided?", `${val(p.feedback.provided, "Yes / No")}. For development and succession centers feedback ` +
       "is required and includes a conversation."],
     ["What form does it take?", `${val(p.feedback.form, "Written report / oral debrief / both")}. Oral feedback is also ` +
-      "summarised in writing."],
+      "summarized in writing."],
     ["Who gives it?", "{{name or role}}, trained to give assessment feedback."],
     ["How and where?", "{{In person at / by video / by phone}}"],
-    ["By when?", p.feedback.when ? val(p.feedback.when, "") : "Within {{14}} days of the centre."],
+    ["By when?", p.feedback.when ? val(p.feedback.when, "") : "Within {{14}} days of the center."],
   ], [5.0, 11.6]);
 
   // ── 8 ─────────────────────────────────────────────────────────────────────
   b.h1("8. Participants");
   b.clause("8.1", `Joining pack. VIFM issues each Participant a joining pack through Caliber at least [[${p.packNoticeDays}]] ` +
-    "days (three weeks) before the centre. It explains the purpose of the centre, when and where it takes place, the " +
+    "days (three weeks) before the center. It explains the purpose of the center, when and where it takes place, the " +
     "exercises and how long they take, how to prepare, how results are used and what decisions follow, who receives " +
     "the report, the feedback on offer, how long data is kept, how to ask for adjustments, and the Participant's " +
     "rights and contact. Participants confirm they have read the pack before they give consent." +
     (p.packPublished
-      ? ` The pack for this centre was published on [[${p.packPublished.on}]]` +
+      ? ` The pack for this center was published on [[${p.packPublished.on}]]` +
         (p.packPublished.noticeGiven !== null ? ` with [[${p.packPublished.noticeGiven}]] days' notice` : "") +
         (p.packPublished.lateReason ? `; the reason for the shorter notice is recorded as: [[${p.packPublished.lateReason}]]` : "") +
         "."
@@ -428,11 +428,11 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.clause("8.3", "Adjustments. Every Participant is asked whether they have a disability-related or other need that " +
     "requires an adjustment. Agreed adjustments, such as extra time, are recorded and applied. VIFM consults the " +
     "Client where an adjustment affects the venue or schedule.");
-  b.clause("8.4", "Concerns and appeals. Participants may raise a concern before, during or after the centre, through " +
+  b.clause("8.4", "Concerns and appeals. Participants may raise a concern before, during or after the center, through " +
     "Caliber or with the contact named in section 5. VIFM acknowledges each one within {{n}} working days. An appeal " +
     `against an assessment result may be made within [[${p.appealWindowDays}]] days of the result being communicated. ` +
     `An appeal against the Client's decision follows the Client's own procedure: ${val(p.clientAppealProcedure, "procedure")}.`);
-  b.clause("8.5", "Disruption. If a Participant is taken ill or seriously disturbed during the centre, VIFM arranges for " +
+  b.clause("8.5", "Disruption. If a Participant is taken ill or seriously disturbed during the center, VIFM arranges for " +
     "them to be assessed again where that is fair to them and to other Participants.");
   b.clause("8.6", "Decisions. The Client tells each Participant the decision made using their results by {{date}}, and " +
     "tells VIFM when it has done so.");
@@ -447,13 +447,13 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
     { label: "Other: {{law}}" },
   ]);
   b.clause("9.2", "The parties' roles under that law are: {{to be confirmed by counsel, e.g. the Client as controller and VIFM as processor}}.");
-  b.clause("9.3", "Access to Participant data in Caliber is restricted by role and organisation. Participants see only " +
-    "their own data. Client users see only their own organisation's released reports. Significant actions are " +
+  b.clause("9.3", "Access to Participant data in Caliber is restricted by role and organization. Participants see only " +
+    "their own data. Client users see only their own organization's released reports. Significant actions are " +
     "recorded in an audit trail.");
   b.clause("9.4", `Identifiable personal data is kept for [[${p.retentionMonths}]] months and then deleted, unless the ` +
     "parties agree a longer period here: {{period and reason}}.");
-  b.clause("9.5", "VIFM will comply with these Client policies in delivering the centre: {{policies}}.");
-  b.clause("9.6", "The centre is designed and used so that it does not discriminate unfairly. Section 10 sets out how this is checked.");
+  b.clause("9.5", "VIFM will comply with these Client policies in delivering the center: {{policies}}.");
+  b.clause("9.6", "The center is designed and used so that it does not discriminate unfairly. Section 10 sets out how this is checked.");
 
   // ── 10 ────────────────────────────────────────────────────────────────────
   b.h1("10. Impact on Participants and fairness");
@@ -467,9 +467,9 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
     ["{{other risk}}", "{{mitigation}}"],
   ], [6.6, 10.0]);
   b.clause("10.3", p.fairnessApplies === false
-    ? "This is a development centre, so outcome fairness monitoring is not run: no selection decision rests on it. " +
+    ? "This is a development center, so outcome fairness monitoring is not run: no selection decision rests on it. " +
       "Design fairness still applies through 9.6 and 10.2."
-    : "For selection and succession centres, Participants are invited to answer optional questions about gender, age " +
+    : "For selection and succession centers, Participants are invited to answer optional questions about gender, age " +
       'band and whether they are a national or expatriate. "Prefer not to say" is always available, and the answers ' +
       "never affect ratings. VIFM checks outcomes against the four-fifths rule. Where a group has fewer than 5 people, " +
       "or the total is under 30, the result is reported as low confidence. A flag leads to a review of how job-related " +
@@ -477,15 +477,15 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
 
   // ── 11 ────────────────────────────────────────────────────────────────────
   b.h1("11. Evidence and status of the content");
-  b.clause("11.1", "On request, VIFM provides the design record and centre plan, which show why each competency and " +
+  b.clause("11.1", "On request, VIFM provides the design record and center plan, which show why each competency and " +
     "exercise was chosen and how they relate to the role.");
-  b.clause("11.2", "Some of the Caliber content library, including competency descriptions, behavioural indicators, " +
+  b.clause("11.2", "Some of the Caliber content library, including competency descriptions, behavioral indicators, " +
     "rating-scale descriptions and exercises, was drafted with the help of AI and is being reviewed by subject matter " +
     `experts. Each report states the review status of the content used. Status at signing: ${val(p.contentStatus, "status")}`);
   b.clause("11.3", "Evidence that results predict later performance in the Client's context (tick one):");
   b.boxes([
     { label: "VIFM does not yet hold this evidence for this design. With the Client's agreement, VIFM will collect " +
-      "outcome data after the centre to build it." },
+      "outcome data after the center to build it." },
     { label: "VIFM holds this evidence: {{reference}}." },
   ]);
   b.clause("11.4", "Where budget or time has shaped the design, the effect is recorded here: {{e.g. one exercise instead " +
@@ -496,26 +496,26 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.h1("12. Constraints, risks and contingency");
   b.clause("12.1", "Known constraints on time, logistics, venue, Participant availability, language or technology: {{constraints}}.");
   b.clause("12.2", "The risk assessment in Schedule 2 covers data security and privacy, consent, legal compliance and " +
-    "delivery. It is reviewed before each centre.");
-  b.clause("12.3", "The centre manual sets out how unexpected events are handled, based on the risk assessment in " +
+    "delivery. It is reviewed before each center.");
+  b.clause("12.3", "The center manual sets out how unexpected events are handled, based on the risk assessment in " +
     "Schedule 2. In any disruption, VIFM puts Participants' safety and wellbeing first, treats everyone fairly, and " +
     "protects the integrity of the assessment, for example by rescheduling an exercise rather than running it under " +
-    "unfair conditions. Each such event, and how it was handled, is recorded in the centre's delivery log.");
-  b.clause("12.4", "Technical support during the centre is provided by {{name}}, available {{hours}}. If Caliber is " +
-    "unavailable, the centre continues using {{fallback arrangement}}.");
+    "unfair conditions. Each such event, and how it was handled, is recorded in the center's delivery log.");
+  b.clause("12.4", "Technical support during the center is provided by {{name}}, available {{hours}}. If Caliber is " +
+    "unavailable, the center continues using {{fallback arrangement}}.");
 
   // ── 13 ────────────────────────────────────────────────────────────────────
   b.h1("13. Changes");
-  b.clause("13.1", "Either party may propose a change to this agreement or the centre plan in writing, using the form in Schedule 3.");
+  b.clause("13.1", "Either party may propose a change to this agreement or the center plan in writing, using the form in Schedule 3.");
   b.clause("13.2", "VIFM sets out the effect of the change on the design, on the standards in this agreement, on dates " +
     "and on cost. No change takes effect until both parties have approved it in writing.");
-  b.clause("13.3", "Each approved change produces a new version of this agreement and, where affected, of the centre plan.");
+  b.clause("13.3", "Each approved change produces a new version of this agreement and, where affected, of the center plan.");
 
   // ── 14 ────────────────────────────────────────────────────────────────────
-  b.h1("14. After the centre");
-  b.clause("14.1", "Within {{n}} weeks of the last centre, VIFM leads a review: what worked, feedback from centre staff, " +
+  b.h1("14. After the center");
+  b.clause("14.1", "Within {{n}} weeks of the last center, VIFM leads a review: what worked, feedback from center staff, " +
     "Participants' reactions, and any design changes with the reasons for them.");
-  b.clause("14.2", "At {{12}} months, the parties compare the cost of the centre, in money and in staff time, with its " +
+  b.clause("14.2", "At {{12}} months, the parties compare the cost of the center, in money and in staff time, with its " +
     "benefits, measured by {{e.g. performance of those appointed; progress against development plans}}.");
 
   // ── 15 ────────────────────────────────────────────────────────────────────
@@ -523,7 +523,7 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   b.clause("15.1", "Fees and payment are as set out in the accepted proposal {{Proposal reference}}.");
   b.clause("15.2", "Resources each party provides:");
   b.table(["Resource", "VIFM", "Client"], [
-    ["People", "{{e.g. centre manager, 4 assessors, 2 role-players}}", "{{e.g. administrator, sponsor at opening}}"],
+    ["People", "{{e.g. center manager, 4 assessors, 2 role-players}}", "{{e.g. administrator, sponsor at opening}}"],
     ["Equipment", "{{e.g. laptops, printed materials}}", "{{e.g. screens, network access}}"],
     ["Space", "-", p.facilities ? val(p.facilities, "") : "{{e.g. 1 plenary room, 4 break-out rooms}}"],
   ], [3.6, 6.5, 6.5]);
@@ -538,18 +538,18 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
 
   // ── Schedules ─────────────────────────────────────────────────────────────
   b.pageBreak();
-  b.h1("Schedule 1. Centre plan");
-  b.para("Attach the centre plan exported from the engagement's design record in Caliber, and record its date in " +
-    "clause 1.2. The plan covers: why this centre and in this shape; where the criteria came from; what is assessed; " +
+  b.h1("Schedule 1. Center plan");
+  b.para("Attach the center plan exported from the engagement's design record in Caliber, and record its date in " +
+    "clause 1.2. The plan covers: why this center and in this shape; where the criteria came from; what is assessed; " +
     "how it is assessed; how the rating is reached; people and facilities; timing and scale; and data and reporting.");
   b.h1("Schedule 2. Risk assessment");
-  b.para("Reviewed before each centre. Likelihood and impact: Low, Medium or High.");
+  b.para("Reviewed before each center. Likelihood and impact: Low, Medium or High.");
   b.table(["Risk", "Likelihood", "Impact", "Control", "Owner"], [
-    ["Unauthorised access to Participant data", "{{L/M/H}}", "{{L/M/H}}", "Role-based access; named recipients", "VIFM"],
+    ["Unauthorized access to Participant data", "{{L/M/H}}", "{{L/M/H}}", "Role-based access; named recipients", "VIFM"],
     ["Data sent to the wrong recipient", "", "", "Recipients list in 7.7; release check", "VIFM"],
     ["Participant has not given valid consent", "", "", "Consent before any data collection", "VIFM"],
     ["Local law not followed", "", "", "Section 9 confirmed by counsel", ""],
-    ["Exercise materials leaked in advance", "", "", "Controlled issue of the centre manual", "VIFM"],
+    ["Exercise materials leaked in advance", "", "", "Controlled issue of the center manual", "VIFM"],
     ["Assessor unavailable on the day", "", "", "Standby assessor with current competence", "VIFM"],
     ["Platform or network failure", "", "", "Fallback in 12.4", "VIFM"],
     ["Participant taken ill", "", "", "Re-assessment under 8.5", "VIFM"],
@@ -563,38 +563,38 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
   ], [6.0, 10.6]);
 
   b.pageBreak();
-  b.h1("Schedule 4. Centre policy statement (template for the Client)");
-  b.para("The Client's organisation should have a policy statement for assessment centres. VIFM offers this template " +
+  b.h1("Schedule 4. Center policy statement (template for the Client)");
+  b.para("The Client's organization should have a policy statement for assessment centers. VIFM offers this template " +
     "where none exists. The Client adapts and adopts it, links it to its human resources policies, and gives it to " +
-    "everyone involved in the centre, including Participants.", { italics: true, color: MUTED });
-  const org = val(p.clientName, "Organisation");
+    "everyone involved in the center, including Participants.", { italics: true, color: MUTED });
+  const org = val(p.clientName, "Organization");
   const policy: [string, string][] = [
-    ["Purpose", `${org} uses assessment centres to {{select / develop / plan succession for}} {{groups}}.`],
-    ["Ethics", "Centres are run honestly and openly. Participants are told the purpose of the centre and how the results will be used before they take part."],
-    ["Diversity and fairness", "Centres assess only what the role requires. Outcomes are monitored for unfair effects on any group, and the design is reviewed if a concern arises."],
+    ["Purpose", `${org} uses assessment centers to {{select / develop / plan succession for}} {{groups}}.`],
+    ["Ethics", "Centers are run honestly and openly. Participants are told the purpose of the center and how the results will be used before they take part."],
+    ["Diversity and fairness", "Centers assess only what the role requires. Outcomes are monitored for unfair effects on any group, and the design is reviewed if a concern arises."],
     ["Security", "Exercise materials and results are kept secure and are shared only with those entitled to see them."],
-    ["Briefing Participants", "Every Participant receives a joining pack in good time before the centre."],
+    ["Briefing Participants", "Every Participant receives a joining pack in good time before the center."],
     ["Participants' rights", "Participants may ask for adjustments, ask questions, raise concerns and appeal, and are told how to do so."],
     ["Data protection", "Personal data is handled under {{law}} and kept for no longer than {{period}}."],
     ["Feedback", "Participants receive feedback {{in this form}} within {{period}}."],
     ["Appeals", "Appeals are handled by {{role}} under {{procedure}}."],
-    ["Staff training and competence", "Only trained and competent people act as assessors or in other centre roles."],
-    ["Quality, evaluation and monitoring", "Each centre is reviewed afterwards, and the use of centres is evaluated against their costs and benefits."],
+    ["Staff training and competence", "Only trained and competent people act as assessors or in other center roles."],
+    ["Quality, evaluation and monitoring", "Each center is reviewed afterwards, and the use of centers is evaluated against their costs and benefits."],
     ["Link to HR policies", `This statement forms part of ${org}'s {{recruitment / talent / development}} policies.`],
   ];
   for (const [head, body] of policy) b.heading(head, body);
 
   b.pageBreak();
   b.h1("Schedule 5. How this agreement addresses the BPS standard");
-  b.para("The British Psychological Society standard for the design and delivery of assessment centres (Division of " +
+  b.para("The British Psychological Society standard for the design and delivery of assessment centers (Division of " +
     "Occupational Psychology, 2015) requires the agreement between the provider and the client to cover the points " +
     "below. A signed, completed agreement meets the requirements about what the agreement contains. Requirements " +
-    "about how the centre is run are met only when the centre is run that way.", { size: 9 });
+    "about how the center is run are met only when the center is run that way.", { size: 9 });
   b.table(["BPS clause", "What it requires", "Where this agreement covers it"], BPS_MAP.map((r) => [...r]), [2.8, 8.8, 5.0]);
 
   const doc = new Document({
     creator: "VIFM Caliber",
-    title: `Assessment Centre Agreement - ${p.centreName}`,
+    title: `Assessment Center Agreement - ${p.centreName}`,
     styles: { default: { document: { run: { font: FONT, size: 20, color: TEXT } } } },
     sections: [{
       properties: { page: { size: { width: cm(21), height: cm(29.7) }, margin: { top: cm(2), bottom: cm(2), left: cm(2.2), right: cm(2.2) } } },
@@ -602,7 +602,7 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
         default: new Footer({
           children: [new Paragraph({
             alignment: AlignmentType.LEFT,
-            children: runs(`VIFM Assessment Centre Agreement  |  ${val(p.clientName, "Client")}  |  {{Agreement reference}}  |  Version {{n}}`, { size: 7.5, color: MUTED }),
+            children: runs(`VIFM Assessment Center Agreement  |  ${val(p.clientName, "Client")}  |  {{Agreement reference}}  |  Version {{n}}`, { size: 7.5, color: MUTED }),
           })],
         }),
       },
@@ -615,7 +615,7 @@ export async function buildCentreAgreementDocx(p: AgreementPrefill, generatedAt:
 const BPS_MAP: readonly (readonly [string, string, string])[] = [
   ["3.2", "Client shares its needs and documents", "2.1, 2.2"],
   ["3.3, 3.7", "Purpose agreed and defined", "3.1"],
-  ["3.4", "Provider advises where a centre is not the best response", "2.3"],
+  ["3.4", "Provider advises where a center is not the best response", "2.3"],
   ["3.5", "Purpose, demographics and how outcomes are reported considered", "3, 7, 10.3"],
   ["3.6, 3.25", "Service, roles and responsibilities documented", "4, 5"],
   ["3.8", "Scope: criteria and methods", "4.1, 4.2, Schedule 1"],
@@ -634,16 +634,16 @@ const BPS_MAP: readonly (readonly [string, string, string])[] = [
   ["3.23.7-3.23.8", "Data security and privacy; policy and legal compliance", "9"],
   ["3.23.9", "Informed consent and feedback", "7.8, 8.2"],
   ["3.23.10", "Costs and resources", "15"],
-  ["3.23.11", "Post-centre review", "14.1"],
+  ["3.23.11", "Post-center review", "14.1"],
   ["3.24", "Budget balanced against standards", "11.4"],
-  ["3.26, 3.27", "Centre plan agreed and part of the agreement", "1.2, Schedule 1"],
+  ["3.26, 3.27", "Center plan agreed and part of the agreement", "1.2, Schedule 1"],
   ["3.28", "Impact on Participants and stakeholders", "10"],
   ["3.29", "Stakeholder commitment", "5"],
   ["3.30", "Change procedure", "13, Schedule 3"],
-  ["4.45-4.48", "Centre policy statement", "5, Schedule 4"],
+  ["4.45-4.48", "Center policy statement", "5, Schedule 4"],
   ["5.3", "Data used only for the agreed purpose", "3.3"],
   ["5.10", "Feedback: whether, what, how, where, by when", "7.8"],
-  ["5.26", "Materials ready before the centre", "5"],
+  ["5.26", "Materials ready before the center", "5"],
   ["5.27", "Attending stakeholders briefed", "5"],
   ["5.28-5.30", "Contingency plan, conduct, technical support", "12.3, 12.4"],
   ["5.40", "Joining pack sent in good time", "8.1"],

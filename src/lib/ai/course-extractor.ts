@@ -76,8 +76,8 @@ const SYSTEM_PROMPT =
   `(4) TARGET AUDIENCE, (5) COURSE METHODOLOGY, (6) COURSE OUTLINE. ` +
   `On the page, TARGET COMPETENCIES and TARGET AUDIENCE may render side-by-side in two columns, ` +
   `but the canonical sequence is the one above - extract accordingly. ` +
-  `Your job: extract the structured catalogue record AND propose two sets of tags - ` +
-  `(a) which AC behavioural competencies the course develops (from a supplied list), and ` +
+  `Your job: extract the structured catalog record AND propose two sets of tags - ` +
+  `(a) which AC behavioral competencies the course develops (from a supplied list), and ` +
   `(b) which ARA pillars the course addresses topically. ` +
   `You may receive English or Arabic outlines; preserve both languages in your output where present.`;
 
@@ -155,14 +155,14 @@ function buildInstructions(competencies: Competency[]): string {
     `Use Shape B when the section has named sub-headers each containing bullets. ` +
     `Use sub_bullets only when the source PDF has a third indentation level under a bullet (commonly bullets prefixed with "o" in the layout). ` +
     `Each section picks ONE shape - never mix bullets and subsections in the same section.\n\n` +
-    `── COMPETENCY TAGGING (BEHAVIOURAL AXIS) ──\n` +
-    `These are VIFM's AC behavioural competencies (how a person works), NOT topical capabilities. ` +
-    `Map a course to a competency only when the course materially develops that *behaviour*, not just ` +
+    `── COMPETENCY TAGGING (BEHAVIORAL AXIS) ──\n` +
+    `These are VIFM's AC behavioral competencies (how a person works), NOT topical capabilities. ` +
+    `Map a course to a competency only when the course materially develops that *behavior*, not just ` +
     `when the topic is adjacent. Lean toward fewer, higher-confidence tags.\n` +
     `Available competencies:\n${competencyMenu}\n\n` +
     `── PILLAR TAGGING (TOPICAL AXIS) ──\n` +
-    `These are ARA's 8 organisational AI-readiness pillars. Map a course to a pillar when the course ` +
-    `topic builds organisational capability in that pillar. Examples: "Cyber Enabled Crime" → governance, ` +
+    `These are ARA's 8 organizational AI-readiness pillars. Map a course to a pillar when the course ` +
+    `topic builds organizational capability in that pillar. Examples: "Cyber Enabled Crime" → governance, ` +
     `data; "AI Strategy Professional" → strategy, governance; "AI-Powered Accountant" → operations, talent.\n\n` +
     `── HARD RULES ──\n` +
     `* Vertical must be exactly one of the 14 listed values. Use 'artificial_intelligence' for AI-focused courses, ` +

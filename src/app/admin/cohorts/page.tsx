@@ -180,7 +180,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
           <h1 className="text-2xl font-semibold text-[#010131]">Project cohorts</h1>
         </div>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">
-          Persona® (behavioural self-report) and Logica® (ability) results for one cohort, grouped by
+          Persona® (behavioral self-report) and Logica® (ability) results for one cohort, grouped by
           the project label set when the voucher batch was issued and matched across instruments by email.
         </p>
       </header>
@@ -318,7 +318,7 @@ export default async function ProjectCohortsPage({ searchParams }: { searchParam
             </div>
           </section>
           <p className="text-xs text-muted-foreground">
-            These are indicative self-served instruments. Persona is a behavioural self-report; Logica
+            These are indicative self-served instruments. Persona is a behavioral self-report; Logica
             Tier 1 bands are raw-score based, not local norms. Pair with Reflect 360® (others) and a target
             role for a readiness verdict.
           </p>

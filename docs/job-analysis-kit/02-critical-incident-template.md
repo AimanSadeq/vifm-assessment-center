@@ -1,9 +1,9 @@
 # 02 — Critical Incident Technique (CIT) Template
 
 **Method:** Flanagan's Critical Incident Technique. Collect **specific, real**
-situations (not generalities) where behaviour made a clear difference to the
+situations (not generalities) where behavior made a clear difference to the
 outcome — both **effective** and **ineffective**. These incidents become the
-behavioural indicators and BARS anchors (Phase 2).
+behavioral indicators and BARS anchors (Phase 2).
 
 **Target:** **6–10 incidents per SME** (aim for a mix of effective and
 ineffective).
@@ -36,7 +36,7 @@ communicated well," ask "what did they actually say or do?"
 | Effectiveness | ☐ Effective ☐ Ineffective ☐ Mixed |
 | **Capability illustrated** (map to a draft competency, or "NEW: ___") | |
 | Severity / stakes (Low / Med / High) | |
-| Anonymised? | ☐ Yes |
+| Anonymized? | ☐ Yes |
 
 *(Duplicate this block per incident.)*
 
@@ -51,10 +51,10 @@ communicated well," ask "what did they actually say or do?"
 3. Incidents that **don't fit** any draft competency → candidate **additions**
    (feed §5 decision rules).
 4. Two competencies that **share** most incidents → candidate **merge**.
-5. One competency whose incidents split into two distinct behaviour sets →
+5. One competency whose incidents split into two distinct behavior sets →
    candidate **split**.
 6. Keep the strongest 2–3 effective and 1–2 ineffective incidents per
    competency as **BARS anchor source material**.
 
-> Anonymise names, clients, and identifying details **before** incidents enter
+> Anonymize names, clients, and identifying details **before** incidents enter
 > the indicator library (data-protection requirement, see README §6).

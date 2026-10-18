@@ -82,7 +82,7 @@ export async function checkAiConnectivity(): Promise<AiConnectivityResult> {
       return { ...base, kind: "model", httpStatus: err.status, message, hint: `The configured model "${AI_MODEL}" is not available to this account. Change AI_MODEL in src/lib/ai/client.ts to a model the account can use.` };
     }
     if (err instanceof Anthropic.RateLimitError) {
-      return { ...base, kind: "rate_limit", httpStatus: err.status, message, hint: "The account is being rate limited. Wait a few minutes and run the check again; if it persists, review the organisation's rate limits in the Anthropic Console." };
+      return { ...base, kind: "rate_limit", httpStatus: err.status, message, hint: "The account is being rate limited. Wait a few minutes and run the check again; if it persists, review the organization's rate limits in the Anthropic Console." };
     }
     if (err instanceof Anthropic.BadRequestError) {
       // The organisation's own monthly spend cap (seen 5 Oct 2026: "You have
@@ -91,7 +91,7 @@ export async function checkAiConnectivity(): Promise<AiConnectivityResult> {
       // in the Console and access resumes at once.
       if (/usage limit/i.test(message)) {
         const reset = message.match(/regain access on ([^."]+)/i)?.[1];
-        return { ...base, kind: "spend_limit", httpStatus: err.status, message, hint: `The organisation's monthly API spend limit has been reached${reset ? ` (resets ${reset})` : ""}. Raise or remove the limit under Settings, Limits in the Anthropic Console; AI features resume immediately, no redeploy needed.` };
+        return { ...base, kind: "spend_limit", httpStatus: err.status, message, hint: `The organization's monthly API spend limit has been reached${reset ? ` (resets ${reset})` : ""}. Raise or remove the limit under Settings, Limits in the Anthropic Console; AI features resume immediately, no redeploy needed.` };
       }
       const billing = /credit|billing|balance|purchase/i.test(message);
       return billing

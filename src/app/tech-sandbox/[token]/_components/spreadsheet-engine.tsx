@@ -200,7 +200,7 @@ export function SpreadsheetEngine({ config, onRegister, initialWork }: Spreadshe
           setTimeout(() => {
             if (!cancelled && containerRef.current && containerRef.current.childElementCount === 0) {
               setInitError(
-                "Spreadsheet initialised but did not render (no canvas). Likely a CSS/theme load issue.",
+                "Spreadsheet initialized but did not render (no canvas). Likely a CSS/theme load issue.",
               );
             }
           }, 1800);

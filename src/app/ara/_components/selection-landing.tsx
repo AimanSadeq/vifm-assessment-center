@@ -101,7 +101,7 @@ export function SelectionLanding() {
           {[
             { href: "/ara/consultant", icon: Users, iconCls: "ara-icon-blue", linkCls: "text-accent", subtitle: "Run engagements", title: "Consultant", description: "Create assessments, invite respondents, validate Phase 2 findings, freeze scores, and generate bilingual reports.", cta: "Open dashboard" },
             { href: "/ara/admin", icon: Shield, iconCls: "ara-icon-violet", linkCls: "text-[#7C3AED]", subtitle: "Curate content", title: "VIFM Admin", description: "Manage question bank versions, regulatory frameworks, sandbox data, and retention lifecycle.", cta: "Open console" },
-            { href: "/ara/personal/start?lens=acquisition", icon: User, iconCls: "ara-icon-teal", linkCls: "text-[#0D9488]", subtitle: "Self-served, complimentary", title: "Personal snapshot", description: "A short bilingual self-assessment for individuals - 5-7 minutes, four VIFM factors, plus personalised VIFM training recommendations to act on the gaps.", cta: "Take the snapshot" },
+            { href: "/ara/personal/start?lens=acquisition", icon: User, iconCls: "ara-icon-teal", linkCls: "text-[#0D9488]", subtitle: "Self-served, complimentary", title: "Personal snapshot", description: "A short bilingual self-assessment for individuals - 5-7 minutes, four VIFM factors, plus personalized VIFM training recommendations to act on the gaps.", cta: "Take the snapshot" },
           ].map((e, i) => (
             <FadeIn key={e.href} delay={i * 120}>
               <Link href={e.href} className="ara-tile p-6 h-full flex flex-col">

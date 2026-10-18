@@ -49,7 +49,7 @@ function DimensionTable({ dim }: { dim: DimensionResult }) {
           <TableRow>
             <TableHead>Group</TableHead>
             <TableHead className="text-end">In pool</TableHead>
-            <TableHead className="text-end">Favourable</TableHead>
+            <TableHead className="text-end">Favorable</TableHead>
             <TableHead className="text-end">Rate</TableHead>
             <TableHead className="text-end">Ratio to highest</TableHead>
           </TableRow>
@@ -152,7 +152,7 @@ export default async function EngagementFairnessPage({
           <h1 className="text-2xl font-semibold text-primary">Fairness monitoring</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {engagement.name as string}
-            {org?.name ? ` · ${org.name}` : ""} · {acPurposeLabel(engagement.purpose as string | null)} centre
+            {org?.name ? ` · ${org.name}` : ""} · {acPurposeLabel(engagement.purpose as string | null)} center
           </p>
         </div>
       </div>
@@ -165,7 +165,7 @@ export default async function EngagementFairnessPage({
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
           <p>
-            For each demographic dimension this compares how often each group received a favourable outcome, takes
+            For each demographic dimension this compares how often each group received a favorable outcome, takes
             the highest group as the reference, and flags any group falling below {pct(FOUR_FIFTHS)} of it - the
             four-fifths rule.
           </p>
@@ -183,7 +183,7 @@ export default async function EngagementFairnessPage({
 
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">This centre</CardTitle>
+          <CardTitle className="text-base">This center</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <div className="grid grid-cols-3 gap-3">
@@ -193,7 +193,7 @@ export default async function EngagementFairnessPage({
             </div>
             <div>
               <div className="text-2xl font-semibold">{view.rated}</div>
-              <div className="text-xs text-muted-foreground">With a finalised rating</div>
+              <div className="text-xs text-muted-foreground">With a finalized rating</div>
             </div>
             <div>
               <div className="text-2xl font-semibold">{view.disclosed}</div>
@@ -202,11 +202,11 @@ export default async function EngagementFairnessPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-            <span className="text-xs text-muted-foreground">Count as favourable:</span>
+            <span className="text-xs text-muted-foreground">Count as favorable:</span>
             {(Object.keys(AC_FAVOURABLE_LABELS) as AcFavourableOutcome[]).map((k) => (
               <Link
                 key={k}
-                href={`/admin/engagements/${params.id}/fairness?favourable=${k}`}
+                href={`/admin/engagements/${params.id}/fairness?favorable=${k}`}
                 className={`rounded border px-2 py-1 text-xs ${
                   favourable === k ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"
                 }`}
@@ -260,7 +260,7 @@ export default async function EngagementFairnessPage({
           ) : (
             <p className="text-muted-foreground">
               Not recorded. The standard asks that the diversity of participants be taken into account when
-              allocating them to centres and to groups within them, and that the reasoning be written down (5.37).
+              allocating them to centers and to groups within them, and that the reasoning be written down (5.37).
               It is recorded on the engagement.
             </p>
           )}

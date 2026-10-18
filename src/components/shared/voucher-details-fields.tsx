@@ -96,7 +96,7 @@ export function VoucherDetailsFields({
             )}
           </div>
           {clientReadOnly ? (
-            <Input value={value.clientName} onChange={set("clientName")} placeholder="Client / organisation" readOnly />
+            <Input value={value.clientName} onChange={set("clientName")} placeholder="Client / organization" readOnly />
           ) : (
             <select className={selectClass} value={value.clientName} onChange={(e) => onChange({ ...value, clientName: e.target.value })}>
               <option value="">- select a client -</option>
@@ -108,7 +108,7 @@ export function VoucherDetailsFields({
           {clientHint && <p className="text-[11px] text-muted-foreground">{clientHint}</p>}
           {showAdd && !clientReadOnly && (
             <div className="mt-2 space-y-2 rounded-md border border-border bg-card p-3">
-              <Input placeholder="New client / organisation name" value={newName} onChange={(e) => setNewName(e.target.value)} />
+              <Input placeholder="New client / organization name" value={newName} onChange={(e) => setNewName(e.target.value)} />
               <div className="grid grid-cols-2 gap-2">
                 <select className={selectClass} value={newRegion} onChange={(e) => setNewRegion(e.target.value as "uae" | "saudi")}>
                   <option value="uae">UAE</option>

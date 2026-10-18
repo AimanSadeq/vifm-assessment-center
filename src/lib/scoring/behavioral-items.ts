@@ -152,7 +152,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "acCompetencyId": "a0000001-0000-0000-0000-000000000003",
         "ord": 4,
         "reverse": false,
-        "textEn": "I can quickly read what a set of financial indicators is signalling.",
+        "textEn": "I can quickly read what a set of financial indicators is signaling.",
         "textAr": "أقرأ بسرعة ما تشير إليه مجموعة من المؤشرات المالية."
       }
     ]
@@ -236,7 +236,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "acCompetencyId": "a0000001-0000-0000-0000-000000000005",
         "ord": 4,
         "reverse": false,
-        "textEn": "People trust my judgement on difficult calls.",
+        "textEn": "People trust my judgment on difficult calls.",
         "textAr": "يثق الناس بحُكمي في القرارات الصعبة."
       }
     ]
@@ -556,7 +556,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "acCompetencyId": "a0000001-0000-0000-0000-000000000013",
         "ord": 2,
         "reverse": false,
-        "textEn": "I prioritise by impact and deadline.",
+        "textEn": "I prioritize by impact and deadline.",
         "textAr": "أرتّب الأولويات بحسب الأثر والموعد."
       },
       {
@@ -572,7 +572,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "acCompetencyId": "a0000001-0000-0000-0000-000000000013",
         "ord": 4,
         "reverse": false,
-        "textEn": "I organise my work to meet key commitments.",
+        "textEn": "I organize my work to meet key commitments.",
         "textAr": "أنظّم عملي للوفاء بالالتزامات الرئيسة."
       }
     ]
@@ -774,7 +774,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "acCompetencyId": "a0000001-0000-0000-0000-000000000018",
         "ord": 3,
         "reverse": true,
-        "textEn": "I struggle to get others energised behind a goal.",
+        "textEn": "I struggle to get others energized behind a goal.",
         "textAr": "يصعب عليّ حشد الآخرين خلف هدف."
       },
       {
@@ -968,7 +968,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
         "acCompetencyId": "a0000001-0000-0000-0000-000000000023",
         "ord": 1,
         "reverse": false,
-        "textEn": "I build relationships across the organisation.",
+        "textEn": "I build relationships across the organization.",
         "textAr": "أبني علاقات عبر المنظمة."
       },
       {
@@ -1651,7 +1651,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
     "items": [
       { "itemKey": "40-1", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 1, "reverse": false, "textEn": "I map and manage the expectations of key stakeholders.", "textAr": "أحدّد وأدير توقعات أصحاب المصلحة الرئيسيين." },
       { "itemKey": "40-2", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 2, "reverse": false, "textEn": "I keep stakeholders informed on progress, risks and changes.", "textAr": "أُبقي أصحاب المصلحة على اطلاع بالتقدّم والمخاطر والتغييرات." },
-      { "itemKey": "40-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 3, "reverse": false, "textEn": "I build trusted relationships with partners inside and outside the organisation.", "textAr": "أبني علاقات موثوقة مع الشركاء داخل المؤسسة وخارجها." },
+      { "itemKey": "40-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 3, "reverse": false, "textEn": "I build trusted relationships with partners inside and outside the organization.", "textAr": "أبني علاقات موثوقة مع الشركاء داخل المؤسسة وخارجها." },
       { "itemKey": "40-4", "acCompetencyId": "a0000001-0000-0000-0000-000000000040", "ord": 4, "reverse": true, "textEn": "I avoid difficult stakeholder conversations until they escalate.", "textAr": "أتجنّب المحادثات الصعبة مع أصحاب المصلحة حتى تتفاقم." }
     ]
   },
@@ -1665,7 +1665,7 @@ export const BEHAVIORAL_COMPETENCIES: BehavioralCompetency[] = [
     "items": [
       { "itemKey": "41-1", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 1, "reverse": false, "textEn": "I connect my work to commercial outcomes and the wider value chain.", "textAr": "أربط عملي بالنتائج التجارية وسلسلة القيمة الأوسع." },
       { "itemKey": "41-2", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 2, "reverse": false, "textEn": "I look for opportunities to create additional value for customers and the business.", "textAr": "أبحث عن فرص لخلق قيمة إضافية للعملاء وللمؤسسة." },
-      { "itemKey": "41-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 3, "reverse": true, "textEn": "I prioritise short-term wins over sustainable long-term value.", "textAr": "أُفضّل المكاسب قصيرة المدى على القيمة المستدامة بعيدة المدى." },
+      { "itemKey": "41-3", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 3, "reverse": true, "textEn": "I prioritize short-term wins over sustainable long-term value.", "textAr": "أُفضّل المكاسب قصيرة المدى على القيمة المستدامة بعيدة المدى." },
       { "itemKey": "41-4", "acCompetencyId": "a0000001-0000-0000-0000-000000000041", "ord": 4, "reverse": false, "textEn": "I measure and communicate the impact of my work on key outcomes.", "textAr": "أقيس وأوصّل أثر عملي على النتائج الرئيسية." }
     ]
   }

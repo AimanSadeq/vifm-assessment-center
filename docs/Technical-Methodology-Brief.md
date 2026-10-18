@@ -6,7 +6,7 @@ How the technical certification test was built, where the items come from, and h
 
 ## 1. Why this exists
 
-Clients ask three questions about any certification test: *Where did the items come from? How do you know the test covers the job? How was the pass mark set?* This brief answers those questions for the VIFM Technical Certification programme. It follows the structure of the AI Readiness Compass, Assessment Center and Fluent briefs so the product family reads consistently.
+Clients ask three questions about any certification test: *Where did the items come from? How do you know the test covers the job? How was the pass mark set?* This brief answers those questions for the VIFM Technical Certification program. It follows the structure of the AI Readiness Compass, Assessment Center and Fluent briefs so the product family reads consistently.
 
 ---
 
@@ -44,7 +44,7 @@ Each item accumulates administration statistics (`times_administered`, `times_co
 
 ### Content validity
 
-This is the core defensibility of a knowledge test, and the programme's strongest evidence. Every item is domain- and skill-tagged against the taxonomy, and items pass SME review before they can be used. The next documented step is a formal content-validity ratio (Lawshe CVR) panel per domain, for which the SME-review trail already captures the necessary judgements.
+This is the core defensibility of a knowledge test, and the program's strongest evidence. Every item is domain- and skill-tagged against the taxonomy, and items pass SME review before they can be used. The next documented step is a formal content-validity ratio (Lawshe CVR) panel per domain, for which the SME-review trail already captures the necessary judgments.
 
 ### Face validity
 
@@ -117,14 +117,14 @@ Items content-align with the works below; this is content alignment, not republi
 
 - Item bank: items added, reviewed and retired continuously; item statistics refresh as administrations accrue.
 - Cut scores: re-set when a domain's blueprint changes; each standard records its method and date.
-- Methodology brief: re-issued as the programme matures. This document is v1.1.
+- Methodology brief: re-issued as the program matures. This document is v1.1.
 - Validation-evidence trails: reviewed in `/admin/evidence/technical`; coverage tracked in `/admin/evidence-map`.
 
 ---
 
 ## 9. Contact
 
-For methodology questions or research-collaboration enquiries, contact the VIFM consulting team: `contact@viftraining.com`.
+For methodology questions or research-collaboration inquiries, contact the VIFM consulting team: `contact@viftraining.com`.
 
 ---
 
@@ -143,7 +143,7 @@ Two kinds of evidence: **(A)** established coefficients for the *method* (work-s
 - **Item statistics:** per-item difficulty (**p-values**) and pass/fail counts are tracked, behind an SME approve / reject / retire review workflow. Status: light classical statistics only; **IRT / Rasch calibration is the documented Tier-2 path, not yet run**.
 - **Cut-scores:** documented per domain with method and rationale; the CERTIFIED path assembles only SME-approved items above the cut, otherwise the result is explicitly INDICATIVE. Status: 7 of 10 domains certifiable (SME-set standards recorded 28-30 September 2026).
 - **Key verification:** every AI-drafted numerical item has its key recomputed before it enters the bank; a whole-bank recheck of worked explanations on 28 September 2026 found one wrong key in 148 servable items, since corrected.
-- **Delivery integrity:** single-use sessions, server-held answer key, options re-randomised per administration.
+- **Delivery integrity:** single-use sessions, server-held answer key, options re-randomized per administration.
 
 ---
 

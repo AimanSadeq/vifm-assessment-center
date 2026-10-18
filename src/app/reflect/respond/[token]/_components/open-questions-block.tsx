@@ -137,7 +137,7 @@ export function OpenQuestionsBlock({
         <h2 className="text-lg font-semibold text-[#010131]">{tx("In your own words", "بكلماتك الخاصة")}</h2>
         <p className="mt-0.5 text-sm text-muted-foreground">
           {tx(
-            "Specific, behavioural examples are the most useful part of this feedback. All questions are optional.",
+            "Specific, behavioral examples are the most useful part of this feedback. All questions are optional.",
             "الأمثلة السلوكية المحددة هي أكثر أجزاء هذه التغذية الراجعة فائدة. جميع الأسئلة اختيارية.",
           )}
         </p>

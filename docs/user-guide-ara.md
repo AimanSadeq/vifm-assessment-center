@@ -1,6 +1,6 @@
 # VIFM AI Readiness Compass — User Guide
 
-A bilingual (EN / AR) diagnostic platform that measures how ready an organisation — or an individual — is to make AI work in the GCC context. Calibrated against UAE and Saudi regulatory frameworks, scored across 8 organisational pillars and 4 personal factors, and packaged in a board-grade bilingual PDF report.
+A bilingual (EN / AR) diagnostic platform that measures how ready an organization — or an individual — is to make AI work in the GCC context. Calibrated against UAE and Saudi regulatory frameworks, scored across 8 organizational pillars and 4 personal factors, and packaged in a board-grade bilingual PDF report.
 
 This guide walks through the full lifecycle for each role.
 
@@ -14,7 +14,7 @@ This guide walks through the full lifecycle for each role.
    - [Delegate (respondent) roadmap](#delegate-respondent-roadmap)
    - [Client roadmap](#client-roadmap)
 3. [Detailed walkthroughs](#detailed-walkthroughs)
-   - [Consultant — running an organisational engagement](#consultant--running-an-organisational-engagement)
+   - [Consultant — running an organizational engagement](#consultant--running-an-organisational-engagement)
    - [Delegate — completing a respondent survey](#delegate--completing-a-respondent-survey)
    - [Personal — taking the free snapshot](#personal--taking-the-free-snapshot)
    - [Client — receiving and using the report](#client--receiving-and-using-the-report)
@@ -30,7 +30,7 @@ This guide walks through the full lifecycle for each role.
 | **Who uses it** | VIFM consultants (run engagements), respondents/delegates (answer the survey), client sponsors (read reports), admins (curate question bank, regulatory docs) |
 | **Languages** | English + Gulf Arabic with full RTL support |
 | **Stages** | Personal · Department · Division · Enterprise |
-| **Scoring** | 1–5 maturity scale on 8 organisational pillars (Strategy, Data, Technology, Talent, Culture, Governance, Operations, Model Management) and 4 personal factors (AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset) |
+| **Scoring** | 1–5 maturity scale on 8 organizational pillars (Strategy, Data, Technology, Talent, Culture, Governance, Operations, Model Management) and 4 personal factors (AI Sense-Check, AI Working Practice, AI Collaboration, AI Adaptive Mindset) |
 | **Output** | Bilingual PDF report (8–60 pages depending on stage) + Personal Snapshot 1-page PDF |
 | **Region calibration** | UAE (PDPL, NCA ECC, etc.) · Saudi Arabia (SDAIA NDGF, DCAI, ADDA, Vision 2030, etc.) — 16 frameworks, 56 mapped requirements |
 
@@ -51,7 +51,7 @@ This guide walks through the full lifecycle for each role.
 
 ### Consultant roadmap
 
-The end-to-end path for a VIFM consultant running an organisational AI Readiness engagement. From client intake to report delivery.
+The end-to-end path for a VIFM consultant running an organizational AI Readiness engagement. From client intake to report delivery.
 
 ```mermaid
 flowchart LR
@@ -84,7 +84,7 @@ flowchart LR
 
 ### Delegate (respondent) roadmap
 
-The path for a person answering the survey — whether on behalf of an organisation (departmental plus personal) or as a free personal snapshot.
+The path for a person answering the survey — whether on behalf of an organization (departmental plus personal) or as a free personal snapshot.
 
 ```mermaid
 flowchart LR
@@ -135,7 +135,7 @@ flowchart LR
 
 ## Detailed walkthroughs
 
-### Consultant — running an organisational engagement
+### Consultant — running an organizational engagement
 
 #### 1. Sign in to the consultant dashboard
 
@@ -149,20 +149,20 @@ What you see here:
 - **Personal snapshots — last 30 days** (panel) — separate from org engagements; shows snapshot vs deep-dive distinction
 - **Quick actions** — *New assessment*, *New deep-dive*, *Year-on-year reassessment*
 
-#### 2. Create the client organisation
+#### 2. Create the client organization
 
-Before creating an assessment you need an organisation record. Go to `/ara/admin/organizations`.
+Before creating an assessment you need an organization record. Go to `/ara/admin/organizations`.
 
 Required fields:
 
-- **Name** (EN) — anonymisable for case studies
+- **Name** (EN) — anonymizable for case studies
 - **Name (AR)** — optional but recommended
 - **Region** — `uae` or `saudi`. Drives which regulatory frameworks appear.
 - **Sector** — banking · government · corporate · etc.
 
 > ⚠️ Region is locked once you start collecting respondent answers — set it correctly upfront.
 
-![Organisations list](images/ara/11-organisations.png)
+![Organizations list](images/ara/11-organisations.png)
 
 #### 3. Create the assessment
 
@@ -182,8 +182,8 @@ Pre-packaged starter templates appear below the stage cards — picking one pre-
 
 Key fields:
 
-- **Organisation** — pick from dropdown
-- **Region / Sector** — defaulted from the organisation; locked at creation
+- **Organization** — pick from dropdown
+- **Region / Sector** — defaulted from the organization; locked at creation
 - **Default language** — what the respondent form opens in (they can still toggle)
 - **Question bank version** — defaulted to the active version
 - **Scope label** — required for Department/Division (e.g., "Risk Management"), optional for Enterprise
@@ -325,10 +325,10 @@ On submission:
 
 The results page surfaces:
 
-- **Overall score** with **maturity stage badge** (Emerging / Practising / Embedded)
-- **Per-factor cards** with score, tone (Strong/Developing/Opportunity), and a sharp behavioural description
+- **Overall score** with **maturity stage badge** (Emerging / Practicing / Embedded)
+- **Per-factor cards** with score, tone (Strong/Developing/Opportunity), and a sharp behavioral description
 - **Vs cohort delta pill** — when you're part of a departmental-plus-personal engagement, shows your score vs the cohort peer mean (excludes self)
-- **Recommended VIFM programmes** — ranked by `gap × course relevance` × ★ HIGH FIT badge for high-confidence matches
+- **Recommended VIFM programs** — ranked by `gap × course relevance` × ★ HIGH FIT badge for high-confidence matches
 
 #### 4. Download the PDF
 
@@ -387,7 +387,7 @@ Hard-delete every assessment marked `is_sandbox=true`. Confirmation phrase requi
 
 `/ara/admin/vouchers`
 
-Vouchers give a delegate the assessment without a login. Issue them per client organisation, email them or copy the link, and follow completions in the ledger. The redeem page accepts the code on its own or pasted inside a whole email: the VIFM code is picked out of the surrounding text.
+Vouchers give a delegate the assessment without a login. Issue them per client organization, email them or copy the link, and follow completions in the ledger. The redeem page accepts the code on its own or pasted inside a whole email: the VIFM code is picked out of the surrounding text.
 
 ### Retention purge
 
@@ -410,14 +410,14 @@ A daily cron at `/api/ara/admin/retention/cron` runs the same logic automaticall
 | **Stage 2 — Division** | 6 of 8 | 4–8 | 27-page bilingual | Fee-based |
 | **Stage 3 — Enterprise** | 8 of 8 | 8–15+ | 27–60-page side-by-side | Fee-based |
 
-### The eight organisational pillars
+### The eight organizational pillars
 
 | Pillar | What it covers |
 |---|---|
 | **Strategy** | AI vision, alignment to business goals, executive sponsorship |
 | **Data** | Data quality, accessibility, lineage, governance, sovereignty |
 | **Technology** | Compute, MLOps platforms, integration, vendor selection |
-| **Talent** | Skills inventory, hiring, retention, training programmes |
+| **Talent** | Skills inventory, hiring, retention, training programs |
 | **Culture** | Adoption mindset, change readiness, psychological safety with AI |
 | **Governance** | Ethics, risk frameworks, model cards, audit trail |
 | **Operations** | Day-to-day AI deployment patterns, incident response |
@@ -439,7 +439,7 @@ Applied to a respondent's overall four-factor average:
 | Score | Stage | What it means |
 |---|---|---|
 | < 3.0 | **Emerging** | Foundation-laying — early exposure, room to build core habits and judgment |
-| 3.0–3.99 | **Practising** | Building rhythm — using AI on real work, sharpening prompts and review habits |
+| 3.0–3.99 | **Practicing** | Building rhythm — using AI on real work, sharpening prompts and review habits |
 | ≥ 4.0 | **Embedded** | Operating fluently — AI is part of how you work, with confident judgment about when to lean on it |
 
 ### Scoring scale
@@ -452,7 +452,7 @@ Likert 1–5 across all factors and pillars:
 | 2 | Developing — pockets of activity |
 | 3 | Defined — documented, repeatable |
 | 4 | Managed — measured, governed |
-| 5 | Optimised — continuously improved |
+| 5 | Optimized — continuously improved |
 
 ### Regulatory frameworks calibrated
 

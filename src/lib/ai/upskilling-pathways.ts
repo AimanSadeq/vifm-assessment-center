@@ -175,7 +175,7 @@ export async function generateUpskillingPathway(input: {
       ? "AI-readiness pillar gaps"
       : input.source === "fluent"
       ? "English-proficiency gaps"
-      : "assessment-centre competency gaps";
+      : "assessment-center competency gaps";
 
   const system =
     `You are a learning & development architect for VIFM, a GCC finance & ` +

@@ -12,8 +12,8 @@ const MAX_ANSWER_CHARS = 4000;
 function competencyFor(title: string) {
   return {
     id: "prehire-cbi",
-    name: `${title} - behavioural competency`,
-    description: `Behavioural competency for the ${title} role.`,
+    name: `${title} - behavioral competency`,
+    description: `Behavioral competency for the ${title} role.`,
     positiveIndicators: [] as string[],
     negativeIndicators: [] as string[],
   };

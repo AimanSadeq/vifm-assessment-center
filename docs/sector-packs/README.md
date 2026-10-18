@@ -6,7 +6,7 @@ self-report scales (Likert + forced-choice) are **universal** and work for any
 industry.
 
 The only layer that benefits from industry context is the **SJT (situational
-judgement) scenarios** — situational items read more realistically when set in
+judgment) scenarios** — situational items read more realistically when set in
 the candidate's world.
 
 ## How it's structured

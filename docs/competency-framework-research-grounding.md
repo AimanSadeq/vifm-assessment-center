@@ -54,8 +54,8 @@ These works underpin the whole model and the competency-based assessment method:
 
 ### Cluster 2 — Innovation & Complexity
 6. **Creative Problem-Solving** — componential model of organizational
-   creativity; innovative work behaviour. *(Amabile, 1988; Scott & Bruce, 1994.)*
-7. **Navigating Complexity** — cognitive/behavioural complexity in managers.
+   creativity; innovative work behavior. *(Amabile, 1988; Scott & Bruce, 1994.)*
+7. **Navigating Complexity** — cognitive/behavioral complexity in managers.
    *(Streufert & Swezey, 1986.)*
 8. **Systems & Global Perspective** — cultural intelligence; cross-boundary
    judgment. *(Earley & Ang, 2003; Ang et al., 2007.)*
@@ -65,7 +65,7 @@ These works underpin the whole model and the competency-based assessment method:
 ## RESULTS
 
 ### Cluster 3 — Delivery & Execution
-10. **Proactive Initiative** — proactive behaviour / personal initiative.
+10. **Proactive Initiative** — proactive behavior / personal initiative.
     *(Bateman & Crant, 1993; Frese & Fay, 2001.)*
 11. **Outcome Ownership** — goal-setting theory and goal-directed performance.
     *(Locke & Latham, 2002.)*
@@ -101,7 +101,7 @@ These works underpin the whole model and the competency-based assessment method:
     position and outcomes. *(Burt, 1992; Ibarra, 1993.)*
 
 ### Cluster 6 — Leading & Developing Others
-24. **Coaching & Talent Growth** — managerial coaching behaviour and outcomes.
+24. **Coaching & Talent Growth** — managerial coaching behavior and outcomes.
     *(Ellinger, Ellinger & Keller, 2003.)*
 25. **Building Cohesive Teams** — the "Big Five" of teamwork.
     *(Salas, Sims & Burke, 2005.)*
@@ -109,7 +109,7 @@ These works underpin the whole model and the competency-based assessment method:
     effectiveness. *(Wageman, 1995.)*
 27. **Trust & Credibility** — integrative model of organizational trust
     (ability, benevolence, integrity). *(Mayer, Davis & Schoorman, 1995.)*
-28. **Interpersonal Adaptability** — self-monitoring and behavioural flexibility.
+28. **Interpersonal Adaptability** — self-monitoring and behavioral flexibility.
     *(Snyder, 1974.)*
 
 ## SELF

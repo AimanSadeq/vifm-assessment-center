@@ -185,7 +185,7 @@ export function PartnerCoursesManager({ rows }: { rows: PartnerCourseRow[] }) {
 
       {/* List */}
       <div>
-        <h2 className="mb-2 text-base font-semibold text-[#010131]">Catalogue ({rows.length})</h2>
+        <h2 className="mb-2 text-base font-semibold text-[#010131]">Catalog ({rows.length})</h2>
         {rows.length === 0 ? (
           <p className="rounded-lg border bg-muted/30 px-4 py-6 text-center text-sm text-muted-foreground">
             No partner courses yet. Add SE Training Academy&rsquo;s English courses above and they&rsquo;ll start

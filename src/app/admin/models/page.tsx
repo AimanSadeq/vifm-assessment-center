@@ -35,7 +35,7 @@ const MODEL_DETAIL: Record<string, { measures: string }> = {
     measures: "The Goleman four quadrants (Self-Awareness, Self-Management, Social Awareness, Relationship Management) read from mapped VIFM competencies.",
   },
   "persona-hipo": {
-    measures: "Aspiration (8 drive markers) x Ability (60% behavioural + 40% Logica reasoning) on a nine-grid, plus a manager-rated Engagement survey.",
+    measures: "Aspiration (8 drive markers) x Ability (60% behavioral + 40% Logica reasoning) on a nine-grid, plus a manager-rated Engagement survey.",
   },
   prehire: {
     measures: "A weighted composite (0-100) across the configured screening stages - Competency Quiz, English (Fluent), and AI Interview (CBI) - checked against per-stage cut-scores, with the role's selected competencies. An advisory signal, never an auto-decision.",

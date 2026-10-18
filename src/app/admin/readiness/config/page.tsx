@@ -41,7 +41,7 @@ const METHODOLOGY: { n: string; title: string; body: string }[] = [
   {
     n: "7",
     title: "Optional year layer",
-    body: "When enabled, the tier maps to a client-defined horizon label for stakeholder copy. It is derived from the tier, never from the maths.",
+    body: "When enabled, the tier maps to a client-defined horizon label for stakeholder copy. It is derived from the tier, never from the math.",
   },
 ];
 

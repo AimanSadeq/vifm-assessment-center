@@ -113,7 +113,7 @@ function ReportBody({
           <dl className="cover-meta">
             <dt>{rtl ? "البرنامج" : "Engagement"}</dt>
             <dd>{scoring.engagement_name}</dd>
-            <dt>{rtl ? "المؤسسة" : "Organisation"}</dt>
+            <dt>{rtl ? "المؤسسة" : "Organization"}</dt>
             <dd>{rtl ? scoring.organization_name_ar ?? scoring.organization_name : scoring.organization_name}</dd>
             <dt>{rtl ? "تاريخ التقرير" : "Report date"}</dt>
             <dd>{new Date(scoring.generated_at).toLocaleDateString(rtl ? "ar-AE" : "en-GB", { day: "numeric", month: "long", year: "numeric" })}</dd>
@@ -152,7 +152,7 @@ function ReportBody({
         <div className="callout">
           {rtl
             ? `تظل آراء الزملاء والتقارير المباشرة مجهولة الهوية: لا يُكشف أي متوسط لفئة معينة إلا إذا أكمل ${scoring.anonymity_min_n} مقيّمين على الأقل في تلك الفئة.`
-            : `Peer and direct-report responses are anonymised: no group score is shown until at least ${scoring.anonymity_min_n} raters in that group have responded.`}
+            : `Peer and direct-report responses are anonymized: no group score is shown until at least ${scoring.anonymity_min_n} raters in that group have responded.`}
         </div>
 
         <h3>{rtl ? "النطاق المرجعي" : "The Favorable Zone"}</h3>
@@ -233,7 +233,7 @@ function ReportBody({
       {/* Strengths */}
       <BehaviorListPage
         title={rtl ? "نقاط القوة" : "Strengths"}
-        subtitle={rtl ? "أعلى 5 سلوكيات حسب رأي الآخرين" : "Top 5 behaviours by Others' mean"}
+        subtitle={rtl ? "أعلى 5 سلوكيات حسب رأي الآخرين" : "Top 5 behaviors by Others' mean"}
         behaviors={scoring.strengths}
         rtl={rtl}
         tone="strength"
@@ -242,7 +242,7 @@ function ReportBody({
       {/* Development areas - with P3.4 AI coaching tips */}
       <BehaviorListPage
         title={rtl ? "مجالات التطوير" : "Development areas"}
-        subtitle={rtl ? "أقل 5 سلوكيات حسب رأي الآخرين - مع نصيحة تطويرية لكل سلوك" : "Bottom 5 behaviours by Others' mean - with a coaching tip for each"}
+        subtitle={rtl ? "أقل 5 سلوكيات حسب رأي الآخرين - مع نصيحة تطويرية لكل سلوك" : "Bottom 5 behaviors by Others' mean - with a coaching tip for each"}
         behaviors={scoring.development_areas}
         rtl={rtl}
         tone="develop"
@@ -255,7 +255,7 @@ function ReportBody({
         subtitle={
           rtl
             ? "السلوكيات التي تقيّمها أعلى مما يقيّمها الآخرون - فرصة لزيادة الوعي الذاتي"
-            : "Behaviours where you rate yourself higher than others - an opportunity to raise self-awareness"
+            : "Behaviors where you rate yourself higher than others - an opportunity to raise self-awareness"
         }
         behaviors={scoring.blind_spots}
         rtl={rtl}
@@ -268,7 +268,7 @@ function ReportBody({
         subtitle={
           rtl
             ? "السلوكيات التي يقيّمها الآخرون أعلى مما تقيّمها بنفسك - لا تقلّل من قدرتك"
-            : "Behaviours where others rate you higher than you rate yourself - don't undersell these"
+            : "Behaviors where others rate you higher than you rate yourself - don't undersell these"
         }
         behaviors={scoring.hidden_strengths}
         rtl={rtl}
@@ -325,7 +325,7 @@ function ReportBody({
                     {/* Favorable Zone band: 3.5-4.25 on a 0-5 scale = 70%-85% of track */}
                     <span className="favorable-zone" />
                     {g.hidden_by_anonymity ? (
-                      <em className="group-bar-hidden">{rtl ? "إخفاء الهوية" : "Anonymised"}</em>
+                      <em className="group-bar-hidden">{rtl ? "إخفاء الهوية" : "Anonymized"}</em>
                     ) : (
                       <span className="group-bar-fill" style={{ width: `${((g.mean ?? 0) / 5) * 100}%` }} />
                     )}
@@ -362,17 +362,17 @@ function ReportBody({
 
       {/* Recommended VIFM programmes */}
       <section className="page">
-        <h2>{rtl ? "البرامج التدريبية الموصى بها من VIFM" : "Recommended VIFM programmes"}</h2>
+        <h2>{rtl ? "البرامج التدريبية الموصى بها من VIFM" : "Recommended VIFM programs"}</h2>
         <p className="lead">
           {rtl
             ? "هذه البرامج تستهدف الفجوات الأعلى ظهورًا في تقييمك. اطلب عرض السعر مباشرةً، أو ناقشها مع مدرّبك خلال الجلسة."
-            : "These programmes target the gaps that stood out most in your feedback. Request a quote directly, or work them into your IDP with your coach."}
+            : "These programs target the gaps that stood out most in your feedback. Request a quote directly, or work them into your IDP with your coach."}
         </p>
         {recommendations.length === 0 ? (
           <div className="callout">
             {rtl
               ? "لا توجد توصيات تلقائية متاحة في الوقت الراهن لإطار الكفايات الخاص بهذا التقرير. يستطيع مدرّبك ربطك يدويًا ببرامج VIFM المناسبة."
-              : "No automated recommendations are available for this competency framework. Your coach can map you to suitable VIFM programmes manually."}
+              : "No automated recommendations are available for this competency framework. Your coach can map you to suitable VIFM programs manually."}
             {unmappedCompetencies.length > 0 && (
               <div className="unmapped-detail">
                 {rtl ? "كفايات لم تُربط: " : "Unmapped competencies: "}
@@ -450,9 +450,9 @@ function ReportBody({
                 { tag: "KSS", title: "ابدأ في", caption: "السلوكيات الجديدة التي ستحدث الفرق الأكبر - جرّب واحدًا في وقت." },
               ]
             : [
-                { tag: "KEEP", title: "KEEP doing", caption: "Behaviours that serve you well - don't lose these as you change." },
-                { tag: "STOP", title: "STOP doing", caption: "Behaviours that cost more than they give - drop these first." },
-                { tag: "START", title: "START doing", caption: "New behaviours that will move the needle most - try one at a time." },
+                { tag: "KEEP", title: "KEEP doing", caption: "Behaviors that serve you well - don't lose these as you change." },
+                { tag: "STOP", title: "STOP doing", caption: "Behaviors that cost more than they give - drop these first." },
+                { tag: "START", title: "START doing", caption: "New behaviors that will move the needle most - try one at a time." },
               ]
           ).map((block, i) => (
             <li key={i}>
@@ -461,7 +461,7 @@ function ReportBody({
                 {block.title}
               </h4>
               <p className="kss-caption">{block.caption}</p>
-              <div className="idp-row"><span>{rtl ? "السلوك المستهدف" : "Target behaviour"}</span><span className="idp-line" /></div>
+              <div className="idp-row"><span>{rtl ? "السلوك المستهدف" : "Target behavior"}</span><span className="idp-line" /></div>
               <div className="idp-row"><span>{rtl ? "لماذا الآن" : "Why now"}</span><span className="idp-line" /></div>
               <div className="idp-row"><span>{rtl ? "الإجراءات الأولى" : "First actions"}</span><span className="idp-line" /></div>
               <div className="idp-row"><span>{rtl ? "كيف ستقيس النجاح" : "How you'll measure success"}</span><span className="idp-line" /></div>
@@ -521,10 +521,10 @@ function ContentsPage({ rtl }: { rtl: boolean }) {
     { en: "Per-competency detail", ar: "تفاصيل حسب الكفاية", descEn: "Bars per rater group with the Favorable Zone band.", descAr: "أشرطة لكل فئة مقيّمين مع شريط النطاق المرجعي." },
     { en: "DARE + EQ lens", ar: "عدسة DARE والذكاء العاطفي", descEn: "Decision-role and Goleman-quadrant re-read with self-vs-others gaps.", descAr: "قراءة عبر أدوار القرار ومربّعات جولمان مع فجوات أنت مقابل الآخرين." },
     { en: "Reference group comparison", ar: "مقارنة فئات المقيّمين", descEn: "Every group, every competency, on one page.", descAr: "كل فئة وكل كفاية في صفحة واحدة." },
-    { en: "Item-level table", ar: "جدول السلوكيات", descEn: "Every behaviour, every group, with consensus flags.", descAr: "كل سلوك وكل فئة مع إشارات التوافق." },
+    { en: "Item-level table", ar: "جدول السلوكيات", descEn: "Every behavior, every group, with consensus flags.", descAr: "كل سلوك وكل فئة مع إشارات التوافق." },
     { en: "Verbatims", ar: "بكلمات المقيّمين", descEn: "Start / Stop / Continue in raters' own words.", descAr: "ابدأ / توقّف / استمر بكلمات المقيّمين." },
-    { en: "AI coaching tips", ar: "نصائح تطويرية ذكية", descEn: "A 60-90 word actionable tip per development-area behaviour.", descAr: "نصيحة عملية (60-90 كلمة) لكل سلوك تطويري." },
-    { en: "Recommended VIFM programmes", ar: "برامج VIFM الموصى بها", descEn: "Top-5 courses with HIGH FIT badging.", descAr: "أعلى 5 برامج مع وسم «مناسب جدًا»." },
+    { en: "AI coaching tips", ar: "نصائح تطويرية ذكية", descEn: "A 60-90 word actionable tip per development-area behavior.", descAr: "نصيحة عملية (60-90 كلمة) لكل سلوك تطويري." },
+    { en: "Recommended VIFM programs", ar: "برامج VIFM الموصى بها", descEn: "Top-5 courses with HIGH FIT badging.", descAr: "أعلى 5 برامج مع وسم «مناسب جدًا»." },
     { en: "IDP scaffold", ar: "خطة التطوير الفردية", descEn: "Keep / Stop / Start, ready for the debrief.", descAr: "احتفظ / توقّف / ابدأ، جاهزة لجلسة الاستخلاص." },
   ];
   return (
@@ -651,13 +651,13 @@ function DareEqLensPage({ scoring, rtl }: { scoring: ParticipantScoring; rtl: bo
       <div className="callout">
         {rtl
           ? `عدسة محتوى، وليست أداة مقنّنة: يُعاد تجميع كفايات إطار هذا البرنامج (${lens.mappedCount} من ${lens.totalCount} طابقت دليل VIFM) في مجموعات النموذج، وتُحسب كل مجموعة من الكفايات المقاسة فعلًا فقط - شارة التغطية «ن من م» هي مقياس الأمانة.`
-          : `A content lens, not a normed instrument: this engagement's framework competencies (${lens.mappedCount} of ${lens.totalCount} matched to the VIFM catalogue) are re-grouped into each model, and every group is scored only from the competencies this 360 actually measured - the "n of N" coverage badge is the honesty rail.`}
+          : `A content lens, not a normed instrument: this engagement's framework competencies (${lens.mappedCount} of ${lens.totalCount} matched to the VIFM catalog) are re-grouped into each model, and every group is scored only from the competencies this 360 actually measured - the "n of N" coverage badge is the honesty rail.`}
         {lens.unmapped.length > 0 && (
           <>
             {" "}
             {rtl
               ? `كفايات خارج الدليل (غير مشمولة): ${lens.unmapped.join("، ")}.`
-              : `Outside the catalogue (excluded): ${lens.unmapped.join(", ")}.`}
+              : `Outside the catalog (excluded): ${lens.unmapped.join(", ")}.`}
           </>
         )}
       </div>
@@ -1215,7 +1215,7 @@ function StrengthsDevSummaryPage({
       <p className="lead">
         {rtl
           ? "كل كفاية مرتّبة حسب رأي الآخرين. النطاق المرجعي يبدأ من 3.5. الكفايات الموسومة بـ «نقطة تطوير حرجة» اخترتموها أنت أو مديرك كحرجة وهي تحت النطاق - أعطها الأولوية في الخطة."
-          : "Every competency ranked by Others' view. The Favorable Zone starts at 3.5. Anything flagged Critical Development Area was picked as role-critical by you or your manager AND is below the zone - prioritise these first in your plan."}
+          : "Every competency ranked by Others' view. The Favorable Zone starts at 3.5. Anything flagged Critical Development Area was picked as role-critical by you or your manager AND is below the zone - prioritize these first in your plan."}
       </p>
 
       <h3 className="sds-strength-h">{rtl ? "نقاط القوة" : "Strengths"}</h3>
@@ -1293,7 +1293,7 @@ function ItemLevelDetailPages({
       <p className="lead">
         {rtl
           ? "كل سلوك في الإطار مع متوسطه عند كل فئة من المقيّمين. الخلايا المخفية تعود إلى عتبة إخفاء الهوية. تشير علامة ⚠ إلى أن المقيّمين في تلك الفئة يختلفون بمقدار 3 درجات أو أكثر - اقرأ المتوسط بحذر."
-          : "Every behaviour in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold. A ⚠ flag means raters within that group disagree by 3+ points - read the mean with care."}
+          : "Every behavior in the framework with its mean per rater group. Hidden cells fall under the anonymity threshold. A ⚠ flag means raters within that group disagree by 3+ points - read the mean with care."}
       </p>
       {scoring.competencies.map((c) => {
         const compBehs = scoring.behaviors.filter((b) => b.competency_id === c.competency_id);
@@ -1304,7 +1304,7 @@ function ItemLevelDetailPages({
             <table className="item-table">
               <thead>
                 <tr>
-                  <th className="item-behavior">{rtl ? "السلوك" : "Behaviour"}</th>
+                  <th className="item-behavior">{rtl ? "السلوك" : "Behavior"}</th>
                   {RATER_GROUPS_FOR_TABLE.map((g) => (
                     <th key={g.role} className="item-group">
                       {rtl ? g.ar : g.en}
@@ -1715,21 +1715,21 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .lens-bar-fill { display: block; height: 100%; border-radius: 1.5mm; }
 .lens-bar-value { text-align: right; font-variant-numeric: tabular-nums; color: var(--vifm-dark); }
 
-/* Recommended programmes */
-.programme-list { padding: 0; margin: 0; list-style: none; }
-.programme-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
-.programme-list > li:last-child { border-bottom: 0; }
-.programme-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
-.programme-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
-.programme-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
-.programme-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
-.programme-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
-.programme-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
-.programme-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
-.programme-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
-.programme-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
-.programme-cta { margin: 2.5mm 0 0 9mm; }
-.programme-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
+/* Recommended programs */
+.program-list { padding: 0; margin: 0; list-style: none; }
+.program-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
+.program-list > li:last-child { border-bottom: 0; }
+.program-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
+.program-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
+.program-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
+.program-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
+.program-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
+.program-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
+.program-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
+.program-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
+.program-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
+.program-cta { margin: 2.5mm 0 0 9mm; }
+.program-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
 .unmapped-detail { margin-top: 2mm; color: var(--vifm-muted); font-size: 9pt; }
 
 /* IDP - K-S-S frame */
@@ -1876,10 +1876,10 @@ h4 { color: var(--vifm-primary); font-size: 11pt; font-weight: 700; margin: 3mm 
 .reflect-pdf[dir="rtl"] .item-table th.item-behavior { text-align: right; }
 .reflect-pdf[dir="rtl"] .item-table td.item-behavior { text-align: right; }
 .reflect-pdf[dir="rtl"] .behavior-rank { margin-right: 0; margin-left: 3mm; }
-.reflect-pdf[dir="rtl"] .programme-meta { margin-left: 0; margin-right: 9mm; }
-.reflect-pdf[dir="rtl"] .programme-drivers { margin-left: 0; margin-right: 9mm; }
-.reflect-pdf[dir="rtl"] .programme-rationale { margin-left: 0; margin-right: 9mm; }
-.reflect-pdf[dir="rtl"] .programme-cta { margin-left: 0; margin-right: 9mm; }
+.reflect-pdf[dir="rtl"] .program-meta { margin-left: 0; margin-right: 9mm; }
+.reflect-pdf[dir="rtl"] .program-drivers { margin-left: 0; margin-right: 9mm; }
+.reflect-pdf[dir="rtl"] .program-rationale { margin-left: 0; margin-right: 9mm; }
+.reflect-pdf[dir="rtl"] .program-cta { margin-left: 0; margin-right: 9mm; }
 .reflect-pdf[dir="rtl"] .behavior-meta { padding-left: 0; padding-right: 9mm; }
 .reflect-pdf[dir="rtl"] .group-bar-value { text-align: left; }
 .reflect-pdf[dir="rtl"] .confidentiality { border-left: 0; border-right: 3pt solid var(--vifm-accent); }

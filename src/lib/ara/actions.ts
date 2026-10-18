@@ -1655,7 +1655,7 @@ export async function collectAndSendOrgResultsAction(
   }
   const clientEmail = (org?.client_contact_email ?? "").trim();
   if (!clientEmail) {
-    return { ok: false, sent: 0, skipped: 0, error: "No client contact email is set for this organisation." };
+    return { ok: false, sent: 0, skipped: 0, error: "No client contact email is set for this organization." };
   }
 
   // Find this org's personal-snapshot assessments (individual stage OR the
@@ -1676,7 +1676,7 @@ export async function collectAndSendOrgResultsAction(
     (a) => a.engagement_stage === "individual" || a.include_individual_layer === true,
   );
   if (personalAssessments.length === 0) {
-    return { ok: false, sent: 0, skipped: 0, error: "No personal-readiness assessments for this organisation." };
+    return { ok: false, sent: 0, skipped: 0, error: "No personal-readiness assessments for this organization." };
   }
 
   // Completed delegates on those assessments.
@@ -1727,7 +1727,7 @@ export async function collectAndSendOrgResultsAction(
   const anySandbox = personalAssessments.some((a) => a.is_sandbox);
   const language: AraEmailLanguage =
     (personalAssessments[0]?.default_language === "ar") ? "ar" : "en";
-  const clientName = (org?.client_contact_name ?? "").trim() || org?.name || "your organisation";
+  const clientName = (org?.client_contact_name ?? "").trim() || org?.name || "your organization";
   const assessmentName = personalAssessments[0]?.scope_label || org?.name || "AI Readiness";
 
   const result = await sendAraEmail({

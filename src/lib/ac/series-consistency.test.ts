@@ -14,7 +14,7 @@ const centre = (over: Partial<Parameters<typeof reviewSeriesConsistency>[0][numb
   externalEvidenceRule: "not_permitted",
   competencies: [
     { id: "c1", name: "Strategy", weight: 2 },
-    { id: "c2", name: "Judgement", weight: 1.5 },
+    { id: "c2", name: "Judgment", weight: 1.5 },
   ],
   exerciseIds: ["e1", "e2"],
   exerciseNames: ["In-basket", "Presentation"],
@@ -22,13 +22,13 @@ const centre = (over: Partial<Parameters<typeof reviewSeriesConsistency>[0][numb
   ...over,
 });
 
-test("one centre is not a series", () => {
+test("one center is not a series", () => {
   const r = reviewSeriesConsistency([centre({ engagementId: "a", name: "March" })]);
-  assert.match(r.summary, /at least two centres/);
+  assert.match(r.summary, /at least two centers/);
   assert.deepEqual(r.differences, []);
 });
 
-test("identical centres report no differences", () => {
+test("identical centers report no differences", () => {
   const r = reviewSeriesConsistency([
     centre({ engagementId: "a", name: "March" }),
     centre({ engagementId: "b", name: "June", startDate: "2026-06-20" }),
@@ -37,7 +37,7 @@ test("identical centres report no differences", () => {
   assert.match(r.summary, /run to the same design/);
 });
 
-test("a changed weight is a difference, reported per centre", () => {
+test("a changed weight is a difference, reported per center", () => {
   const r = reviewSeriesConsistency([
     centre({ engagementId: "a", name: "March" }),
     centre({
@@ -46,7 +46,7 @@ test("a changed weight is a difference, reported per centre", () => {
       startDate: "2026-06-20",
       competencies: [
         { id: "c1", name: "Strategy", weight: 3 },
-        { id: "c2", name: "Judgement", weight: 1.5 },
+        { id: "c2", name: "Judgment", weight: 1.5 },
       ],
     }),
   ]);
@@ -83,7 +83,7 @@ test("competency order does not count as a difference", () => {
       name: "June",
       startDate: "2026-06-20",
       competencies: [
-        { id: "c2", name: "Judgement", weight: 1.5 },
+        { id: "c2", name: "Judgment", weight: 1.5 },
         { id: "c1", name: "Strategy", weight: 2 },
       ],
     }),
@@ -100,7 +100,7 @@ test("the summary refuses to call a difference a fault", () => {
   assert.match(r.summary, /9\.13/);
 });
 
-test("centres with no post-centre review are named, because a change there has no recorded reason", () => {
+test("centers with no post-center review are named, because a change there has no recorded reason", () => {
   const r = reviewSeriesConsistency([
     centre({ engagementId: "a", name: "March", hasReview: false }),
     centre({ engagementId: "b", name: "June", startDate: "2026-06-20" }),
@@ -108,7 +108,7 @@ test("centres with no post-centre review are named, because a change there has n
   assert.deepEqual(r.withoutReview.map((x) => x.name), ["March"]);
 });
 
-test("centres are compared in date order, so the story reads forwards", () => {
+test("centers are compared in date order, so the story reads forwards", () => {
   const r = reviewSeriesConsistency([
     centre({ engagementId: "b", name: "June", startDate: "2026-06-20", purpose: "development" }),
     centre({ engagementId: "a", name: "March", startDate: "2026-03-01" }),

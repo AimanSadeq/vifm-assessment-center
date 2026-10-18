@@ -85,7 +85,7 @@ export function ProposalSectionEditor({
     setBusy(false);
     if ("error" in res) return setMsg({ ok: false, text: res.error });
     const n = Object.keys(overrides).length;
-    setMsg({ ok: true, text: `Saved. ${n === 0 ? "All sections use the standard wording." : `${n} section${n === 1 ? "" : "s"} customised.`} Re-download the PDF or Word to see the change.` });
+    setMsg({ ok: true, text: `Saved. ${n === 0 ? "All sections use the standard wording." : `${n} section${n === 1 ? "" : "s"} customized.`} Re-download the PDF or Word to see the change.` });
     router.refresh();
   }
 
@@ -105,14 +105,14 @@ export function ProposalSectionEditor({
         <div>
           <h2 className="font-medium text-foreground">Proposal content</h2>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            Every section, with its current wording. Format it (bold, italic, underline, colour, size) before you export.
+            Every section, with its current wording. Format it (bold, italic, underline, color, size) before you export.
             Edited sections become fixed text; untouched sections keep updating with the client name, totals and pricing tables.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {customisedCount > 0 && (
             <span className="rounded-full bg-[#5391D5]/10 px-2.5 py-1 text-xs font-medium text-[#5391D5]">
-              {customisedCount} customised
+              {customisedCount} customized
             </span>
           )}
           <SaveBtn />
@@ -138,7 +138,7 @@ export function ProposalSectionEditor({
                   <span className="text-muted-foreground">{s.number}.</span> {s.title}
                 </span>
                 {custom && (
-                  <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">Customised</span>
+                  <span className="rounded-full bg-[#5391D5]/10 px-2 py-0.5 text-[11px] font-medium text-[#5391D5]">Customized</span>
                 )}
                 {s.kind === "prepend" && (
                   <span className="rounded-full border border-border px-2 py-0.5 text-[11px] text-muted-foreground">intro note</span>

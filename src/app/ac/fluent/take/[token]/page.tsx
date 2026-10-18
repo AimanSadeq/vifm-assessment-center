@@ -49,7 +49,7 @@ export default async function FluentTakePage({
           <h1 className="mt-6 text-xl font-semibold text-primary">Assessment already completed</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             This placement has already been submitted{displayName ? `, ${displayName}` : ""}.
-            Your result has been recorded and sent to the organisation that invited you. This link can be used once.
+            Your result has been recorded and sent to the organization that invited you. This link can be used once.
           </p>
         </div>
       </div>

@@ -64,7 +64,7 @@ export function FrameworkApproval({
       onClick={() => run(() => approveReflectFrameworkAction(engagementId), "Framework approved.")}
       disabled={pending}
       className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 transition-colors hover:bg-amber-100 disabled:opacity-50"
-      title="Review the AI-decomposed behaviours, then approve so raters can be invited"
+      title="Review the AI-decomposed behaviors, then approve so raters can be invited"
     >
       {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CircleDashed className="h-3.5 w-3.5" />}
       Approve framework

@@ -6,13 +6,13 @@ How the VIFM Talent Intelligence platform (Caliber) safeguards unsupervised, web
 
 ## 1. The design principle
 
-Remote, browser-based testing trades the control of a supervised test centre for reach, speed, and cost. No remote platform can eliminate misconduct; pretending otherwise is the real risk. Caliber therefore does not aim for impossible certainty. It provides **four layers - prevention, detection, verification, and evidence** - so that every result carries enough context for the organisation to make an informed judgement about its validity, and no result is ever accepted or rejected by a machine alone.
+Remote, browser-based testing trades the control of a supervised test center for reach, speed, and cost. No remote platform can eliminate misconduct; pretending otherwise is the real risk. Caliber therefore does not aim for impossible certainty. It provides **four layers - prevention, detection, verification, and evidence** - so that every result carries enough context for the organization to make an informed judgment about its validity, and no result is ever accepted or rejected by a machine alone.
 
 ## 2. Layer 1 - Prevention (make cheating hard)
 
 - **Answer keys never reach the browser.** Every scored instrument (Fluent, Logica, Techno, Pre-Hire quiz) holds the full keyed test server-side; the candidate's browser receives a key-stripped copy, and grading happens on the server against the stored key. If the secure session store is unavailable, the platform refuses to serve the test rather than fall back to an insecure mode.
 - **Single-use, time-boxed sessions.** Each administration is claimed atomically - a session can be scored exactly once (no replay into a second result or credential) and expires after 3 hours.
-- **Per-sitting option randomisation.** Option positions are re-randomised on every administration (with two psychometric guardrails: numerically ordered option sets stay in order, and semantic judgement scales such as True/False/Cannot say keep their authored order). This defeats position memorisation between sittings and authoring bias toward early positions.
+- **Per-sitting option randomization.** Option positions are re-randomized on every administration (with two psychometric guardrails: numerically ordered option sets stay in order, and semantic judgment scales such as True/False/Cannot say keep their authored order). This defeats position memorization between sittings and authoring bias toward early positions.
 - **Time limits with auto-submit.** Administrator-configurable per instrument; the test submits itself when time runs out.
 - **Fresh content per sitting.** AI-authored instruments generate a new form per administration; certified Techno sittings assemble from an SME-approved bank.
 
@@ -20,7 +20,7 @@ Remote, browser-based testing trades the control of a supervised test centre for
 
 - **Integrity Signal (advisory, 0-100).** Fluent sittings capture privacy-safe telemetry - tab-switch/focus-loss counts, total time away, the LENGTH (never the content) of pasted text, and a server-detected mid-test IP change - and compose it into a tiered advisory signal (clean / minor / elevated) shown to the reviewing administrator with plain-language reasons.
 - **AI-likeness estimate (advisory).** Free-text writing (Fluent writing task, Pre-Hire AI-interview answers) receives a conservative stylometric estimate that the text was produced with a generative-AI tool. **AI-text detection is inherently unreliable**: the estimate is hard-capped on short responses, contributes to the Integrity Signal only above a high floor, is framed as "worth a human glance", and is never treated as proof. Its strongest reading is alongside the paste-length capture, which catches the most common copy-from-a-chatbot workflow directly.
-- **Camera proctoring (opt-in).** When an organisation or voucher requires it, the candidate consents on screen and periodic webcam snapshots (with a motion score) are captured during the test, stored in a private bucket, and **deleted automatically after 90 days**. An administrator can run an AI-assisted review (face count, looking-away, second-device cues) whose output is flags for a human reviewer - never an automatic action. The REQUIREMENT is decided server-side (organisation policy or voucher flag - not a URL parameter a candidate can strip); the capture itself necessarily runs in the candidate's browser, so at scoring time the server independently checks that a proctoring session was actually recorded for any administration that required one and, if not, flags the result ("proctoring required but not recorded") in the Integrity Signal for human review.
+- **Camera proctoring (opt-in).** When an organization or voucher requires it, the candidate consents on screen and periodic webcam snapshots (with a motion score) are captured during the test, stored in a private bucket, and **deleted automatically after 90 days**. An administrator can run an AI-assisted review (face count, looking-away, second-device cues) whose output is flags for a human reviewer - never an automatic action. The REQUIREMENT is decided server-side (organization policy or voucher flag - not a URL parameter a candidate can strip); the capture itself necessarily runs in the candidate's browser, so at scoring time the server independently checks that a proctoring session was actually recorded for any administration that required one and, if not, flags the result ("proctoring required but not recorded") in the Integrity Signal for human review.
 - **Response-pattern validity.** The AI-readiness questionnaire runs distortion detection (extremity, straight-lining, anchor deviation); Assessment Center analytics include assessor-bias metrics (leniency, central tendency, halo).
 
 ## 4. Layer 3 - Verification (confirm what matters)
@@ -35,7 +35,7 @@ Remote, browser-based testing trades the control of a supervised test centre for
 - **Scoring audit substrate.** AI writing/speaking score runs are logged for human re-rating and calibration (target quadratic-weighted kappa >= 0.70 against human examiners); item responses are logged for statistical calibration of the item banks.
 - **Consent records.** Candidate consent (including the exact proctoring consent text shown) is stored with timestamps.
 
-## 6. Organisational control
+## 6. Organizational control
 
 Clients decide their own monitoring posture. Camera proctoring is **off by default** and can be mandated org-wide from the client portal's settings page (or per voucher batch); the always-on layer (server-held keys, single-use sessions, advisory telemetry) is part of the platform's basic result-validity guarantee and is documented here rather than toggleable.
 

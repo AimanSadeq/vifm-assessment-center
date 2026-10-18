@@ -209,7 +209,7 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
             </div>
           </div>
           <p className="mt-3 max-w-2xl text-sm text-white/70">
-            {org?.name ?? "Your organisation"} · utilisation, completion, and results across every subscribed service · {generatedAt}
+            {org?.name ?? "Your organization"} · utilization, completion, and results across every subscribed service · {generatedAt}
           </p>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
             <div className="grid gap-5 p-5 sm:grid-cols-[auto_1fr_1fr]">
               {/* Rings */}
               <div className="flex items-start justify-center gap-4">
-                <Donut value={pct(p.alloc.seats_used, p.alloc.seats_total)} color={p.accent} label="Utilisation" />
+                <Donut value={pct(p.alloc.seats_used, p.alloc.seats_total)} color={p.accent} label="Utilization" />
                 <Donut value={pct(p.funnel.c, Math.max(p.funnel.b, 1))} color="#059669" label="Completion" />
               </div>
 
@@ -357,7 +357,7 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
           <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
             <div className="flex items-center gap-2 border-b border-l-4 border-l-[#010131] bg-[#010131]/[0.04] px-5 py-3.5">
               <Boxes className="h-4 w-4 text-[#5391D5]" />
-              <h2 className="text-sm font-bold text-[#010131]">Tailored programmes (bundles)</h2>
+              <h2 className="text-sm font-bold text-[#010131]">Tailored programs (bundles)</h2>
             </div>
             <div className="grid gap-3 p-5 sm:grid-cols-2">
               {bundles.map((b) => {
@@ -396,7 +396,7 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
                       href={`/portal/bundle/${b.id}${orgSuffix}`}
                       className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#5391D5] hover:underline"
                     >
-                      Open programme <ArrowRight className="h-3.5 w-3.5" />
+                      Open program <ArrowRight className="h-3.5 w-3.5" />
                     </Link>
                   </div>
                 );
@@ -407,7 +407,7 @@ export default async function PortalInsightsPage({ searchParams }: { searchParam
 
         <p className="pb-2 text-[11px] leading-relaxed text-muted-foreground">
           Assessment results are screening and development signals - combine them with structured interviews and work
-          evidence before decisions. AI Readiness organisational reports are prepared and delivered by your VIFM consultant.
+          evidence before decisions. AI Readiness organizational reports are prepared and delivered by your VIFM consultant.
         </p>
       </div>
     </div>

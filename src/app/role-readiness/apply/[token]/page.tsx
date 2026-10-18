@@ -12,7 +12,7 @@ export default async function RoleReadinessApplyPage({ params }: { params: { tok
       <div className="mx-auto max-w-md px-6 py-20 text-center">
         <h1 className="text-xl font-semibold text-[#010131]">Invalid or expired link</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This assessment link is not valid. Please check with the organisation that invited you.
+          This assessment link is not valid. Please check with the organization that invited you.
         </p>
       </div>
     );

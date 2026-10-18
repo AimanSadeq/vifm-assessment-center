@@ -43,7 +43,7 @@ export function DemographicsSection({
         <p className="text-xs text-muted-foreground">
           {rtl
             ? "تساعد هذه الإجابات مؤسستك على قراءة النتائج حسب الشريحة. لا تؤثر في درجتك، ولا تُعرض إلا كمجاميع لمجموعات من ثلاثة أشخاص فأكثر. يمكنك تخطي أي سؤال."
-            : "These answers let your organisation read results by group. They do not affect your score and are only shown as aggregates of three or more people. Skip any question you prefer not to answer."}
+            : "These answers let your organization read results by group. They do not affect your score and are only shown as aggregates of three or more people. Skip any question you prefer not to answer."}
         </p>
       </CardHeader>
       <CardContent>

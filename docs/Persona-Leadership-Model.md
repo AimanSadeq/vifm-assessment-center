@@ -8,7 +8,7 @@ How the Persona Leadership Report turns the Persona self-assessment into a view 
 
 ## 1. Purpose
 
-The Persona Leadership Report is a leadership-focused lens built on top of the existing VIFM Persona behavioural self-assessment. It adds **no new questions** - it re-reads the same 41-competency self-ratings through a leadership frame, separating a person's **transactional (management)** tendencies from their **transformational (leadership)** tendencies, and plots the two against each other so development can be targeted.
+The Persona Leadership Report is a leadership-focused lens built on top of the existing VIFM Persona behavioral self-assessment. It adds **no new questions** - it re-reads the same 41-competency self-ratings through a leadership frame, separating a person's **transactional (management)** tendencies from their **transformational (leadership)** tendencies, and plots the two against each other so development can be targeted.
 
 ---
 
@@ -16,8 +16,8 @@ The Persona Leadership Report is a leadership-focused lens built on top of the e
 
 The report uses the **Full Range Leadership** model (Bass, 1985; Bass & Avolio, 1994), the most widely used framework distinguishing two complementary leadership orientations:
 
-- **Management (transactional)** - leading through structure, execution, oversight, and operational consistency. Bass's contingent-reward and management-by-exception behaviours sit here.
-- **Leadership (transformational)** - leading through vision, influence, change, and developing people. Bass's four transformational components - idealised influence, inspirational motivation, intellectual stimulation, individualised consideration - sit here.
+- **Management (transactional)** - leading through structure, execution, oversight, and operational consistency. Bass's contingent-reward and management-by-exception behaviors sit here.
+- **Leadership (transformational)** - leading through vision, influence, change, and developing people. Bass's four transformational components - idealized influence, inspirational motivation, intellectual stimulation, individualized consideration - sit here.
 
 Neither orientation is "better." The most effective leaders draw on both; the value of the report is showing where a person's *self-perceived* strengths currently sit, so development can be aimed at the right side.
 
@@ -39,7 +39,7 @@ Forward Strategy Setting · Systems & Global Perspective · Creative Problem-Sol
 
 A handful of competencies defensibly sit either side. Their placement was decided as follows:
 
-- **Ethical Conduct, Value Creation, Commercial & Market Awareness → Leadership** - read as role-modelling integrity (idealised influence), strategic value, and strategic foresight respectively.
+- **Ethical Conduct, Value Creation, Commercial & Market Awareness → Leadership** - read as role-modeling integrity (idealized influence), strategic value, and strategic foresight respectively.
 - **Stakeholder Management → Management** - coordination/alignment is transactional; relational *influence* is already covered by Persuasion & Buy-in on the leadership side.
 - **Resilience Under Pressure, Composure Under Stress, Sustainable Wellbeing → Management** - placed as operational endurance. These three (plus the self-awareness competencies) are genuinely **foundational** traits that enable *both* orientations; a future revision could present them as a separate "Foundational" band rather than forcing the binary.
 
@@ -50,7 +50,7 @@ A handful of competencies defensibly sit either side. Their placement was decide
 - Each competency carries a self-rating from **1 to 5** (the mean of its items, reverse-scored where applicable - identical to the standard Persona report).
 - **Management axis (X)** = the mean of the management-set competencies actually answered. **Leadership axis (Y)** = the mean of the leadership-set competencies. Both on the 1-5 scale, equal-weighted by default.
 - The **high/low split is the 3.0 scale midpoint** today; it moves to the **norm median** once a Persona norm sample exists (consistent with the indicative-until-normed posture in the Persona methodology brief).
-- Two derived signals accompany the axes: **orientation** = leadership minus management (which way the person leans), and **average** = (management + leadership) / 2 (overall behavioural strength).
+- Two derived signals accompany the axes: **orientation** = leadership minus management (which way the person leans), and **average** = (management + leadership) / 2 (overall behavioral strength).
 
 ---
 
@@ -72,7 +72,7 @@ A near-midpoint position on both axes is read as a **Balanced / Versatile** prof
 1. **Executive Summary** - the preferred style, the two axis scores, the overall self-rating, and a short synthesis of orientation.
 2. **Leadership / Management Matrix** - the 2x2 plot of the person's self-assessed position (X = management, Y = leadership), with quadrant tints, gridlines, 1-5 tick marks, and both axis labels.
 3. **Leadership Potential Summary** - dominant tendencies (highest self-ratings) and development areas (lowest), each tagged by dimension.
-4. **Development Tips & Activities** - targeted tips and on-the-job activities for the five lowest-rated competencies (the development areas), drawn from the VIFM development-tip catalogue (3 per competency, GCC-contextualised), framed for a 30/60/90-day cycle with a manager or coach.
+4. **Development Tips & Activities** - targeted tips and on-the-job activities for the five lowest-rated competencies (the development areas), drawn from the VIFM development-tip catalog (3 per competency, GCC-contextualized), framed for a 30/60/90-day cycle with a manager or coach.
 5. **Leadership Potential Details** - every competency with its self-rating, short definition, and dimension tag, grouped by dimension and ordered by score.
 
 ---
@@ -82,7 +82,7 @@ A near-midpoint position on both axes is read as a **Balanced / Versatile** prof
 - **Self-report.** The report reflects how a person sees *themselves*, not how others see them. Pair it with a **Reflect 360°** (others' view) before any leadership-readiness conclusion - the self-vs-others gap is itself a key leadership signal.
 - **An orientation lens, not a typology.** The four styles are descriptive development labels, not a validated leadership taxonomy and not a selection tool.
 - **Indicative until normed.** Scores are read against the scale midpoint until a Persona norm sample (target **n ≥ 200**) supports norm-referenced percentiles.
-- **The dimension mapping is a content decision.** It was authored against the model and reviewed by VIFM; it can be revised with industrial/organisational-psychology input as evidence accrues.
+- **The dimension mapping is a content decision.** It was authored against the model and reviewed by VIFM; it can be revised with industrial/organizational-psychology input as evidence accrues.
 
 ---
 

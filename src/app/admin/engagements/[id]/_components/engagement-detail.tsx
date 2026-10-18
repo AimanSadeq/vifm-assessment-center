@@ -358,7 +358,7 @@ export function EngagementDetail({
           <Badge variant="secondary">{t(`adminEngagements.status.${engagement.status as string}`)}</Badge>
           {engagement.target_role ? <span>{t("adminEngagements.detail.targetPrefix")} {engagement.target_role as string}</span> : null}
           {/* What the centre is for: it decides how the overall rating is reached (BPS 3.7, 7.4). */}
-          <span title={acPurpose(engagement.purpose as string | null)?.description ?? "No purpose was recorded for this centre"}>
+          <span title={acPurpose(engagement.purpose as string | null)?.description ?? "No purpose was recorded for this center"}>
             Purpose: {acPurposeLabel(engagement.purpose as string | null)}
           </span>
           {isSelectionCentre ? (

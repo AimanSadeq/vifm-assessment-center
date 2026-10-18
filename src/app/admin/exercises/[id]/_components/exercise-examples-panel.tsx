@@ -72,7 +72,7 @@ export function ExerciseExamplesPanel({
         <CardTitle className="text-base">Indicator examples for assessors</CardTitle>
         <p className="text-xs text-muted-foreground">
           What good and poor evidence of a competency looks like in THIS exercise (BPS clause 4.24). Assessors see these
-          when they record an observation. Drafts are labelled as drafts until approved.
+          when they record an observation. Drafts are labeled as drafts until approved.
         </p>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -99,30 +99,30 @@ export function criterionValidity(input: {
   if (n === 0) {
     return {
       n, inRole: input.inRole, r: null, power: "none",
-      statement: "No performance follow-ups have been collected yet, so there is no evidence either way on how the centre's ratings relate to later performance.",
+      statement: "No performance follow-ups have been collected yet, so there is no evidence either way on how the center's ratings relate to later performance.",
     };
   }
   if (n < VALIDATION_COMPUTE_N || r === null) {
     return {
       n, inRole: input.inRole, r: null, power: "too_small",
-      statement: `${n} participant${n === 1 ? " has" : "s have"} both a centre rating and a performance rating. That is too few to compute a meaningful correlation; at least ${VALIDATION_COMPUTE_N} are needed before one is shown.`,
+      statement: `${n} participant${n === 1 ? " has" : "s have"} both a center rating and a performance rating. That is too few to compute a meaningful correlation; at least ${VALIDATION_COMPUTE_N} are needed before one is shown.`,
     };
   }
   if (n < VALIDATION_MIN_N) {
     return {
       n, inRole: input.inRole, r: round(r), power: "too_small",
-      statement: `Across ${n} participants the correlation between centre rating and later performance is ${round(r)}. With fewer than ${VALIDATION_MIN_N} participants this is an early indication only and should not be quoted as evidence of validity.`,
+      statement: `Across ${n} participants the correlation between center rating and later performance is ${round(r)}. With fewer than ${VALIDATION_MIN_N} participants this is an early indication only and should not be quoted as evidence of validity.`,
     };
   }
   if (n < VALIDATION_ADEQUATE_N) {
     return {
       n, inRole: input.inRole, r: round(r), power: "early",
-      statement: `Across ${n} participants the correlation between centre rating and later performance is ${round(r)}. The standard's guide is about ${VALIDATION_ADEQUATE_N} participants for a validation study with reasonable power, so treat this as provisional.`,
+      statement: `Across ${n} participants the correlation between center rating and later performance is ${round(r)}. The standard's guide is about ${VALIDATION_ADEQUATE_N} participants for a validation study with reasonable power, so treat this as provisional.`,
     };
   }
   return {
     n, inRole: input.inRole, r: round(r), power: "adequate",
-    statement: `Across ${n} participants the correlation between centre rating and later performance is ${round(r)}, a sample large enough for the study to carry reasonable power.`,
+    statement: `Across ${n} participants the correlation between center rating and later performance is ${round(r)}, a sample large enough for the study to carry reasonable power.`,
   };
 }
 

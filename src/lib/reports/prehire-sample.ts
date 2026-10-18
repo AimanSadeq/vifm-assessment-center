@@ -39,7 +39,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
         label: ar ? "مقابلة الذكاء الاصطناعي (CBI)" : "AI Interview (CBI)",
         definition: ar
           ? "مقابلة سلوكية منظمة (STAR) على كفاءة واحدة، تُراجَع بشرياً قبل الاعتماد."
-          : "Structured STAR behavioural interview on one competency; human-reviewed before it counts.",
+          : "Structured STAR behavioral interview on one competency; human-reviewed before it counts.",
         normalized: 60, cutScore: 60, passed: true, weightPct: 30, required: true, note: null,
       },
     ],
@@ -67,7 +67,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
           who: "candidate",
           text: ar
             ? "في مشروع تخرّجي، تأخّرت البيانات من مورّد خارجي، فأعدتُ ترتيب الأولويات وبنيتُ نموذجاً مؤقتاً بالبيانات المتاحة."
-            : "During my graduation project, data from an external supplier was delayed, so I re-prioritised and built an interim model from the data we already had.",
+            : "During my graduation project, data from an external supplier was delayed, so I re-prioritized and built an interim model from the data we already had.",
         },
         {
           who: "interviewer",
@@ -90,7 +90,7 @@ export function samplePrehireReportData(generatedAt: Date, lang: Lang = "en"): P
           key: "writing", cefr: "B2",
           feedback: ar
             ? "كتابة واضحة ومنظّمة تعرض وجهة النظر بسببين مدعومين، مع بعض الأخطاء النحوية البسيطة التي لا تعيق الفهم. الأسلوب مناسب للسياق المهني."
-            : "Clear, well-organised writing that states a position with two supported reasons; a few minor grammar slips that do not impede understanding. Register is appropriate for a professional context.",
+            : "Clear, well-organized writing that states a position with two supported reasons; a few minor grammar slips that do not impede understanding. Register is appropriate for a professional context.",
         },
         {
           key: "speaking", cefr: "B2",

@@ -121,7 +121,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return new NextResponse(new Uint8Array(out), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Centre-plan-${safeName}.pdf"`,
+        "Content-Disposition": `attachment; filename="Center-plan-${safeName}.pdf"`,
       },
     });
   } catch (err) {

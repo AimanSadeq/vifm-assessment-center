@@ -352,7 +352,7 @@ export async function buildDashboardTree(rootAssessmentId: string): Promise<Dash
       id: root.id,
       kind: kindFor(root.engagement_stage, true, depthBelow),
       stage: root.engagement_stage,
-      label: root.scope_label ?? orgName ?? "Organisation",
+      label: root.scope_label ?? orgName ?? "Organization",
       label_ar: root.scope_label_ar ?? root.scope_label ?? orgName ?? "المؤسسة",
       status: root.status,
       respondents: rollup.totalRespondents,

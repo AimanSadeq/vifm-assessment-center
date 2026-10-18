@@ -117,7 +117,7 @@ export function Tenant({ brand, shareMode = false }: { brand: Brand; shareMode?:
   const navGroups: { key: string; label: string; caption: string; mods: PreviewModule[] }[] = [
     { key: "command", label: "Command", caption: "Your HQ", mods: PREVIEW_MODULES.filter((m) => m.group === "command") },
     ...(scoped
-      ? [{ key: "services", label: "Services", caption: "In this licence", mods: featured }]
+      ? [{ key: "services", label: "Services", caption: "In this license", mods: featured }]
       : MODULE_GROUPS.filter((g) => g.key !== "command").map((g) => ({
           key: g.key,
           label: g.label,
@@ -203,7 +203,7 @@ export function Tenant({ brand, shareMode = false }: { brand: Brand; shareMode?:
           )}
           <p className="mx-auto mt-8 max-w-3xl text-center text-xs text-slate-400">
             This is a licensed-portal preview for {brand.org}. All figures are representative sample data generated for
-            demonstration - no live records are shown. A production licence runs on your own secured tenant.
+            demonstration - no live records are shown. A production license runs on your own secured tenant.
           </p>
         </main>
       </div>
@@ -258,9 +258,9 @@ function CommandCenter({
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Stat label="Workforce" value={data.headcount.toLocaleString()} sub="employees in tenant" icon={Users} accent={accent} />
-          <Stat label="Assessments run" value={data.assessmentsRun.toLocaleString()} sub="this licence year" icon={Activity} accent={accent} />
+          <Stat label="Assessments run" value={data.assessmentsRun.toLocaleString()} sub="this license year" icon={Activity} accent={accent} />
           <Stat label="Credentials" value={data.credentialsIssued.toLocaleString()} sub="verifiable, issued" icon={Award} accent={accent} />
-          <Stat label="Programmes" value={String(data.programmesActive)} sub="active learning paths" icon={BookOpen} accent={accent} />
+          <Stat label="Programs" value={String(data.programmesActive)} sub="active learning paths" icon={BookOpen} accent={accent} />
         </div>
       </div>
 
@@ -409,14 +409,14 @@ function ModuleView({
           <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
             <div className="text-xs font-semibold uppercase tracking-wide text-amber-700">Priority gap</div>
             <div className="mt-1 text-lg font-bold text-amber-900">{s.topGap}</div>
-            <p className="mt-1 text-sm text-amber-700/80">Recommended for targeted Academy programmes this cycle.</p>
+            <p className="mt-1 text-sm text-amber-700/80">Recommended for targeted Academy programs this cycle.</p>
           </div>
         </div>
       </div>
 
       {/* Department coverage strip */}
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-3 text-sm font-semibold text-slate-900">Where this lands across the organisation</div>
+        <div className="mb-3 text-sm font-semibold text-slate-900">Where this lands across the organization</div>
         <div className="grid gap-2.5 sm:grid-cols-2">
           {departments.slice(0, 6).map((d) => (
             <BarRow key={d.name} label={d.name} value={d.readiness} accent={m.tone} />

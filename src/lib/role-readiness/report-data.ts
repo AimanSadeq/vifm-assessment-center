@@ -21,7 +21,7 @@ export type RrReportData = {
   generatedAt: Date;
 };
 
-const GENERIC_COMP = (name: string) => `Prioritise development on ${name} to reach the target level.`;
+const GENERIC_COMP = (name: string) => `Prioritize development on ${name} to reach the target level.`;
 const GENERIC_AREA = (name: string) => `Strengthen ${name}: targeted practice and review to close the gap.`;
 
 export async function loadReadinessReportData(candidateId: string): Promise<RrReportData | null> {

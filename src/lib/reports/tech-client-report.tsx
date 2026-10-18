@@ -126,7 +126,7 @@ function InsightColumns({ insights }: { insights: Insight[] }) {
               <Text style={s.insightTitle}>{i.title}</Text>
               <Text style={s.insightDetail}>{i.detail}</Text>
               {i.courseCodes && i.courseCodes.length > 0 && (
-                <Text style={s.courseChip}>Programmes: {i.courseCodes.join(", ")}</Text>
+                <Text style={s.courseChip}>Programs: {i.courseCodes.join(", ")}</Text>
               )}
             </View>
           ))}

@@ -26,7 +26,7 @@ export default async function AdminLicensedPreviewPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Licensed Portal Preview</h1>
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Show a prospect exactly what a whole-portal Caliber licence feels like - their own branded tenant, a
+            Show a prospect exactly what a whole-portal Caliber license feels like - their own branded tenant, a
             workforce-intelligence command center, and every capability they would light up. Brand it to them, launch,
             and walk the room through the diagnose → develop → certify loop.
           </p>

@@ -12,16 +12,16 @@ const p = (
   extra: Partial<{ age_band: string; nationality_group: string }> = {}
 ) => ({ gender, recommendation, ...extra });
 
-test("a development centre is refused the analysis, with the reason given", () => {
+test("a development center is refused the analysis, with the reason given", () => {
   const v = computeAcFairness([p("male", "ready_now")], { purpose: "development" });
   assert.equal(v.report, null);
   assert.match(v.reason ?? "", /no one is selected/);
 });
 
-test("no finalised ratings means nothing to analyse", () => {
+test("no finalized ratings means nothing to analyze", () => {
   const v = computeAcFairness([p("male", null), p("female", null)], { purpose: "selection" });
   assert.equal(v.report, null);
-  assert.match(v.reason ?? "", /finalised overall rating/);
+  assert.match(v.reason ?? "", /finalized overall rating/);
 });
 
 test("everyone declining is a legitimate outcome, not an error", () => {
@@ -60,7 +60,7 @@ test("a real disparity is flagged", () => {
   assert.ok((female?.impactRatio ?? 1) < 0.8);
 });
 
-test("the favourable-outcome reading changes the answer, which is why it is a choice", () => {
+test("the favorable-outcome reading changes the answer, which is why it is a choice", () => {
   // Women are rated Ready with Development; men Ready Now. On the strict
   // reading that is a disparity; on the shortlist reading it is not.
   const rows = [
@@ -86,13 +86,13 @@ test("undisclosed participants are excluded, never imputed", () => {
   assert.equal(total, 20, "the undisclosed ten are in no group");
 });
 
-test("a small centre is reported as underpowered rather than precise", () => {
+test("a small center is reported as underpowered rather than precise", () => {
   const rows = [p("male", "ready_now"), p("female", "not_ready")];
   const v = computeAcFairness(rows, { purpose: "selection" });
   assert.equal(v.report?.dimensions.every((d) => d.underpowered || d.groups.length === 0), true);
 });
 
-test("counts describe the centre, not just the pool", () => {
+test("counts describe the center, not just the pool", () => {
   const rows = [p("male", "ready_now"), p("female", null), p("prefer_not_to_say", "not_ready")];
   const v = computeAcFairness(rows, { purpose: "selection" });
   assert.equal(v.participants, 3);

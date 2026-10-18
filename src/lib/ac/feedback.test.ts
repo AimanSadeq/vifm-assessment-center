@@ -18,7 +18,7 @@ const rec = (id: string, over: Partial<{ form: "written_report" | "oral" | "both
 
 const END = "2026-06-17T00:00:00Z";
 
-test("a development centre owes feedback to anyone with a result", () => {
+test("a development center owes feedback to anyone with a result", () => {
   const r = reviewFeedback({ purpose: "development", centreEndDate: END, participants: [p("c1", "Abdullah")], records: [] });
   assert.equal(r.mandatory, true);
   assert.deepEqual(r.owed.map((o) => o.name), ["Abdullah"]);
@@ -30,7 +30,7 @@ test("nobody is owed feedback before they have a result", () => {
   assert.deepEqual(r.owed, []);
 });
 
-test("a selection centre still reports the gap, in softer terms", () => {
+test("a selection center still reports the gap, in softer terms", () => {
   const r = reviewFeedback({ purpose: "selection", centreEndDate: END, participants: [p("c1", "Abdullah")], records: [] });
   assert.equal(r.mandatory, false);
   assert.equal(r.owed.length, 1);
@@ -51,7 +51,7 @@ test("an oral session with no written record is flagged (8.21)", () => {
   assert.deepEqual(r.withoutWrittenRecord.map((x) => x.name), ["Abdullah"]);
 });
 
-test("a written report alone is not enough for a development centre (8.22)", () => {
+test("a written report alone is not enough for a development center (8.22)", () => {
   const dev = reviewFeedback({
     purpose: "development", centreEndDate: END,
     participants: [p("c1", "Abdullah")],
@@ -64,7 +64,7 @@ test("a written report alone is not enough for a development centre (8.22)", () 
     participants: [p("c1", "Abdullah")],
     records: [rec("c1", { form: "written_report" })],
   });
-  assert.equal(sel.withoutOralElement.length, 0, "a selection centre may give a report alone");
+  assert.equal(sel.withoutOralElement.length, 0, "a selection center may give a report alone");
 });
 
 test("late feedback is flagged, and the threshold is named as practice", () => {

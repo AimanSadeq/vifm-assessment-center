@@ -10,7 +10,7 @@ export function personaBand(score: number): PersonaBand {
   if (score >= 4.5) return { key: "exceptional", label: "Exceptional", labelAr: "متميّز", action: "A clear, distinctive strength - share and teach this capability." };
   if (score >= 3.5) return { key: "proficient", label: "Proficient", labelAr: "متمكّن", action: "Solid - deepen mastery and extend impact beyond the immediate role." };
   if (score >= 2.5) return { key: "developing", label: "Developing", labelAr: "قيد التطوير", action: "Emerging - structured coaching, practice and stretch assignments help." };
-  if (score >= 1.5) return { key: "requires_focus", label: "Requires Focus", labelAr: "يحتاج تركيزًا", action: "A significant gap - prioritise with a formal development plan." };
+  if (score >= 1.5) return { key: "requires_focus", label: "Requires Focus", labelAr: "يحتاج تركيزًا", action: "A significant gap - prioritize with a formal development plan." };
   return { key: "critical", label: "Critical Focus", labelAr: "تركيز حرج", action: "Urgent - immediate development action and close support are essential." };
 }
 
@@ -31,7 +31,7 @@ export const PERSONA_BAND_GUIDE: readonly PersonaBandGuideRow[] = [
   { key: "exceptional", range: "4.5 and above", rangeAr: "≥ 4.5", name: "Exceptional", nameAr: "متميّز", definition: "A clear, distinctive strength to share and teach.", definitionAr: "قوة مميّزة وواضحة تستحقّ المشاركة والتعليم." },
   { key: "proficient", range: "3.5 - 4.49", rangeAr: "3.5 - 4.49", name: "Proficient", nameAr: "متمكّن", definition: "Solid, with room to deepen mastery and extend impact.", definitionAr: "متين، مع مجال لتعميق الإتقان وتوسيع الأثر." },
   { key: "developing", range: "2.5 - 3.49", rangeAr: "2.5 - 3.49", name: "Developing", nameAr: "قيد التطوير", definition: "Emerging; structured coaching, practice and stretch assignments help.", definitionAr: "في طور النموّ؛ يساعده التدريب المنظّم والممارسة والمهام التطويرية." },
-  { key: "requires_focus", range: "1.5 - 2.49", rangeAr: "1.5 - 2.49", name: "Requires Focus", nameAr: "يحتاج تركيزًا", definition: "A significant gap to prioritise with a formal development plan.", definitionAr: "فجوة مهمّة ينبغي إعطاؤها الأولوية بخطة تطوير رسمية." },
+  { key: "requires_focus", range: "1.5 - 2.49", rangeAr: "1.5 - 2.49", name: "Requires Focus", nameAr: "يحتاج تركيزًا", definition: "A significant gap to prioritize with a formal development plan.", definitionAr: "فجوة مهمّة ينبغي إعطاؤها الأولوية بخطة تطوير رسمية." },
   { key: "critical", range: "Below 1.5", rangeAr: "< 1.5", name: "Critical Focus", nameAr: "تركيز حرج", definition: "Urgent; immediate development action and close support are essential.", definitionAr: "عاجل؛ يلزم إجراء تطويري فوري ودعم لصيق." },
 ];
 

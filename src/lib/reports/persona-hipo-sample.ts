@@ -96,7 +96,7 @@ export function sampleHipoPdfData(generatedAt: string, completedAtIso: string): 
         score: 3.1,
         tips: [
           "On your next unclear brief, draft your own one-paragraph problem statement and confirm it before starting work.",
-          "Practise deciding with 70% of the information on low-stakes calls, and review the outcomes monthly.",
+          "Practice deciding with 70% of the information on low-stakes calls, and review the outcomes monthly.",
         ],
       },
     ],

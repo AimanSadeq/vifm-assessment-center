@@ -359,7 +359,7 @@ function RoadmapPage({ d }: { d: ReportData }) {
       <Text style={s.bodyText}>
         Below is your development roadmap, sequenced from the most pressing
         gaps to longer-term opportunities. Treat the first 30 days as
-        non-negotiable - that&apos;s where the highest-impact behaviour change
+        non-negotiable - that&apos;s where the highest-impact behavior change
         lives.
       </Text>
 
@@ -373,7 +373,7 @@ function RoadmapPage({ d }: { d: ReportData }) {
         <View style={s.closingBox}>
           <Text style={s.closingHeading}>No recommendations yet</Text>
           <Text style={[s.bodyText, { marginBottom: 0 }]}>
-            Your assessor team is still finalising the development plan. The
+            Your assessor team is still finalizing the development plan. The
             per-competency tips on the next pages still apply - start there.
           </Text>
         </View>
@@ -456,10 +456,10 @@ function CompetencyDevelopmentPage({ d }: { d: ReportData }) {
           · Which 1-2 actions in &quot;Now&quot; will I commit to in the next two weeks?
         </Text>
         <Text style={[s.tipText, { marginBottom: 3 }]}>
-          · What specific situations at work could I use to practice each behaviour?
+          · What specific situations at work could I use to practice each behavior?
         </Text>
         <Text style={[s.tipText, { marginBottom: 3 }]}>
-          · Who can give me feedback on these specific behaviours over the next 90 days?
+          · Who can give me feedback on these specific behaviors over the next 90 days?
         </Text>
         <Text style={[s.tipText, { marginBottom: 0 }]}>
           · How will I know I&apos;ve made progress - what does &quot;good&quot; look like?
@@ -478,7 +478,7 @@ function CoursesPage({ d }: { d: ReportData }) {
   return (
     <Page size="A4" style={s.page} wrap>
       <Text style={s.sectionEyebrow}>Targeted training</Text>
-      <Text style={s.sectionTitle}>Recommended VIFM Programmes</Text>
+      <Text style={s.sectionTitle}>Recommended VIFM Programs</Text>
       <View style={s.sectionRule} />
 
       <Text style={s.bodyText}>

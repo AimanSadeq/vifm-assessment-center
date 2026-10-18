@@ -94,7 +94,7 @@ export function ArcDashboard({ tree, initialLang = "en", backHref, backLabel, sh
   const pooledFrom = (n: number) =>
     rtl ? (n === 2 ? "مجمّعة من وحدتين" : `مجمّعة من ${n} وحدات`) : `pooled from ${n} units`;
   const kindLabel = (k: DashboardNode["kind"]) =>
-    k === "organisation" ? T("Organisation", "المؤسسة") : k === "division" ? T("Division", "القطاع") : T("Department", "الإدارة");
+    k === "organisation" ? T("Organization", "المؤسسة") : k === "division" ? T("Division", "القطاع") : T("Department", "الإدارة");
 
   const tabs: Array<{ id: Tab; label: string; on: boolean }> = [
     { id: "overview", label: T("Overview", "نظرة عامة"), on: true },
@@ -285,7 +285,7 @@ export function ArcDashboard({ tree, initialLang = "en", backHref, backLabel, sh
         )}
 
         {activeTab === "units" && (
-          <Card title={T("Every unit against every pillar", "كل وحدة مقابل كل ركيزة")} sub={T("Cell colour is the maturity band. A dash means the pillar was not in that unit's scope.", "لون الخلية هو نطاق النضج. الشرطة تعني أن الركيزة لم تكن ضمن نطاق تلك الوحدة.")}>
+          <Card title={T("Every unit against every pillar", "كل وحدة مقابل كل ركيزة")} sub={T("Cell color is the maturity band. A dash means the pillar was not in that unit's scope.", "لون الخلية هو نطاق النضج. الشرطة تعني أن الركيزة لم تكن ضمن نطاق تلك الوحدة.")}>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>

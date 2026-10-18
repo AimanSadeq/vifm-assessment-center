@@ -85,11 +85,11 @@ const PORTALS: ReadonlyArray<Portal> = [
     name: { en: "Assessment Center", ar: "مركز التقييم" },
     tagline: { en: "Competency assessment", ar: "تقييم الكفاءات" },
     acquire: {
-      measures: { en: `Behaviour across the ${COMPETENCY_COUNT} competencies, observed in exercises.`, ar: `السلوك عبر الكفاءات الـ${COMPETENCY_COUNT}، مُلاحَظًا في التمارين.` },
+      measures: { en: `Behavior across the ${COMPETENCY_COUNT} competencies, observed in exercises.`, ar: `السلوك عبر الكفاءات الـ${COMPETENCY_COUNT}، مُلاحَظًا في التمارين.` },
       method: { en: "Assessment-center exercises + assessor observation + live wash-up consensus.", ar: "تمارين مركز التقييم + ملاحظة المقيّمين + توافق عبر المراجعة المباشرة." },
       who: { en: "Candidates, by cohort; assessor-run.", ar: "المرشّحون، بحسب الدفعة؛ يُجريها المقيّمون." },
       reporting: { en: "Competency fit-score + OAR recommendation (Ready Now / with Development / Not Ready); 6-page report.", ar: "درجة ملاءمة الكفاءات + توصية التقييم العام (جاهز الآن / مع تطوير / غير جاهز)؛ تقرير من 6 صفحات." },
-      credential: { en: "AC Ready-Now (when the finalised OAR is Ready Now).", ar: "جاهز الآن (عند اعتماد التقييم العام كـ«جاهز الآن»)." },
+      credential: { en: "AC Ready-Now (when the finalized OAR is Ready Now).", ar: "جاهز الآن (عند اعتماد التقييم العام كـ«جاهز الآن»)." },
     },
     manage: {
       measures: { en: `The same ${COMPETENCY_COUNT} competencies, read for growth.`, ar: `الكفاءات الـ${COMPETENCY_COUNT} نفسها، بهدف النمو.` },
@@ -112,7 +112,7 @@ const PORTALS: ReadonlyArray<Portal> = [
       credential: { en: "None (diagnostic).", ar: "لا توجد (تشخيصي)." },
     },
     manage: {
-      measures: { en: "Organisational AI readiness across 8 pillars (+ individual layer).", ar: "جاهزية المؤسسة للذكاء الاصطناعي عبر 8 ركائز (+ طبقة فردية)." },
+      measures: { en: "Organizational AI readiness across 8 pillars (+ individual layer).", ar: "جاهزية المؤسسة للذكاء الاصطناعي عبر 8 ركائز (+ طبقة فردية)." },
       method: { en: "Respondent survey (Levels 1-5), distortion checks, peer benchmarks.", ar: "استبيان للمستجيبين (مستويات 1-5)، فحوص تشويه، مقارنات مرجعية." },
       who: { en: "Org cohorts + workforce.", ar: "دفعات المؤسسة + القوى العاملة." },
       reporting: { en: "Readiness gaps -> matched AI courses; board-ready bilingual org report.", ar: "فجوات الجاهزية -> دورات ذكاء اصطناعي مطابقة؛ تقرير مؤسسي ثنائي اللغة جاهز للعرض." },
@@ -163,12 +163,12 @@ const PORTALS: ReadonlyArray<Portal> = [
     key: "persona",
     icon: Layers,
     name: { en: "Persona®", ar: "بيرسونا" },
-    tagline: { en: "Behavioural self-assessment", ar: "تقييم سلوكي ذاتي" },
+    tagline: { en: "Behavioral self-assessment", ar: "تقييم سلوكي ذاتي" },
     acquire: {
       measures: { en: `Self-ratings across the ${COMPETENCY_COUNT} competencies (the 'self' view).`, ar: `تقييم ذاتي عبر الكفاءات الـ${COMPETENCY_COUNT} (رؤية «الذات»).` },
       method: { en: "Likert + forced-choice (most/least) self-report; bilingual.", ar: "ليكرت + اختيار إجباري (الأكثر/الأقل) تقييم ذاتي؛ ثنائي اللغة." },
       who: { en: "Candidates; individual.", ar: "المرشّحون؛ فرديًا." },
-      reporting: { en: "Behavioural fit signal vs a target role (fit %, prioritised gaps).", ar: "إشارة ملاءمة سلوكية مقابل دور مستهدف (نسبة ملاءمة، فجوات مرتّبة)." },
+      reporting: { en: "Behavioral fit signal vs a target role (fit %, prioritized gaps).", ar: "إشارة ملاءمة سلوكية مقابل دور مستهدف (نسبة ملاءمة، فجوات مرتّبة)." },
       credential: { en: "None.", ar: "لا توجد." },
     },
     manage: {
@@ -195,7 +195,7 @@ const PORTALS: ReadonlyArray<Portal> = [
       measures: { en: "The same four-skill CEFR profile, for growth.", ar: "ملف المهارات الأربع وفق CEFR نفسه، للنمو." },
       method: { en: "Same placement, developmental framing.", ar: "التحديد نفسه، بإطار تطويري." },
       who: { en: "Employees; any scale.", ar: "الموظفون؛ أي نطاق." },
-      reporting: { en: "Comprehensive 4-skill report -> the right English programmes.", ar: "تقرير شامل للمهارات الأربع -> برامج الإنجليزية المناسبة." },
+      reporting: { en: "Comprehensive 4-skill report -> the right English programs.", ar: "تقرير شامل للمهارات الأربع -> برامج الإنجليزية المناسبة." },
       credential: { en: "Fluent CEFR certificate.", ar: "شهادة فلوينت CEFR." },
     },
   },
@@ -249,7 +249,7 @@ const PORTALS: ReadonlyArray<Portal> = [
     acquire: { na: naDevelopmentOnly },
     manage: {
       measures: { en: "Learning delivery + per-lesson knowledge checks (delivery, not a diagnostic).", ar: "تقديم التعلّم + اختبارات معرفية لكل درس (تقديم، وليس تشخيصًا)." },
-      method: { en: "Self-paced programmes; AI knowledge-check per lesson; pass-gate.", ar: "برامج ذاتية الوتيرة؛ اختبار معرفي بالذكاء الاصطناعي لكل درس؛ بوّابة نجاح." },
+      method: { en: "Self-paced programs; AI knowledge-check per lesson; pass-gate.", ar: "برامج ذاتية الوتيرة؛ اختبار معرفي بالذكاء الاصطناعي لكل درس؛ بوّابة نجاح." },
       who: { en: "Learners; English or Arabic.", ar: "المتعلّمون؛ بالعربية أو الإنجليزية." },
       reporting: { en: "Completion + scores; closes the gaps the diagnostics found.", ar: "الإتمام + الدرجات؛ يعالج الفجوات التي كشفتها الأدوات التشخيصية." },
       credential: { en: "Verifiable completion credential.", ar: "شهادة إتمام قابلة للتحقّق." },

@@ -53,9 +53,9 @@ export default async function CognitiveTakePage({ params }: { params: { token: s
           <div className="space-y-4 rounded-xl border bg-card p-6 text-sm text-muted-foreground">
             <p>
               {displayName ? `${displayName}, this` : "This"} assessment has already
-              been completed and your results have been shared with the requesting organisation. It can only be
+              been completed and your results have been shared with the requesting organization. It can only be
               taken once, so it cannot be started again. If you believe this is a mistake, please contact the
-              organisation that invited you.
+              organization that invited you.
             </p>
             <p dir="rtl" className="border-t border-border pt-4">
               {displayName ? `${displayName}، هذا ` : "هذا "}

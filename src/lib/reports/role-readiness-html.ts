@@ -103,7 +103,7 @@ export function renderRoleReadinessHtml(data: RrReportData): string {
 
   <div class="sides">
     <div class="side">
-      <div class="lbl">Behavioural (Persona)</div>
+      <div class="lbl">Behavioral (Persona)</div>
       <div class="pct">${sidePct(data.persona.scorePct)}</div>
       <div class="thr">${metBadge(data.persona.passed)} <span class="muted">target ${esc(data.persona.threshold)}%</span></div>
     </div>
@@ -114,7 +114,7 @@ export function renderRoleReadinessHtml(data: RrReportData): string {
     </div>
   </div>
 
-  <h2>Behavioural competencies vs target</h2>
+  <h2>Behavioral competencies vs target</h2>
   <table><thead><tr><th>Competency</th><th class="num">Target</th><th class="num">Self</th><th class="num">Attainment</th><th>Result</th></tr></thead>
   <tbody>${compRows || `<tr><td colspan="5" class="muted">No competencies configured.</td></tr>`}</tbody></table>
 

@@ -136,7 +136,7 @@ export async function recordExerciseTrialAction(values: {
     if (isAuthorizationError(e)) return { error: e.message };
     throw e;
   }
-  if (!values.trialledOn) return { error: "When was it trialled?" };
+  if (!values.trialledOn) return { error: "When was it trialed?" };
   const who = (values.representativeNote ?? "").trim();
   if (who.length < 10) {
     return {

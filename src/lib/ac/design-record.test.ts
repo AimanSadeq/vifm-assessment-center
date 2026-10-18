@@ -26,8 +26,8 @@ const ex = (id: string, name: string, type: string) => ({
 });
 
 const FULL_ENGAGEMENT = {
-  design_rationale: "Two-day centre matching the role's split between analysis and stakeholder work.",
-  alternatives_considered: "A one-day centre was rejected as too thin for six criteria.",
+  design_rationale: "Two-day center matching the role's split between analysis and stakeholder work.",
+  alternatives_considered: "A one-day center was rejected as too thin for six criteria.",
   job_analysis_method: "role_profile",
   work_context: "Corporate banking, matrixed, heavy regulator contact.",
   sme_review_note: "Reviewed by two current Senior Managers.",
@@ -37,7 +37,7 @@ const FULL_ENGAGEMENT = {
 
 const baseline = {
   engagement: FULL_ENGAGEMENT,
-  competencies: [comp("c1", "Strategy"), comp("c2", "Judgement")],
+  competencies: [comp("c1", "Strategy"), comp("c2", "Judgment")],
   exercises: [ex("e1", "In-basket", "in_basket"), ex("e2", "Role play", "role_play")],
   matrix: [
     { exerciseId: "e1", competencyId: "c1" },
@@ -91,17 +91,17 @@ test("a criterion observed once has nothing converging on it", () => {
 test("a criterion with no indicators is flagged (4.20)", () => {
   const r = reviewDesignRecord({
     ...baseline,
-    competencies: [comp("c1", "Strategy"), comp("c2", "Judgement", { indicatorCount: 0 })],
+    competencies: [comp("c1", "Strategy"), comp("c2", "Judgment", { indicatorCount: 0 })],
   });
-  assert.deepEqual(r.withoutIndicators.map((c) => c.name), ["Judgement"]);
+  assert.deepEqual(r.withoutIndicators.map((c) => c.name), ["Judgment"]);
 });
 
 test("a criterion with no link to the job is flagged (4.4)", () => {
   const r = reviewDesignRecord({
     ...baseline,
-    competencies: [comp("c1", "Strategy"), comp("c2", "Judgement", { rationale: "  " })],
+    competencies: [comp("c1", "Strategy"), comp("c2", "Judgment", { rationale: "  " })],
   });
-  assert.deepEqual(r.withoutRationale.map((c) => c.name), ["Judgement"]);
+  assert.deepEqual(r.withoutRationale.map((c) => c.name), ["Judgment"]);
   assert.ok(r.cautions.some((c) => /no recorded link to the job/.test(c)));
 });
 
@@ -123,7 +123,7 @@ test("too many criteria is a caution until someone records why", () => {
     { exerciseId: "e2", competencyId: c.competencyId },
   ]);
   const flagged = reviewDesignRecord({ ...baseline, competencies: many, matrix });
-  assert.ok(flagged.cautions.some((c) => /This centre assesses 9 criteria/.test(c)));
+  assert.ok(flagged.cautions.some((c) => /This center assesses 9 criteria/.test(c)));
 
   const acked = reviewDesignRecord({
     ...baseline,
@@ -131,7 +131,7 @@ test("too many criteria is a caution until someone records why", () => {
     competencies: many,
     matrix,
   });
-  assert.equal(acked.cautions.some((c) => /This centre assesses 9 criteria/.test(c)), false);
+  assert.equal(acked.cautions.some((c) => /This center assesses 9 criteria/.test(c)), false);
 });
 
 test("approval is reported from the plan sign-off", () => {

@@ -16,7 +16,7 @@ export const AC_PURPOSES = [
     label: "Selection",
     short: "Hiring or promotion decisions",
     description:
-      "The centre informs a decision about a person: hiring, promotion or placement. The overall rating is "
+      "The center informs a decision about a person: hiring, promotion or placement. The overall rating is "
       + "calculated from the agreed competency ratings using the weights fixed at design time.",
   },
   {
@@ -24,7 +24,7 @@ export const AC_PURPOSES = [
     label: "Development",
     short: "Growth, with feedback owed",
     description:
-      "The centre exists to help people grow. Assessors agree the overall rating in discussion, and every "
+      "The center exists to help people grow. Assessors agree the overall rating in discussion, and every "
       + "participant is owed feedback.",
   },
   {
@@ -32,7 +32,7 @@ export const AC_PURPOSES = [
     label: "Succession",
     short: "Readiness for future roles",
     description:
-      "The centre assesses readiness for future roles. Where the outcome informs an appointment, treat it as "
+      "The center assesses readiness for future roles. Where the outcome informs an appointment, treat it as "
       + "selection.",
   },
 ] as const;

@@ -14,7 +14,7 @@ export function ClientLogo({
 }) {
   return (
     <div className={`flex ${align === "start" ? "justify-start" : "justify-center"} ${className}`}>
-      <img src={src} alt="Organisation logo" className="h-14 w-auto max-w-full object-contain" />
+      <img src={src} alt="Organization logo" className="h-14 w-auto max-w-full object-contain" />
     </div>
   );
 }

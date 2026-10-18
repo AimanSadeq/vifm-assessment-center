@@ -48,17 +48,17 @@ export function ManagerReport({ data }: AudienceReportProps) {
   const firstName = data.candidateName.split(" ")[0];
 
   return (
-    <Document title={`Manager Development Report - ${data.candidateName}`} author="VIFM Behavioural Assessment">
+    <Document title={`Manager Development Report - ${data.candidateName}`} author="VIFM Behavioral Assessment">
       {/* Cover */}
       <Page size="A4" style={sh.cover}>
         <CoverHero
-          eyebrow="Behavioural Psychometric · For the Line Manager"
+          eyebrow="Behavioral Psychometric · For the Line Manager"
           title="Manager Development Report®"
           subtitle={`Developing ${firstName} - where they stand and how to grow`}
           candidateName={data.candidateName}
           audience={AUDIENCE}
           rows={[
-            ["Organisation", data.organizationName],
+            ["Organization", data.organizationName],
             ["Role", data.targetRole ?? "-"],
             ["Date completed", data.assessmentDates],
             ["Competencies measured", String(comps.length)],
@@ -160,7 +160,7 @@ export function ManagerReport({ data }: AudienceReportProps) {
       <Page size="A4" style={sh.page}>
         <SectionHeader eyebrow="Reference" title="What each competency means" />
         <Text style={[sh.body, { marginBottom: 8 }]}>
-          Definitions for every competency assessed, grouped by behavioural domain, with the 1-5 rating scale used
+          Definitions for every competency assessed, grouped by behavioral domain, with the 1-5 rating scale used
           throughout this report.
         </Text>
         {groups.map((g, gi) => (
@@ -187,7 +187,7 @@ export function ManagerReport({ data }: AudienceReportProps) {
 
         <View style={[sh.note, { marginTop: 8 }]} wrap={false}>
           <Text style={sh.noteText}>
-            This is a development guide based on the VIFM online behavioural psychometric, scored against the VIFM
+            This is a development guide based on the VIFM online behavioral psychometric, scored against the VIFM
             competency framework. It supports coaching and growth conversations; it is not a performance rating or a
             hiring decision. Findings are most relevant for the next ~24 months.
           </Text>

@@ -564,7 +564,7 @@ function buildCoaching(priorities: string[], strengths: string[], ar: boolean): 
     return { forConversation, forSelf };
   }
   const forConversation = [
-    p1 ? `What upcoming opportunity could let you practise ${p1} deliberately?` : `Where will you focus your development over the next three months?`,
+    p1 ? `What upcoming opportunity could let you practice ${p1} deliberately?` : `Where will you focus your development over the next three months?`,
     p2 ? `What support or assignment would help you build ${p2}?` : `What support do you need from your manager?`,
     s1 ? `How can you use your strength in ${s1} to support your development areas?` : `How can your strengths support your goals?`,
     `How will we both know you have made progress in 90 days?`,

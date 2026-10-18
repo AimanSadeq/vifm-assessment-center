@@ -174,7 +174,7 @@ Download as PDF:
 ${d.pdfUrl}
 
 Your snapshot is private to you. The results page lists the four
-VIFM factor scores and the VIFM training programmes most likely to
+VIFM factor scores and the VIFM training programs most likely to
 help you close any gaps.
 
 Best regards,
@@ -229,7 +229,7 @@ ${d.respondentName}${d.respondentEmail ? ` (${d.respondentEmail})` : ""} has com
 
 ${d.pdfAttached === "no"
   ? "Their results report could not be attached to this email - your VIFM consultant will follow up with the PDF."
-  : "Their results report is attached as a PDF. It covers the four AI-readiness factors and the VIFM training programmes most likely to close any gaps."}
+  : "Their results report is attached as a PDF. It covers the four AI-readiness factors and the VIFM training programs most likely to close any gaps."}
 
 If you have questions about interpreting the results, please contact your VIFM consultant.
 

@@ -121,7 +121,7 @@ export function AgendaMatrix({ points, unevenThreshold, target = 4, lang = "en" 
   const xSplit = PAD + colW, ySplit = py(unevenThreshold);
   return (
     <svg viewBox={`0 0 ${W + LEGEND_W} ${H}`} width={`${W + LEGEND_W}pt`} height={`${H}pt`} style={{ maxWidth: "100%" }} role="img"
-      aria-label={rtl ? "مصفوفة الأجندة: مركزي مقابل نقل الممارسات" : "Agenda matrix: central programme versus practice transfer"}>
+      aria-label={rtl ? "مصفوفة الأجندة: مركزي مقابل نقل الممارسات" : "Agenda matrix: central program versus practice transfer"}>
       {/* quadrant tints */}
       <rect x={PAD} y={PAD} width={xSplit - PAD} height={ySplit - PAD} fill="#eff6ff" />
       <rect x={xSplit} y={PAD} width={PAD + plotW - xSplit} height={ySplit - PAD} fill="#fffbeb" />
@@ -134,7 +134,7 @@ export function AgendaMatrix({ points, unevenThreshold, target = 4, lang = "en" 
       <text x={PAD + 6} y={PAD + 12} fontFamily={FONT} fontSize={7.5} fontWeight={700} fill="#1e3a8a">{qLabel("MOVE PRACTICE", "نقل الممارسات")}</text>
       <text x={PAD + plotW - 6} y={PAD + 12} textAnchor="end" fontFamily={FONT} fontSize={7.5} fontWeight={700} fill="#78350f">{qLabel("LIFT THE REST", "رفع البقية")}</text>
       <text x={PAD + 6} y={PAD + plotH - 6} fontFamily={FONT} fontSize={7.5} fontWeight={700} fill="#065f46">{qLabel("SUSTAIN", "الحفاظ")}</text>
-      <text x={PAD + plotW - 6} y={PAD + plotH - 6} textAnchor="end" fontFamily={FONT} fontSize={7.5} fontWeight={700} fill="#9f1239">{qLabel("CENTRAL PROGRAMME", "برنامج مركزي")}</text>
+      <text x={PAD + plotW - 6} y={PAD + plotH - 6} textAnchor="end" fontFamily={FONT} fontSize={7.5} fontWeight={700} fill="#9f1239">{qLabel("CENTRAL PROGRAM", "برنامج مركزي")}</text>
       {/* axes */}
       <text x={PAD + plotW / 2} y={H - 10} textAnchor="middle" fontFamily={FONT} fontSize={8} fill={TOKENS.mute}>
         {qLabel("Some unit at 4.00   |   Shared gap: every unit below 4.00", "وحدة ما عند 4.00   |   فجوة مشتركة: كل الوحدات دون 4.00")}

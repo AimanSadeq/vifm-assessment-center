@@ -129,7 +129,7 @@ export function CbiStage({ token, onDone, lang = "en" }: { token: string; onDone
       {phase === "intro" && (
         <Card>
           <CardContent className="space-y-4 pt-6">
-            <h2 className="font-semibold text-[#010131]">{tr("Behavioural interview", "مقابلة سلوكية")}</h2>
+            <h2 className="font-semibold text-[#010131]">{tr("Behavioral interview", "مقابلة سلوكية")}</h2>
             <p className="text-sm text-muted-foreground">
               {tr(
                 "A short conversational interview. You'll be asked about real situations you've handled - describe what happened, what you personally did, and the outcome. Answer in your own words; take your time.",

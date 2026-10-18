@@ -31,7 +31,7 @@ test("a person may tick an automatic item the record cannot see, shown as manual
   assert.equal(it?.source, "manual");
 });
 
-test("the weights item appears only for selection centres", () => {
+test("the weights item appears only for selection centers", () => {
   const sel = evaluateChecklist(AC_CHECKLIST, { "ac.purpose": { done: true, detail: "selection" } }, []);
   const dev = evaluateChecklist(AC_CHECKLIST, { "ac.purpose": { done: true, detail: "development" } }, []);
   assert.ok(sel.phases.flatMap((p) => p.items).some((i) => i.key === "ac.weights"));

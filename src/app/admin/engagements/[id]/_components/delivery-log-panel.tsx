@@ -115,7 +115,7 @@ export function DeliveryLogPanel({
                 value={candidateId}
                 onChange={(e) => setCandidateId(e.target.value)}
               >
-                <option value="">Affected the whole centre</option>
+                <option value="">Affected the whole center</option>
                 {candidates.map((c) => (
                   <option key={c.id as string} value={c.id as string}>
                     {(c.full_name as string) ?? (c.id as string)}
@@ -149,7 +149,7 @@ export function DeliveryLogPanel({
                   <span className="text-xs text-muted-foreground">
                     <LocalDate value={e.occurred_at as string} withTime />
                     {e.logged_by_name ? ` · ${e.logged_by_name as string}` : ""}
-                    {nameOf(e.candidate_id) ? ` · ${nameOf(e.candidate_id)}` : " · whole centre"}
+                    {nameOf(e.candidate_id) ? ` · ${nameOf(e.candidate_id)}` : " · whole center"}
                   </span>
                   {e.affects_assessment ? (
                     <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">

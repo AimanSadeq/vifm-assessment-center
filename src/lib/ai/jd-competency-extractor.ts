@@ -30,7 +30,7 @@ const SYSTEM_PROMPT =
   `You ONLY pick from the supplied list - do not invent competencies. ` +
   `You may receive English or Arabic job descriptions; respond in English regardless. ` +
   `Aim for 4 to 8 competencies - never fewer than 4, never more than 12. ` +
-  `Prioritise behaviours genuinely critical to success in the role over generic ones.`;
+  `Prioritize behaviors genuinely critical to success in the role over generic ones.`;
 
 function buildInstructions(
   competencies: Competency[],

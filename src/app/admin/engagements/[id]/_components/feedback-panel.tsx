@@ -87,7 +87,7 @@ export function FeedbackPanel({
       <CardContent className="space-y-3 text-sm">
         <p className="text-muted-foreground">
           {review.mandatory
-            ? "This centre must give feedback to every participant (8.14), and it should include a conversation so the findings can be worked through (8.22)."
+            ? "This center must give feedback to every participant (8.14), and it should include a conversation so the findings can be worked through (8.22)."
             : "Feedback should be offered to every participant (8.15). Releasing a report is not the same as giving feedback."}
         </p>
 

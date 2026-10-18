@@ -71,7 +71,7 @@ export default async function CompetencyEvidenceDetailPage({ params }: Props) {
       {/* Behavioural indicators give the AI suggester + reviewer construct context. */}
       {indicators.length > 0 && (
         <div className="rounded-lg border bg-card mb-6 p-5">
-          <h2 className="text-sm font-semibold mb-3">Behavioural indicators ({indicators.length})</h2>
+          <h2 className="text-sm font-semibold mb-3">Behavioral indicators ({indicators.length})</h2>
           <ul className="space-y-1.5">
             {indicators.map((ind, i) => (
               <li key={i} className="flex items-start gap-2 text-sm">

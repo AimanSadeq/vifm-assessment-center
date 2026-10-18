@@ -264,12 +264,12 @@ function CoverPage({ d }: { d: ReportData }) {
 function AboutPage({ d }: { d: ReportData }) {
   return (
     <Page size="A4" style={s.page}>
-      <SectionHeader eyebrow="Methodology" title="About the Assessment Centre" />
+      <SectionHeader eyebrow="Methodology" title="About the Assessment Center" />
       <Text style={s.bodyText}>
-        {d.candidateName} took part in a VIFM Talent Assessment Centre as part of the {d.engagementName} engagement. This report summarises the results of the assessment.
+        {d.candidateName} took part in a VIFM Talent Assessment Center as part of the {d.engagementName} engagement. This report summarizes the results of the assessment.
       </Text>
       <Text style={s.bodyText}>
-        Assessment Centres consist of a number of different activities and exercises providing participants with a range of opportunities to demonstrate their competence. Participants are observed by trained assessors who collect behavioural evidence related to the relevant competencies.
+        Assessment Centers consist of a number of different activities and exercises providing participants with a range of opportunities to demonstrate their competence. Participants are observed by trained assessors who collect behavioral evidence related to the relevant competencies.
       </Text>
 
       {d.exercisesUsed.length > 0 && (
@@ -296,7 +296,7 @@ function AboutPage({ d }: { d: ReportData }) {
         The overall competency rating is not necessarily an average of the scores from the exercises - some activities are rated more heavily than others based on the competency-to-exercise matrix.
       </Text>
       <Text style={s.bodyText}>
-        This report provides information around the participant&apos;s strengths and development areas in relation to skills and behaviours important for the target role. You may regard this report as being particularly relevant for the next 24 months.
+        This report provides information around the participant&apos;s strengths and development areas in relation to skills and behaviors important for the target role. You may regard this report as being particularly relevant for the next 24 months.
       </Text>
       <Footer name={d.candidateName} />
     </Page>
@@ -625,16 +625,16 @@ function UsingThisReportPage({ d }: { d: ReportData }) {
 
       <Text style={s.subSection}>What this report is for</Text>
       <Text style={s.bodyText}>
-        This report describes how {d.candidateName} performed against the competencies assessed at this centre. It is
+        This report describes how {d.candidateName} performed against the competencies assessed at this center. It is
         evidence for a decision, not the decision itself: any decision that follows, and its consequences, rests with
-        the client organisation. It should be read alongside other information about the person, never on its own.
+        the client organization. It should be read alongside other information about the person, never on its own.
       </Text>
 
       <Text style={s.subSection}>How the overall rating was reached</Text>
       <Text style={s.bodyText}>
         {computed
-          ? "This centre supports a selection decision, so the overall rating is calculated from the agreed competency "
-            + "ratings using weights fixed when the centre was designed. It is not a figure the assessor panel agreed "
+          ? "This center supports a selection decision, so the overall rating is calculated from the agreed competency "
+            + "ratings using weights fixed when the center was designed. It is not a figure the assessor panel agreed "
             + "in discussion."
           : "Assessors reached the overall rating by discussing the evidence recorded against each competency and "
             + "agreeing a view."}
@@ -647,7 +647,7 @@ function UsingThisReportPage({ d }: { d: ReportData }) {
 
       <Text style={s.subSection}>What it cannot tell you</Text>
       <Text style={s.bodyText}>
-        An assessment centre samples behaviour in simulated situations over a short period. It cannot account for
+        An assessment center samples behavior in simulated situations over a short period. It cannot account for
         performance in a real job over time, for circumstances on the day, or for growth since the assessment. Ratings
         carry measurement error, and small differences between people, or between one competency and another, should
         not be treated as meaningful.
@@ -662,11 +662,11 @@ function UsingThisReportPage({ d }: { d: ReportData }) {
       <Text style={s.subSection}>Technical quality</Text>
       <Text style={s.bodyText}>
         {contentPending
-          ? `The behavioural content used at this centre is under expert review: ${d.contentApproved?.approved} of `
+          ? `The behavioral content used at this center is under expert review: ${d.contentApproved?.approved} of `
             + `${d.contentApproved?.total} indicators have been approved by a subject-matter expert so far. Until that `
             + "review is complete, treat these results as indicative and do not use them as the sole basis for a "
             + "hiring, promotion or termination decision."
-          : "The behavioural content used at this centre has been reviewed and approved by subject-matter experts. "
+          : "The behavioral content used at this center has been reviewed and approved by subject-matter experts. "
             + "VIFM continues to collect evidence on the reliability and validity of these assessments, and that "
             + "evidence is available to clients on request."}
       </Text>

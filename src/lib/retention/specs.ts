@@ -31,7 +31,7 @@ export const RETENTION_SPECS: RetentionSpec[] = [
   },
   {
     key: "persona",
-    label: "Persona (behavioural)",
+    label: "Persona (behavioral)",
     // SCOPED to self-served / voucher sittings only. This table also holds
     // engagement-bound sittings (candidate_id NOT NULL) that feed Succession
     // Readiness; those are governed by the engagement's lifecycle, not this

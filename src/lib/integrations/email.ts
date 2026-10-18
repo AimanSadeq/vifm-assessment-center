@@ -74,12 +74,12 @@ function getGraphClient(): Client | null {
 
 const TEMPLATES: Record<EmailTemplate, { subject: string; body: string }> = {
   platform_demo_request: {
-    subject: "New demo request - {{organisation}}",
+    subject: "New demo request - {{organization}}",
     body: `A demo request was submitted from the Caliber landing page.
 
 Name: {{name}}
 Work email: {{email}}
-Organisation: {{organisation}}
+Organization: {{organization}}
 Role: {{role}}
 Phone: {{phone}}
 
@@ -166,7 +166,7 @@ VIFM Assessment Center`,
   },
   course_quote_request: {
     subject: "New quote request - {{courseTitle}}",
-    body: `A new course quote request has come in from the public catalogue.
+    body: `A new course quote request has come in from the public catalog.
 
 Course:    {{courseTitle}}{{courseCode}}
 Requester: {{requesterName}} <{{requesterEmail}}>
@@ -189,7 +189,7 @@ Manage this request: {{adminUrl}}
 
 You've been invited to complete a short pre-employment screening for the {{roleTitle}} role{{orgClause}}.
 
-It takes about {{duration}} and may include a brief competency check, an English placement, and a short behavioural interview. Your answers are saved as you go - you can pause and resume using the same link.
+It takes about {{duration}} and may include a brief competency check, an English placement, and a short behavioral interview. Your answers are saved as you go - you can pause and resume using the same link.
 
 Start your screening here (please don't share this link, it's unique to you):
 {{applyUrl}}
@@ -205,7 +205,7 @@ Virginia Institute of Finance and Management`,
 
 Please find attached the pre-hire screening report for {{candidateName}}{{empClause}}, who completed the screening for the {{roleTitle}} role.
 
-The report summarises the advisory composite and the per-stage results. As always, this is a screening signal to support your process - VIFM does not make the hiring decision; your team does.
+The report summarizes the advisory composite and the per-stage results. As always, this is a screening signal to support your process - VIFM does not make the hiring decision; your team does.
 
 Please treat the attached report as confidential.
 
@@ -305,12 +305,12 @@ Best regards,
 Virginia Institute of Finance and Management`,
   },
   proposal_renewal_reminder: {
-    subject: "Licence renewal approaching - {{proposalTitle}}",
+    subject: "License renewal approaching - {{proposalTitle}}",
     body: `Dear {{clientName}},
 
-The annual all-access Caliber licence covered by {{proposalTitle}} is approaching its renewal date ({{renewalDate}}).
+The annual all-access Caliber license covered by {{proposalTitle}} is approaching its renewal date ({{renewalDate}}).
 
-To keep your programmes running without interruption, we would be glad to confirm the renewal terms - the licence renews for a further 12 months, capped at the agreed uplift, with your committed volumes carried forward.
+To keep your programs running without interruption, we would be glad to confirm the renewal terms - the license renews for a further 12 months, capped at the agreed uplift, with your committed volumes carried forward.
 
 You can review the current proposal here:
 {{viewUrl}}

@@ -321,7 +321,7 @@ export function PersonaStandaloneClient({
         setError(
           "completed" in res && res.completed
             ? tx(
-                "You have already completed this assessment. Your results have been shared with the organisation that invited you.",
+                "You have already completed this assessment. Your results have been shared with the organization that invited you.",
                 "لقد أكملت هذا التقييم بالفعل. تمت مشاركة نتائجك مع الجهة التي دعتك.",
               )
             : res.error,
@@ -513,7 +513,7 @@ export function PersonaStandaloneClient({
         </h1>
         <p className={`mt-1 text-sm ${onDark ? "text-white/80" : "text-muted-foreground"}`}>
           {tx(
-            "Behavioural Competency Self-Assessment - self-ratings across the VIFM competency framework (the same framework as the 360).",
+            "Behavioral Competency Self-Assessment - self-ratings across the VIFM competency framework (the same framework as the 360).",
             "التقييم الذاتي للجدارات السلوكية - تقييم ذاتي عبر إطار جدارات VIFM (الإطار نفسه المستخدم في تقييم 360).",
           )}
         </p>
@@ -1296,7 +1296,7 @@ function PersonaResult({
 
           <p className="mt-3 rounded-md bg-[#5391D5]/10 px-3 py-2 text-[11px] text-[#010131]">
             {tx(
-              "A self-report development plan - pair it with a Reflect 360 (others' view) and the recommended VIFM programmes to turn priorities into progress.",
+              "A self-report development plan - pair it with a Reflect 360 (others' view) and the recommended VIFM programs to turn priorities into progress.",
               "خطة تطوير قائمة على تقييم ذاتي - اقرنها بتقييم ريفلكت 360 (رأي الآخرين) وببرامج VIFM الموصى بها لتحويل الأولويات إلى تقدّم.",
             )}
           </p>
@@ -1401,11 +1401,11 @@ function AcademyCourses({
   return (
     <div className="mt-4 rounded-lg border border-[#5391D5]/30 bg-[#5391D5]/5 p-3">
       <p className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#010131]">
-        <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Recommended VIFM Academy programmes", "برامج أكاديمية VIFM الموصى بها")}
+        <GraduationCap className="h-4 w-4 text-[#5391D5]" /> {tx("Recommended VIFM Academy programs", "برامج أكاديمية VIFM الموصى بها")}
       </p>
       <p className="mt-0.5 text-[11px] text-muted-foreground">
         {tx(
-          "Mapped to your development priorities - ranked by gap size and how strongly each programme targets it.",
+          "Mapped to your development priorities - ranked by gap size and how strongly each program targets it.",
           "مرتبطة بأولويات تطويرك - مرتّبة حسب حجم الفجوة ومدى استهداف كل برنامج لها.",
         )}
       </p>

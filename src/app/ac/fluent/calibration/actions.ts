@@ -22,7 +22,7 @@ export async function submitHumanRating(
   try {
     await requireRole(["admin", "consultant"]);
   } catch (e) {
-    if (isAuthorizationError(e)) return { ok: false, error: "Not authorised." };
+    if (isAuthorizationError(e)) return { ok: false, error: "Not authorized." };
     throw e;
   }
 

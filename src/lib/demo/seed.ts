@@ -110,7 +110,7 @@ const AC_PRELIMINARY_PROFILE = [
  *  (see AC_EXERCISE_COMPETENCIES). */
 const AC_HIGHER_VIEW_EXERCISE = [2, 0, 1, 0, 2, 1];
 const AC_WORKSHEET_NOTES = [
-  "Consolidated across the exercises I observed: framing, prioritisation and the link back to the strategy.",
+  "Consolidated across the exercises I observed: framing, prioritization and the link back to the strategy.",
   "Judged on the quality of the reasoning behind each call, not on whether I would have made the same one.",
   "Looked at follow-through: what was actually committed to, and what was left open.",
   "Rated on clarity and on how the message landed with the other person, in writing and in the room.",

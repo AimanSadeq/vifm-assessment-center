@@ -123,7 +123,7 @@ export function AllocationsClient({
               <div>
                 <label className={label}>Technical function (Techno)</label>
                 <select className={input} value={gFunctionId} onChange={(e) => setGFunctionId(e.target.value)}>
-                  <option value="">First catalogue function (default)</option>
+                  <option value="">First catalog function (default)</option>
                   {techFunctions.map((f) => (
                     <option key={f.id} value={f.id}>{f.name}</option>
                   ))}

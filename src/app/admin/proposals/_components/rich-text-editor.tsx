@@ -67,7 +67,7 @@ export function RichTextEditor({
         <button type="button" title="Bold" className={btn} onClick={() => apply("bold")}><Bold className="h-3.5 w-3.5" /></button>
         <button type="button" title="Italic" className={btn} onClick={() => apply("italic")}><Italic className="h-3.5 w-3.5" /></button>
         <button type="button" title="Underline" className={btn} onClick={() => apply("underline")}><Underline className="h-3.5 w-3.5" /></button>
-        <label className={`${btn} relative cursor-pointer`} title="Text colour">
+        <label className={`${btn} relative cursor-pointer`} title="Text color">
           <Palette className="h-3.5 w-3.5" />
           <input
             type="color"

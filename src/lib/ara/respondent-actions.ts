@@ -492,7 +492,7 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
               const { sendAraEmail } = await import("@/lib/ara/email");
 
               // Best-effort display labels for the client email.
-              let clientName = "your organisation";
+              let clientName = "your organization";
               let assessmentLabel = "AI Readiness";
               try {
                 const { data: lbl } = await sb

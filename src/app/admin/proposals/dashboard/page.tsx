@@ -27,7 +27,7 @@ const STATUSES: StatusMeta[] = [
   { key: "lost", label: "Lost", color: "#C0392B", cardBg: "border-t-rose-500", chip: "bg-rose-50 text-rose-600", icon: XCircle },
 ];
 
-const MODE_LABEL: Record<string, string> = { licence: "Licence", engagement: "Engagement", combined: "Combined", per_project: "Project" };
+const MODE_LABEL: Record<string, string> = { licence: "License", engagement: "Engagement", combined: "Combined", per_project: "Project" };
 
 function dominantCurrency(proposals: Proposal[]): string {
   const counts = new Map<string, number>();
@@ -137,7 +137,7 @@ export default async function ProposalsDashboardPage() {
               <PipelineDonut data={donutData} total={total} />
               {arr > 0 && (
                 <div className="mt-2 border-t border-border pt-2 text-center text-xs text-muted-foreground">
-                  <span className="font-semibold text-[#010131]">{money(arr)}</span> annual recurring (sent + won licences)
+                  <span className="font-semibold text-[#010131]">{money(arr)}</span> annual recurring (sent + won licenses)
                 </div>
               )}
             </div>

@@ -105,13 +105,13 @@ export function reviewFeedback(input: {
   if (owed.length > 0) {
     problems.push(
       mandatory
-        ? `${owed.map((o) => o.name).join(", ")} ${owed.length === 1 ? "has" : "have"} a finalised result and no feedback recorded. A development centre must give feedback (8.14).`
-        : `${owed.map((o) => o.name).join(", ")} ${owed.length === 1 ? "has" : "have"} a finalised result and no feedback recorded (8.15).`
+        ? `${owed.map((o) => o.name).join(", ")} ${owed.length === 1 ? "has" : "have"} a finalized result and no feedback recorded. A development center must give feedback (8.14).`
+        : `${owed.map((o) => o.name).join(", ")} ${owed.length === 1 ? "has" : "have"} a finalized result and no feedback recorded (8.15).`
     );
   }
   for (const l of late) {
     problems.push(
-      `${l.name} was given feedback ${l.days} days after the centre closed. The standard asks for it as soon as possible (8.16); ${FEEDBACK_PROMPT_DAYS} days is the working threshold here, not a clause value.`
+      `${l.name} was given feedback ${l.days} days after the center closed. The standard asks for it as soon as possible (8.16); ${FEEDBACK_PROMPT_DAYS} days is the working threshold here, not a clause value.`
     );
   }
   if (withoutWrittenRecord.length > 0) {
@@ -121,7 +121,7 @@ export function reviewFeedback(input: {
   }
   if (withoutOralElement.length > 0) {
     problems.push(
-      `${withoutOralElement.map((x) => x.name).join(", ")} received a written report only. A development centre's feedback should include a conversation, so the findings can be worked through (8.22).`
+      `${withoutOralElement.map((x) => x.name).join(", ")} received a written report only. A development center's feedback should include a conversation, so the findings can be worked through (8.22).`
     );
   }
   if (byUntrained.length > 0) {

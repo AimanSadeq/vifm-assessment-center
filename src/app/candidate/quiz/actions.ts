@@ -159,7 +159,7 @@ export async function saveQuizAnswerAction(values: SaveQuizAnswerValues) {
 
   if (fetchErr || !attempt) return { error: "Attempt not found." };
   if (attempt.status !== "in_progress") {
-    return { error: "This attempt has already been finalised." };
+    return { error: "This attempt has already been finalized." };
   }
 
   const questions = attempt.questions as QuizQuestion[];
@@ -203,7 +203,7 @@ export async function completeQuizAttemptAction(values: CompleteQuizValues) {
 
   if (fetchErr || !attempt) return { error: "Attempt not found." };
   if (attempt.status !== "in_progress") {
-    return { error: "This attempt has already been finalised." };
+    return { error: "This attempt has already been finalized." };
   }
 
   const questions = attempt.questions as QuizQuestion[];
@@ -311,7 +311,7 @@ export async function abandonQuizAttemptAction(values: CompleteQuizValues) {
     .single();
   if (fetchErr || !attempt) return { error: "Attempt not found." };
   if (attempt.status !== "in_progress") {
-    return { error: "This attempt has already been finalised." };
+    return { error: "This attempt has already been finalized." };
   }
 
   const startedAt = new Date(attempt.started_at as string);

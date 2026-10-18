@@ -89,7 +89,7 @@ const WRITING_PROMPTS: WritingTask[] = [
     prompt_en: "Write a short email (about 70-90 words) to a colleague explaining why a project deadline needs to move, and propose a new date.",
     prompt_ar: "اكتب بريدًا إلكترونيًا قصيرًا (نحو 70-90 كلمة) إلى زميل تشرح فيه سبب الحاجة إلى تأجيل موعد تسليم مشروع، واقترح موعدًا جديدًا." },
   { id: "w2", cefr_target: "B1", min_words: 70,
-    prompt_en: "Write a short message (about 70-90 words) to a client apologising for a delay and explaining the next steps you will take.",
+    prompt_en: "Write a short message (about 70-90 words) to a client apologizing for a delay and explaining the next steps you will take.",
     prompt_ar: "اكتب رسالة قصيرة (نحو 70-90 كلمة) إلى عميل تعتذر فيها عن تأخير وتوضّح الخطوات التالية التي ستتخذها." },
   { id: "w3", cefr_target: "B2", min_words: 80,
     prompt_en: "Write a short paragraph (about 80-100 words) giving your opinion on whether teams should work from the office or remotely, with one reason for your view.",

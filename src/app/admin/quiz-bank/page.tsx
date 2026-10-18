@@ -33,7 +33,7 @@ export default async function QuizBankPage() {
           <ClipboardCheck className="h-6 w-6 text-[#5391D5]" /> Competency quiz bank
         </h1>
         <p className="mt-0.5 text-sm text-muted-foreground">
-          The vetted situational-judgement items behind the Pre-Hire screen. Review a competency and approve its pool -
+          The vetted situational-judgment items behind the Pre-Hire screen. Review a competency and approve its pool -
           a competency serves from the bank (instead of live-AI) once it has {QUIZ_BANK_TARGET}+ approved items.
         </p>
       </header>

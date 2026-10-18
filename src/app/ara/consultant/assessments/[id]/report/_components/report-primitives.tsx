@@ -585,7 +585,7 @@ export function recommendationsFor(pillarName: string, score: number | null) {
       },
       {
         title: "Baseline against peers",
-        body: `Commission a peer scan across 3 comparable GCC organisations on ${n} to set an evidence-based target.`,
+        body: `Commission a peer scan across 3 comparable GCC organizations on ${n} to set an evidence-based target.`,
         horizon: "build" as const, effort: "Medium" as const,
         outcome: "Target benchmark with named peers and aspirational KPIs.",
       },
@@ -594,14 +594,14 @@ export function recommendationsFor(pillarName: string, score: number | null) {
   if (score < 3.0) {
     return [
       {
-        title: "Formalise policies and processes",
-        body: `Document and publish the working policies governing ${n}. Move from tacit practice to signed-off governance artefacts.`,
+        title: "Formalize policies and processes",
+        body: `Document and publish the working policies governing ${n}. Move from tacit practice to signed-off governance artifacts.`,
         horizon: "quick" as const, effort: "Medium" as const,
-        outcome: "Published policy pack and acknowledgement record.",
+        outcome: "Published policy pack and acknowledgment record.",
       },
       {
         title: "Pilot one initiative with success metrics",
-        body: `Launch a single well-scoped pilot with measurable KPIs to prove the organisation can execute on ${n}.`,
+        body: `Launch a single well-scoped pilot with measurable KPIs to prove the organization can execute on ${n}.`,
         horizon: "build" as const, effort: "Medium" as const,
         outcome: "One reference pilot with pre/post evidence.",
       },
@@ -617,9 +617,9 @@ export function recommendationsFor(pillarName: string, score: number | null) {
     return [
       {
         title: "Scale proven pilots into production",
-        body: `Take the 1-2 strongest pilots and productionise them with formal handover into business-as-usual operations.`,
+        body: `Take the 1-2 strongest pilots and productionize them with formal handover into business-as-usual operations.`,
         horizon: "quick" as const, effort: "Medium" as const,
-        outcome: "Productionised use cases with named owners and ROI targets.",
+        outcome: "Productionized use cases with named owners and ROI targets.",
       },
       {
         title: "Close the gap to the AI Ready benchmark",
@@ -638,7 +638,7 @@ export function recommendationsFor(pillarName: string, score: number | null) {
   // Score >= 4.0 (Advanced / Leading)
   return [
     {
-      title: "Share practices internally as a centre of excellence",
+      title: "Share practices internally as a center of excellence",
       body: `Codify what works in ${n} and publish it as an internal CoE playbook other functions can adopt.`,
       horizon: "quick" as const, effort: "Low" as const,
       outcome: "Internal playbook referenced by at least two other pillars.",
@@ -651,7 +651,7 @@ export function recommendationsFor(pillarName: string, score: number | null) {
     },
     {
       title: "Continue annual benchmarking to retain leadership",
-      body: `Re-run the Compass annually against peer organisations to keep ${n} at the leading edge.`,
+      body: `Re-run the Compass annually against peer organizations to keep ${n} at the leading edge.`,
       horizon: "transform" as const, effort: "Low" as const,
       outcome: "Sustained leadership position with documented year-on-year delta.",
     },

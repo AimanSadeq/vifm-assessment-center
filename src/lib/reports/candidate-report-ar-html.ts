@@ -757,7 +757,7 @@ export function renderCandidateReportHtmlAr(data: ReportData): string {
     </div>
   </section>
 
-  <!-- PAGE 2 - About the Assessment Centre -->
+  <!-- PAGE 2 - About the Assessment Center -->
   <section class="page">
     ${sectionHeader("المنهجية", "نبذة عن مركز التقييم")}
     <p class="body-text">شارك ${esc(d.candidateName)} في مركز VIFM لتقييم المواهب ضمن مشروع ${esc(d.engagementName)}. يلخّص هذا التقرير نتائج التقييم.</p>

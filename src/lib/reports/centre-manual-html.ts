@@ -20,7 +20,7 @@ const esc = (v: unknown): string =>
 
 const body = (text: string): string => {
   const t = text.trim();
-  if (!t) return '<p class="gap">Nothing recorded for this centre.</p>';
+  if (!t) return '<p class="gap">Nothing recorded for this center.</p>';
   return t
     .split(/\n{2,}/)
     .map((block) => {
@@ -34,7 +34,7 @@ const body = (text: string): string => {
 };
 
 export function variantLabel(variant: ManualVariant): string {
-  return variant === "full" ? "Full centre manual" : `${centreRoleName(variant)} manual`;
+  return variant === "full" ? "Full center manual" : `${centreRoleName(variant)} manual`;
 }
 
 export function buildCentreManualHtml(input: {
@@ -124,7 +124,7 @@ export function buildCentreManualHtml(input: {
       <strong>This copy contains assessment material.</strong>
       Exercise briefs, role-player prompts and assessor guidance keep their value only while participants have not
       seen them, and these exercises are used again. Do not copy, forward or store this outside the systems VIFM
-      provides, and do not leave printed copies in the assessment rooms. Tell the centre administrator when you have
+      provides, and do not leave printed copies in the assessment rooms. Tell the center administrator when you have
       returned or destroyed your copy.
     </div>`
       : ""
@@ -135,7 +135,7 @@ export function buildCentreManualHtml(input: {
 
   <footer>
     ${esc(variantLabel(input.variant))} &middot; version ${esc(input.version)} &middot; VIFM Caliber.
-    Generated from the centre design, so it describes the centre as designed. Where a section says nothing is
+    Generated from the center design, so it describes the center as designed. Where a section says nothing is
     recorded, that gap is real and is shown rather than hidden.
   </footer>
 </body></html>`;

@@ -190,7 +190,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
         {/* What the centre is for. Required: it decides how the overall rating
             is reached and what the participant is owed (BPS 3.7 and 7.4). */}
         <div className="space-y-2">
-          <Label>What is this centre for?</Label>
+          <Label>What is this center for?</Label>
           <Select
             value={state.purpose}
             onValueChange={(value) =>
@@ -210,7 +210,7 @@ export function StepBasicInfo({ organizations: initialOrgs }: Props) {
           </Select>
           <p className="text-xs text-muted-foreground">
             {acPurpose(state.purpose)?.description
-              ?? "Selection centres reach the overall rating by calculation; development centres reach it by assessor discussion and owe the participant feedback."}
+              ?? "Selection centers reach the overall rating by calculation; development centers reach it by assessor discussion and owe the participant feedback."}
           </p>
         </div>
 

@@ -40,10 +40,10 @@ export const MODULE_GROUPS: { key: ModuleGroupKey; label: string; caption: strin
 export const PREVIEW_MODULES: PreviewModule[] = [
   { id: "command", label: "Command Center", tagline: "Workforce intelligence at a glance", icon: LayoutDashboard, tone: "#5391D5", group: "command", metricLabel: "Workforce readiness" },
 
-  { id: "ac", label: "Assessment Center", tagline: "Behavioural competence, observed", icon: Target, tone: "#5391D5", group: "diagnose", metricLabel: "Avg competency" },
+  { id: "ac", label: "Assessment Center", tagline: "Behavioral competence, observed", icon: Target, tone: "#5391D5", group: "diagnose", metricLabel: "Avg competency" },
   { id: "techno", label: "Techno® Technical", tagline: "Job-ready technical proficiency", icon: Wrench, tone: "#6366f1", group: "diagnose", metricLabel: "Avg proficiency" },
   { id: "logica", label: "Logica® Cognitive", tagline: "Reasoning aptitude under time", icon: Brain, tone: "#0891b2", group: "diagnose", metricLabel: "Avg aptitude" },
-  { id: "persona", label: "Persona® Behavioural", tagline: "Self-reported working style", icon: UserCircle, tone: "#8b5cf6", group: "diagnose", metricLabel: "Avg index" },
+  { id: "persona", label: "Persona® Behavioral", tagline: "Self-reported working style", icon: UserCircle, tone: "#8b5cf6", group: "diagnose", metricLabel: "Avg index" },
   { id: "fluent", label: "Fluent® English", tagline: "CEFR-aligned language placement", icon: Languages, tone: "#0ea5e9", group: "diagnose", metricLabel: "Avg CEFR score" },
   { id: "arc", label: "AR Compass® AI Readiness", tagline: "Readiness to use & govern AI", icon: Sparkles, tone: "#7c3aed", group: "diagnose", metricLabel: "Avg readiness" },
   { id: "reflect", label: "Reflect 360°", tagline: "Multi-rater leadership feedback", icon: Aperture, tone: "#db2777", group: "diagnose", metricLabel: "Avg leadership" },

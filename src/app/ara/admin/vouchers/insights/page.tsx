@@ -401,7 +401,7 @@ async function CompanyDetail({ company }: { company: string }) {
       {insight.cohort_overall != null && (
         <RecommendedCoursesPanel
           title="Recommended VIFM training for this cohort"
-          description="Programmes ranked by the cohort's weakest factors (gap to target × course relevance)."
+          description="Programs ranked by the cohort's weakest factors (gap to target × course relevance)."
           emptyMessage="This cohort is at or near the target across all four factors - no training gaps to close right now."
           courses={courses}
           context="ara"

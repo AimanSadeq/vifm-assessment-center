@@ -12,7 +12,7 @@ supervisor · **Recorder:** interviewer captures notes on the role profile
 > [role family]. I'll ask about what the role involves and what separates strong
 > performers from adequate ones. There are no right or wrong answers — your
 > experience is the data. May I record this session? The recording is used only
-> to build the framework, kept confidential, and anonymised. You can stop or skip
+> to build the framework, kept confidential, and anonymized. You can stop or skip
 > any question at any time."
 
 Confirm: ☐ consent to participate ☐ consent to record
@@ -38,12 +38,12 @@ Confirm: ☐ consent to participate ☐ consent to record
 ## Section C — Performance differentiators *(the heart of it)* (15–20 min)
 
 8. Think of an **outstanding** performer in this role. What do they *do* that
-   sets them apart — specific behaviours, not traits?
+   sets them apart — specific behaviors, not traits?
 9. Now think of someone who was **technically capable but ultimately
-   ineffective**. What was missing — behaviourally?
+   ineffective**. What was missing — behaviorally?
 10. When two people have the same technical knowledge, what makes one **far more
     effective** than the other?
-11. What behaviours would make someone **fail** or be a **risk** in this role
+11. What behaviors would make someone **fail** or be a **risk** in this role
     (e.g., cutting compliance corners, poor client confidentiality)?
 
 *(Each answer here should yield candidate competencies — note them against the
@@ -65,7 +65,7 @@ draft list in `04`, and capture concrete examples as critical incidents in
 
 ## Interviewer notes
 
-- Push for **behaviour, not adjectives**: "What did they *do*?" beats "they were
+- Push for **behavior, not adjectives**: "What did they *do*?" beats "they were
   proactive."
 - Stay neutral; don't lead toward the draft competencies in Sections A–C.
 - Flag any capability that doesn't map to the 38 draft items — these are

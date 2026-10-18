@@ -73,7 +73,7 @@ export function reviewSeriesConsistency(centres: SeriesCentre[]): SeriesConsiste
     if (distinct.size > 1) differences.push({ field, label, clause, values });
   };
 
-  compare("purpose", "What the centre is for", "3.7", (c) => c.purpose ?? "not recorded");
+  compare("purpose", "What the center is for", "3.7", (c) => c.purpose ?? "not recorded");
   compare(
     "integration_method",
     "How the overall rating is reached",
@@ -90,7 +90,7 @@ export function reviewSeriesConsistency(centres: SeriesCentre[]): SeriesConsiste
   );
   compare(
     "external_evidence_rule",
-    "Whether evidence from outside the centre may count",
+    "Whether evidence from outside the center may count",
     "7.14",
     (c) => c.externalEvidenceRule ?? "not decided"
   );
@@ -99,13 +99,13 @@ export function reviewSeriesConsistency(centres: SeriesCentre[]): SeriesConsiste
 
   let summary: string;
   if (ordered.length < 2) {
-    summary = "A series needs at least two centres before there is anything to compare.";
+    summary = "A series needs at least two centers before there is anything to compare.";
   } else if (differences.length === 0) {
-    summary = `All ${ordered.length} centres in this series run to the same design.`;
+    summary = `All ${ordered.length} centers in this series run to the same design.`;
   } else {
     summary =
-      `${differences.length} ${differences.length === 1 ? "difference" : "differences"} across ${ordered.length} centres. `
-      + "A difference is not automatically a fault: a design that changed because a post-centre review said it should is the standard working (9.13). "
+      `${differences.length} ${differences.length === 1 ? "difference" : "differences"} across ${ordered.length} centers. `
+      + "A difference is not automatically a fault: a design that changed because a post-center review said it should is the standard working (9.13). "
       + "A design that changed for no recorded reason is what 5.19 asks you to find.";
   }
 

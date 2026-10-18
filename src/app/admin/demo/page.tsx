@@ -28,7 +28,7 @@ export default async function DemoDataPage() {
         </div>
         {status.orgPresent ? (
           <ul className="space-y-1 text-sm">
-            <li className="text-foreground">Demo organisation: <span className="font-medium">loaded</span></li>
+            <li className="text-foreground">Demo organization: <span className="font-medium">loaded</span></li>
             {status.counts.map((c) => (
               <li key={c.service} className="text-muted-foreground">
                 {c.label}: <span className="font-medium text-foreground">{c.count}</span>

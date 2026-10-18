@@ -49,9 +49,9 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 const STAGE_LABEL: Record<string, string> = {
-  before: "before the centre",
-  during: "during the centre",
-  after: "after the centre",
+  before: "before the center",
+  during: "during the center",
+  after: "after the center",
 };
 
 // One rendering of a timestamp across every surface: the participant's page is
@@ -138,7 +138,7 @@ export function ParticipantRightsPanel({
           {concerns.length === 0 ? (
             <p className="text-muted-foreground">
               Nothing raised. Participants can raise a concern or appeal from their own portal, before, during or
-              after the centre.
+              after the center.
             </p>
           ) : (
             concerns.map((c) => (
@@ -265,7 +265,7 @@ export function ParticipantRightsPanel({
                   value={reaExercise}
                   onChange={(e) => setReaExercise(e.target.value)}
                 >
-                  <option value="">The whole centre</option>
+                  <option value="">The whole center</option>
                   {exercises.map((x) => (
                     <option key={x.id as string} value={x.id as string}>
                       {x.name as string}
@@ -468,7 +468,7 @@ export function ParticipantRightsPanel({
           </h3>
           <p className="text-xs text-muted-foreground">
             The decision is the client&apos;s. Recording it here is how the participant gets told what was decided
-            and when, which the centre is responsible for.
+            and when, which the center is responsible for.
           </p>
           <div className="divide-y rounded border">
             {candidates.map((c) => {

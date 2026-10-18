@@ -197,7 +197,7 @@ export function ReadinessConfigForm({ initial }: { initial: ReadinessConfig }) {
           <Label htmlFor="year" className="text-sm font-semibold">Optional year-horizon layer</Label>
         </div>
         <p className="text-[11px] text-muted-foreground">
-          Stakeholder-facing horizon label per tier. Presentation only - derived from the tier, never the maths.
+          Stakeholder-facing horizon label per tier. Presentation only - derived from the tier, never the math.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {(Object.keys(TIER_LABELS) as ReadinessTier[]).map((t) => (

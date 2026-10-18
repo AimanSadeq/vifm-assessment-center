@@ -26,9 +26,9 @@ A family, not one instrument:
 |---|---|---|---|
 | **Cognitive ability** | Reasoning capacity (g + specifics) | Maximum | Yes |
 | **Attainment / knowledge** | Acquired knowledge & skills | Maximum | Yes |
-| **Personality** | Behavioural dispositions / traits | Typical | No (norm-referenced) |
+| **Personality** | Behavioral dispositions / traits | Typical | No (norm-referenced) |
 | **Values / motivation / interests** | What drives & matters | Typical | No |
-| **Situational Judgement (SJT)** | Applied judgement | Hybrid | Keyed (consensus/expert) |
+| **Situational Judgment (SJT)** | Applied judgment | Hybrid | Keyed (consensus/expert) |
 
 > **Talking point:** the AC, CBI, Reflect 360 and ARA are psychometric too. The question isn't "do we do psychometrics" — it's "which standardized *test types* are missing, and how do we raise the whole suite to test-publisher standard."
 
@@ -36,7 +36,7 @@ A family, not one instrument:
 
 ## 2. Where it fits — the layered measurement model
 
-A first-pass "quadrant" framing buckets the constructs but blurs *how they relate* — which is the real source of confusion. The correct model keeps the **38 behavioural competencies as the single spine** (VIFM's IP and reporting anchor) and connects every other instrument to that spine through a **named relationship** that also encodes how strong the evidence is.
+A first-pass "quadrant" framing buckets the constructs but blurs *how they relate* — which is the real source of confusion. The correct model keeps the **38 behavioral competencies as the single spine** (VIFM's IP and reporting anchor) and connects every other instrument to that spine through a **named relationship** that also encodes how strong the evidence is.
 
 ```
  OUTCOMES        Readiness · Performance · Potential  (OAR)
@@ -51,7 +51,7 @@ A first-pass "quadrant" framing buckets the constructs but blurs *how they relat
    measured by → Cognitive battery · Personality inv.    ── PREDICTS   (stable propensity; must be validated)
 ```
 
-Read bottom-to-top: **stable & general → contextual & observed → decisive.** Evidence strength rises with each layer — *predicts* (a likelihood) < *enables* (a capability is present) < *manifests* (we watched them do it). That ordering is what makes the model both **correct** (it respects that ability ≠ attainment ≠ behaviour) and **easy to explain**.
+Read bottom-to-top: **stable & general → contextual & observed → decisive.** Evidence strength rises with each layer — *predicts* (a likelihood) < *enables* (a capability is present) < *manifests* (we watched them do it). That ordering is what makes the model both **correct** (it respects that ability ≠ attainment ≠ behavior) and **easy to explain**.
 
 | Layer | Construct | Instrument | Relation to a competency | Evidence |
 |---|---|---|---|---|
@@ -59,16 +59,16 @@ Read bottom-to-top: **stable & general → contextual & observed → decisive.**
 | **Foundations** | Personality (Big Five) | Personality inventory *(new)* | **predicts** | propensity (validated) |
 | **Attainments** | Technical knowledge | Technical Certification | **enables** | capability |
 | **Attainments** | English | Fluent | **enables** | capability |
-| **Competencies** | The 38 behavioural | AC · CBI · Reflect 360 | **manifests** (it *is* the competency) | direct |
+| **Competencies** | The 38 behavioral | AC · CBI · Reflect 360 | **manifests** (it *is* the competency) | direct |
 | **Outcomes** | Readiness / OAR | Wash-up → OAR | rolls up | decision |
 
 **Org-level ARA sits outside this spine** (its unit is the organization, not the person). **ARA-individual** is genuinely cross-layer (mindset = foundation, working-practice = attainment, collaboration = competency-adjacent) and keeps its factor→competency map, each link tagged with the right relation.
 
-**In code:** `unified-profile.ts` already paints typed "enables" chips onto competencies (Fluent language, Technical domains). The upgrade generalises that into one typed bridge — `construct_competency_links(source, competency, relation ∈ {manifests, enables, predicts}, layer ∈ {foundations, attainments, competencies}, weight, validated)` — so cognitive/personality plug in as `predicts`/`foundations` links and every instrument relates to the spine the same principled way. A candidate competency then reads, honestly, as:
+**In code:** `unified-profile.ts` already paints typed "enables" chips onto competencies (Fluent language, Technical domains). The upgrade generalizes that into one typed bridge — `construct_competency_links(source, competency, relation ∈ {manifests, enables, predicts}, layer ∈ {foundations, attainments, competencies}, weight, validated)` — so cognitive/personality plug in as `predicts`/`foundations` links and every instrument relates to the spine the same principled way. A candidate competency then reads, honestly, as:
 > **Decision Quality — 3/5** *(measured: AC In-Basket)* · ↳ enabled by Finance 4/5 · ⤳ predicted by Cognitive 85th pct
 
 ### 2.1 The flagship application — High-Potential & Succession
-This is not abstract: it directly upgrades Caliber's existing **Talent Map** (`/admin/engagements/[id]/talent-map`). Today the 9-box plots **Performance = RESULTS + PEOPLE competencies** vs **Potential = THINKING + SELF competencies** — i.e. *Potential is a proxy built from current behavioural competence*, because no true potential measure exists (the code says as much). In the layered model:
+This is not abstract: it directly upgrades Caliber's existing **Talent Map** (`/admin/engagements/[id]/talent-map`). Today the 9-box plots **Performance = RESULTS + PEOPLE competencies** vs **Potential = THINKING + SELF competencies** — i.e. *Potential is a proxy built from current behavioral competence*, because no true potential measure exists (the code says as much). In the layered model:
 
 - **Performance axis = Competencies layer** (manifested — AC / CBI / 360). *(have it)*
 - **Potential axis = Foundations layer** (cognitive ability + personality + learning agility — predictive). *(the psychometrics build)*
@@ -107,7 +107,7 @@ A new pillar, mirroring how Technical was added:
 | Calibration console | Fluent (`eng_fluent_human_ratings` + `eng_fluent_score_runs`, human-vs-AI QWK); Technical |
 | Fairness analytics | Pre-Hire `computeAdverseImpact` (4/5ths) + voluntary demographics |
 | Response distortion / faking | ARA distortion detection (directly reusable for personality validity scales) |
-| Security / integrity | Server-held keys, option re-randomisation, single-use sessions, integrity flags |
+| Security / integrity | Server-held keys, option re-randomization, single-use sessions, integrity flags |
 | Bilingual + reporting + credentials | EN/AR i18n, Puppeteer + React-PDF reports, verifiable credentials |
 
 **Conclusion:** the engine exists. The build is mostly *content + configuration*, not new infrastructure.
@@ -143,16 +143,16 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 **A — what code + workflow deliver (buildable):**
 1. Construct definitions + **test blueprints** (content sampling plan).
 2. Item development + **classical analysis** (difficulty `p`, discrimination/point-biserial, distractor analysis) → **IRT calibration** (a/b/c parameters).
-3. **Adaptive delivery + item-exposure control** (CAT, rotation, large banks, randomisation).
-4. **Standardised administration** (fixed instructions, timing, proctoring incl. AI proctoring, accommodations).
+3. **Adaptive delivery + item-exposure control** (CAT, rotation, large banks, randomization).
+4. **Standardized administration** (fixed instructions, timing, proctoring incl. AI proctoring, accommodations).
 5. **Scoring + interpretive reports** (SEM reported, candidate/recruiter versions, feedback).
 6. **Fairness analytics** — **DIF** (differential item functioning), **measurement invariance** across gender / nationality / age and **EN↔AR equivalence**, plus existing adverse-impact monitoring.
-7. **Technical manual** (the artefact reviewers grade — see §9).
+7. **Technical manual** (the artifact reviewers grade — see §9).
 
 **B — what only science + process deliver (slow, data-hungry):**
 8. **Reliability** — internal consistency (Cronbach α / McDonald ω **≥ .80** high-stakes), test–retest, parallel forms; report **SEM**.
 9. **Validity** — content (SME), construct (CFA, convergent/discriminant), and the selection gold standard **criterion validity** (predicts job performance), plus **incremental validity** over cognitive ability. Needs a **validation study with real outcome data.**
-10. **Norms / standardisation** — **GCC-appropriate** norm groups (percentiles, sten). Western norms are not defensible for Emirati / Saudi / expatriate populations (same constraint as ARA free personal snapshot norming, at larger N).
+10. **Norms / standardization** — **GCC-appropriate** norm groups (percentiles, sten). Western norms are not defensible for Emirati / Saudi / expatriate populations (same constraint as ARA free personal snapshot norming, at larger N).
 11. **Arabic equivalence** — back-translation + equivalence testing, **not** AI translation. A mistranslated item invalidates the score (VIFM's standing "AR strings need native review" caveat applies doubly to test items).
 12. **Qualified-user governance** — test-user competence (BPS Level A/B concept), consent, feedback rights, appeals, retention (PDPL/GDPR already covered).
 
@@ -179,9 +179,9 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 - Author item pools: cognitive (SME-drafted + piloted) and personality (IPIP-seeded, Arabic-adapted draft).
 - Classical scoring + confidence band + indicative reports (reuse PDF infra).
 - Pre-Hire stage integration (`cognitive`, `personality`) + AC report surfacing.
-- **Outcome:** usable, honestly labelled **Tier 1**.
+- **Outcome:** usable, honestly labeled **Tier 1**.
 
-**Phase 2 — Professionalise (months, needs data).**
+**Phase 2 — Professionalize (months, needs data).**
 - Pilot at scale → classical item analysis → **IRT calibration** (≈ N ≥ 300–500/item for stable 2PL) → reliability ≥ .80 → **provisional GCC norms** → **DIF / invariance** + Arabic equivalence → CAT goes live → **Technical Manual v1.**
 - **Outcome:** **Tier 2.**
 
@@ -191,7 +191,7 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 
 ---
 
-## 9. Validation & norming programme (the slow science)
+## 9. Validation & norming program (the slow science)
 
 | Evidence | Method | Rough sample need |
 |---|---|---|
@@ -202,7 +202,7 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 | DIF / invariance | Mantel-Haenszel / IRT-DIF; multi-group CFA | N ≥ 200 per group |
 | Criterion validity | Predictive/concurrent vs performance, range-restriction correction | N ≥ 100+ with outcomes |
 
-**Data sources:** (1) passive accrual as candidates take it (à la ARA free personal snapshot); (2) **paid pilot cohorts** with client organisations; (3) **outcome-sharing partnerships** for criterion data. A qualified psychometrician (in-house or external consultant) should own sign-off.
+**Data sources:** (1) passive accrual as candidates take it (à la ARA free personal snapshot); (2) **paid pilot cohorts** with client organizations; (3) **outcome-sharing partnerships** for criterion data. A qualified psychometrician (in-house or external consultant) should own sign-off.
 
 ---
 
@@ -214,7 +214,7 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 4. Item analysis & IRT calibration
 5. Reliability (internal consistency, test–retest, SEM)
 6. Validity (content, construct, criterion, incremental)
-7. Norms & standardisation (samples, tables, dates)
+7. Norms & standardization (samples, tables, dates)
 8. Fairness (DIF, invariance, adverse impact, translation/adaptation)
 9. Administration & security (conditions, timing, proctoring, exposure control)
 10. Scoring & interpretation (incl. confidence bands)
@@ -226,7 +226,7 @@ Judged against published standards: **AERA/APA/NCME *Standards for Educational a
 
 ## 11. Risks, governance & compliance
 
-- **Adverse impact (GCC-specific):** cognitive tests commonly show subgroup score differences. Monitor 4/5ths (reuse Pre-Hire engine); consider banding / multiple-hurdle / job-relatedness justification; document. National-vs-expat, gender, and language are the sensitive dimensions; nationalisation policy (Emiratisation / Saudisation) interacts with selection.
+- **Adverse impact (GCC-specific):** cognitive tests commonly show subgroup score differences. Monitor 4/5ths (reuse Pre-Hire engine); consider banding / multiple-hurdle / job-relatedness justification; document. National-vs-expat, gender, and language are the sensitive dimensions; nationalization policy (Emiratization / Saudization) interacts with selection.
 - **Faking (personality):** the central selection threat → forced-choice + validity scales; never use a faked-down profile as a hard gate.
 - **AI-authored item risk:** AI-drafted items are a starting draft only — **human SME review before any item goes live** (already the Technical discipline).
 - **Translation validity:** Arabic items need professional adaptation + equivalence testing, not AI translation.

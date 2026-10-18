@@ -123,6 +123,6 @@ export async function purgeDemoData(): Promise<DemoPurgeOutcome[]> {
     await step("Assessment Center", () => purgeAssessmentCenter(sb, organizationId));
   }
   await step("Demo people", () => purgeDemoPeople(sb));
-  await step("Organisation", () => deleteDemoOrgs(sb, organizationId, araOrganizationId));
+  await step("Organization", () => deleteDemoOrgs(sb, organizationId, araOrganizationId));
   return out;
 }

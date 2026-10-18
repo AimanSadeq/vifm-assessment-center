@@ -33,8 +33,8 @@ export default async function PartnerCoursesPage() {
       <BackLink href="/ac/fluent/cohort" label="Back to Fluent" />
       <h1 className="mt-4 text-2xl font-bold text-[#010131]">Partner English courses</h1>
       <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-        Curated partner programmes (e.g. SE Training Academy) shown on the Fluent placement report&rsquo;s
-        recommendations, alongside VIFM&rsquo;s own catalogue. A course is suggested when its CEFR level suits the
+        Curated partner programs (e.g. SE Training Academy) shown on the Fluent placement report&rsquo;s
+        recommendations, alongside VIFM&rsquo;s own catalog. A course is suggested when its CEFR level suits the
         candidate&rsquo;s band - leave the level list empty to suit all levels. This source stays empty (and invisible
         on the report) until you add a course here.
       </p>

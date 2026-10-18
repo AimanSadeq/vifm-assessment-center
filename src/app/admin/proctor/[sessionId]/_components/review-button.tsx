@@ -16,7 +16,7 @@ export function ReviewButton({ sessionId, reviewed }: { sessionId: string; revie
       if (res.ok) {
         toast.success(
           res.summary.configured
-            ? `AI review complete - ${res.summary.analyzed} of ${res.summary.total} frame(s) analysed.`
+            ? `AI review complete - ${res.summary.analyzed} of ${res.summary.total} frame(s) analyzed.`
             : "AI review unavailable (no AI key set); motion summary updated."
         );
         router.refresh();

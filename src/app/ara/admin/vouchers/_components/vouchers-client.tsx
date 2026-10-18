@@ -387,7 +387,7 @@ export function VouchersClient({
                 {showAddClient && (
                   <div className="mt-2 space-y-2 rounded-md border border-border bg-card p-3 sm:max-w-md">
                     <Input
-                      placeholder="New client / organisation name"
+                      placeholder="New client / organization name"
                       value={newClientName}
                       onChange={(e) => setNewClientName(e.target.value)}
                     />
@@ -549,7 +549,7 @@ export function VouchersClient({
                     />
                     <span>
                       <span className="font-medium">One cohort, one assessment.</span>{" "}
-                      Everyone who redeems this code joins the same {assessmentKind} assessment, so the organisational report covers
+                      Everyone who redeems this code joins the same {assessmentKind} assessment, so the organizational report covers
                       all of them. Leave off and each redemption gets its own single-person assessment.
                     </span>
                   </label>
@@ -563,7 +563,7 @@ export function VouchersClient({
                     <span>
                       <span className="font-medium">Add the personal layer.</span>{" "}
                       Each respondent also answers the four personal AI-readiness factors and gets their own report; the
-                      organisational report gains the workforce readiness rollup.
+                      organizational report gains the workforce readiness rollup.
                     </span>
                   </label>
                   {includeIndividualLayer && (
@@ -592,7 +592,7 @@ export function VouchersClient({
                       <div className="space-y-1.5 border-t border-[#5391D5]/30 pt-2">
                         <Label className="text-xs">Roll this cohort up under</Label>
                         {!selectedOrg ? (
-                          <p className="text-[11px] text-amber-700">Tag a client above first - a rollup lives inside a client organisation.</p>
+                          <p className="text-[11px] text-amber-700">Tag a client above first - a rollup lives inside a client organization.</p>
                         ) : (
                           <>
                             <select className={selectClass} value={rollupChoice} onChange={(e) => setRollupChoice(e.target.value)}>
@@ -609,7 +609,7 @@ export function VouchersClient({
                                 <Input
                                   value={newRollupName}
                                   onChange={(e) => setNewRollupName(e.target.value)}
-                                  placeholder={assessmentKind === "department" ? "e.g. Corporate Services (division)" : "e.g. Whole organisation"}
+                                  placeholder={assessmentKind === "department" ? "e.g. Corporate Services (division)" : "e.g. Whole organization"}
                                 />
                                 <select className={selectClass} value={newRollupStage} onChange={(e) => setNewRollupStage(e.target.value as "division" | "enterprise")}>
                                   {assessmentKind === "department" && <option value="division">Division</option>}

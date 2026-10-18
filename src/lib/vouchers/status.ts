@@ -93,7 +93,7 @@ export function voucherBlockCopy(block: VoucherBlock): { en: Copy; ar: Copy } {
       return {
         en: {
           title: "This code is no longer active",
-          body: "The organisation that issued this code has deactivated it. Please contact them for a new link.",
+          body: "The organization that issued this code has deactivated it. Please contact them for a new link.",
         },
         ar: {
           title: "لم يعد هذا الرمز نشطًا",
@@ -104,7 +104,7 @@ export function voucherBlockCopy(block: VoucherBlock): { en: Copy; ar: Copy } {
       return {
         en: {
           title: "This code has expired",
-          body: "This link is past its valid-until date. Please contact the organisation that invited you for a new one.",
+          body: "This link is past its valid-until date. Please contact the organization that invited you for a new one.",
         },
         ar: {
           title: "انتهت صلاحية هذا الرمز",
@@ -116,7 +116,7 @@ export function voucherBlockCopy(block: VoucherBlock): { en: Copy; ar: Copy } {
         ? {
             en: {
               title: "This code has no places left",
-              body: `All ${block.maxUses} places on this code have been taken. Please ask the organisation that invited you for a new code.`,
+              body: `All ${block.maxUses} places on this code have been taken. Please ask the organization that invited you for a new code.`,
             },
             ar: {
               title: "لم تعد هناك مقاعد متاحة على هذا الرمز",
@@ -126,7 +126,7 @@ export function voucherBlockCopy(block: VoucherBlock): { en: Copy; ar: Copy } {
         : {
             en: {
               title: "This code has already been used",
-              body: "Each access code can be used once, and this one has been redeemed. If you already completed the assessment, your result was sent to the organisation that invited you. If you think this is a mistake, contact them for a new code.",
+              body: "Each access code can be used once, and this one has been redeemed. If you already completed the assessment, your result was sent to the organization that invited you. If you think this is a mistake, contact them for a new code.",
             },
             ar: {
               title: "تم استخدام هذا الرمز بالفعل",

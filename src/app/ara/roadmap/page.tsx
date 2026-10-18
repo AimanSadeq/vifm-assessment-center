@@ -193,7 +193,7 @@ export default async function AraRoadmapPage() {
             { label: "Personal",   name: "Personal",   scope: "One person, self-served",            price: "Complimentary", metric: "4 personal factors", color: "#0D9488" },
             { label: "Stage 1",    name: "Department", scope: "One department",                     price: "Complimentary", metric: "4 of 8 pillars · you choose",  color: "#0D9488" },
             { label: "Stage 2",    name: "Division",   scope: "A division of several departments",  price: "Fee-based",     metric: "6 of 8 pillars · you choose",  color: "#7C3AED" },
-            { label: "Stage 3",    name: "Enterprise", scope: "The whole organisation, board-level", price: "Fee-based",    metric: "All 8 pillars",                 color: "#D97706" },
+            { label: "Stage 3",    name: "Enterprise", scope: "The whole organization, board-level", price: "Fee-based",    metric: "All 8 pillars",                 color: "#D97706" },
           ].map((s) => (
             <div
               key={s.name}

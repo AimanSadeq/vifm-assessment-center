@@ -101,7 +101,7 @@ export function canComputeOverallRating(engagement: {
   const method = engagement.integration_method
     ?? (engagement.purpose === "selection" ? "weighted_average" : "consensus");
   if (method !== "weighted_average") {
-    return { allowed: false, reason: "This centre reaches its overall rating by assessor discussion." };
+    return { allowed: false, reason: "This center reaches its overall rating by assessor discussion." };
   }
   if (!engagement.weights_confirmed_at) {
     return {

@@ -158,7 +158,7 @@ export function reviewTimetable(input: {
     if (first && last && mins(first.startsAt, last.endsAt) > LONG_DAY_MINUTES) {
       problems.push({
         severity: "caution",
-        message: `${p.name} is at the centre for ${Math.round(mins(first.startsAt, last.endsAt) / 60)} hours. A day that long affects what the later exercises measure (5.35.5).`,
+        message: `${p.name} is at the center for ${Math.round(mins(first.startsAt, last.endsAt) / 60)} hours. A day that long affects what the later exercises measure (5.35.5).`,
         slotIds: [last.id],
       });
     }

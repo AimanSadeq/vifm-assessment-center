@@ -69,7 +69,7 @@ export async function POST(req: Request) {
         template: "proposal_renewal_reminder",
         data: {
           clientName: (row.client_name as string) || "there",
-          proposalTitle: (row.title as string) || "your VIFM licence",
+          proposalTitle: (row.title as string) || "your VIFM license",
           renewalDate: renewal.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }),
           viewUrl: `${appBase}/proposals/${row.access_token as string}`,
         },
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
   } catch (err) {
     // Tolerant: missing licence columns / table just yields nothing processed.
     console.error("[proposals/renewals/cron]", err);
-    return NextResponse.json({ ok: true, due, notified, note: "no licence data available" });
+    return NextResponse.json({ ok: true, due, notified, note: "no license data available" });
   }
 
   return NextResponse.json({ ok: true, due, notified });

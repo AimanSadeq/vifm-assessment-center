@@ -110,7 +110,7 @@ export async function bundleStageState(ctx: BundleCandidateContext): Promise<{ p
 }
 
 /** API guard: the bundle is on hold for this candidate. */
-export const HELD_MESSAGE = "This assessment is not open yet. Your organisation will let you know when it opens.";
+export const HELD_MESSAGE = "This assessment is not open yet. Your organization will let you know when it opens.";
 
 /** Validate demographic answers against the bundle's field definitions. */
 export function validateDemographics(

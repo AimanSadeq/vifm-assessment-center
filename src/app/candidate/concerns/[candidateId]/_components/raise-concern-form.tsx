@@ -14,9 +14,9 @@ const KINDS = [
 ] as const;
 
 const STAGES = [
-  { value: "before", label: "Before the centre" },
-  { value: "during", label: "During the centre" },
-  { value: "after", label: "After the centre" },
+  { value: "before", label: "Before the center" },
+  { value: "during", label: "During the center" },
+  { value: "after", label: "After the center" },
 ] as const;
 
 export function RaiseConcernForm({ candidateId }: { candidateId: string }) {

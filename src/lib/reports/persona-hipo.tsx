@@ -214,11 +214,11 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
         <Text style={s.p}>
           High potential is read here through two measurable pillars. ASPIRATION - the drive, initiative and growth
           appetite to rise into bigger roles - is measured from the drive and growth markers in the VIFM Persona®
-          sitting. ABILITY - the capability to succeed once there - blends the remaining behavioural competencies
+          sitting. ABILITY - the capability to succeed once there - blends the remaining behavioral competencies
           with cognitive reasoning evidence from VIFM Logica®.{" "}
           {d.engagement
-            ? "The third element, ENGAGEMENT (the commitment to stay and grow with the organisation), is read from a short survey completed by the line manager - a management judgement that informs the development conversation, shown as its own reading and never blended into the grid."
-            : "A third element every credible high-potential decision needs, ENGAGEMENT (the commitment to stay and grow with the organisation), cannot be read from an assessment sitting: this report deliberately leaves it to the manager and HR conversation and says where."}
+            ? "The third element, ENGAGEMENT (the commitment to stay and grow with the organization), is read from a short survey completed by the line manager - a management judgment that informs the development conversation, shown as its own reading and never blended into the grid."
+            : "A third element every credible high-potential decision needs, ENGAGEMENT (the commitment to stay and grow with the organization), cannot be read from an assessment sitting: this report deliberately leaves it to the manager and HR conversation and says where."}
         </Text>
 
         <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
@@ -227,7 +227,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
             label="Ability · can they succeed?"
             value={d.ability}
             bandLabel={d.bandLabel(d.abilityBand)}
-            sub={d.cognitive != null ? `behavioural ${d.behavioural.toFixed(2)} · cognitive ${d.cognitive.toFixed(2)}` : "behavioural evidence only"}
+            sub={d.cognitive != null ? `behavioral ${d.behavioural.toFixed(2)} · cognitive ${d.cognitive.toFixed(2)}` : "behavioral evidence only"}
           />
           {d.engagement && (
             <Gauge
@@ -276,8 +276,8 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
       <Page size="A4" style={s.page}>
         <Text style={s.h2}>Aspiration - the drive and growth markers</Text>
         <Text style={s.pSoft}>
-          Self-rated behavioural markers of drive, initiative and growth appetite from the Persona sitting.
-          Self-report shows how the individual sees their own drive - triangulate with observed behaviour and,
+          Self-rated behavioral markers of drive, initiative and growth appetite from the Persona sitting.
+          Self-report shows how the individual sees their own drive - triangulate with observed behavior and,
           where available, a Reflect 360.
         </Text>
         {d.aspirationMarkers.map((m) => (
@@ -298,14 +298,14 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
 
       {/* ── Page 4: ability detail ── */}
       <Page size="A4" style={s.page}>
-        <Text style={s.h2}>Ability - behavioural + cognitive</Text>
+        <Text style={s.h2}>Ability - behavioral + cognitive</Text>
         <Text style={s.pSoft}>
-          Ability blends behavioural capability ({Math.round(d.weights.behavioural * 100)}%) with cognitive reasoning
+          Ability blends behavioral capability ({Math.round(d.weights.behavioural * 100)}%) with cognitive reasoning
           ({Math.round(d.weights.cognitive * 100)}%). Both components are shown separately below - the blend is never a black box.
         </Text>
         <View style={{ flexDirection: "row", gap: 10 }}>
           <View style={[s.panel, { flex: 1 }]}>
-            <Text style={s.panelTitle}>Behavioural ability · Persona</Text>
+            <Text style={s.panelTitle}>Behavioral ability · Persona</Text>
             <Text style={s.bigValue}>{d.behavioural.toFixed(2)} / 5</Text>
             <Text style={s.pSoft}>Mean of {d.behaviouralCount} leadership-relevant competencies (all measured competencies outside the aspiration set).</Text>
           </View>
@@ -345,7 +345,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
             Rated by {d.engagement.managerName ? `${d.engagement.managerName} (line manager)` : "the candidate's line manager"} on{" "}
             {new Date(d.engagement.completedAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}.{" "}
             {d.engagement.items.length} observable statements on the same 1-5 scale as the other pillars. This is a
-            single-rater management judgement - prone to recency and halo effects - so treat it as a conversation
+            single-rater management judgment - prone to recency and halo effects - so treat it as a conversation
             opener, never a verdict.
           </Text>
 
@@ -387,7 +387,7 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
       <Page size="A4" style={s.page}>
         <Text style={s.h2}>Development tips & activities</Text>
         <Text style={s.pSoft}>
-          Built from the three lowest-rated behavioural markers in this sitting, plus reasoning practice where a
+          Built from the three lowest-rated behavioral markers in this sitting, plus reasoning practice where a
           subtest sits below the Solid band. Work one or two items at a time - depth beats breadth.
         </Text>
         {d.behaviouralDev.map((item) => (
@@ -413,18 +413,18 @@ export function HipoReportPdf({ d }: { d: HipoPdfData }) {
 
         <Text style={s.h2}>Methodology & honest limits</Text>
         <Text style={s.pSoft}>
-          Sources: VIFM Persona® behavioural self-assessment (VIFM behavioural framework; forced-choice and Likert items,
+          Sources: VIFM Persona® behavioral self-assessment (VIFM behavioral framework; forced-choice and Likert items,
           reverse-keyed) and VIFM Logica® reasoning (server-scored, keyed test held server-side). Aspiration is the mean
-          of the drive/growth markers the sitting measured; behavioural ability is the mean of the remaining measured competencies; cognitive
+          of the drive/growth markers the sitting measured; behavioral ability is the mean of the remaining measured competencies; cognitive
           agility maps reasoning accuracy onto the shared 1-5 scale.{" "}
           {d.cognitive != null
-            ? `Ability = ${Math.round(d.weights.behavioural * 100)}% behavioural + ${Math.round(d.weights.cognitive * 100)}% cognitive.`
-            : "No Logica result was attached to this sitting, so Ability here rests on behavioural evidence alone - adding the recommended reasoning tests strengthens the pillar."}{" "}
+            ? `Ability = ${Math.round(d.weights.behavioural * 100)}% behavioral + ${Math.round(d.weights.cognitive * 100)}% cognitive.`
+            : "No Logica result was attached to this sitting, so Ability here rests on behavioral evidence alone - adding the recommended reasoning tests strengthens the pillar."}{" "}
           Band cuts are indicative (scale-midpoint based)
           until a VIFM norm sample is established.{" "}
           {d.engagement
-            ? "Engagement is a manager-rated survey on the same 1-5 scale - a single-rater management judgement that annotates the placement and never moves it."
-            : "Engagement - the commitment to remain and grow with the organisation - is not measurable from this sitting and must come from the manager/HR conversation."}{" "}
+            ? "Engagement is a manager-rated survey on the same 1-5 scale - a single-rater management judgment that annotates the placement and never moves it."
+            : "Engagement - the commitment to remain and grow with the organization - is not measurable from this sitting and must come from the manager/HR conversation."}{" "}
           Treat this profile as one input to a high-potential nomination, never the decision itself.
         </Text>
         <Footer name={d.takerName} />

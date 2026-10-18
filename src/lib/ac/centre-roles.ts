@@ -43,11 +43,11 @@ export type CentreRole = {
 export const CENTRE_ROLES: CentreRole[] = [
   {
     key: "centre_designer",
-    name: "Centre Designer",
-    purpose: "Designs the centre: the criteria, the exercises and the timetable.",
+    name: "Center Designer",
+    purpose: "Designs the center: the criteria, the exercises and the timetable.",
     competences: [
       "Job analysis: can establish what the role actually requires and turn it into assessment criteria",
-      "Exercise selection and design: can choose or build exercises that elicit the behaviour being assessed",
+      "Exercise selection and design: can choose or build exercises that elicit the behavior being assessed",
       "Timetabling: can schedule participants, assessors and rooms so every criterion is observed as designed",
     ],
     requiredWhen: "design_time",
@@ -55,25 +55,25 @@ export const CENTRE_ROLES: CentreRole[] = [
   },
   {
     key: "centre_manager",
-    name: "Centre Manager",
-    purpose: "Runs the centre on the day and is answerable for it being run as designed.",
+    name: "Center Manager",
+    purpose: "Runs the center on the day and is answerable for it being run as designed.",
     competences: [
-      "Knows the design of this centre and the standard it is run to",
+      "Knows the design of this center and the standard it is run to",
       "Can manage staff, timings and rooms, and handle events that disrupt them",
       "Can decide when an incident affects assessment, and record it",
-      "Can confirm that everyone working the centre is competent to do so",
+      "Can confirm that everyone working the center is competent to do so",
     ],
     requiredWhen: "always",
     clause: "5.16 / 6.1 / 6.2",
   },
   {
     key: "centre_administrator",
-    name: "Centre Administrator",
-    purpose: "Handles the logistics, materials and paperwork that keep the centre running.",
+    name: "Center Administrator",
+    purpose: "Handles the logistics, materials and paperwork that keep the center running.",
     competences: [
       "Can prepare, issue and account for assessment materials without exposing them",
       "Can administer joining instructions, timetables and participant records",
-      "Knows the confidentiality and data-protection rules that apply to centre material",
+      "Knows the confidentiality and data-protection rules that apply to center material",
     ],
     requiredWhen: "always",
     clause: "5.16",
@@ -81,11 +81,11 @@ export const CENTRE_ROLES: CentreRole[] = [
   {
     key: "assessor",
     name: "Assessor",
-    purpose: "Observes, records and rates behaviour against the criteria.",
+    purpose: "Observes, records and rates behavior against the criteria.",
     competences: [
-      "Can observe and record behaviour accurately, separating evidence from inference",
+      "Can observe and record behavior accurately, separating evidence from inference",
       "Can classify evidence against the competency framework and rate it on the scale in use",
-      "Understands rating errors and how their own judgement can drift",
+      "Understands rating errors and how their own judgment can drift",
       "Can contribute evidence to the wash-up and hold a position against challenge",
     ],
     requiredWhen: "always",
@@ -142,7 +142,7 @@ export const CENTRE_ROLES: CentreRole[] = [
     name: "Feedback Generator",
     purpose: "Writes or delivers the feedback a participant receives.",
     competences: [
-      "Trained in giving feedback, and familiar with this centre's purpose and content",
+      "Trained in giving feedback, and familiar with this center's purpose and content",
       "Can give feedback sensitively, supportively and constructively",
       "Can ground every statement in recorded evidence rather than impression",
     ],
@@ -156,7 +156,7 @@ export const CENTRE_ROLES: CentreRole[] = [
     competences: [
       "Can chair an evidence-based discussion and keep it to the evidence",
       "Can ensure every assessor's evidence is heard before a conclusion is reached",
-      "Can recognise and challenge unsupported or biased conclusions",
+      "Can recognize and challenge unsupported or biased conclusions",
     ],
     requiredWhen: "development_feedback",
     clause: "4.43",

@@ -57,7 +57,7 @@ export const HIPO_LOGICA_RECOMMENDATION = {
     },
     {
       key: "numerical",
-      why: "Senior roles in the region's banking, government and corporate context are data- and financially-loaded; numerical reasoning underwrites judgement with numbers.",
+      why: "Senior roles in the region's banking, government and corporate context are data- and financially-loaded; numerical reasoning underwrites judgment with numbers.",
     },
   ],
   recommendedForSenior: [
@@ -136,7 +136,7 @@ export const HIPO_GRID: HipoCell[] = [
   // Aspiration STRONG (row 2)
   CELL(2, 2, "High Potential - Accelerate",
     "Strong drive matched by next-level capability",
-    "Strong drive to rise, matched by the behavioural and cognitive capability to succeed at the next level. The profile most worth deliberate, visible investment.",
+    "Strong drive to rise, matched by the behavioral and cognitive capability to succeed at the next level. The profile most worth deliberate, visible investment.",
     "Stretch assignments with real accountability, senior sponsorship, and early exposure to enterprise-level decisions. Guard against under-challenge."),
   CELL(1, 2, "Emerging Potential - Stretch with Support",
     "Clear ambition; capability still building",
@@ -149,12 +149,12 @@ export const HIPO_GRID: HipoCell[] = [
   // Aspiration SOLID (row 1)
   CELL(2, 1, "Quiet Strength - Ignite Ambition",
     "Next-level capability, measured ambition",
-    "Capability at or near next-level standard, with measured rather than hungry aspiration. Often the most under-recognised profile in a pipeline.",
+    "Capability at or near next-level standard, with measured rather than hungry aspiration. Often the most under-recognized profile in a pipeline.",
     "Explore what would make a bigger role attractive - scope, mission, autonomy. A targeted conversation can unlock more here than training."),
   CELL(1, 1, "Solid Contributor - Grow Steadily",
     "Balanced drive and capability",
     "Balanced aspiration and capability around the standard expected today. A dependable core-talent profile with genuine headroom.",
-    "Maintain a steady development rhythm: one behavioural and one technical growth objective at a time, revisited each cycle."),
+    "Maintain a steady development rhythm: one behavioral and one technical growth objective at a time, revisited each cycle."),
   CELL(0, 1, "Steady Performer - Focus Development",
     "Moderate drive; focused gaps to close",
     "Moderate drive with capability gaps against next-level demands. Progress is available but needs focus rather than breadth.",
@@ -162,7 +162,7 @@ export const HIPO_GRID: HipoCell[] = [
   // Aspiration DEVELOPING (row 0)
   CELL(2, 0, "Untapped Expert - Re-engage",
     "Real capability, low current appetite to climb",
-    "Real capability without the current appetite to climb. The risk is quiet disengagement; the opportunity is a role redesign that re-energises.",
+    "Real capability without the current appetite to climb. The risk is quiet disengagement; the opportunity is a role redesign that re-energizes.",
     "Diagnose the aspiration gap before prescribing anything - fit, recognition, workload or life-stage often explain it. Expert-track paths may fit better than management."),
   CELL(1, 0, "Developing Contributor",
     "Mid-range on both pillars; unfocused potential",
@@ -210,7 +210,7 @@ export const COGNITIVE_DEV_ACTIVITIES: Record<string, string[]> = {
     "Re-build a report you receive as a consumer (budget, dashboard) from its source data once a month.",
   ],
   inductive: [
-    "Practise structured problem decomposition: take an unfamiliar process and map its rules from examples before asking for the manual.",
+    "Practice structured problem decomposition: take an unfamiliar process and map its rules from examples before asking for the manual.",
     "Rotate onto one task outside your specialism each quarter - pattern-finding grows fastest on genuinely new material.",
   ],
   deductive: [
@@ -218,6 +218,6 @@ export const COGNITIVE_DEV_ACTIVITIES: Record<string, string[]> = {
     "Review a policy or SOP and trace one real case through it end-to-end, noting every rule applied.",
   ],
   verbal: [
-    "Summarise one dense document per week into five defensible bullet points, then verify each against the text.",
+    "Summarize one dense document per week into five defensible bullet points, then verify each against the text.",
   ],
 };

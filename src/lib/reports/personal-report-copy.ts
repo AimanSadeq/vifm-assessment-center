@@ -173,8 +173,8 @@ export const HOW_TO_USE_PANELS = {
   about: {
     title: "What this measures",
     bullets: [
-      "Four behavioural factors that predict whether AI tools turn into real outcomes for you, not just experiments.",
-      "Each factor maps to VIFM Assessment Centre competencies you may already be working on - so AI growth compounds with the rest of your development.",
+      "Four behavioral factors that predict whether AI tools turn into real outcomes for you, not just experiments.",
+      "Each factor maps to VIFM Assessment Center competencies you may already be working on - so AI growth compounds with the rest of your development.",
       "This snapshot is self-report only. A consultant-led deep-dive doubles the items and adds peer benchmarking.",
     ],
   },

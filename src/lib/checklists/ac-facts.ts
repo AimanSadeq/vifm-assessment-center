@@ -152,14 +152,14 @@ export async function loadAcChecklistFacts(
   const plan = e.evaluation_plan as Record<string, unknown> | null;
 
   const facts: ChecklistFacts = {
-    "ac.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organisation" : "No organisation" },
+    "ac.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organization" : "No organization" },
     "ac.purpose": { done: Boolean(e.purpose), detail: (e.purpose as string | null) ?? "Not set" },
     "ac.plan_approved": { done: Boolean(e.plan_approved_at), detail: e.plan_approved_at ? `Agreed by ${(e.plan_approved_client_name as string | null) ?? "the client"}` : "Not yet agreed" },
     "ac.weights": { done: Boolean(e.weights_confirmed_at), detail: e.weights_confirmed_at ? "Confirmed" : "Not confirmed" },
     "ac.recipients": { done: Boolean(e.pack_report_recipients), detail: e.pack_report_recipients ? String(e.pack_report_recipients).slice(0, 80) : "Not named" },
     "ac.feedback_spec": { done: Boolean(e.pack_feedback_offer), detail: (e.pack_feedback_offer as string | null) ?? "Not specified" },
     "ac.eval_plan": { done: Boolean(plan), detail: plan ? [plan.validation && "validation", plan.reaction && "reaction", plan.utility && "utility"].filter(Boolean).join(", ") || "Agreed: none of the studies" : "Not agreed" },
-    "ac.org": { done: Boolean(orgId), detail: orgId ? undefined : "No organisation on the engagement" },
+    "ac.org": { done: Boolean(orgId), detail: orgId ? undefined : "No organization on the engagement" },
     "ac.design": { done: design.missing.length === 0 && designProblems === 0, detail: design.missing.length || designProblems ? `${design.missing.length} unwritten, ${designProblems} problem${designProblems === 1 ? "" : "s"}` : "Complete" },
     "ac.roles": { done: roles.blocking.length === 0 && roleRows.length > 0, detail: roleRows.length === 0 ? "No roles assigned" : roles.blocking.length ? roles.blocking[0] : "All assigned and competent" },
     "ac.staffing": { done: n > 0 && assignments.length > 0 && staffing.blocking.length === 0, detail: assignments.length === 0 ? "No assessor assignments" : staffing.blocking.length ? staffing.blocking[0] : `${staffing.assessors} assessors for ${staffing.participants}` },

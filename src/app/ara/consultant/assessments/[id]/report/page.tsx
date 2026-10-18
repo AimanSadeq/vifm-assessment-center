@@ -392,14 +392,14 @@ export default async function AraReportPage({
   const pillarAr = (en: string) => ARA_PILLARS.find((x) => x.name_en === en)?.name_ar ?? en;
   const roadmapInitiatives = [
     ...gaps.slice(0, 2).map((g) => ({
-      name: `Stabilise ${g.pillar} fundamentals`,
+      name: `Stabilize ${g.pillar} fundamentals`,
       name_ar: `تثبيت أساسيات ${pillarAr(g.pillar)}`,
       pillar: g.pillar,
       pillar_ar: pillarAr(g.pillar),
       horizon: "quick" as const,
     })),
     ...gaps.slice(0, 3).map((g) => ({
-      name: `Institutionalise ${g.pillar} practices`,
+      name: `Institutionalize ${g.pillar} practices`,
       name_ar: `مأسسة ممارسات ${pillarAr(g.pillar)}`,
       pillar: g.pillar,
       pillar_ar: pillarAr(g.pillar),
@@ -703,9 +703,9 @@ export default async function AraReportPage({
         <section className="report-page">
           <h2 className="report-h2">{t("how_to_read")}</h2>
           <p className="report-body">
-            This report summarises findings across the {scopedPillars.length} in-scope
+            This report summarizes findings across the {scopedPillars.length} in-scope
             pillars of AI Readiness. Each pillar is scored 1-5 against a
-            behavioural rubric, and the overall score is a weighted aggregate.
+            behavioral rubric, and the overall score is a weighted aggregate.
           </p>
 
           <h3 className="report-h3">Maturity Scale</h3>
@@ -874,7 +874,7 @@ export default async function AraReportPage({
           <h3 className="report-h3">Benchmark comparison</h3>
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
             {peerBenchmarks.has_enough_data
-              ? `Peer column shows the median score across ${peerBenchmarks.sample_size} anonymised ${sectorLabel.toLowerCase()} organisations in ${region}.`
+              ? `Peer column shows the median score across ${peerBenchmarks.sample_size} anonymized ${sectorLabel.toLowerCase()} organizations in ${region}.`
               : `Peer medians are not yet available: they unlock once ≥ ${peerBenchmarks.min_sample_required} comparable ${sectorLabel.toLowerCase()} engagements in ${region} have completed (current sample: ${peerBenchmarks.sample_size}). The AI Ready column (4.00) remains the reference target.`}
           </p>
           <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -1072,8 +1072,8 @@ export default async function AraReportPage({
             <h2 className="report-h2">{t("roadmap")}</h2>
             <p className="report-body">
               A phased 12-month roadmap translates findings into action across
-              three horizons: immediate stabilisation (Quick Wins, months 0-3),
-              institutionalisation (Build, months 3-9), and scaled transformation
+              three horizons: immediate stabilization (Quick Wins, months 0-3),
+              institutionalization (Build, months 3-9), and scaled transformation
               (Transform, months 9-12).
             </p>
             <div style={{ marginTop: "16pt" }}>
@@ -1218,7 +1218,7 @@ export default async function AraReportPage({
             <p className="report-body">
               Inventory of AI initiatives across the organization, scored by
               stage, risk, and business value. Use this to sequence investment
-              and prioritise governance effort.
+              and prioritize governance effort.
             </p>
             <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -1306,7 +1306,7 @@ export default async function AraReportPage({
               respondent{workforceRollup.cohort_size === 1 ? "" : "s"}{" "}
               ({workforceRollup.completed_count} completed) across four VIFM
               individual readiness factors. The factors map to VIFM&apos;s
-              behavioural framework - THINKING, RESULTS, PEOPLE, SELF.
+              behavioral framework - THINKING, RESULTS, PEOPLE, SELF.
               {assessment.assessment_tier === "deep_dive"
                 ? " The deep-dive tier (12 items per factor) was used - research-grade reliability."
                 : " The snapshot tier (6 items per factor) was used - directional reliability."}
@@ -1364,7 +1364,7 @@ export default async function AraReportPage({
               VIFM portal (Phase 2 tab on the assessment detail) but is not
               included in this client-facing report by default. Discuss with
               your VIFM consultant if you want named individual results
-              surfaced or anonymised.
+              surfaced or anonymized.
             </p>
           </section>
         )}
@@ -1380,7 +1380,7 @@ export default async function AraReportPage({
             <h2 className="report-h2">Agentic-AI Readiness</h2>
             <p className="report-body">
               Beyond readiness to <em>use</em> AI, this assessment measured the
-              organisation&apos;s readiness to safely <em>delegate</em> work to
+              organization&apos;s readiness to safely <em>delegate</em> work to
               autonomous AI agents. {agenticRollup.completed_count} respondent
               {agenticRollup.completed_count === 1 ? "" : "s"} answered the
               Agentic-AI Readiness layer across six governance dimensions that
@@ -1427,7 +1427,7 @@ export default async function AraReportPage({
 
             <h3 className="report-h3">Reading the dimension scores</h3>
             <ul className="report-body">
-              <li><strong>4.0 and above</strong> - mature controls; the organisation can delegate to agents in this area with confidence.</li>
+              <li><strong>4.0 and above</strong> - mature controls; the organization can delegate to agents in this area with confidence.</li>
               <li><strong>3.0 to 3.9</strong> - developing; tighten controls before widening autonomous deployment.</li>
               <li><strong>Below 3.0</strong> - significant gap; address before granting agents autonomy that touches this area.</li>
             </ul>
@@ -1461,7 +1461,7 @@ export default async function AraReportPage({
               name: string; blurb: string; pillars: string[];
             }> = [
               { name: "AI Strategy Workshop", blurb: `co-design a 12-month AI roadmap aligned to your business goals.`, pillars: ["Strategy & Vision"] },
-              { name: "Data Foundations Programme", blurb: `data quality, governance, and sovereignty.`, pillars: ["Data Foundations"] },
+              { name: "Data Foundations Program", blurb: `data quality, governance, and sovereignty.`, pillars: ["Data Foundations"] },
               { name: "AI Governance Playbook", blurb: `policy templates, acceptable-use frameworks, and DPIAs tailored to ${region}.`, pillars: ["Governance, Ethics & Compliance", "Model Management & Monitoring"] },
               { name: "AI Talent Development", blurb: `role-based learning paths for leaders, specialists, and all staff.`, pillars: ["Talent & Skills", "Culture & Change Readiness"] },
               { name: "Annual Reassessment", blurb: `track progress year-on-year against the same benchmark.`, pillars: [] },
@@ -1647,13 +1647,13 @@ export default async function AraReportPage({
             Each pillar raw score is the average of answered questions on a 1-5 scale.
             The overall organizational score is the weighted average of the scored,
             in-scope pillars - each pillar contributes its raw score × its pillar
-            weight, with weights renormalised over the pillars actually scored.
+            weight, with weights renormalized over the pillars actually scored.
           </p>
 
           <h3 className="report-h3">Item development &amp; validation</h3>
           <p className="report-body">
             Items in the v1.1 production bank were developed through three rounds:
-            initial drafting by VIFM consultants against the VIFM-AC behavioural
+            initial drafting by VIFM consultants against the VIFM-AC behavioral
             framework and reference regulatory frameworks; AI-assisted expansion
             with every suggestion reviewed by at least one consultant before
             inclusion; and a bilingual rewrite in Gulf Arabic at source rather
@@ -1718,7 +1718,7 @@ export default async function AraReportPage({
           <p className="report-body report-muted" style={{ fontSize: "9pt" }}>
             Construct validity (does the four-factor / eight-pillar model carve
             nature at its joints?) requires confirmatory factor analysis with
-            N ≥ 200 individual responses and N ≥ 50 organisational responses.
+            N ≥ 200 individual responses and N ≥ 50 organizational responses.
             We are accumulating responses passively and will publish loadings
             and fit indices once the threshold is met. Pre-CFA, the model is
             treated as a content-validated heuristic, not an empirically

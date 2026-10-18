@@ -263,7 +263,7 @@ export function renderSdcSummaryHtml(r: SdcCandidateReport): string {
   <div class="card"><div class="eyebrow">${svg("plus")} Strengths to build on</div>${strengths.length ? `<ul class="ind pos cp">${strengths.map((s) => li(s, "check")).join("")}</ul>` : `<p class="small muted" style="margin:0">No required competency is above the level for Grade ${r.grade} yet.</p>`}</div>
   <div class="card"><div class="eyebrow">${svg("trend")} Development priorities${moreGaps > 0 ? `<span class="pill gray cnt">Top ${gaps.length} of ${allGaps.length}</span>` : ""}</div>${gaps.length ? `<ul class="ind neg cp">${gaps.map((s) => li(s, "target")).join("")}</ul>` : `<p class="small muted" style="margin:0">Every required competency is at or above the level for Grade ${r.grade}.</p>`}</div>
 </div>
-<div class="card soft blk fitend" style="padding:7px 12px"><p class="note" style="margin:0"><b>How to read this.</b> Competency results come from ${esc(scenText)} that measure judgement in realistic SDC work situations; they are not observations of behaviour at work. Reasoning performance is the mean accuracy on ${esc(testsPhrase)}. Bands are indicative until an SDC cohort norm is available.${leadFrom != null ? ` Leadership competencies are not required below Grade ${leadFrom} and are then shown for development only.` : ""}</p></div>
+<div class="card soft blk fitend" style="padding:7px 12px"><p class="note" style="margin:0"><b>How to read this.</b> Competency results come from ${esc(scenText)} that measure judgment in realistic SDC work situations; they are not observations of behavior at work. Reasoning performance is the mean accuracy on ${esc(testsPhrase)}. Bands are indicative until an SDC cohort norm is available.${leadFrom != null ? ` Leadership competencies are not required below Grade ${leadFrom} and are then shown for development only.` : ""}</p></div>
 ${pfoot(`${PROGRAMME}  |  Executive summary`)}</div>`;
   return doc(`${r.name}: SDC executive summary`, `${body}<script>${FIT_ONE_PAGE_JS}</script>`);
 }
@@ -291,7 +291,7 @@ function idpCard(p: IdpItem, i: number, r: SdcCandidateReport): string {
     <div><div class="k">${svg("flag", 10)} 90-day target</div>${p.plan ? esc(p.plan.smart) : "Agreed with the participant at the start of Module 1."}</div>
     <div><div class="k">${svg("user", 10)} Evidence owner</div>${esc(EVIDENCE_OWNER)}</div>
   </div>`);
-  if (p.goals.length) parts.push(`<div class="small"><b>Development direction (${p.target} behaviours):</b> ${p.goals.map(esc).join("; ")}.</div>`);
+  if (p.goals.length) parts.push(`<div class="small"><b>Development direction (${p.target} behaviors):</b> ${p.goals.map(esc).join("; ")}.</div>`);
   if (p.actions) {
     parts.push(`<table class="act"><tr><td class="h">On the job</td><td>${esc(p.actions.job)}</td></tr><tr><td class="h">Coaching</td><td>${esc(p.actions.coaching)}</td></tr><tr><td class="h">Learning</td><td>${esc(p.actions.learning)}</td></tr></table>`);
   }
@@ -394,14 +394,14 @@ export function renderSdcIdpHtml(r: SdcCandidateReport): string {
     : "";
   // Line manager added to the sign-off (Ali, 17 Oct 2026: the line manager is the evidence owner).
   const closing = `<div class="closing"><div class="sig"><div>Participant</div><div>Line manager</div><div>VIFM coach</div><div>SDC Talent Development</div></div>
-<p class="note fnote" style="margin:6px 0 0">Goal behaviours are taken from the SDC behavioural indicators for the target level, which is shown as a development direction. Each 90-day target is written in the SMART format (Doran, 1981) and records a baseline and an evidence owner. Behaviour change takes time (new habits took a median of 66 days to form in Lally et al., 2010), so a change of level is confirmed only by the post-programme reassessment, not by completing the plan. The mix of on-the-job, coaching and learning actions follows the programme's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the start of Module 1 and reviewed at each milestone. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p></div>`;
+<p class="note fnote" style="margin:6px 0 0">Goal behaviors are taken from the SDC behavioral indicators for the target level, which is shown as a development direction. Each 90-day target is written in the SMART format (Doran, 1981) and records a baseline and an evidence owner. Behavior change takes time (new habits took a median of 66 days to form in Lally et al., 2010), so a change of level is confirmed only by the post-program reassessment, not by completing the plan. The mix of on-the-job, coaching and learning actions follows the program's 70-20-10 development approach (Lombardo and Eichinger, 1996; Center for Creative Leadership); it guides the balance of activities and is not a scoring formula. The plan is agreed with the participant at the start of Module 1 and reviewed at each milestone. The placement shown is a preliminary, assessment-based indicator; final identification and selection decisions are made by SDC's designated talent review committee.</p></div>`;
 
   const foot = `<div class="pfoot"><span>${esc(`${PROGRAMME}  |  Individual development plan`)}<span class="pno"></span></span><span>${esc(FOOT_RIGHT)}</span></div>`;
   const blocks = [
     `<div class="grid3 idpk">
   <div class="kpi"><div class="l">Placement</div><div class="v">${esc(P.t)}</div><div class="small muted">${esc(F.label)}, ${esc(G.label.toLowerCase())} reasoning</div></div>
   <div class="kpi"><div class="l">Priorities</div><div class="v">${prioV}</div><div class="small muted">${prioSub}</div></div>
-  <div class="kpi"><div class="l">Review points</div><div class="v">Day 30, 60, 90</div><div class="small muted">milestones, then post-programme reassessment</div></div>
+  <div class="kpi"><div class="l">Review points</div><div class="v">Day 30, 60, 90</div><div class="small muted">milestones, then post-program reassessment</div></div>
 </div>`,
     G.check?.rushed ? checkNote(G) : "",
     ...items.map((it, i) => idpCard(it, i, r)),

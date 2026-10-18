@@ -62,7 +62,7 @@ const FEEDBACK_TEXT: Record<string, string> = {
   written_report: "You will receive a written report on your results.",
   verbal_debrief: "You will be offered a conversation with an assessor to talk through your results.",
   both: "You will receive a written report and be offered a conversation with an assessor to talk it through.",
-  none: "No individual feedback is offered for this centre.",
+  none: "No individual feedback is offered for this center.",
 };
 
 const orgName = (e: PackEngagement): string | null => {
@@ -106,23 +106,23 @@ export function buildJoiningPack(engagement: PackEngagement, exercises: PackExer
 
   const purposeWords = engagement.purpose ? acPurposeLabel(engagement.purpose) : null;
   const purposeIntro = purposeWords
-    ? `This is a ${purposeWords.toLowerCase()} centre.`
+    ? `This is a ${purposeWords.toLowerCase()} center.`
     : null;
   add(
     "What this assessment is for",
     [purposeIntro, engagement.pack_purpose_statement].filter(Boolean).join(" "),
     "5.41.1",
     "pack_purpose_statement",
-    "What this centre is for, in words a participant reads"
+    "What this center is for, in words a participant reads"
   );
 
   const when = dateRange(engagement);
   add(
     "When and where",
-    [when ? `The centre runs on ${when}.` : null, engagement.pack_location].filter(Boolean).join(" "),
+    [when ? `The center runs on ${when}.` : null, engagement.pack_location].filter(Boolean).join(" "),
     "5.39",
     "pack_location",
-    "Where the centre takes place"
+    "Where the center takes place"
   );
 
   add("What you will be asked to do", describeExercises(exercises), "5.41.2", "exercises", "Exercises on the engagement");
@@ -144,7 +144,7 @@ export function buildJoiningPack(engagement: PackEngagement, exercises: PackExer
       : null,
     "5.13",
     "pack_report_recipients",
-    "Who receives reports from this centre"
+    "Who receives reports from this center"
   );
 
   add(
@@ -164,7 +164,7 @@ export function buildJoiningPack(engagement: PackEngagement, exercises: PackExer
     body:
       `Your results are held for ${months} months from the assessment date and then deleted.\n\n` +
       (engagement.research_use
-        ? "With your separate agreement, anonymised results may also be used to check that the assessment works as it should. You can take part without agreeing to this."
+        ? "With your separate agreement, anonymized results may also be used to check that the assessment works as it should. You can take part without agreeing to this."
         : "Your results are not used for research or validation studies."),
   });
 
@@ -186,10 +186,10 @@ export function buildJoiningPack(engagement: PackEngagement, exercises: PackExer
       `If you believe a result is wrong, you can appeal within ${APPEAL_WINDOW_DAYS} days of receiving it, from your ` +
       "assessment portal under \"Questions or concerns\" or through the contact below.\n\n" +
       (contact
-        ? `Questions about this centre go to ${engagement.participant_contact_name ?? "your assessment contact"}` +
+        ? `Questions about this center go to ${engagement.participant_contact_name ?? "your assessment contact"}` +
           (engagement.participant_contact_email ? ` (${engagement.participant_contact_email})` : "") +
           "."
-        : "A named contact for this centre has not been set yet."),
+        : "A named contact for this center has not been set yet."),
   });
   if (!contact) {
     missing.push({ field: "participant_contact_name", label: "A named contact for participants", clause: "5.43" });

@@ -76,7 +76,7 @@ export default async function JoiningPackPage({ params, searchParams }: Props) {
           </p>
           {!pack.published && (
             <p className="rounded border border-amber-300 bg-amber-50 p-3 text-amber-900">
-              This pack is still being prepared, so some of it may change before the centre runs.
+              This pack is still being prepared, so some of it may change before the center runs.
             </p>
           )}
         </CardContent>

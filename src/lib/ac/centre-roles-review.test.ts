@@ -33,28 +33,28 @@ const FULL_SELECTION = {
   competence: [competent("p1", "centre_manager"), competent("p2", "centre_administrator"), competent("p3", "assessor")],
 };
 
-test("a fully staffed, fully certified selection centre has nothing blocking", () => {
+test("a fully staffed, fully certified selection center has nothing blocking", () => {
   const r = reviewCentreRoles(FULL_SELECTION);
   assert.deepEqual(r.blocking, []);
   assert.equal(r.unfilled.length, 0);
   assert.equal(r.uncertified.length, 0);
 });
 
-test("no centre manager blocks (5.16)", () => {
+test("no center manager blocks (5.16)", () => {
   const r = reviewCentreRoles({
     ...FULL_SELECTION,
     assignments: FULL_SELECTION.assignments.filter((a) => a.role_key !== "centre_manager"),
   });
   assert.equal(r.unfilled.some((x) => x.key === "centre_manager"), true);
-  assert.equal(r.blocking.some((b) => /Centre Manager/.test(b)), true);
+  assert.equal(r.blocking.some((b) => /Center Manager/.test(b)), true);
 });
 
-test("no centre administrator blocks (5.16)", () => {
+test("no center administrator blocks (5.16)", () => {
   const r = reviewCentreRoles({
     ...FULL_SELECTION,
     assignments: FULL_SELECTION.assignments.filter((a) => a.role_key !== "centre_administrator"),
   });
-  assert.equal(r.blocking.some((b) => /Centre Administrator/.test(b)), true);
+  assert.equal(r.blocking.some((b) => /Center Administrator/.test(b)), true);
 });
 
 test("a person in a role with no competence record blocks (5.22, 6.2)", () => {
@@ -108,7 +108,7 @@ test("a role-play requires a role-player", () => {
   assert.equal(r.blocking.some((b) => /Role-player/.test(b)), true);
 });
 
-test("a development centre needs feedback roles, a selection centre does not (4.43)", () => {
+test("a development center needs feedback roles, a selection center does not (4.43)", () => {
   const dev = reviewCentreRoles({ ...FULL_SELECTION, purpose: "development" });
   assert.equal(dev.required.some((x) => x.key === "feedback_generator"), true);
   assert.equal(dev.required.some((x) => x.key === "feedback_meeting_chair"), true);

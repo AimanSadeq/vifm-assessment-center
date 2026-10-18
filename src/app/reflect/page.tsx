@@ -36,7 +36,7 @@ export default function ReflectRootPage() {
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-white/85 px-3.5 py-1.5 rounded-full border border-white/15 bg-white/0 hover:bg-white/10 hover:border-white/30 backdrop-blur transition-colors"
               >
                 <GraduationCap className="h-3.5 w-3.5" />
-                Training catalogue
+                Training catalog
               </Link>
               <Link
                 href="/ara"
@@ -63,9 +63,9 @@ export default function ReflectRootPage() {
             </p>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
               Bring your Corporate Values and Leadership Competencies. We turn them
-              into behavioural items, gather feedback from peers, managers, and direct
+              into behavioral items, gather feedback from peers, managers, and direct
               reports, and deliver two layers of insight - a development-grade report
-              and Individual Development Plan for each leader, plus an organisation-wide
+              and Individual Development Plan for each leader, plus an organization-wide
               cohort view that surfaces the gaps shaping your culture. In English,
               Arabic, or both.
             </p>
@@ -97,7 +97,7 @@ export default function ReflectRootPage() {
             tone="blue"
             title="Consultant"
             subtitle="Run engagements"
-            description="Create a 360° engagement, build the competency framework from the client's values, invite participants and raters, then release both individual reports and the organisation-wide cohort view."
+            description="Create a 360° engagement, build the competency framework from the client's values, invite participants and raters, then release both individual reports and the organization-wide cohort view."
             cta="Open dashboard"
           />
           <EntryCard
@@ -136,18 +136,18 @@ export default function ReflectRootPage() {
                 icon: Aperture,
                 tone: "blue" as const,
                 title: "Your framework, our engine",
-                body: "Upload your Corporate Values and Leadership Competencies. AI proposes the behavioural items; the consultant approves before launch.",
+                body: "Upload your Corporate Values and Leadership Competencies. AI proposes the behavioral items; the consultant approves before launch.",
               },
               {
                 icon: Users,
                 tone: "violet" as const,
-                title: "Multi-rater, anonymised",
+                title: "Multi-rater, anonymized",
                 body: "Self, Manager, Peer, Direct Report - minimum 3 raters per group before peer and direct-report scores are revealed.",
               },
               {
                 icon: BarChart3,
                 tone: "rose" as const,
-                title: "Organisational insights",
+                title: "Organizational insights",
                 body: "Beyond individual reports - a cohort heatmap of every leader × every competency, top-3 strengths and development areas across the org, and an exportable culture view for the CHRO office.",
               },
               {
@@ -160,7 +160,7 @@ export default function ReflectRootPage() {
                 icon: GraduationCap,
                 tone: "gold" as const,
                 title: "Linked to training",
-                body: "Each report ends with the VIFM courses that close the participant's biggest behaviour gaps - ready to debrief and act on.",
+                body: "Each report ends with the VIFM courses that close the participant's biggest behavior gaps - ready to debrief and act on.",
               },
             ].map((c) => (
               <CapabilityItem key={c.title} icon={c.icon} tone={c.tone} title={c.title} body={c.body} />

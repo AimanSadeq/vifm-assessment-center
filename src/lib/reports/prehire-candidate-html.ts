@@ -231,7 +231,7 @@ function competenciesSection(data: PrehireReportData, lang: Lang): string {
     critical: { en: "Critical", ar: "حرجة" }, high: { en: "High", ar: "عالية" },
     medium: { en: "Medium", ar: "متوسطة" }, low: { en: "Low", ar: "منخفضة" },
   };
-  const subLabel = ar ? "السلوكيات المُقيَّمة (المؤشرات)" : "Behaviours assessed (sub-competencies)";
+  const subLabel = ar ? "السلوكيات المُقيَّمة (المؤشرات)" : "Behaviors assessed (sub-competencies)";
   const defLabel = ar ? "التعريف" : "Definition";
   const meansLabel = ar ? "ماذا يعني هذا" : "What this means";
 
@@ -650,7 +650,7 @@ const L: Record<Lang, Record<string, string>> = {
     mean_incomplete: "No composite is available yet",
     cbiTitle: "AI Interview - transcript & assessment",
     cbiIntro:
-      "This behavioural interview was conducted and scored by AI. The full exchange and the AI's assessment are below for your review - the rating is an advisory signal, not a decision.",
+      "This behavioral interview was conducted and scored by AI. The full exchange and the AI's assessment are below for your review - the rating is an advisory signal, not a decision.",
     cbiAiRating: "AI rating",
     cbiRationale: "AI rationale",
     cbiStrengths: "Strengths noted",
@@ -876,9 +876,9 @@ export function renderPrehireCandidateHtml(data: PrehireReportData, lang: Lang):
           developing: "كانت الأدلّة السلوكية دون المعيار المتوقّع - يُنصح بالتعمّق فيها في المقابلة البشرية.",
         }
       : {
-          strong: "The candidate gave strong behavioural evidence on this competency in the interview - a clear strength.",
-          competent: "The candidate met the expected behavioural standard - competent, with room to deepen.",
-          developing: "The behavioural evidence was below the expected standard - probe this further at the human interview.",
+          strong: "The candidate gave strong behavioral evidence on this competency in the interview - a clear strength.",
+          competent: "The candidate met the expected behavioral standard - competent, with room to deepen.",
+          developing: "The behavioral evidence was below the expected standard - probe this further at the human interview.",
         };
     const meansTxt = meansMap[key] ?? "";
     const meansLbl2 = rtl ? "ماذا يعني هذا" : "What this means";

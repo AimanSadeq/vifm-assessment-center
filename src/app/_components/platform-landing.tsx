@@ -47,7 +47,7 @@ const SERVICES: ReadonlyArray<{ key: ServiceKey; href: string; icon: typeof Comp
   { key: "ac", href: "/admin/assessment-center", icon: ClipboardCheck, tone: "blue", pillars: ["acquire", "manage"] },
   { key: "ara", href: "/ara", icon: Compass, tone: "violet", pillars: ["acquire", "manage"] },
   { key: "technical", href: "/admin/tech-sandbox", icon: BadgeCheck, tone: "indigo", pillars: ["acquire", "manage"] },
-  // Cognitive (aptitude) + Persona (the behavioural self-assessment,
+  // Cognitive (aptitude) + Persona (the behavioral self-assessment,
   // the "self" view of readiness) - individual diagnostics, dual-purpose too.
   { key: "cognitive", href: "/ac/cognitive", icon: BrainCircuit, tone: "fuchsia", pillars: ["acquire", "manage"] },
   { key: "persona", href: "/ac/persona", icon: Layers, tone: "cyan", pillars: ["acquire", "manage"] },
@@ -73,7 +73,7 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     ac: {
       acquire: {
         name: "Assessment Center", tagline: "Competency assessment · selection", badge: "For Selection",
-        description: "Observe behaviour across exercises and reach scoring consensus - a competency fit-score for hiring and promotion decisions.",
+        description: "Observe behavior across exercises and reach scoring consensus - a competency fit-score for hiring and promotion decisions.",
         tooltip: "Selection use: a defensible competency fit-score for hiring and promotion.",
       },
       manage: {
@@ -120,13 +120,13 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
     },
     persona: {
       acquire: {
-        tagline: "Behavioural self-assessment · selection", badge: "For Selection",
-        description: `Self-ratings across the VIFM behavioural framework - a behavioural fit signal alongside the rest of the screen.`,
-        tooltip: "Selection use: a behavioural self-view to complement screening.",
+        tagline: "Behavioral self-assessment · selection", badge: "For Selection",
+        description: `Self-ratings across the VIFM behavioral framework - a behavioral fit signal alongside the rest of the screen.`,
+        tooltip: "Selection use: a behavioral self-view to complement screening.",
       },
       manage: {
-        tagline: "Behavioural self-assessment · development", badge: "For Development",
-        description: `Self-insight across the VIFM behavioural framework - development areas become a plan and matched VIFM Academy courses.`,
+        tagline: "Behavioral self-assessment · development", badge: "For Development",
+        description: `Self-insight across the VIFM behavioral framework - development areas become a plan and matched VIFM Academy courses.`,
         tooltip: "Development use: self-insight feeding a development plan.",
       },
     },
@@ -138,7 +138,7 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
       },
       manage: {
         tagline: "AI English placement · development", badge: "For Development",
-        description: "The same CEFR placement run developmentally - the indicative level points each person to the right English programmes.",
+        description: "The same CEFR placement run developmentally - the indicative level points each person to the right English programs.",
         tooltip: "Development use: an English level that guides each person to the right learning.",
       },
     },
@@ -222,7 +222,7 @@ const VARIANTS: Record<Lang, Partial<Record<ServiceKey, Partial<Record<Pillar, V
 const T = {
   en: {
     pickLang: "Language",
-    catalogue: "Training catalogue",
+    catalogue: "Training catalog",
     designRoles: "Design target roles",
     compare: "Compare portals",
     admin: "Admin",
@@ -238,12 +238,12 @@ const T = {
     ctaBrowse: "Virginia Academy",
     ctaLearning: "My learning",
     trust: ["Bilingual English / Arabic", "Verifiable credentials", "AI-supported learning"],
-    stats: { services: "Assessment services", competencies: "Competency domains", programmes: "Training programmes", languages: "Languages" },
+    stats: { services: "Assessment services", competencies: "Competency domains", programmes: "Training programs", languages: "Languages" },
     servicesEyebrow: "Two solution families",
     features: {
       catalogue: {
-        title: "Self-paced programmes",
-        body: "A catalogue spanning finance, investment, leadership, analytics and AI - learn at your own pace, in English or Arabic.",
+        title: "Self-paced programs",
+        body: "A catalog spanning finance, investment, leadership, analytics and AI - learn at your own pace, in English or Arabic.",
       },
       checks: {
         title: "AI knowledge-checks",
@@ -251,11 +251,11 @@ const T = {
       },
       credentials: {
         title: "Verifiable credentials",
-        body: "Finish a programme and earn a credential anyone can verify by its code - no account required.",
+        body: "Finish a program and earn a credential anyone can verify by its code - no account required.",
       },
       mapped: {
         title: "Mapped to your gaps",
-        body: "Our diagnostics recommend the exact programmes that close each person's development gaps.",
+        body: "Our diagnostics recommend the exact programs that close each person's development gaps.",
       },
     },
     servicesHeading: "Start with a diagnosis",
@@ -269,22 +269,22 @@ const T = {
     },
     pillars: {
       acquire: { title: "Talent Acquisition Solutions", sub: "Assess the people you bring in - screen, place, and select with defensible, bilingual instruments." },
-      manage: { title: "Talent Management Solutions", sub: "Grow the people you have - develop, benchmark, and certify across the organisation." },
+      manage: { title: "Talent Management Solutions", sub: "Grow the people you have - develop, benchmark, and certify across the organization." },
     },
     footerOrg: "Virginia Institute of Finance and Management",
     footerConfidential: "Confidential - for VIFM and engaged clients only.",
     footerGcc: "Built for the GCC",
     services: {
-      ac: { tagline: "Competency assessment", name: "Assessment Center", description: "Design assessment centers, run exercises and observations, reach scoring consensus in the live wash-up engine, and issue competency reports and learning plans.", tooltip: "Best for hiring and promotion decisions grounded in observed behaviour." },
-      ara: { tagline: "AR Compass® diagnostic", name: "AI Readiness", description: "An eight-pillar organisational AI-readiness diagnostic, calibrated for Saudi Arabia, UAE, and the wider GCC, with bilingual board-ready reports and a complimentary personal snapshot.", tooltip: "Best for sizing up your organisation's AI readiness before you invest." },
-      reflect: { tagline: "Leadership feedback", name: "Reflect 360®", description: "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organisation-wide cohort culture view.", tooltip: "Best for developing leaders with candid, multi-rater feedback." },
+      ac: { tagline: "Competency assessment", name: "Assessment Center", description: "Design assessment centers, run exercises and observations, reach scoring consensus in the live wash-up engine, and issue competency reports and learning plans.", tooltip: "Best for hiring and promotion decisions grounded in observed behavior." },
+      ara: { tagline: "AR Compass® diagnostic", name: "AI Readiness", description: "An eight-pillar organizational AI-readiness diagnostic, calibrated for Saudi Arabia, UAE, and the wider GCC, with bilingual board-ready reports and a complimentary personal snapshot.", tooltip: "Best for sizing up your organization's AI readiness before you invest." },
+      reflect: { tagline: "Leadership feedback", name: "Reflect 360®", description: "360-degree leadership feedback built from your own values and competencies, with a development plan per leader and an organization-wide cohort culture view.", tooltip: "Best for developing leaders with candid, multi-rater feedback." },
       fluent: { tagline: "AI English placement", name: "Fluent®", description: "A four-skill, CEFR-aligned English placement: AI-generated reading and listening, rubric-scored writing and speaking, with an indicative level and feedback in minutes.", tooltip: "Best for fast, defensible English placement at any scale." },
       technical: { tagline: "Technical proficiency", name: "Techno®", description: "Performance-based, function-specific assessment: candidates do real work in live sandboxes (build a 3-statement model, a variance breakdown, write SQL) graded against master answers and banded Basic / Intermediate / Advanced per competency. Issue a direct link per delegate, or hand a client voucher codes to self-distribute.", tooltip: "Best for screening and developing functional skills with hands-on tasks." },
       cognitive: { tagline: "Reasoning aptitude", name: "Logica®", description: "Indicative numerical, verbal, inductive and deductive reasoning - a foundational read on aptitude. Server-scored, admin-run and bilingual.", tooltip: "Best for a foundational read on reasoning and aptitude." },
-      persona: { tagline: "Behavioural self-assessment", name: "Persona®", description: `Self-ratings across the VIFM behavioural framework - the same framework as the 360. The 'self' view that feeds Succession Readiness.`, tooltip: `Best for fast behavioural self-insight across the four VIFM domains.` },
+      persona: { tagline: "Behavioral self-assessment", name: "Persona®", description: `Self-ratings across the VIFM behavioral framework - the same framework as the 360. The 'self' view that feeds Succession Readiness.`, tooltip: `Best for fast behavioral self-insight across the four VIFM domains.` },
       readiness: { tagline: "Self + 360 vs the role", name: "Succession Readiness", description: "Combines Persona (self) and a Reflect 360 (others) against a target role to produce a readiness tier, gaps, blind spots and a development plan.", tooltip: "Best for judging whether someone is ready for a target role." },
-      prehire: { tagline: "Pre-employment screening", name: "Pre-Hire®", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioural interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal - a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
-      academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programmes that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
+      prehire: { tagline: "Pre-employment screening", name: "Pre-Hire®", description: "Screen and shortlist applicants before you hire: a configurable funnel of competency quiz, English placement and an AI behavioral interview, with a weighted composite, adverse-impact monitoring and an audit trail. The score is a signal - a person always decides.", tooltip: "Best for shortlisting applicants at scale, defensibly." },
+      academy: { tagline: "Learning & delivery", name: "VIFM Academy", description: "Self-paced finance & management programs that turn each diagnosis into action - AI knowledge-checks per lesson and a verifiable completion credential, in English or Arabic.", tooltip: "Best for closing development gaps with guided, credentialed learning." },
     },
   },
   ar: {
@@ -712,10 +712,10 @@ export function PlatformLanding({
         {clientMode && bespokeProducts.length > 0 && (
           <section className="mt-8">
             <span className="ara-eyebrow text-accent">
-              <Boxes className="h-3 w-3" /> {lang === "ar" ? "برامج مخصّصة" : "Bespoke programmes"}
+              <Boxes className="h-3 w-3" /> {lang === "ar" ? "برامج مخصّصة" : "Bespoke programs"}
             </span>
             <h2 className="mt-2 text-lg font-semibold text-[#010131]">
-              {lang === "ar" ? "البرامج المخصّصة لمؤسستك" : "Your tailored programmes"}
+              {lang === "ar" ? "البرامج المخصّصة لمؤسستك" : "Your tailored programs"}
             </h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {bespokeProducts.map((p) => (

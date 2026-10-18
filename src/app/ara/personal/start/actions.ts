@@ -89,7 +89,7 @@ export async function startPersonalAssessmentAction(
     if (orgErr || !createdOrg) {
       return {
         ok: false,
-        error: orgErr?.message ?? "Could not provision the Personal organisation row",
+        error: orgErr?.message ?? "Could not provision the Personal organization row",
       };
     }
     orgId = createdOrg.id;

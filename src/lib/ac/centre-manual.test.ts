@@ -30,7 +30,7 @@ const input = {
       durationMinutes: 30,
       meetingMinutes: 20,
       participantBrief: "You are meeting a direct report about missed deadlines.",
-      assessorNotes: "Probe whether they separate the behaviour from the person.",
+      assessorNotes: "Probe whether they separate the behavior from the person.",
       rolePlayerPrompts: [
         { prompt: "Open defensively; do not volunteer that the deadline was missed.", triggerBehaviours: "Opening question" },
         { prompt: "Soften once the participant acknowledges your workload.", triggerBehaviours: "If they listen before advising" },

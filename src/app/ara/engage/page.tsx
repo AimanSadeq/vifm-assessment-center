@@ -251,7 +251,7 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
             <p className="text-sm text-muted-foreground mt-3">
               Personal is a complimentary self-assessment for one individual.
               Department, Division, and Enterprise are cumulative engagements
-              for organisations - everything in Department is also in
+              for organizations - everything in Department is also in
               Division, and everything in Division is also in Enterprise.
             </p>
           </div>
@@ -310,7 +310,7 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
           </h2>
           <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-6">
             A department report, a division consolidation and an individual report,
-            each generated live from a sample organisation through the same code
+            each generated live from a sample organization through the same code
             that produces a client&apos;s. English and Arabic.
           </p>
           <Link
@@ -325,18 +325,18 @@ export default function AraEngagePage({ searchParams }: { searchParams?: { lens?
       <section className="border-t bg-muted/30">
         <div className="max-w-4xl mx-auto px-6 py-12 text-center">
           <h2 className="text-2xl font-semibold text-primary mb-2">
-            Or browse VIFM&apos;s full training catalogue
+            Or browse VIFM&apos;s full training catalog
           </h2>
           <p className="text-sm text-muted-foreground max-w-xl mx-auto mb-6">
-            Over a hundred programmes across finance, AI, leadership, and
+            Over a hundred programs across finance, AI, leadership, and
             governance - request a tailored quote for any of them. The
-            diagnostic narrows the field; the catalogue shows the field.
+            diagnostic narrows the field; the catalog shows the field.
           </p>
           <Link
             href="/courses?source=ara"
             className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
-            Open the training catalogue <ArrowRight className="h-4 w-4" />
+            Open the training catalog <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>

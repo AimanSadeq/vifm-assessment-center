@@ -309,7 +309,7 @@ const FALLBACK_TEST: FluentTest = {
         "The team went on holiday",
         "The data migration was unfinished",
         "The budget was cut",
-        "The client cancelled",
+        "The client canceled",
       ],
       correct_index: 1,
       cefr: "B1",
@@ -758,7 +758,7 @@ const CEFR_ANCHORS =
   "A2 = simple sentences on familiar topics, basic connectors (and/but/because); " +
   "B1 = connected text on familiar matters, generally clear despite recurrent errors; " +
   "B2 = clear, detailed text with good control and a range of structures, errors rarely impede; " +
-  "C1 = fluent, well-organised, flexible and precise language, only occasional minor errors; " +
+  "C1 = fluent, well-organized, flexible and precise language, only occasional minor errors; " +
   "C2 = consistently precise, nuanced, near-native control.";
 
 // ── Ensemble aggregation helpers (self-consistency) ──────────────
@@ -815,7 +815,7 @@ export async function scoreFluentWriting(input: {
     `institute. Score a candidate's written response against the task on SEVEN criteria, ` +
     `each 1-5 (1 = far below, 5 = excellent for the level): ` +
     `Task Achievement (does it fully address the prompt); ` +
-    `Coherence & Cohesion (organisation, logical flow, linking); ` +
+    `Coherence & Cohesion (organization, logical flow, linking); ` +
     `Lexical Resource (range and precision of vocabulary); ` +
     `Grammatical Range & Accuracy; ` +
     `Register (professional, business-like tone appropriate to a workplace email/message); ` +
@@ -940,7 +940,7 @@ export async function scoreFluentSpeaking(input: {
   const system =
     `You are a CEFR-certified English speaking examiner. You are given a TRANSCRIPT ` +
     `of a candidate's spoken response (produced by automatic speech recognition, so it ` +
-    `may contain minor transcription noise - do not penalise that). You CANNOT judge ` +
+    `may contain minor transcription noise - do not penalize that). You CANNOT judge ` +
     `pronunciation or accent from a transcript, so do not. Score four criteria, each ` +
     `1-5: Fluency & Coherence (infer hesitation/repetition/false-starts from the text), ` +
     `Coherence & Cohesion, Lexical Resource, Grammatical Range & Accuracy. Then assign ` +

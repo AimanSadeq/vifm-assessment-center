@@ -354,10 +354,10 @@ async function buildPricedSnapshot(input: ProposalInput): Promise<PricedSnapshot
   if (mode === "licence") {
     const licence = normalizeLicensingModel(input.licensingModel);
     if (!licence) {
-      return { error: "Add at least one priced service (annual volume x unit price) before saving a licence proposal." };
+      return { error: "Add at least one priced service (annual volume x unit price) before saving a license proposal." };
     }
     const computed = computeLicensing(licence);
-    if (!computed) return { error: "Nothing is priced on this licence proposal yet." };
+    if (!computed) return { error: "Nothing is priced on this license proposal yet." };
     const scope: ScopeItem[] = computed.products.map((p) => ({
       service: p.key,
       label: p.name,
@@ -479,7 +479,7 @@ export async function createProposal(input: ProposalInput): Promise<{ ok: true; 
   }
   if (error && isMissingColumn(error) && priced.pricingMode !== "per_project") {
     const mig = priced.pricingMode === "engagement" ? "00176" : "00175";
-    const label = priced.pricingMode === "engagement" ? "Engagement" : "Licence";
+    const label = priced.pricingMode === "engagement" ? "Engagement" : "License";
     return { error: `${label}-mode pricing needs migration ${mig}. Apply it before saving in ${priced.pricingMode} mode.` };
   }
   if (error || !data) {
@@ -549,7 +549,7 @@ export async function updateProposal(
   }
   if (error && isMissingColumn(error) && priced.pricingMode !== "per_project") {
     const mig = priced.pricingMode === "engagement" ? "00176" : "00175";
-    const label = priced.pricingMode === "engagement" ? "Engagement" : "Licence";
+    const label = priced.pricingMode === "engagement" ? "Engagement" : "License";
     return { error: `${label}-mode pricing needs migration ${mig}. Apply it before saving in ${priced.pricingMode} mode.` };
   }
   if (error) return { error: error.message ?? "Could not save the proposal." };

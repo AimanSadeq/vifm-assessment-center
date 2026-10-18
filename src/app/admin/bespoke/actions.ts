@@ -41,7 +41,7 @@ export async function composeBundleAction(input: {
   const nameEn = input.nameEn?.trim() ?? "";
   if (nameEn.length < 2) return { error: "Give the bespoke service a name." };
   const clientName = input.clientName?.trim() ?? "";
-  if (!clientName) return { error: "Pick a client organisation." };
+  if (!clientName) return { error: "Pick a client organization." };
 
   const design = deriveDesign(input);
   if ("error" in design) return { error: design.error };
@@ -121,7 +121,7 @@ export async function updateBundleAction(input: {
   const nameEn = input.nameEn?.trim() ?? "";
   if (nameEn.length < 2) return { error: "Give the bespoke service a name." };
   const clientName = input.clientName?.trim() ?? "";
-  if (!clientName) return { error: "Pick a client organisation." };
+  if (!clientName) return { error: "Pick a client organization." };
 
   const current = await loadBundleService(input.id);
   if (!current) return { error: "This bundle no longer exists." };

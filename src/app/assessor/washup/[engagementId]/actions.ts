@@ -211,8 +211,8 @@ export async function saveOarAction(values: SaveOarValues) {
       return {
         error:
           rule === "not_permitted"
-            ? "This centre's design does not permit evidence from outside the centre to count towards a rating."
-            : "This centre has not decided whether evidence from outside the centre may be used. That is a design decision, not one for the wash-up.",
+            ? "This center's design does not permit evidence from outside the center to count towards a rating."
+            : "This center has not decided whether evidence from outside the center may be used. That is a design decision, not one for the wash-up.",
       };
     }
     if ((parsed.data.externalEvidenceNote ?? "").trim().length < 10) {

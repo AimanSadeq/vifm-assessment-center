@@ -73,12 +73,12 @@ export function personalFactSheetRows(lang: "en" | "ar"): FactSheetRow[] {
     {
       label: "Reading the score",
       value:
-        "Emerging (below 3): building foundational habits. Practising (3 to below 4): applying AI with growing judgment. Embedded (4 and above): AI is a confident, routine part of how you work.",
+        "Emerging (below 3): building foundational habits. Practicing (3 to below 4): applying AI with growing judgment. Embedded (4 and above): AI is a confident, routine part of how you work.",
     },
     {
       label: "Honest limits",
       value:
-        "Self-report (it reflects self-perception, not observed behaviour); the norm group is GCC-based; this is a developmental and diagnostic tool, not a hiring or selection instrument.",
+        "Self-report (it reflects self-perception, not observed behavior); the norm group is GCC-based; this is a developmental and diagnostic tool, not a hiring or selection instrument.",
     },
     { label: "Methodology", value: `Full methodology brief: ${METHODOLOGY_URL}` },
   ];
@@ -129,11 +129,11 @@ export function orgFactSheetRows(
     ];
   }
   return [
-    { label: "Instrument", value: "VIFM AI Readiness Compass® - Organisational assessment" },
+    { label: "Instrument", value: "VIFM AI Readiness Compass® - Organizational assessment" },
     {
       label: "What it measures",
       value:
-        "Organisational AI readiness across eight pillars: Strategy, Data, Technology, Talent, Culture, Governance, Operations, and Model Management (the number in scope depends on the engagement stage).",
+        "Organizational AI readiness across eight pillars: Strategy, Data, Technology, Talent, Culture, Governance, Operations, and Model Management (the number in scope depends on the engagement stage).",
     },
     {
       label: "Format & items",

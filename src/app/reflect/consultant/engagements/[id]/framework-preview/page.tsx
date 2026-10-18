@@ -59,7 +59,7 @@ export default async function ReflectFrameworkPreviewPage({
             <dd>{rtl ? framework.framework.name_ar ?? framework.framework.name_en : framework.framework.name_en}</dd>
             <dt>{rtl ? "الكفايات" : "Competencies"}</dt>
             <dd>{framework.competencies.length}</dd>
-            <dt>{rtl ? "السلوكيات" : "Behaviours"}</dt>
+            <dt>{rtl ? "السلوكيات" : "Behaviors"}</dt>
             <dd>{totalBehaviours}</dd>
             <dt>{rtl ? "تاريخ المراجعة" : "Review date"}</dt>
             <dd>{new Date().toLocaleDateString(rtl ? "ar-AE" : "en-GB", { day: "numeric", month: "long", year: "numeric" })}</dd>
@@ -67,14 +67,14 @@ export default async function ReflectFrameworkPreviewPage({
           <div className="callout">
             {rtl
               ? "هذه نسخة المراجعة من إطار العمل قبل الإطلاق. شاركها مع العميل لاعتماد الكفايات والسلوكيات قبل إرسال الدعوات للمقيّمين."
-              : "This is the pre-launch framework review. Share it with the client to sign off the competencies and behaviours before rater invitations go out."}
+              : "This is the pre-launch framework review. Share it with the client to sign off the competencies and behaviors before rater invitations go out."}
           </div>
         </div>
       </section>
 
       {/* Per-competency */}
       <section className="page no-break-after">
-        <h2>{rtl ? "الكفايات والسلوكيات" : "Competencies & behaviours"}</h2>
+        <h2>{rtl ? "الكفايات والسلوكيات" : "Competencies & behaviors"}</h2>
         {framework.competencies.length === 0 ? (
           <p className="empty">{rtl ? "إطار العمل فارغ." : "Framework is empty."}</p>
         ) : (

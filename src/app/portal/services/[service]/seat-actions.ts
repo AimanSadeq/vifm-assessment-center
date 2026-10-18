@@ -37,11 +37,11 @@ async function resolveActorOrg(orgParam?: string): Promise<{ orgId: string } | {
   }
   if (caller.role === "client_manager") {
     const orgId = await getClientOrgId();
-    if (!orgId) return { error: "Your account is not linked to an organisation." };
+    if (!orgId) return { error: "Your account is not linked to an organization." };
     return { orgId };
   }
-  if (!orgParam) return { error: "Select a client organisation." };
-  if (!UUID_RE.test(orgParam)) return { error: "Invalid organisation id." };
+  if (!orgParam) return { error: "Select a client organization." };
+  if (!UUID_RE.test(orgParam)) return { error: "Invalid organization id." };
   return { orgId: orgParam };
 }
 
@@ -54,7 +54,7 @@ export async function clientInviteSeatAction(input: {
 }): Promise<ClientSeatResult> {
   if (!PORTAL_SERVICE_IDS.includes(input.service as CaliberService)) return { error: "Unknown service" };
   const service = input.service as CaliberService;
-  if (!isSeatService(service)) return { error: "This service is self-serve, not a VIFM-managed programme." };
+  if (!isSeatService(service)) return { error: "This service is self-serve, not a VIFM-managed program." };
 
   const actor = await resolveActorOrg(input.orgParam);
   if ("error" in actor) return { error: actor.error };

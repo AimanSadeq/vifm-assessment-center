@@ -70,7 +70,7 @@ export function proctoringReportHtml(view: ProctorSessionView): string {
   const reviewBlock = review
     ? `<div class="reviewline">${
         review.configured
-          ? `AI vision review: <strong>${review.analyzed}</strong> of <strong>${review.total}</strong> frames analysed`
+          ? `AI vision review: <strong>${review.analyzed}</strong> of <strong>${review.total}</strong> frames analyzed`
           : `AI vision review not configured - motion signal only`
       }${session.ai_reviewed_at ? ` · ${escapeHtml(fmt(session.ai_reviewed_at))}` : ""}</div>
        <div class="stats">

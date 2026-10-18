@@ -36,7 +36,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     return new NextResponse(new Uint8Array(buf), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="Centre-agreement-${safeName}.docx"`,
+        "Content-Disposition": `attachment; filename="Center-agreement-${safeName}.docx"`,
       },
     });
   } catch (err) {

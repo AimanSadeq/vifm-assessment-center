@@ -37,7 +37,7 @@ export const ARA_DEMOGRAPHICS: ReadonlyArray<AraDemographicDimension> = [
   },
   {
     id: "tenure",
-    label_en: "Time in the organisation",
+    label_en: "Time in the organization",
     label_ar: "مدة الخدمة في المؤسسة",
     options: [
       { key: "lt_2", en: "Under 2 years", ar: "أقل من سنتين" },

@@ -34,7 +34,7 @@ const SYSTEM_PROMPT =
   `matching the supplied skill library so item banks are reused, and you PROPOSE a new skill ` +
   `only when the JD genuinely requires a technical skill not in the library. You may receive ` +
   `English or Arabic job descriptions; respond in English. Focus on technical skills, NOT ` +
-  `behavioural traits (leadership, communication) - those are assessed separately.`;
+  `behavioral traits (leadership, communication) - those are assessed separately.`;
 
 function buildInstructions(skillLibrary: string[], targetRole: string | undefined, jdInline: string | null) {
   const menu = skillLibrary.map((s) => `- ${s}`).join("\n");

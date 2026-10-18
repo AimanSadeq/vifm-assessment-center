@@ -229,9 +229,9 @@ export default async function TechResultsPage({ params }: { params: { token: str
 
       {r.recommendedCourses.length > 0 ? (
         <section className="rounded-lg border bg-card p-4">
-          <h2 className="text-sm font-semibold text-[#5391D5]">RECOMMENDED VIFM ACADEMY PROGRAMMES</h2>
+          <h2 className="text-sm font-semibold text-[#5391D5]">RECOMMENDED VIFM ACADEMY PROGRAMS</h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Suggested development programmes from the VIFM training catalogue, matched to this
+            Suggested development programs from the VIFM training catalog, matched to this
             assessment&apos;s domain and the candidate&apos;s development areas.
           </p>
           <ul className="mt-3 space-y-2">
@@ -262,7 +262,7 @@ export default async function TechResultsPage({ params }: { params: { token: str
         </a>
       </div>
       <p className="text-xs text-muted-foreground">
-        To deliver to the client, download the PDF and send it, or share this page with authorised
+        To deliver to the client, download the PDF and send it, or share this page with authorized
         VIFM staff. (Automatic delivery to a client recipient is a planned enhancement.)
       </p>
     </div>

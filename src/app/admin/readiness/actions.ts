@@ -22,8 +22,8 @@ export async function createReadinessProgramAction(input: {
   }
 
   const name = input.name?.trim();
-  if (!input.organizationId) return { error: "Pick a client organisation." };
-  if (!name) return { error: "Enter a programme name." };
+  if (!input.organizationId) return { error: "Pick a client organization." };
+  if (!name) return { error: "Enter a program name." };
 
   const sb = createServiceClient();
   const { data, error } = await sb
@@ -37,6 +37,6 @@ export async function createReadinessProgramAction(input: {
     })
     .select("id")
     .single();
-  if (error || !data) return { error: error?.message ?? "Could not create the programme." };
+  if (error || !data) return { error: error?.message ?? "Could not create the program." };
   return { ok: true, id: data.id as string };
 }

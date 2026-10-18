@@ -34,7 +34,7 @@ export function buildEvidencePackHtml(ev: EngagementEvidence, generatedAt: strin
     <p>${e.job_analysis_method
       ? `The criteria were derived from the job: ${esc(e.job_analysis_method)}${e.job_analysis_note ? `. ${esc(e.job_analysis_note)}` : "."}`
       : '<span class="gap">How the criteria were derived from the job is not recorded (4.2, 4.4).</span>'}</p>
-    <table><thead><tr><th>Criterion</th><th>Link to the job</th><th class="num">Behavioural indicators</th></tr></thead><tbody>
+    <table><thead><tr><th>Criterion</th><th>Link to the job</th><th class="num">Behavioral indicators</th></tr></thead><tbody>
     ${ev.competencies.map((c) => `<tr><td>${esc(c.name)}</td><td>${c.rationale ? esc(c.rationale) : '<span class="gap">Not recorded</span>'}</td><td class="num">${c.indicators}</td></tr>`).join("")}
     </tbody></table>
     <p class="muted">${withRationale} of ${ev.competencies.length} criteria carry a written link to the job. Each is observed in at least two exercises by design.</p>`;
@@ -64,7 +64,7 @@ export function buildEvidencePackHtml(ev: EngagementEvidence, generatedAt: strin
       <tr><td>Not available</td><td class="num">${fs.notAvailable}</td></tr>
       <tr><td>Went into the role</td><td class="num">${fs.inRole}</td></tr>
     </tbody></table>
-    <p class="muted">The criterion is the line manager's rating of performance in the role, on the centre's own 1 to 5 scale, six and twelve months on. Only participants who went into the role can contribute; those who did not are the range-restriction caveat on any correlation. The standard's guide is about ${VALIDATION_ADEQUATE_N} participants for a study with reasonable power (9.10).</p>`;
+    <p class="muted">The criterion is the line manager's rating of performance in the role, on the center's own 1 to 5 scale, six and twelve months on. Only participants who went into the role can contribute; those who did not are the range-restriction caveat on any correlation. The standard's guide is about ${VALIDATION_ADEQUATE_N} participants for a study with reasonable power (9.10).</p>`;
 
   // 5. Fairness.
   const fair = ev.fairness;
@@ -79,8 +79,8 @@ export function buildEvidencePackHtml(ev: EngagementEvidence, generatedAt: strin
   // 6. Participant impact.
   const pi = ev.participantImpact;
   const impact = pi.responses
-    ? `<p>${pi.responses} participant${pi.responses === 1 ? "" : "s"} gave feedback on the centre${pi.meanRating !== null ? `, with a mean rating of ${pi.meanRating} out of 5` : ""}. Concerns and appeals raised through the participant portal are recorded on the engagement.</p>`
-    : gap("No participant feedback collected yet. Participants can rate the centre from their portal after it ends.");
+    ? `<p>${pi.responses} participant${pi.responses === 1 ? "" : "s"} gave feedback on the center${pi.meanRating !== null ? `, with a mean rating of ${pi.meanRating} out of 5` : ""}. Concerns and appeals raised through the participant portal are recorded on the engagement.</p>`
+    : gap("No participant feedback collected yet. Participants can rate the center from their portal after it ends.");
 
   // 7. Utility and the agreed plan.
   const plan = ev.plan;
@@ -93,7 +93,7 @@ export function buildEvidencePackHtml(ev: EngagementEvidence, generatedAt: strin
         ${plan.criterion ? `<li>Performance measure supplied by the client: ${esc(plan.criterion)}</li>` : ""}
         ${plan.note ? `<li>${esc(plan.note)}</li>` : ""}
       </ul>`
-    : gap("No post-centre evaluation plan has been agreed with the client (3.20). The centre agreement, clause 11.3, is where it is agreed.");
+    : gap("No post-center evaluation plan has been agreed with the client (3.20). The center agreement, clause 11.3, is where it is agreed.");
 
   // 8. Evaluations.
   const evals = ev.evaluations.length
@@ -137,8 +137,8 @@ export function buildEvidencePackHtml(ev: EngagementEvidence, generatedAt: strin
 <body>
   <p class="eyebrow">Evidence pack</p>
   <h1>${esc(e.name)}</h1>
-  <p class="sub">${[ev.organisationName, purpose ? `${purpose} centre` : null, e.target_role, `${fmtDate(e.start_date)} to ${fmtDate(e.end_date)}`].filter(Boolean).map(esc).join(" &middot; ")}</p>
-  <p>What VIFM can show about whether this centre works, under the headings the BPS standard sets for evaluating a centre (9.9): reliability, validity, diversity, participant impact and utility, with the design evidence the criteria rest on. Every number carries the sample behind it, and a heading with no evidence yet says so.</p>
+  <p class="sub">${[ev.organisationName, purpose ? `${purpose} center` : null, e.target_role, `${fmtDate(e.start_date)} to ${fmtDate(e.end_date)}`].filter(Boolean).map(esc).join(" &middot; ")}</p>
+  <p>What VIFM can show about whether this center works, under the headings the BPS standard sets for evaluating a center (9.9): reliability, validity, diversity, participant impact and utility, with the design evidence the criteria rest on. Every number carries the sample behind it, and a heading with no evidence yet says so.</p>
   <div class="summary">
     <div><b>Reliability</b>${ev.icc && ev.icc.value !== null ? `ICC ${ev.icc.value.toFixed(2)} (${ev.icc.subjects} co-rated)` : "Not yet computable"}</div>
     <div><b>Criterion validity</b>${ev.validity.r !== null ? `r ${ev.validity.r.toFixed(2)} over ${ev.validity.n}` : `${ev.validity.n} with both ratings`}${ev.validity.power === "adequate" ? "" : ev.validity.power === "early" ? " (provisional)" : ev.validity.power === "too_small" ? " (too few)" : " (no data)"}</div>
@@ -154,9 +154,9 @@ export function buildEvidencePackHtml(ev: EngagementEvidence, generatedAt: strin
   <h2>6. Participant impact <span class="clause">9.9</span></h2>${impact}
   <h2>7. Utility and the agreed evaluation plan <span class="clause">3.20, 9.5</span></h2>${utility}
   <h2>8. Evaluations carried out <span class="clause">9.6, 9.8</span></h2>
-  <p class="muted">${cal.annualDueOn ? `Next annual evaluation due ${esc(fmtDate(cal.annualDueOn))}${cal.annualOverdue ? " (overdue)" : ""}; major review due ${esc(fmtDate(cal.majorDueOn))}.` : "No centre dates, so no evaluation calendar."}</p>
+  <p class="muted">${cal.annualDueOn ? `Next annual evaluation due ${esc(fmtDate(cal.annualDueOn))}${cal.annualOverdue ? " (overdue)" : ""}; major review due ${esc(fmtDate(cal.majorDueOn))}.` : "No center dates, so no evaluation calendar."}</p>
   ${evals}
 
-  <footer>Virginia Institute of Finance and Management &middot; Generated ${esc(generatedAt)} from the engagement in Caliber. Figures are computed from the centre's records on the day of generation and are not stored; a later pack may differ as follow-ups are collected.</footer>
+  <footer>Virginia Institute of Finance and Management &middot; Generated ${esc(generatedAt)} from the engagement in Caliber. Figures are computed from the center's records on the day of generation and are not stored; a later pack may differ as follow-ups are collected.</footer>
 </body></html>`;
 }

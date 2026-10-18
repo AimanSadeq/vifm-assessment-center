@@ -133,7 +133,7 @@ export async function archiveReflectEngagement(
   try {
     await requireEngagementOwner(engagementId);
   } catch (e) {
-    return { ok: false, error: isAuthorizationError(e) ? e.message : "Not authorised" };
+    return { ok: false, error: isAuthorizationError(e) ? e.message : "Not authorized" };
   }
   const sb = createServiceClient();
   const { data: eng } = await sb
@@ -307,7 +307,7 @@ export async function createReflectEngagement(
     const friendly =
       issue?.message && issue.message !== "Invalid UUID"
         ? issue.message
-        : "Please check the client organisation and framework selections.";
+        : "Please check the client organization and framework selections.";
     return { ok: false, error: friendly };
   }
   const p = parsed.data;
@@ -689,7 +689,7 @@ export async function deleteReflectCompetency(competencyId: string) {
     return {
       ok: false,
       error:
-        "Cannot delete this competency - completed raters have recorded responses for its behaviours. Their scored history is immutable.",
+        "Cannot delete this competency - completed raters have recorded responses for its behaviors. Their scored history is immutable.",
     };
   }
 
@@ -703,7 +703,7 @@ export async function deleteReflectCompetency(competencyId: string) {
     target_table: "reflect_competencies",
     target_id: competencyId,
     performed_by: caller?.isDev ? null : caller?.uid ?? null,
-    metadata: { note: "Draft-time delete; cascaded its behaviours.", behaviors: behaviorIds.length },
+    metadata: { note: "Draft-time delete; cascaded its behaviors.", behaviors: behaviorIds.length },
   });
   return { ok: true };
 }
@@ -723,7 +723,7 @@ export async function deleteReflectBehavior(behaviorId: string) {
     return {
       ok: false,
       error:
-        "Cannot delete this behaviour - completed raters have recorded responses for it. Their scored history is immutable.",
+        "Cannot delete this behavior - completed raters have recorded responses for it. Their scored history is immutable.",
     };
   }
 
@@ -953,7 +953,7 @@ export async function approveReflectFrameworkAction(engagementId: string) {
     .maybeSingle<{ id: string; reflect_competencies: Array<{ id: string; reflect_behaviors: Array<{ id: string }> }> }>();
   const behaviourCount = (fw?.reflect_competencies ?? []).reduce((n, c) => n + (c.reflect_behaviors?.length ?? 0), 0);
   if (!fw || behaviourCount === 0) {
-    return { ok: false, error: "Add competencies and behaviours to the framework before approving it." };
+    return { ok: false, error: "Add competencies and behaviors to the framework before approving it." };
   }
 
   const { error } = await sb
@@ -1040,7 +1040,7 @@ export async function launchReflectEngagement(engagementId: string) {
     return {
       ok: false,
       error:
-        "Approve the framework before launching. A consultant must review the AI-decomposed behaviours before raters are invited.",
+        "Approve the framework before launching. A consultant must review the AI-decomposed behaviors before raters are invited.",
     };
   }
 

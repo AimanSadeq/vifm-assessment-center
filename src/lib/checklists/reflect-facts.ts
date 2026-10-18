@@ -76,12 +76,12 @@ export async function loadReflectChecklistFacts(
   const closed = status === "complete" || status === "archived" || Boolean(e.archived_at) || Boolean(e.closed_at);
 
   const facts: ChecklistFacts = {
-    "reflect.region": { done: Boolean(org?.region && org?.sector), detail: org ? `${String(org.region ?? "?")}, ${String(org.sector ?? "?")}` : "No organisation" },
-    "reflect.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organisation" : "No organisation" },
-    "reflect.contact": { done: Boolean(org?.client_contact_name || org?.client_contact_email), detail: org?.client_contact_name ? String(org.client_contact_name) : "No contact on the organisation" },
+    "reflect.region": { done: Boolean(org?.region && org?.sector), detail: org ? `${String(org.region ?? "?")}, ${String(org.sector ?? "?")}` : "No organization" },
+    "reflect.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organization" : "No organization" },
+    "reflect.contact": { done: Boolean(org?.client_contact_name || org?.client_contact_email), detail: org?.client_contact_name ? String(org.client_contact_name) : "No contact on the organization" },
     "reflect.language": { done: true, detail: `Report: ${String(e.report_language ?? "bilingual")}; form: ${String(e.default_language ?? "en")}` },
     "reflect.anonymity": { done: minN >= 3, detail: `${minN} raters per group before scores show${minN < 3 ? " (below the usual 3)" : ""}` },
-    "reflect.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organisation" },
+    "reflect.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organization" },
     "reflect.sandbox": { done: !e.is_sandbox, detail: e.is_sandbox ? "Marked as sandbox: results will be purged" : "Live engagement" },
     "reflect.framework": { done: compIds.length > 0 && behaviours.length > 0, detail: compIds.length ? `${count(compIds.length, "competency", "competencies")}, ${count(behaviours.length, "behaviour")}` : "No framework yet" },
     "reflect.framework_approved": { done: approved, detail: approved ? "Approved" : "Not approved: launch is blocked" },

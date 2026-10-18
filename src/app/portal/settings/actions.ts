@@ -14,6 +14,6 @@ export async function setFluentProctoringPolicyAction(input: {
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const access = await resolvePortalAccess(input.orgParam);
   const orgId = access.ok ? access.orgId : null;
-  if (!orgId) return { ok: false, error: "No organisation access." };
+  if (!orgId) return { ok: false, error: "No organization access." };
   return updateOrgSettings(orgId, { fluent_proctoring_required: input.enabled === true });
 }

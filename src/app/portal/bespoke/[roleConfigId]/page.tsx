@@ -7,7 +7,7 @@ import { InviteClient } from "./_components/invite-client";
 import { CandidatesCollapsible, type Cand } from "./_components/candidates-collapsible";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Bespoke programme · VIFM" };
+export const metadata = { title: "Bespoke program · VIFM" };
 
 export default async function PortalBespokeProductPage({
   params,
@@ -62,7 +62,7 @@ export default async function PortalBespokeProductPage({
       <div>
         <h1 className="text-2xl font-bold">{assigned.name_en as string}</h1>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Role Readiness programme (Persona + technical). Invite your people, then track each verdict and download
+          Role Readiness program (Persona + technical). Invite your people, then track each verdict and download
           their report. {candidates.length} invited · {completed} completed.
         </p>
       </div>

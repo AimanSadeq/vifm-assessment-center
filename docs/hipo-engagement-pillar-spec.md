@@ -3,7 +3,7 @@
 Status: SPEC ONLY - not built. Complements the shipped VIFM High-Potential Profile
 (Persona Aspiration x Persona+Logica Ability nine-grid). Adds the third element a
 credible high-potential decision needs: ENGAGEMENT - the likelihood the person
-stays and grows with the organisation.
+stays and grows with the organization.
 
 ## 1. Construct and honest positioning
 
@@ -11,22 +11,22 @@ stays and grows with the organisation.
   self-report in an evaluative context is systematically inflated. The current
   report says so and directs it to the manager/HR conversation.
 - This spec structures that conversation: a short survey the LINE MANAGER
-  answers about the individual. One rater, observable judgements, ~3 minutes.
-- It stays a judgement, not a measurement. The report labels it "manager-rated,
+  answers about the individual. One rater, observable judgments, ~3 minutes.
+- It stays a judgment, not a measurement. The report labels it "manager-rated,
   single rater, indicative" and it is never a reject signal - it changes the
   development conversation, not the nomination arithmetic.
 
 ## 2. Instrument (6 items, 1-5 Likert, bilingual EN/AR)
 
 Manager rates agreement (1 Strongly disagree ... 5 Strongly agree). All items are
-observable manager judgements - no mind-reading, no sentiment guessing.
+observable manager judgments - no mind-reading, no sentiment guessing.
 
-1. **Future here** - "They talk about their future in terms of this organisation."
+1. **Future here** - "They talk about their future in terms of this organization."
 2. **Discretionary effort** - "They routinely give effort beyond what the role requires."
 3. **Acts on development** - "When given feedback or learning opportunities, they visibly act on them."
 4. **Retention risk (reverse-keyed)** - "I see signals they may leave us within the next year."
-5. **Purpose alignment** - "They connect their work to the organisation's purpose and priorities."
-6. **Internal appetite** - "They actively seek bigger responsibility inside this organisation."
+5. **Purpose alignment** - "They connect their work to the organization's purpose and priorities."
+6. **Internal appetite** - "They actively seek bigger responsibility inside this organization."
 
 Plus one OPTIONAL free-text context box (not scored; surfaces verbatim in the
 consultant view only, never in the client PDF).
@@ -71,7 +71,7 @@ consultant view only, never in the client PDF).
 
 ## 6. Guardrails
 
-- Single-rater manager judgement: prone to recency and halo bias - stated in
+- Single-rater manager judgment: prone to recency and halo bias - stated in
   the report's methodology block.
 - Never blended into Ability/Aspiration and never a selection cut - overlay
   language only.

@@ -87,7 +87,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             <CardDescription>
               {isAr
                 ? "شكرًا لإكمالك التقييم. ستتم مشاركة نتائجك مع مؤسستك، التي ستتواصل معك بشأن الخطوات التالية."
-                : "Thank you for completing the assessment. Your results are shared with your organisation, who will follow up with you on next steps."}
+                : "Thank you for completing the assessment. Your results are shared with your organization, who will follow up with you on next steps."}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -816,7 +816,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             the acquisition lens, which suppresses the develop-with-VIFM block). */}
         {!isAcquisition && (
         <RecommendedCoursesPanel
-          title={isAr ? "تطوّر مع برامج VIFM" : "Develop with VIFM programmes"}
+          title={isAr ? "تطوّر مع برامج VIFM" : "Develop with VIFM programs"}
           description={
             isAr
               ? "دورات VIFM التي تعالج الفجوات في عواملك ذات الدرجات الأقل، مرتبة حسب الملاءمة (حجم الفجوة × ملاءمة الدورة)."
@@ -825,7 +825,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
           emptyMessage={
             isAr
               ? "لا توجد توصيات حالياً - جميع عواملك قريبة من المستوى المستهدف، أو الكتالوج الحالي لا يغطي بعد العوامل ذات الدرجات الأقل."
-              : "No recommendations yet - either all your factors are near target, or the catalogue doesn't yet cover the relevant capabilities."
+              : "No recommendations yet - either all your factors are near target, or the catalog doesn't yet cover the relevant capabilities."
           }
           courses={recommendations}
           publicSource="ara"
@@ -846,12 +846,12 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-semibold">
-                {isAr ? "تصفّح كتالوج VIFM الكامل" : "Browse the full VIFM catalogue"}
+                {isAr ? "تصفّح كتالوج VIFM الكامل" : "Browse the full VIFM catalog"}
               </p>
               <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
                 {isAr
                   ? "أكثر من مئة برنامج في المالية والذكاء الاصطناعي والقيادة والحوكمة - احصل على عرض سعر مخصّص لأي برنامج."
-                  : "Over a hundred programmes across finance, AI, leadership and governance - request a tailored quote for any of them."}
+                  : "Over a hundred programs across finance, AI, leadership and governance - request a tailored quote for any of them."}
               </p>
             </div>
           </div>
@@ -859,7 +859,7 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             href="/courses?source=ara"
             className="inline-flex items-center gap-1 text-[11px] font-semibold text-accent hover:underline shrink-0"
           >
-            {isAr ? "افتح الكتالوج" : "Open catalogue"}
+            {isAr ? "افتح الكتالوج" : "Open catalog"}
             <ArrowLeft className="h-3 w-3 rotate-180" />
           </Link>
         </div>

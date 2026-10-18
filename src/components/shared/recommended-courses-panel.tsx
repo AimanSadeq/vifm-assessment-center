@@ -63,7 +63,7 @@ export async function RecommendedCoursesPanel({
         </CardHeader>
         <CardContent>
           <p className="text-sm text-muted-foreground">
-            {emptyMessage ?? "No recommendations yet - either no gaps were detected against the catalogue's mappings, or the catalogue doesn't yet cover the relevant competencies / pillars."}
+            {emptyMessage ?? "No recommendations yet - either no gaps were detected against the catalog's mappings, or the catalog doesn't yet cover the relevant competencies / pillars."}
           </p>
         </CardContent>
       </Card>
@@ -100,9 +100,9 @@ export async function RecommendedCoursesPanel({
             {" "}<span className="font-mono">×2</span>{" "}medium,
             {" "}<span className="font-mono">×3</span>{" "}strong). The
             {" "}<span className="font-semibold text-foreground">fit score</span>{" "}
-            is out of 10 - your strongest-matched programme scores 10, the rest relative to it.
+            is out of 10 - your strongest-matched program scores 10, the rest relative to it.
             {" "}<span className="font-semibold text-foreground">★ High fit</span>{" "}
-            marks the programmes that close the most, highest-priority gaps.
+            marks the programs that close the most, highest-priority gaps.
           </p>
         </div>
         {courses.map((c) => {

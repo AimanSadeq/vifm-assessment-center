@@ -249,7 +249,7 @@ async function acBehavioural(): Promise<BankReadiness> {
   const total = comps.length || COMPETENCY_COUNT;
   const covered = comps.filter((c) => withIndicators.has(String(c.id))).length;
   return {
-    key: "ac", label: "AC behavioural", tier: "reviewed", servesLive: false, hasReviewGate: false,
+    key: "ac", label: "AC behavioral", tier: "reviewed", servesLive: false, hasReviewGate: false,
     vetted: indicators.length, total: indicators.length, console: "/admin/framework",
     note: `Seeded BARS framework (assessor-rated, not MCQ). ${covered}/${total || "?"} competencies have behavioral indicators${covered < total ? ` - ${total - covered} have none` : ""}. Tags/Q&A live only in a script, not a migration.`,
   };
@@ -262,7 +262,7 @@ async function reflect(): Promise<BankReadiness> {
   return {
     key: "reflect", label: "Reflect 360", tier: "reviewed", servesLive: false, hasReviewGate: true,
     vetted: templates, total: rows.length, console: "/reflect/admin/templates",
-    note: `Multi-rater behaviour framework (frequency-rated, not scored). ${templates} library template(s) - edit their competencies + behaviours in the template console (incl. the seeded 21-competency VIFM framework v2). Per-engagement frameworks are AI-decomposed, but a consultant must APPROVE the framework before an engagement can launch / raters are invited (gate); seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
+    note: `Multi-rater behavior framework (frequency-rated, not scored). ${templates} library template(s) - edit their competencies + behaviors in the template console (incl. the seeded 21-competency VIFM framework v2). Per-engagement frameworks are AI-decomposed, but a consultant must APPROVE the framework before an engagement can launch / raters are invited (gate); seat/client-portal shells clone a pre-reviewed template, so they are approved by construction.`,
   };
 }
 

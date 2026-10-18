@@ -138,7 +138,7 @@ function DevBlock({ title, items, hex }: { title: string; items: DareDevItem[]; 
               </View>
             ))
           ) : (
-            <Text style={s.tipEmpty}>No catalogue tips for this competency yet - set a development objective with a coach.</Text>
+            <Text style={s.tipEmpty}>No catalog tips for this competency yet - set a development objective with a coach.</Text>
           )}
         </View>
       ))}
@@ -147,7 +147,7 @@ function DevBlock({ title, items, hex }: { title: string; items: DareDevItem[]; 
 }
 
 const FOOTER =
-  "A decision-role lens on a self-report sitting, built on the VIFM DARE Framework v1.0 (after the decision-rights literature: McKinsey DARE; cf. Bain RAPID). It describes behavioural readiness for a role in a decision process - it does not allocate authority. Pair with a Reflect 360° (others' view) before restructuring decision rights. Indicative until a Persona norm sample exists. © VIFM.";
+  "A decision-role lens on a self-report sitting, built on the VIFM DARE Framework v1.0 (after the decision-rights literature: McKinsey DARE; cf. Bain RAPID). It describes behavioral readiness for a role in a decision process - it does not allocate authority. Pair with a Reflect 360° (others' view) before restructuring decision rights. Indicative until a Persona norm sample exists. © VIFM.";
 
 export function DareReportPdf({ data, provisional }: { data: DarePdfData; provisional?: boolean }) {
   const p = data.profile;
@@ -202,7 +202,7 @@ export function DareReportPdf({ data, provisional }: { data: DarePdfData; provis
           <Text style={[s.statSub, { marginTop: 4 }]}>
             Each bar is the mean self-rating (1-5) of the competencies mapped to that decision role. The dashed marker is the{" "}
             {DARE_MIDPOINT.toFixed(1)} scale midpoint (moves to the norm median once a Persona norm sample exists). No role is
-            senior to another - organisations need strength in all four.
+            senior to another - organizations need strength in all four.
           </Text>
         </View>
 

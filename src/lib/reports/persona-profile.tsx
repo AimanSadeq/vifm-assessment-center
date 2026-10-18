@@ -270,7 +270,7 @@ export function PersonaProfilePdf({ data, provisional }: { data: PersonaPdfData;
           </View>
         )}
         <View style={s.banner}>
-          <Text style={s.eyebrow}>Persona® - Behavioural Self-Assessment</Text>
+          <Text style={s.eyebrow}>Persona® - Behavioral Self-Assessment</Text>
           <Text style={s.title}>{data.takerName || "Self-profile"}</Text>
           <Text style={s.subtitle}>
             {hiring
@@ -390,7 +390,7 @@ export function PersonaProfilePdf({ data, provisional }: { data: PersonaPdfData;
             )}
             {dev ? (
               <Text style={s.fitNote}>
-                A self-report development plan - pair it with a Reflect 360 (others&apos; view) and the recommended VIFM programmes below to turn priorities into progress.
+                A self-report development plan - pair it with a Reflect 360 (others&apos; view) and the recommended VIFM programs below to turn priorities into progress.
               </Text>
             ) : (
               <Text style={s.fitCaveat}>
@@ -561,9 +561,9 @@ export function PersonaProfilePdf({ data, provisional }: { data: PersonaPdfData;
             the courses that close the gaps after the analysis + the plan. */}
         {dev && data.courses && data.courses.length > 0 && (
           <View style={s.academyPanel}>
-            <Text style={s.academyTitle}>Recommended VIFM Academy programmes</Text>
+            <Text style={s.academyTitle}>Recommended VIFM Academy programs</Text>
             <Text style={s.academySub}>
-              Mapped to the development priorities - ranked by gap size and how strongly each programme targets it.
+              Mapped to the development priorities - ranked by gap size and how strongly each program targets it.
             </Text>
             {data.courses.map((c, i) => (
               <View key={`course-${i}`} style={s.courseCard} wrap={false}>
@@ -594,7 +594,7 @@ export function PersonaProfilePdf({ data, provisional }: { data: PersonaPdfData;
           <View style={s.sectionPanel}>
             <Text style={s.sectionTitle}>Interview guide</Text>
             <Text style={s.sectionSub}>
-              Behavioural (STAR) probes for the role-critical competencies, grounded in the candidate&apos;s
+              Behavioral (STAR) probes for the role-critical competencies, grounded in the candidate&apos;s
               lower-rated answers. A screening aid; record evidence and your own rating.
             </Text>
             {data.interviewProbes.map((grp) => (
@@ -618,7 +618,7 @@ export function PersonaProfilePdf({ data, provisional }: { data: PersonaPdfData;
             : "This is an indicative self-report - how the person sees themselves across the competencies. To turn it into a readiness verdict, pair Persona (self) with a Reflect 360 (others) against a target role."}
         </Text>
         <Text style={s.methodNote}>
-          Methodology: Persona is a 1-5 behavioural self-report scored per competency (reverse items
+          Methodology: Persona is a 1-5 behavioral self-report scored per competency (reverse items
           mapped), averaged by cluster, and compared against a target role and, where set, a norm group.
           It is a self-report signal, not an objective measure or a decision. See the Persona Methodology Brief for full detail.
         </Text>

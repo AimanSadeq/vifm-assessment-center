@@ -652,7 +652,7 @@ export default async function EngagementDetailPage({ params, searchParams }: Pro
           href={`/admin/engagements/${id}/fairness`}
           className="inline-flex items-center gap-1 text-accent hover:underline"
         >
-          Fairness monitoring for this centre
+          Fairness monitoring for this center
         </a>
         <span className="ms-2 text-xs text-muted-foreground">
           Whether outcomes fell differently on any group (BPS 3.19, 4.22).

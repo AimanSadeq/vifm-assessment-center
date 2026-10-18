@@ -129,8 +129,8 @@ export function buildAgreementPrefill(input: AgreementInput): AgreementPrefill {
   const approved = input.contentApproved;
   const contentStatus = approved && approved.total > 0
     ? approved.approved === approved.total
-      ? `All ${approved.total} behavioural indicators used at this centre have been approved by a subject-matter expert (at ${input.generatedAt}).`
-      : `${approved.approved} of ${approved.total} behavioural indicators used at this centre have been approved by a subject-matter expert so far (at ${input.generatedAt}). Until review is complete, results are indicative.`
+      ? `All ${approved.total} behavioral indicators used at this center have been approved by a subject-matter expert (at ${input.generatedAt}).`
+      : `${approved.approved} of ${approved.total} behavioral indicators used at this center have been approved by a subject-matter expert so far (at ${input.generatedAt}). Until review is complete, results are indicative.`
     : null;
 
   const counts = new Map<string, { role: string; providedBy: Set<string>; count: number }>();
@@ -147,7 +147,7 @@ export function buildAgreementPrefill(input: AgreementInput): AgreementPrefill {
 
   return {
     clientName: input.organisationName,
-    centreName: text(e.name) ?? "Assessment centre",
+    centreName: text(e.name) ?? "Assessment center",
     purpose,
     ratingRule,
     weightsConfirmedOn: fmtAgreementDate(e.weights_confirmed_at),

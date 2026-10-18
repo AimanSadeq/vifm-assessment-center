@@ -107,13 +107,13 @@ export function ExerciseQualityPanel({
 
       <CardContent className="space-y-3 text-sm">
         <p className="text-muted-foreground">
-          The standard names eight checks for every exercise (4.36), and requires a new one to be trialled before
+          The standard names eight checks for every exercise (4.36), and requires a new one to be trialed before
           it is used on anyone (4.37).
         </p>
 
         {review.needsTrial && (
           <p className="rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-900">
-            This exercise has never been used at a centre and has no trial recorded. A new exercise is trialled on
+            This exercise has never been used at a center and has no trial recorded. A new exercise is trialed on
             people representative of the intended participants, who are not themselves participants (4.37).
           </p>
         )}

@@ -7,9 +7,9 @@ targets, candidate and evidence are fictional. English only.
 |---|---|
 | `VIFM-Competency-Based-Interview-Approach.pptx` (and `.pdf`) | 18-slide deck: what a CBI is, the framework, the 21 competency definitions, scoping, the two-hour structure, STAR-L, the guide, the rating scale, the report, fairness, delivery options. |
 | `VIFM-CBI-Interview-Guide-Sample-Senior-Finance-Manager.pdf` | 9-page interview guide for an illustrative Senior Finance Manager role: six competencies, each with definition, indicators, three questions with three probes, notes and the five-point anchors. |
-| `VIFM-CBI-Sample-Report-Senior-Finance-Manager.pdf` | 5-page report for an anonymised, fictional candidate on the same six competencies. |
+| `VIFM-CBI-Sample-Report-Senior-Finance-Manager.pdf` | 5-page report for an anonymized, fictional candidate on the same six competencies. |
 
-Content sources: definitions, behavioural indicators and scale anchors are the live v2 framework
+Content sources: definitions, behavioral indicators and scale anchors are the live v2 framework
 (`competencies`, `behavioral_indicators`, `competency_scale_anchors`). The anchors are AI drafts
 pending SME review in Caliber, and that applies here too. The interview questions and probes were
 written for this pack in STAR-L form; nothing from any third-party interview guide was reused.

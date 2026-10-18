@@ -43,8 +43,8 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     name: "Assessment Center",
     href: "/admin",
     itemTypes:
-      "Behaviourally Anchored Rating Scales (BARS, 1-5 + No Evidence) applied by trained assessors to observed behaviour across multiple exercises, integrated in a consensus wash-up.",
-    construct: "The 21 VIFM behavioural competencies (4 domains, 8 clusters, 225 behavioural indicators).",
+      "Behaviorally Anchored Rating Scales (BARS, 1-5 + No Evidence) applied by trained assessors to observed behavior across multiple exercises, integrated in a consensus wash-up.",
+    construct: "The 21 VIFM behavioral competencies (4 domains, 8 clusters, 225 behavioral indicators).",
     validity:
       "Content validity - competencies and indicators derived from the VIFM framework; each competency is observed in at least two exercises (the exercise-competency matrix), the design basis for content coverage.",
     reliability: "Inter-rater reliability via Intraclass Correlation (ICC) across assessors; ratings integrated to consensus.",
@@ -52,7 +52,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     literature: [
       "ISO 10667 - Assessment service delivery in work and organizational settings",
       "International Taskforce on Assessment Center Operations - Guidelines (6th ed., 2015)",
-      "Smith & Kendall (1963) - Behaviourally Anchored Rating Scales",
+      "Smith & Kendall (1963) - Behaviorally Anchored Rating Scales",
       "Shrout & Fleiss (1979) - Intraclass correlations",
     ],
     docs: [
@@ -68,8 +68,8 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     name: "AI Readiness Compass® (ARA)",
     href: "/ara",
     itemTypes:
-      "Layer-1 self-assessment maturity items (Likert 1-5), plus situational-judgment and knowledge-check items; mapped to 8 organisational pillars and 4 individual factors.",
-    construct: "Organisational and individual AI readiness across 8 pillars / 4 VIFM factors.",
+      "Layer-1 self-assessment maturity items (Likert 1-5), plus situational-judgment and knowledge-check items; mapped to 8 organizational pillars and 4 individual factors.",
+    construct: "Organizational and individual AI readiness across 8 pillars / 4 VIFM factors.",
     validity:
       "Content validity - a vetted Production Bank (v1.1) with per-question validation evidence (anchor instruments + human-review status); pillars pre-mapped to 16 UAE/Saudi regulatory frameworks.",
     reliability: "Distortion detection and perception-vs-reality validated scoring; per-pillar internal-consistency planned.",
@@ -88,10 +88,10 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
   },
   {
     key: "persona",
-    name: "Persona® (behavioural self-assessment)",
+    name: "Persona® (behavioral self-assessment)",
     href: "/ac/persona",
-    itemTypes: "Likert self-ratings across the behavioural competencies - the 'self' view that feeds Succession Readiness.",
-    construct: "Self-perceived standing on the VIFM behavioural competencies.",
+    itemTypes: "Likert self-ratings across the behavioral competencies - the 'self' view that feeds Succession Readiness.",
+    construct: "Self-perceived standing on the VIFM behavioral competencies.",
     validity:
       "Content validity - the same competency framework as the Assessment Center and Reflect 360; single-source self-report, triangulated against 360 ratings in Succession Readiness.",
     reliability: "Internal consistency planned; self-vs-others gap computed against Reflect 360 (others).",
@@ -151,7 +151,7 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     construct: "Functional technical skill per finance domain.",
     validity:
       "Content validity - an SME-reviewed item bank with documented cut-scores. The CERTIFIED path assembles only approved items; otherwise the result is INDICATIVE.",
-    reliability: "Light item statistics (p-values); IRT calibration not yet; single-use secure delivery with re-randomised options.",
+    reliability: "Light item statistics (p-values); IRT calibration not yet; single-use secure delivery with re-randomized options.",
     tier: "grounded",
     literature: [
       "Roth, Bobko & McFarland (2005) - work-sample test validity",
@@ -169,10 +169,10 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     name: "Reflect 360®",
     href: "/reflect",
     itemTypes:
-      "Multi-rater behavioural items on a 5-point frequency scale, decomposed from the client's own values/competencies; rated by Self, Manager, Peer and Direct Report.",
-    construct: "Observed leadership behaviours against the client's competency model.",
+      "Multi-rater behavioral items on a 5-point frequency scale, decomposed from the client's own values/competencies; rated by Self, Manager, Peer and Direct Report.",
+    construct: "Observed leadership behaviors against the client's competency model.",
     validity:
-      "Content validity - behaviours derived from the client's own framework; the multi-source design reduces single-rater bias.",
+      "Content validity - behaviors derived from the client's own framework; the multi-source design reduces single-rater bias.",
     reliability: "Anonymity threshold (min-n) before group means surface; self-vs-others gap and year-on-year deltas.",
     tier: "grounded",
     literature: [
@@ -181,14 +181,14 @@ export const EVIDENCE_INSTRUMENTS: EvidenceInstrument[] = [
     ],
     docs: [{ label: "Reflect 360", href: "/reflect" }],
     countKey: "reflect_behaviors",
-    countLabel: "seeded behaviours",
+    countLabel: "seeded behaviors",
   },
   {
     key: "prehire",
     name: "Pre-Hire® (screening composite)",
     href: "/admin/prehire",
     itemTypes:
-      "An orchestration layer - a weighted composite of a competency quiz, the Fluent placement and an AI behavioural interview (CBI). It adds no items of its own.",
+      "An orchestration layer - a weighted composite of a competency quiz, the Fluent placement and an AI behavioral interview (CBI). It adds no items of its own.",
     construct: "A defensible screening signal for selection - not a development diagnostic, never an auto-reject; a human always decides.",
     validity:
       "Process / defensibility validity - per-stage cut-scores, adverse-impact (4/5ths) monitoring, and an immutable audit trail. The composite is a signal, not a decision.",

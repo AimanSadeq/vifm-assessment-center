@@ -23,7 +23,7 @@ const ACQUIRE: Svc[] = [
   { name: "Pre-Hire® screening", desc: "Quiz + English + AI interview, ranked.", href: "/admin/prehire", icon: UserSearch, tone: "text-rose-600" },
   { name: "Techno®", desc: "Hands-on, function-specific proficiency.", href: "/admin/tech-sandbox?lens=acquisition", icon: BadgeCheck, tone: "text-indigo-600" },
   { name: "Logica®", desc: "Indicative reasoning aptitude (psychometrics).", href: "/ac/cognitive", icon: BrainCircuit, tone: "text-emerald-600" },
-  { name: "Persona®", desc: "Behavioural self-assessment across the framework.", href: "/ac/persona", icon: Layers, tone: "text-fuchsia-600" },
+  { name: "Persona®", desc: "Behavioral self-assessment across the framework.", href: "/ac/persona", icon: Layers, tone: "text-fuchsia-600" },
   { name: "Fluent® (English)", desc: "Four-skill CEFR English placement.", href: "/ac/fluent", icon: Languages, tone: "text-sky-600" },
 ];
 
@@ -33,14 +33,14 @@ const MANAGE: Svc[] = [
   { name: "Reflect 360®", desc: "Multi-rater leadership feedback.", href: "/reflect", icon: Aperture, tone: "text-teal-600" },
   { name: "Succession Readiness", desc: "Persona® + 360 vs a target role.", href: "/admin/readiness", icon: TrendingUp, tone: "text-amber-600" },
   { name: "Techno®", desc: "Function skill gaps mapped to courses.", href: "/admin/tech-sandbox?lens=development", icon: BadgeCheck, tone: "text-indigo-600" },
-  { name: "VIFM Academy", desc: "Training catalogue + course recommender.", href: "/admin/courses", icon: GraduationCap, tone: "text-orange-600" },
+  { name: "VIFM Academy", desc: "Training catalog + course recommender.", href: "/admin/courses", icon: GraduationCap, tone: "text-orange-600" },
 ];
 
 const PLATFORM: Svc[] = [
   { name: "Clients", desc: "Unified client registry across services.", href: "/admin/clients", icon: Building2, tone: "text-slate-600" },
   { name: "Role profiles", desc: "Reusable target-role competency packs.", href: "/admin/role-profiles", icon: Briefcase, tone: "text-cyan-700" },
   { name: "Vouchers", desc: "Issue + track redeemable access codes.", href: "/admin/vouchers", icon: Ticket, tone: "text-[#5391D5]" },
-  { name: "Competency framework", desc: "The behavioural competencies + indicators.", href: "/admin/framework", icon: Network, tone: "text-fuchsia-700" },
+  { name: "Competency framework", desc: "The behavioral competencies + indicators.", href: "/admin/framework", icon: Network, tone: "text-fuchsia-700" },
   { name: "Compare portals", desc: "Talent Acquisition vs Talent Development.", href: "/compare", icon: Table2, tone: "text-indigo-600" },
   { name: "Research & validity", desc: "Evidence behind every instrument.", href: "/evidence", icon: BookOpen, tone: "text-emerald-700" },
   { name: "Psychometrics bank", desc: "SME item bank + calibration.", href: "/admin/psychometrics", icon: ListChecks, tone: "text-violet-700" },

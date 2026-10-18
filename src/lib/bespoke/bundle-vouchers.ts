@@ -132,7 +132,7 @@ export async function redeemBundleVoucher(input: {
         .eq("id", voucher.bespoke_service_id)
         .maybeSingle<{ status: string }>();
       if (!bundle || bundle.status !== "active") {
-        return { ok: false, error: "This programme is no longer available. Please contact the organisation that invited you." };
+        return { ok: false, error: "This program is no longer available. Please contact the organization that invited you." };
       }
       const { data: cand, error: candErr } = await sb
         .from("bundle_candidates")
@@ -185,10 +185,10 @@ async function checkBundleGate(rawCode: string, email: string): Promise<Gate> {
 
   const entry = settings.rosterRequired ? await findRosterEntry(v.bespoke_service_id, email) : null;
   if (settings.rosterRequired && !entry) {
-    return { error: "This email is not on the list of people invited to this assessment. Please use your work email, or contact the organisation that invited you." };
+    return { error: "This email is not on the list of people invited to this assessment. Please use your work email, or contact the organization that invited you." };
   }
   if (settings.held && !entry?.is_tester) {
-    return { error: "This assessment is not open yet. Your organisation will let you know when it opens." };
+    return { error: "This assessment is not open yet. Your organization will let you know when it opens." };
   }
   if (entry?.bundle_candidate_id) {
     const { data: cand } = await sb

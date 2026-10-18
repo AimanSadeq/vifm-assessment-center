@@ -59,7 +59,7 @@ export const createEngagementSchema = z.object({
   // surfaced to the user. SD-5 recurring bug.
   organization_id: z.preprocess(
     (v) => (typeof v === "string" && v.trim() === "" ? null : v),
-    z.string().uuid("Please pick a valid client organisation.").nullable().optional()
+    z.string().uuid("Please pick a valid client organization.").nullable().optional()
   ),
   region: z.enum(REGION).nullable().optional(),
   sector: z.enum(SECTOR).nullable().optional(),

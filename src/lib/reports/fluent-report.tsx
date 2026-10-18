@@ -55,16 +55,16 @@ const SPEAK_CRIT: Array<[keyof FluentResult["speaking"], string]> = [
 // reader what that criterion is actually rating.
 const WRITE_DEF: Record<string, string> = {
   task_achievement: "Addresses every part of the prompt with relevant, on-topic content.",
-  coherence: "Organises ideas logically and links them with clear connectors.",
+  coherence: "Organizes ideas logically and links them with clear connectors.",
   lexical_range: "Range and precision of vocabulary, including word choice and collocation.",
   grammar: "Variety and correctness of sentence structures and grammatical forms.",
   register: "Maintains an appropriate, business-like tone for the audience and purpose.",
   etiquette: "Observes professional conventions - greeting, polite requests, sign-off.",
-  mechanics: "Accuracy of spelling, punctuation and capitalisation.",
+  mechanics: "Accuracy of spelling, punctuation and capitalization.",
 };
 const SPEAK_DEF: Record<string, string> = {
   fluency: "Speaks at a natural pace with limited hesitation or self-correction.",
-  coherence: "Organises spoken ideas logically so they are easy to follow.",
+  coherence: "Organizes spoken ideas logically so they are easy to follow.",
   lexical_range: "Range and precision of vocabulary used when speaking.",
   grammar: "Variety and correctness of the structures used in speech.",
 };
@@ -370,7 +370,7 @@ export function FluentReport({
             <View style={s.block}>
               <Text style={s.narrative}>
                 This session was camera-proctored with the candidate&apos;s consent. A separate Proctoring &amp;
-                Integrity Report - timestamped snapshots and an AI integrity review - is available to authorised VIFM
+                Integrity Report - timestamped snapshots and an AI integrity review - is available to authorized VIFM
                 staff.
               </Text>
               {data.proctoring.reportUrl ? (
@@ -387,10 +387,10 @@ export function FluentReport({
             Omitted entirely when neither source returns a match. */}
         {hasRecs && recs && (
           <>
-            <Text style={s.sectionTitle}>Recommended development programmes</Text>
+            <Text style={s.sectionTitle}>Recommended development programs</Text>
             <View style={s.block}>
               <Text style={s.narrative}>
-                Programmes to strengthen the English measured here
+                Programs to strengthen the English measured here
                 {recs.weakest ? `, with a focus on ${SKILL_LABEL[recs.weakest.skill] ?? recs.weakest.skill}` : ""}.
               </Text>
               {recs.vifm.length > 0 && (

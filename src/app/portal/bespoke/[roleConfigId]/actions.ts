@@ -19,7 +19,7 @@ export async function clientInviteRoleCandidateAction(input: {
   const access = await resolvePortalAccess(input.orgParam);
   if (!access.ok || !access.orgId) return { error: "Not authorized." };
   const orgId = access.orgId;
-  if (!UUID_RE.test(input.roleConfigId)) return { error: "Invalid programme." };
+  if (!UUID_RE.test(input.roleConfigId)) return { error: "Invalid program." };
 
   const name = (input.fullName || "").trim();
   const email = (input.email || "").trim();
@@ -34,7 +34,7 @@ export async function clientInviteRoleCandidateAction(input: {
     .eq("role_config_id", input.roleConfigId)
     .eq("organization_id", orgId)
     .maybeSingle();
-  if (!assigned) return { error: "This programme is not assigned to your organisation." };
+  if (!assigned) return { error: "This program is not assigned to your organization." };
 
   const { data, error } = await sb
     .from("rr_candidates")
@@ -72,7 +72,7 @@ export async function clientIssueRoleVouchersAction(input: {
   const access = await resolvePortalAccess(input.orgParam);
   if (!access.ok || !access.orgId) return { error: "Not authorized." };
   const orgId = access.orgId;
-  if (!UUID_RE.test(input.roleConfigId)) return { error: "Invalid programme." };
+  if (!UUID_RE.test(input.roleConfigId)) return { error: "Invalid program." };
 
   const sb = createServiceClient();
   const { data: assigned } = await sb
@@ -82,7 +82,7 @@ export async function clientIssueRoleVouchersAction(input: {
     .eq("role_config_id", input.roleConfigId)
     .eq("organization_id", orgId)
     .maybeSingle();
-  if (!assigned) return { error: "This programme is not assigned to your organisation." };
+  if (!assigned) return { error: "This program is not assigned to your organization." };
 
   return createRoleReadinessVouchers({
     roleConfigId: input.roleConfigId,

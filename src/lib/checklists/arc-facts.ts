@@ -55,12 +55,12 @@ export async function loadArcChecklistFacts(
   const layers = [e.include_individual_layer && "individual", e.include_agentic_layer && "agentic", e.talent_lens && `lens: ${String(e.talent_lens)}`].filter(Boolean);
 
   const facts: ChecklistFacts = {
-    "arc.region": { done: Boolean(org?.region && org?.sector), detail: org ? `${String(org.region ?? "?")}, ${String(org.sector ?? "?")}` : "No organisation" },
+    "arc.region": { done: Boolean(org?.region && org?.sector), detail: org ? `${String(org.region ?? "?")}, ${String(org.sector ?? "?")}` : "No organization" },
     "arc.stage": { done: Boolean(stage), detail: stage ? `${ARA_STAGE_MAP[stage as keyof typeof ARA_STAGE_MAP]?.label_en ?? stage}: ${pillars.length} pillars` : "Not set" },
-    "arc.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organisation" : "No organisation" },
-    "arc.contact": { done: Boolean(org?.client_contact_name || org?.client_contact_email), detail: org?.client_contact_name ? String(org.client_contact_name) : "No contact on the organisation" },
+    "arc.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organization" : "No organization" },
+    "arc.contact": { done: Boolean(org?.client_contact_name || org?.client_contact_email), detail: org?.client_contact_name ? String(org.client_contact_name) : "No contact on the organization" },
     "arc.layers": { done: true, detail: layers.length ? layers.join(", ") : "Pillars only" },
-    "arc.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organisation" },
+    "arc.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organization" },
     "arc.assessment": { done: Boolean(e.question_bank_version_id), detail: e.question_bank_version_id ? "On a pinned question bank" : "No question bank pinned" },
     "arc.sandbox": { done: !e.is_sandbox, detail: e.is_sandbox ? "Marked as sandbox: results will be purged" : "Live assessment" },
     "arc.weights": { done: true, detail: weights && Object.keys(weights).length ? "Custom weights" : "Default weights" },

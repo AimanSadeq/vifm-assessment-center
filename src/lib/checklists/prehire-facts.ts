@@ -76,12 +76,12 @@ export async function loadPrehireChecklistFacts(
   const weightSum = plan.reduce((s, x) => s + Number(x.weight ?? 0), 0);
 
   const facts: ChecklistFacts = {
-    "prehire.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organisation" : "No organisation" },
+    "prehire.proposal": { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organization" : "No organization" },
     "prehire.recipient": { done: Boolean(r.client_recipient_email), detail: r.client_recipient_email ? String(r.client_recipient_email) : "No client recipient set" },
     "prehire.plan": { done: plan.length > 0 && Math.abs(weightSum - 1) < 0.02, detail: plan.length ? plan.map((s) => `${String(s.kind)} ${Math.round(Number(s.weight ?? 0) * 100)}%${s.cut_score != null ? ` cut ${String(s.cut_score)}` : ""}`).join(", ") : "No stages configured" },
     "prehire.profile": { done: Boolean(r.role_profile_id) || comps > 0, detail: r.role_profile_id ? "Role profile bound" : comps ? `${comps} competencies selected` : "No role profile or competencies" },
     "prehire.english": { done: true, detail: r.english_required ? "English required: Fluent stage applies" : "English not required" },
-    "prehire.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organisation" },
+    "prehire.org": { done: Boolean(orgId), detail: org?.name ? String(org.name) : "No organization" },
     "prehire.open": { done: status !== "draft", detail: status },
     "prehire.candidates": { done: n > 0, detail: `${n} candidate${n === 1 ? "" : "s"}` },
     "prehire.invited": { done: n > 0 && invited === n, detail: `${invited} of ${n} invited` },

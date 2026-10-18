@@ -14,7 +14,7 @@ export async function analyzeProctorSessionAction(
   try {
     await requireRole(["admin"]);
   } catch (e) {
-    if (isAuthorizationError(e)) return { ok: false, error: "Not authorised." };
+    if (isAuthorizationError(e)) return { ok: false, error: "Not authorized." };
     throw e;
   }
   if (!SESSION_RE.test(sessionId)) return { ok: false, error: "Invalid session id." };

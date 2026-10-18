@@ -41,11 +41,11 @@ async function resolveActorOrg(orgParam?: string): Promise<{ orgId: string } | {
   }
   if (caller.role === "client_manager") {
     const orgId = await getClientOrgId();
-    if (!orgId) return { error: "Your account is not linked to an organisation." };
+    if (!orgId) return { error: "Your account is not linked to an organization." };
     return { orgId };
   }
-  if (!orgParam) return { error: "Select a client organisation." };
-  if (!UUID_RE.test(orgParam)) return { error: "Invalid organisation id." };
+  if (!orgParam) return { error: "Select a client organization." };
+  if (!UUID_RE.test(orgParam)) return { error: "Invalid organization id." };
   return { orgId: orgParam };
 }
 

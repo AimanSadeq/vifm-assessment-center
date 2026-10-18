@@ -78,7 +78,7 @@ function CombinedCover({ d }: { d: CoverData }) {
         <View style={{ flexDirection: "row", gap: 10 }}>
           {d.persona && (
             <View style={[s.panel, { flex: 1 }]}>
-              <Text style={s.panelTitle}>Persona® · behavioural self-assessment</Text>
+              <Text style={s.panelTitle}>Persona® · behavioral self-assessment</Text>
               <Text style={s.bigValue}>{d.persona.overall.toFixed(2)} / 5</Text>
               <Text style={s.sub}>Overall self-rating · {d.persona.bandLabel}</Text>
               <View style={{ marginTop: 6 }}>
@@ -176,7 +176,7 @@ export async function buildBundleCombinedReport(candidateId: string): Promise<Co
   if (cand.persona_session_id) {
     const persona = await buildPersonaPdfData(cand.persona_session_id, "en");
     if (persona.ok) {
-      sections.push({ name: "Persona® Behavioural Profile", buffer: Buffer.from(await renderToBuffer(<PersonaProfilePdf data={persona.data} />)) });
+      sections.push({ name: "Persona® Behavioral Profile", buffer: Buffer.from(await renderToBuffer(<PersonaProfilePdf data={persona.data} />)) });
     }
     const lead = await buildLeadershipPdfData(cand.persona_session_id);
     if (lead.ok) {

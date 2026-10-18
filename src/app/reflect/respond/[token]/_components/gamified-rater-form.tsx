@@ -44,12 +44,12 @@ const SCALE_LABELS = {
 
 const ROLE_FRAMING = {
   en: {
-    self: { title: "Self assessment", lead: "Rate how often you show each behaviour." },
-    manager: { title: "Manager perspective", lead: "Rate how often your direct report shows each behaviour." },
-    peer: { title: "Peer perspective", lead: "Rate how often your colleague shows each behaviour." },
-    direct_report: { title: "Direct-report perspective", lead: "Rate how often your line manager shows each behaviour." },
-    skip_level: { title: "Skip-level perspective", lead: "Rate how often this leader shows each behaviour." },
-    other: { title: "Cross-functional perspective", lead: "Rate how often your collaborator shows each behaviour." },
+    self: { title: "Self assessment", lead: "Rate how often you show each behavior." },
+    manager: { title: "Manager perspective", lead: "Rate how often your direct report shows each behavior." },
+    peer: { title: "Peer perspective", lead: "Rate how often your colleague shows each behavior." },
+    direct_report: { title: "Direct-report perspective", lead: "Rate how often your line manager shows each behavior." },
+    skip_level: { title: "Skip-level perspective", lead: "Rate how often this leader shows each behavior." },
+    other: { title: "Cross-functional perspective", lead: "Rate how often your collaborator shows each behavior." },
   },
   ar: {
     self: { title: "التقييم الذاتي", lead: "قيّم مدى تكرار قيامك بكل سلوك." },

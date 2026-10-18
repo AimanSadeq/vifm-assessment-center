@@ -13,7 +13,7 @@ import {
   summariseFollowups,
 } from "./validity.ts";
 
-test("follow-ups fall due six and twelve months after the centre, clamped to month end", () => {
+test("follow-ups fall due six and twelve months after the center, clamped to month end", () => {
   assert.deepEqual(followupDueDates("2026-06-17"), [
     { wave: "6m", dueOn: "2026-12-17" },
     { wave: "12m", dueOn: "2027-06-17" },
@@ -53,8 +53,8 @@ test("criteria overlap flags pairs above 0.7 and ignores thin pairs", () => {
     ratings.push({ candidateId: `c${i}`, competencyId: "C", score: 1 + ((i * 7) % 5) }); // unrelated
   }
   for (let i = 0; i < 4; i++) ratings.push({ candidateId: `c${i}`, competencyId: "D", score: 3 }); // too few
-  const out = criteriaOverlap(ratings, { A: "Analysis", B: "Judgement", C: "Communication" });
-  const ab = out.find((p) => p.a === "Analysis" && p.b === "Judgement");
+  const out = criteriaOverlap(ratings, { A: "Analysis", B: "Judgment", C: "Communication" });
+  const ab = out.find((p) => p.a === "Analysis" && p.b === "Judgment");
   assert.equal(ab?.merge, true);
   assert.equal(ab?.n, 12);
   assert.ok(out.every((p) => p.a !== "D" && p.b !== "D"));
@@ -70,7 +70,7 @@ test("follow-up summary separates due, overdue, collected and not available", ()
   assert.deepEqual(s, { total: 4, due: 1, overdue: 1, collected: 1, notAvailable: 1, inRole: 1 });
 });
 
-test("the evaluation calendar runs annually from the last evaluation, or from the first centre", () => {
+test("the evaluation calendar runs annually from the last evaluation, or from the first center", () => {
   const fresh = evaluationCalendar({ firstCentreOn: "2025-06-01", lastEvaluationOn: null, lastMajorOn: null, today: "2026-09-30" });
   assert.equal(fresh.annualDueOn, "2026-06-01");
   assert.equal(fresh.annualOverdue, true);

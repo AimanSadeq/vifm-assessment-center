@@ -1240,7 +1240,7 @@ function techDevFocusEn(ctx: DevFocusContext): string | null {
   if (hasSub) {
     return ctx.band === "basic"
       ? `${lead} - this is a priority development area; focus first on ${ctx.weakestSubEn}${subPct}, the weakest sub-area, through structured training and supervised practice.`
-      : `${lead} - strengthen through applied practice, prioritising ${ctx.weakestSubEn}${subPct}, the weakest sub-area.`;
+      : `${lead} - strengthen through applied practice, prioritizing ${ctx.weakestSubEn}${subPct}, the weakest sub-area.`;
   }
   return ctx.band === "basic"
     ? `${lead} - this is a priority development area; build foundational capability here through structured training and supervised practice.`
@@ -1462,7 +1462,7 @@ export async function getSessionReport(token: string): Promise<SessionReport | n
   const narrativeEn =
     `This is a development read of the candidate's technical skill. Overall, a ${overallBand} result at ${overallPct}%, where ${techBandSentenceEn(overallBand)}.` +
     (showSW
-      ? ` ${strongest!.nameEn} is a relative strength to build on; prioritise development in ${weakest!.nameEn}. See the per-area development focus below.`
+      ? ` ${strongest!.nameEn} is a relative strength to build on; prioritize development in ${weakest!.nameEn}. See the per-area development focus below.`
       : " See the per-area development focus below.");
   const narrativeAr =
     `هذه قراءة تطويرية لمهارة المرشح التقنية. بشكل عام، النتيجة ${techBandLabelAr(overallBand)} عند ${overallPct}%، حيث ${techBandSentenceAr(overallBand)}.` +

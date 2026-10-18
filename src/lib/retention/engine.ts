@@ -221,7 +221,7 @@ export async function runRetentionForService(
   }
   for (const step of spec.anonymise ?? []) {
     try { out.anonymised += await runAnonymise(sb, step, cutoff, dryRun); }
-    catch (e) { out.errors.push(e instanceof Error ? e.message : `${step.table}: anonymise failed`); }
+    catch (e) { out.errors.push(e instanceof Error ? e.message : `${step.table}: anonymize failed`); }
   }
   for (const step of spec.sweeps ?? []) {
     try { out.swept += await runSweep(sb, step, dryRun); }

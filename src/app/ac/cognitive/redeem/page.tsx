@@ -31,7 +31,7 @@ export default async function CognitiveRedeemPage({ searchParams }: Props) {
               Redeem your access code
             </h1>
             <p className="mt-3 text-base leading-relaxed text-white/75">
-              Enter the voucher code your organisation gave you, then take a short
+              Enter the voucher code your organization gave you, then take a short
               numerical, verbal, inductive and deductive reasoning assessment. No account needed.
             </p>
           </div>

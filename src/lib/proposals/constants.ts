@@ -25,21 +25,21 @@ export const PROPOSAL_BLURB: Record<ProposalServiceKey, string> = {
   fluent:
     "Indicative CEFR English placement across reading, listening, writing and speaking. Receptive skills are auto-scored; productive skills are AI-scored against a CEFR rubric with human-review calibration. Positioned as indicative placement, not a certified high-stakes qualification.",
   logica:
-    "Indicative cognitive reasoning aptitude across numerical, verbal, inductive and deductive reasoning. The full keyed test is held server-side and graded there, with option order re-randomised per administration to protect result validity.",
+    "Indicative cognitive reasoning aptitude across numerical, verbal, inductive and deductive reasoning. The full keyed test is held server-side and graded there, with option order re-randomized per administration to protect result validity.",
   persona:
-    "Behavioural competency self-assessment mapped to the VIFM behavioural framework across its four domains (Thinking, Results, People and Self), with optional decision-rights (DARE) and emotional-intelligence lenses on the same sitting. Produces a development-grade profile and, where a target role is set, a role-fit view.",
+    "Behavioral competency self-assessment mapped to the VIFM behavioral framework across its four domains (Thinking, Results, People and Self), with optional decision-rights (DARE) and emotional-intelligence lenses on the same sitting. Produces a development-grade profile and, where a target role is set, a role-fit view.",
   techno:
     "Function-specific technical proficiency drawn from an SME-reviewed item bank. Delivers an indicative 1-5 band per domain, or a certified, publicly verifiable credential when the score clears the documented cut-score. Secure delivery with a server-held answer key.",
   prehire:
-    "Commercial pre-employment screening that orchestrates a competency check, an English placement and a short behavioural interview into a single advisory composite. It is a screening signal for selection - not a development diagnostic, and never an auto-reject: a person always makes the hiring decision.",
+    "Commercial pre-employment screening that orchestrates a competency check, an English placement and a short behavioral interview into a single advisory composite. It is a screening signal for selection - not a development diagnostic, and never an auto-reject: a person always makes the hiring decision.",
   arc:
-    "Organisational and individual AI readiness across eight pillars, benchmarked against peers with year-on-year tracking. Deliverables include a bilingual (EN/AR) consultant report, a capability-building plan and a regulatory-alignment view for UAE and Saudi frameworks.",
+    "Organizational and individual AI readiness across eight pillars, benchmarked against peers with year-on-year tracking. Deliverables include a bilingual (EN/AR) consultant report, a capability-building plan and a regulatory-alignment view for UAE and Saudi frameworks.",
   reflect:
     "Multi-rater 360 leadership feedback against the client's own competency framework. Self, manager, peer and direct-report ratings roll up into anonymity-protected participant and cohort reports with an individual development plan.",
   bespoke:
     "Configurable assessment solutions assembled from the Caliber instrument suite - custom bundles, role-readiness batteries and client-specific assessment designs - scoped, configured and reported to the client's own framework by VIFM consultants.",
   succession:
-    "Succession and role-readiness evaluation combining behavioural (Persona) and technical (Techno) evidence against a defined target role, producing a ready / not-ready verdict with a personal development plan for each succession candidate."
+    "Succession and role-readiness evaluation combining behavioral (Persona) and technical (Techno) evidence against a defined target role, producing a ready / not-ready verdict with a personal development plan for each succession candidate."
 };
 
 /** Concrete deliverables per service, listed under each technical-approach block. */
@@ -47,15 +47,15 @@ export const PROPOSAL_DELIVERABLES: Record<ProposalServiceKey, string[]> = {
   fluent: [
     "Individual CEFR placement report with per-skill breakdown (reading, listening, writing, speaking)",
     "Downloadable placement certificate per participant",
-    "Cohort placement matrix for programme planning",
+    "Cohort placement matrix for program planning",
   ],
   logica: [
     "Individual reasoning profile with per-subtest bands (numerical, verbal, inductive, deductive)",
     "Cohort analytics with band distributions",
-    "Administration integrity signals surfaced to the programme owner",
+    "Administration integrity signals surfaced to the program owner",
   ],
   persona: [
-    "Individual behavioural profile across the VIFM behavioural framework (Thinking, Results, People and Self)",
+    "Individual behavioral profile across the VIFM behavioral framework (Thinking, Results, People and Self)",
     "Optional decision-rights (DARE) and emotional-intelligence report lenses",
     "Role-fit view where a target role profile is set",
     "Cohort intelligence sheet for the sponsoring organization",
@@ -89,7 +89,7 @@ export const PROPOSAL_DELIVERABLES: Record<ProposalServiceKey, string[]> = {
     "Consultant walkthrough of results and recommendations",
   ],
   succession: [
-    "Target-role readiness profile (behavioural + technical evidence)",
+    "Target-role readiness profile (behavioral + technical evidence)",
     "Per-candidate ready / not-ready verdict with rationale",
     "Individual development plan per succession candidate",
     "Cohort succession-bench summary for HR leadership",
@@ -242,7 +242,7 @@ export const PROPOSAL_SERVICE_BASIS: Record<ProposalServiceKey, string> = {
 export const PROPOSAL_SERVICE_CATEGORY: Record<ProposalServiceKey, string> = {
   prehire: "Pre-employment screening",
   logica: "Reasoning aptitude",
-  persona: "Behavioural self-assessment",
+  persona: "Behavioral self-assessment",
   techno: "Technical proficiency",
   fluent: "English placement",
   arc: "AI readiness diagnostic",
@@ -257,7 +257,7 @@ export const DEFAULT_PAYMENT_TERMS =
 
 /** SaaS payment schedule seeded when a new proposal opens in licence mode. */
 export const DEFAULT_LICENCE_PAYMENT_TERMS =
-  "50% upon signing; 50% upon go-live; annually in advance thereafter. The licence is annual and renewable; renewal for Year 2 is capped at no more than a 5% uplift. Fees are exclusive of any applicable taxes.";
+  "50% upon signing; 50% upon go-live; annually in advance thereafter. The license is annual and renewable; renewal for Year 2 is capped at no more than a 5% uplift. Fees are exclusive of any applicable taxes.";
 
 // ── Section selection + recommendation tiers (Phase 2) ──
 // The document outline, each section carrying a recommendation tier. MANDATORY

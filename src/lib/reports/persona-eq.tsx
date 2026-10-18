@@ -112,7 +112,7 @@ function DevBlock({ title, items }: { title: string; items: EqDevItem[] }) {
               </View>
             ))
           ) : (
-            <Text style={s.tipEmpty}>No catalogue tips for this competency yet - set a development objective with a coach.</Text>
+            <Text style={s.tipEmpty}>No catalog tips for this competency yet - set a development objective with a coach.</Text>
           )}
         </View>
       ))}

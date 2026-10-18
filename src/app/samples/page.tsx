@@ -12,7 +12,7 @@ import {
 export const metadata = {
   title: "AI Readiness Compass - Sample Reports | VIFM",
   description:
-    "The three deliverables of an AI Readiness Compass engagement, rendered live from a sample organisation: department report, division consolidation, individual report. English and Arabic.",
+    "The three deliverables of an AI Readiness Compass engagement, rendered live from a sample organization: department report, division consolidation, individual report. English and Arabic.",
 };
 
 /**
@@ -45,7 +45,7 @@ const SAMPLES = [
     title: "Division consolidation",
     subject: `${SAMPLE_DIVISION_LABEL} over ${SAMPLE_DEPARTMENT_LABEL} and Finance`,
     blurb:
-      "What a division engagement adds on top of its departments' own reports: the units ranked, every unit against every pillar with a profile radar and spread chart, the agenda matrix that sorts each pillar into central programme or practice transfer, a deep-dive page per pillar with division-level actions, workforce readiness across units, a twelve-month roadmap and pooled training.",
+      "What a division engagement adds on top of its departments' own reports: the units ranked, every unit against every pillar with a profile radar and spread chart, the agenda matrix that sorts each pillar into central program or practice transfer, a deep-dive page per pillar with division-level actions, workforce readiness across units, a twelve-month roadmap and pooled training.",
     pages: "About 16 pages",
     arabic: true,
   },
@@ -56,7 +56,7 @@ const SAMPLES = [
     title: "Enterprise consolidation",
     subject: `${SAMPLE_ENTERPRISE_LABEL} over Corporate Services and Operations`,
     blurb:
-      "The organisation-level view: divisions compared on the same scale, each division's score pooled from the departments beneath it, with a drill-down to every department so a board can see which division is carrying the number and which department inside it is dragging - then the same deep dives, agenda matrix, roadmap and training as the division consolidation, at enterprise level.",
+      "The organization-level view: divisions compared on the same scale, each division's score pooled from the departments beneath it, with a drill-down to every department so a board can see which division is carrying the number and which department inside it is dragging - then the same deep dives, agenda matrix, roadmap and training as the division consolidation, at enterprise level.",
     pages: "About 17 pages",
     arabic: true,
   },
@@ -67,7 +67,7 @@ const SAMPLES = [
     title: "Individual report",
     subject: `One officer in ${SAMPLE_DEPARTMENT_LABEL}`,
     blurb:
-      "Delivered to VIFM and the client for each person who completed the individual layer: the four AI-readiness factors with self-rated versus demonstrated sub-scores, strengths, sequenced development priorities, a 30/60/90-day plan, comparison against their unit and organisation, matched VIFM training, and a manager conversation guide.",
+      "Delivered to VIFM and the client for each person who completed the individual layer: the four AI-readiness factors with self-rated versus demonstrated sub-scores, strengths, sequenced development priorities, a 30/60/90-day plan, comparison against their unit and organization, matched VIFM training, and a manager conversation guide.",
     pages: "4 pages",
     arabic: true,
   },
@@ -83,8 +83,8 @@ const SAMPLES = [
 const DASHBOARD = {
   href: "/samples/arc-dashboard",
   kicker: "Interactive",
-  title: "Organisational dashboard",
-  subject: `${SAMPLE_ORG_NAME} - organisation to division to department to person`,
+  title: "Organizational dashboard",
+  subject: `${SAMPLE_ORG_NAME} - organization to division to department to person`,
   blurb:
     "Click through the whole tree the way a consultant does in the portal: overall readiness, divisions ranked, every department against every pillar, the people who ran the individual layer, optional segments, and matched training. Same numbers as the reports above, with a language toggle on the page.",
 } as const;
@@ -107,7 +107,7 @@ export default function SamplesLandingPage() {
               One engagement. <span className="ara-accent-sweep">Four documents.</span> One dashboard.
             </h1>
             <p className="text-lg text-white/75 max-w-2xl leading-relaxed">
-              Every sample below is generated live from one fictional organisation,{" "}
+              Every sample below is generated live from one fictional organization,{" "}
               {SAMPLE_ORG_NAME}, through exactly the code that produces a client&apos;s
               report. Nothing is mocked up: what you open here is what you would
               receive.
@@ -192,13 +192,13 @@ export default function SamplesLandingPage() {
             departments. The individual layer can be switched on for
             any department, in which case each person who completes it has their own
             report and the department report gains a workforce section. The dashboard
-            opens the same tree interactively, from the organisation down to one person.
+            opens the same tree interactively, from the organization down to one person.
             Every document and the dashboard are rendered from the same scored data, so
             they never disagree.
           </p>
           <p className="mt-4 text-xs text-muted-foreground">
             Sample data. {SAMPLE_ORG_NAME} is fictional; the respondents and their answers
-            are seeded to illustrate the reports and are labelled as such on every page.
+            are seeded to illustrate the reports and are labeled as such on every page.
             Documents render on request and take a few seconds to open.
           </p>
         </div>

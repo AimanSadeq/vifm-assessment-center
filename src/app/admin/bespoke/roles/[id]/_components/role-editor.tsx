@@ -108,7 +108,7 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
       {/* Settings */}
       <CollapsibleCard title="Pass thresholds" icon={Save} defaultOpen>
         <div className="flex flex-wrap items-end gap-4">
-          <label className="text-xs">Behavioural (Persona) pass %
+          <label className="text-xs">Behavioral (Persona) pass %
             <Input type="number" min={0} max={100} value={personaPct} onChange={(e) => setPersonaPct(Number(e.target.value) || 0)} className="mt-1 w-32" />
           </label>
           <label className="text-xs">Technical pass %
@@ -123,7 +123,7 @@ export function RoleEditor({ config, published, clients, assignedOrgId }: { conf
 
       {/* Competencies */}
       <CollapsibleCard
-        title="Behavioural competencies + targets"
+        title="Behavioral competencies + targets"
         icon={ClipboardList}
         defaultOpen
         subtitle={`${Object.keys(comps).length} selected across ${blocksCovered}/${TOTAL_BLOCKS} building blocks`}

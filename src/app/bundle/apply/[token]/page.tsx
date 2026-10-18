@@ -25,7 +25,7 @@ export default async function BundleApplyPage({ params }: { params: { token: str
         <div className="mx-auto max-w-md rounded-xl border bg-card p-6 text-center">
           {ctx.settings.clientLogoUrl && <ClientLogo src={ctx.settings.clientLogoUrl} className="mb-5" />}
           <h1 className="text-lg font-semibold text-[#010131]">This assessment is not open yet</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Your organisation will let you know when it opens. Please use the same link then.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Your organization will let you know when it opens. Please use the same link then.</p>
         </div>
       </div>
     );

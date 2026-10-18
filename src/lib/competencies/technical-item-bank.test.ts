@@ -17,7 +17,7 @@ test("surrounding whitespace does not hide it", () => {
 
 test("a real question alongside its scenario passes", () => {
   assert.equal(
-    questionRepeatsScenario("What goodwill is recognised?", "A company acquires 80%..."),
+    questionRepeatsScenario("What goodwill is recognized?", "A company acquires 80%..."),
     false,
   );
 });

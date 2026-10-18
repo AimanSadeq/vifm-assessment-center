@@ -78,7 +78,7 @@ const ANCHOR_MENU: Array<{ domains: string[]; name: string; citation: string }> 
 
 const SYSTEM_PROMPT =
   `You are a psychometric expert advising VIFM on per-competency content-validity ` +
-  `evidence for an Assessment Center behavioural framework. Given a single competency ` +
+  `evidence for an Assessment Center behavioral framework. Given a single competency ` +
   `(name + definition), you identify which published instrument(s) / works from a CLOSED ` +
   `menu the competency construct most closely content-aligns with.\n\n` +
   `Hard rules:\n` +

@@ -1054,7 +1054,7 @@ export function BilingualReport(p: BilingualReportProps) {
               <p className="report-body">
                 Inventory of AI initiatives across the organization, scored by
                 stage, risk, and business value. Use this to sequence investment
-                and prioritise governance effort.
+                and prioritize governance effort.
               </p>
             </div>
             <div className="col-ar" dir="rtl">
@@ -1074,8 +1074,8 @@ export function BilingualReport(p: BilingualReportProps) {
           <div className="col-en">
             <h2 className="report-h2">Peer benchmark</h2>
             <p className="report-body">
-              Median pillar scores from {p.peerBenchmarks.sample_size} anonymised
-              peer organisations in the same region and sector.
+              Median pillar scores from {p.peerBenchmarks.sample_size} anonymized
+              peer organizations in the same region and sector.
             </p>
             <table className="report-body" style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
@@ -1298,7 +1298,7 @@ export function BilingualReport(p: BilingualReportProps) {
             <h2 className="report-h2">Agentic-AI Readiness</h2>
             <p className="report-body">
               Beyond readiness to <em>use</em> AI, this assessment measured the
-              organisation&apos;s readiness to safely <em>delegate</em> work to
+              organization&apos;s readiness to safely <em>delegate</em> work to
               autonomous AI agents. {p.agenticRollup.completed_count}{" "}
               respondent{p.agenticRollup.completed_count === 1 ? "" : "s"}{" "}
               answered six governance dimensions that extend the Governance and

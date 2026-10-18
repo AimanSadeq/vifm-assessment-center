@@ -65,7 +65,7 @@ export function CentreManualPanel({
   // Only offer role manuals for roles somebody actually holds, plus the full
   // manual. A manual for an unfilled role is a document with no reader.
   const variants = [
-    { value: "full", label: "Full centre manual" },
+    { value: "full", label: "Full center manual" },
     ...Array.from(new Set(staffedRoles.map((r) => r.roleKey))).map((k) => ({
       value: k,
       label: `${centreRoleName(k)} manual`,
@@ -79,7 +79,7 @@ export function CentreManualPanel({
     <Card className="mt-6">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base">
-          Centre manual
+          Center manual
           <span className="ms-2 text-xs font-normal text-muted-foreground">version {version}</span>
           {stale.length > 0 && (
             <span className="ms-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-900">
@@ -89,7 +89,7 @@ export function CentreManualPanel({
         </CardTitle>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`/api/admin/engagements/${engagementId}/centre-manual?variant=full`}>Full manual (PDF)</a>
+            <a href={`/api/admin/engagements/${engagementId}/center-manual?variant=full`}>Full manual (PDF)</a>
           </Button>
           <Button size="sm" variant="outline" onClick={() => setIssuing((v) => !v)}>
             {issuing ? "Cancel" : "Record an issue"}
@@ -99,7 +99,7 @@ export function CentreManualPanel({
 
       <CardContent className="space-y-4 text-sm">
         <p className="text-muted-foreground">
-          Generated from the design, so it describes the centre that will actually run. Each role&apos;s manual is
+          Generated from the design, so it describes the center that will actually run. Each role&apos;s manual is
           the same document with the sections that role has no business reading removed - an assessor does not get
           the role-player&apos;s objectives, and a role-player does not get the assessor guidance.
         </p>
@@ -108,14 +108,14 @@ export function CentreManualPanel({
         <div className="flex flex-wrap gap-2">
           {CENTRE_ROLES.filter((r) => holdersOf(r.key).length > 0).map((r) => (
             <Button key={r.key} size="sm" variant="outline" asChild>
-              <a href={`/api/admin/engagements/${engagementId}/centre-manual?variant=${r.key}`}>
+              <a href={`/api/admin/engagements/${engagementId}/center-manual?variant=${r.key}`}>
                 {r.name} ({holdersOf(r.key).length})
               </a>
             </Button>
           ))}
           {staffedRoles.length === 0 && (
             <p className="text-xs text-muted-foreground">
-              No centre roles assigned yet, so there are no role manuals to cut. Assign them above.
+              No center roles assigned yet, so there are no role manuals to cut. Assign them above.
             </p>
           )}
         </div>
@@ -242,7 +242,7 @@ export function CentreManualPanel({
             {outstanding.length > 0 && (
               <p className="mt-1 text-xs text-muted-foreground">
                 {outstanding.length} {outstanding.length === 1 ? "copy is" : "copies are"} still out. Account for
-                them after the centre (6.9).
+                them after the center (6.9).
               </p>
             )}
           </div>
@@ -276,7 +276,7 @@ export function CentreManualPanel({
           ) : (
             <>
               <p className="mt-1 text-xs text-muted-foreground">
-                Before the centre runs, the Centre Manager confirms the venue, the equipment and the documentation
+                Before the center runs, the Center Manager confirms the venue, the equipment and the documentation
                 are actually ready (6.3). Nothing can derive this - no query knows whether the room has a working
                 clock in it.
               </p>

@@ -16,9 +16,9 @@ type Props = {
 };
 
 const STAGE_LABEL: Record<string, string> = {
-  before: "Before the centre",
-  during: "During the centre",
-  after: "After the centre",
+  before: "Before the center",
+  during: "During the center",
+  after: "After the center",
 };
 
 const STATUS_LABEL: Record<string, string> = {

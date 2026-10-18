@@ -51,12 +51,12 @@ const SCALE_LABELS = {
 
 const ROLE_FRAMING = {
   en: {
-    self: { title: "Self assessment", lead: "Rate how often you demonstrate each behaviour." },
-    manager: { title: "Manager perspective", lead: "Rate how often your direct report demonstrates each behaviour." },
-    peer: { title: "Peer perspective", lead: "Rate how often your colleague demonstrates each behaviour." },
-    direct_report: { title: "Direct-report perspective", lead: "Rate how often your line manager demonstrates each behaviour." },
-    skip_level: { title: "Skip-level perspective", lead: "Rate how often this leader demonstrates each behaviour." },
-    other: { title: "Cross-functional perspective", lead: "Rate how often your collaborator demonstrates each behaviour." },
+    self: { title: "Self assessment", lead: "Rate how often you demonstrate each behavior." },
+    manager: { title: "Manager perspective", lead: "Rate how often your direct report demonstrates each behavior." },
+    peer: { title: "Peer perspective", lead: "Rate how often your colleague demonstrates each behavior." },
+    direct_report: { title: "Direct-report perspective", lead: "Rate how often your line manager demonstrates each behavior." },
+    skip_level: { title: "Skip-level perspective", lead: "Rate how often this leader demonstrates each behavior." },
+    other: { title: "Cross-functional perspective", lead: "Rate how often your collaborator demonstrates each behavior." },
   },
   ar: {
     self: { title: "التقييم الذاتي", lead: "قيّم مدى تكرار قيامك بكل من هذه السلوكيات." },
@@ -77,7 +77,7 @@ const UI = {
     failed: "Save failed - will retry",
     submit: "Submit responses",
     submitting: "Saving and submitting…",
-    submitDisabled: "Rate every behaviour or mark N/A to submit",
+    submitDisabled: "Rate every behavior or mark N/A to submit",
     commentPlaceholder: "Add a short comment (optional)",
     showComment: "Add comment",
     hideComment: "Hide comment",
@@ -934,7 +934,7 @@ export function RaterForm({ ctx }: Props) {
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   {rtl
                     ? "تم تقييم جميع السلوكيات. يمكنك المراجعة قبل الإرسال."
-                    : "Every behaviour rated. Review and submit when you're ready."}
+                    : "Every behavior rated. Review and submit when you're ready."}
                 </span>
               ) : (
                 <span>{t.submitDisabled}</span>

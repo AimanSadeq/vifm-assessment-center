@@ -105,13 +105,13 @@ export function reviewDesignRecord(input: {
   const need = (value: string | null | undefined, field: string, label: string, clause: string) => {
     if (!value || !value.trim()) missing.push({ field, label, clause });
   };
-  need(engagement.design_rationale, "design_rationale", "Why this centre is designed the way it is", "4.1 / 3.26");
+  need(engagement.design_rationale, "design_rationale", "Why this center is designed the way it is", "4.1 / 3.26");
   need(engagement.alternatives_considered, "alternatives_considered", "What else was considered, and why it was not chosen", "4.1");
   need(engagement.job_analysis_method, "job_analysis_method", "How the criteria were derived from the job", "4.4");
   need(engagement.work_context, "work_context", "The work, its context and the systems the role uses", "4.9 / 4.12");
   need(engagement.sme_review_note, "sme_review_note", "Who from the job reviewed the exercises for difficulty", "4.23");
   need(engagement.exercise_independence_note, "exercise_independence_note", "Confirmation that no exercise carries into another", "4.19");
-  need(engagement.facilities_note, "facilities_note", "The people and facilities the centre needs", "3.26");
+  need(engagement.facilities_note, "facilities_note", "The people and facilities the center needs", "3.26");
 
   const byCompetency = new Map<string, Set<string>>();
   const byExercise = new Map<string, Set<string>>();
@@ -156,7 +156,7 @@ export function reviewDesignRecord(input: {
   }
   if (competencies.length > MAX_COMPETENCIES_PER_CENTRE && !engagement.criteria_load_ack) {
     cautions.push(
-      `This centre assesses ${competencies.length} criteria. Beyond about ${MAX_COMPETENCIES_PER_CENTRE}, evidence per criterion thins out across the exercises available (4.5). Record why if that is deliberate.`
+      `This center assesses ${competencies.length} criteria. Beyond about ${MAX_COMPETENCIES_PER_CENTRE}, evidence per criterion thins out across the exercises available (4.5). Record why if that is deliberate.`
     );
   }
   for (const c of thinlyObserved) {
@@ -166,7 +166,7 @@ export function reviewDesignRecord(input: {
   }
   if (withoutIndicators.length > 0) {
     cautions.push(
-      `${withoutIndicators.length} criteria have no behavioural indicators, so assessors have nothing concrete to rate against (4.20): ${withoutIndicators.map((c) => c.name).join(", ")}.`
+      `${withoutIndicators.length} criteria have no behavioral indicators, so assessors have nothing concrete to rate against (4.20): ${withoutIndicators.map((c) => c.name).join(", ")}.`
     );
   }
   if (withoutRationale.length > 0) {
@@ -194,7 +194,7 @@ export function reviewDesignRecord(input: {
   const unbriefed = rolePlays.filter((x) => (x.rolePlayerPromptCount ?? 0) === 0);
   if (unbriefed.length > 0) {
     cautions.push(
-      `${unbriefed.map((x) => x.name).join(", ")} ${unbriefed.length === 1 ? "is a role play with" : "are role plays with"} no role-player brief written. A role play needs a trained person playing the counterpart, briefed well enough to behave the same way for every participant (4.42, 5.33) - without that the exercise is not standardised and the centre cannot be activated.`
+      `${unbriefed.map((x) => x.name).join(", ")} ${unbriefed.length === 1 ? "is a role play with" : "are role plays with"} no role-player brief written. A role play needs a trained person playing the counterpart, briefed well enough to behave the same way for every participant (4.42, 5.33) - without that the exercise is not standardized and the center cannot be activated.`
     );
   }
 

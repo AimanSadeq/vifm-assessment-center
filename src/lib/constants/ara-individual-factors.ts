@@ -194,7 +194,7 @@ const STAGE_EMERGING: AraIndividualMaturityStage = {
 
 const STAGE_PRACTISING: AraIndividualMaturityStage = {
   id: "practising",
-  name_en: "Practising",
+  name_en: "Practicing",
   name_ar: "ممارَسة",
   definition_en: "applying AI with growing judgment",
   definition_ar: "تطبيق الذكاء الاصطناعي بحُكم متنامٍ",

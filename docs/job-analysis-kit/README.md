@@ -18,7 +18,7 @@ framework VIFM can defend as **original** and **job-related**.
 | Output | Feeds |
 |---|---|
 | Role context + accountabilities per role family | Role profiles; assessment design |
-| Critical incidents (effective / ineffective behaviours) | Behavioural indicators; BARS anchoring (Phase 2) |
+| Critical incidents (effective / ineffective behaviors) | Behavioral indicators; BARS anchoring (Phase 2) |
 | Card-sort results (criticality + structural edits) | The **final competency set** (resize decisions) |
 | Competency ratings (importance / frequency / essential) | Content-validity evidence (Phase 3, CVR) |
 | Completed role profiles | Client engagements; tiered profiles (Blueprint §3.3) |
@@ -30,7 +30,7 @@ Single-source job analysis is weak. We triangulate four instruments:
 1. **SME structured interview** (`01-sme-interview-guide.md`) — role context and
    what differentiates strong performers.
 2. **Critical Incident Technique** (`02-critical-incident-template.md`) — concrete
-   behaviours, the raw material for indicators and BARS.
+   behaviors, the raw material for indicators and BARS.
 3. **Competency card-sort** (`03-competency-card-sort.md`) — criticality *and*
    the structural edits that resize the framework.
 4. **Competency rating form** (`04-competency-rating-form.md`) — quantitative
@@ -79,7 +79,7 @@ Apply *after* aggregating across SMEs and instruments. A competency is
   critical incident.
 - **Merge** two competencies if SMEs repeatedly rate/sort them as the same thing
   or incidents don't distinguish them.
-- **Split** a competency if incidents reveal two clearly distinct behaviour sets
+- **Split** a competency if incidents reveal two clearly distinct behavior sets
   scored differently.
 - **Add** a competency if incidents/interviews surface a required capability not
   in the draft (likely for GCC banking: e.g., regulatory/Sharia awareness, AML
@@ -98,7 +98,7 @@ Apply *after* aggregating across SMEs and instruments. A competency is
 - **Informed consent:** every SME consents to participation and recording; data
   used only for framework development.
 - **Confidentiality & data protection:** handle SME and incident data per UAE
-  Federal Decree-Law No. 45/2021 and KSA PDPL (as the Blueprint commits). Anonymise
+  Federal Decree-Law No. 45/2021 and KSA PDPL (as the Blueprint commits). Anonymize
   incidents before they enter indicator libraries.
 
 ---

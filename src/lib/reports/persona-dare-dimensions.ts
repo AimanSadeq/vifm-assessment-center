@@ -85,28 +85,28 @@ export const DARE_META: Record<
     label: "Decide",
     noun: "Decider",
     hex: "#4f46e5",
-    blurb: "Owns the call - commits the organisation, carries accountability, and holds the line under pressure and ambiguity.",
+    blurb: "Owns the call - commits the organization, carries accountability, and holds the line under pressure and ambiguity.",
   },
   advise: {
     letter: "A",
     label: "Advise",
     noun: "Adviser",
     hex: "#0891b2",
-    blurb: "Improves others' decisions - brings domain perspective, candour, and trusted relationships without needing the vote.",
+    blurb: "Improves others' decisions - brings domain perspective, candor, and trusted relationships without needing the vote.",
   },
   recommend: {
     letter: "R",
     label: "Recommend",
     noun: "Recommender",
     hex: "#d97706",
-    blurb: "Builds the case - analyses, frames real options, and brings forward a persuasive, evidence-based recommendation.",
+    blurb: "Builds the case - analyzes, frames real options, and brings forward a persuasive, evidence-based recommendation.",
   },
   execute: {
     letter: "E",
     label: "Execute",
     noun: "Executor",
     hex: "#059669",
-    blurb: "Delivers the decision - mobilises people, process, and resources so the call becomes results.",
+    blurb: "Delivers the decision - mobilizes people, process, and resources so the call becomes results.",
   },
 };
 
@@ -177,7 +177,7 @@ export function computeDareProfile(
   } else if (spread <= VERSATILE_SPREAD) {
     profileLabel = "Versatile";
     profileBlurb =
-      "Self-ratings sit close together across all four decision roles - a flexible profile that can take whichever seat the decision needs. Valuable in small teams; in larger organisations, pick the seat deliberately per decision.";
+      "Self-ratings sit close together across all four decision roles - a flexible profile that can take whichever seat the decision needs. Valuable in small teams; in larger organizations, pick the seat deliberately per decision.";
   } else if (topGap <= DUAL_GAP) {
     profileLabel = `${DARE_META[primary].noun} / ${DARE_META[secondary].noun}`;
     profileBlurb =

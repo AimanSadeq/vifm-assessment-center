@@ -31,7 +31,7 @@ const REC_TONE: Record<string, string> = {
   hold: "bg-amber-100 text-amber-800",
   incomplete: "bg-slate-100 text-slate-700",
 };
-const STAGE_LABEL: Record<string, string> = { quiz: "Competency quiz", fluent: "English placement", cbi: "Behavioural interview" };
+const STAGE_LABEL: Record<string, string> = { quiz: "Competency quiz", fluent: "English placement", cbi: "Behavioral interview" };
 const STAGE_LABEL_AR: Record<string, string> = { quiz: "تقييم الكفاءات", fluent: "تحديد مستوى الإنجليزية", cbi: "المقابلة السلوكية" };
 
 // UX-1: a visual progress stepper so the candidate can see how many stages

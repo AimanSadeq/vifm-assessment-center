@@ -64,7 +64,7 @@ export async function araAssessmentProvisional(assessmentId: string): Promise<Pr
 export const PROVISIONAL_COPY = {
   en: {
     title: "Preliminary results",
-    body: "These are preliminary results and may be refined as the assessment is finalised. Treat them as indicative for now.",
+    body: "These are preliminary results and may be refined as the assessment is finalized. Treat them as indicative for now.",
   },
   ar: {
     title: "نتائج أولية",

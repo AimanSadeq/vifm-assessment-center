@@ -12,7 +12,7 @@ export const basicInfoSchema = z.object({
   targetRole: z.string().optional(),
   // What the centre is for. Required for new engagements: it decides how the
   // overall rating is reached and what the participant is owed (BPS 3.7, 7.4).
-  purpose: z.enum(AC_PURPOSE_VALUES, { message: "Select what this centre is for" }),
+  purpose: z.enum(AC_PURPOSE_VALUES, { message: "Select what this center is for" }),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 }).refine((data) => {
@@ -46,7 +46,7 @@ export const createEngagementSchema = z.object({
   organizationId: uuidish(),
   name: z.string().min(1),
   targetRole: z.string().optional(),
-  purpose: z.enum(AC_PURPOSE_VALUES, { message: "Select what this centre is for" }),
+  purpose: z.enum(AC_PURPOSE_VALUES, { message: "Select what this center is for" }),
   startDate: z.string().optional(),
   endDate: z.string().optional(),
   competencies: z

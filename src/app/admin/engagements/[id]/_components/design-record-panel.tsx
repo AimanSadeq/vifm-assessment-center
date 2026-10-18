@@ -84,7 +84,7 @@ export function DesignRecordPanel({
     <Card className="mt-6">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base">
-          Design record and centre plan
+          Design record and center plan
           {review.missing.length > 0 && (
             <span className="ms-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-normal text-amber-900">
               {review.missing.length} unwritten
@@ -98,14 +98,14 @@ export function DesignRecordPanel({
         </CardTitle>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" asChild>
-            <a href={`/api/admin/engagements/${engagementId}/centre-plan`}>Centre plan (PDF)</a>
+            <a href={`/api/admin/engagements/${engagementId}/center-plan`}>Center plan (PDF)</a>
           </Button>
           <Button size="sm" variant="outline" asChild>
             <a
-              href={`/api/admin/engagements/${engagementId}/centre-agreement`}
+              href={`/api/admin/engagements/${engagementId}/center-agreement`}
               title="The agreement and statement of work, pre-filled from this design. Complete the yellow fields in Word."
             >
-              Centre agreement (Word)
+              Center agreement (Word)
             </a>
           </Button>
           <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>
@@ -117,7 +117,7 @@ export function DesignRecordPanel({
       <CardContent className="space-y-4 text-sm">
         <p className="text-muted-foreground">
           Why these criteria, why these exercises, and how they map to the job. The plan is the document the
-          standard asks to be agreed with the client before the centre runs.
+          standard asks to be agreed with the client before the center runs.
         </p>
 
         {review.missing.length > 0 && (
@@ -217,11 +217,11 @@ export function DesignRecordPanel({
 
         {open && (
           <div className="space-y-3 rounded border p-3">
-            <Field label="Why this centre is designed the way it is" clause="4.1 / 3.26">
+            <Field label="Why this center is designed the way it is" clause="4.1 / 3.26">
               <Textarea rows={2} value={form.designRationale} onChange={(e) => set("designRationale", e.target.value)} />
             </Field>
             <Field label="What else was considered, and why it was not chosen" clause="4.1">
-              <Textarea rows={2} value={form.alternativesConsidered} onChange={(e) => set("alternativesConsidered", e.target.value)} placeholder="For example: a one-day centre was rejected as too thin for six criteria." />
+              <Textarea rows={2} value={form.alternativesConsidered} onChange={(e) => set("alternativesConsidered", e.target.value)} placeholder="For example: a one-day center was rejected as too thin for six criteria." />
             </Field>
             <Field label="How the criteria were derived from the job" clause="4.4">
               <div className="flex flex-wrap gap-2">
@@ -251,11 +251,11 @@ export function DesignRecordPanel({
             <Field label="Existing or adapted exercises" clause="4.28">
               <Textarea rows={2} value={form.existingExercisesNote} onChange={(e) => set("existingExercisesNote", e.target.value)} placeholder="Where an exercise was reused or adapted, how it was held to the same standard as a new one." />
             </Field>
-            <Field label="The people and facilities the centre needs" clause="3.26">
+            <Field label="The people and facilities the center needs" clause="3.26">
               <Textarea rows={2} value={form.facilitiesNote} onChange={(e) => set("facilitiesNote", e.target.value)} placeholder="Rooms, equipment, anything the venue has to provide." />
             </Field>
             {competencies.length > 0 && (
-              <Field label="Why this centre carries the number of criteria it does" clause="4.5">
+              <Field label="Why this center carries the number of criteria it does" clause="4.5">
                 <Textarea rows={2} value={form.criteriaLoadAck} onChange={(e) => set("criteriaLoadAck", e.target.value)} placeholder="Only needed if the design carries more criteria than the exercises can comfortably assess." />
               </Field>
             )}

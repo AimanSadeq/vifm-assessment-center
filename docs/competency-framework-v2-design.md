@@ -12,7 +12,7 @@ authored** framework that VIFM owns outright.
 > True originality is established in **Phase 1 (Job Analysis)**, where the
 > evidence must be allowed to **drop, merge, add, and re-split** competencies so
 > the final set is demonstrably derived from VIFM's own role data — not a
-> one-to-one relabelling of the prior set. Everything below is a **starting
+> one-to-one relabeling of the prior set. Everything below is a **starting
 > scaffold to diverge from**, not a final framework.
 
 ---
@@ -20,13 +20,13 @@ authored** framework that VIFM owns outright.
 ## 1. Purpose & Principles
 
 VIFM-AC needs a competency model that is (a) **owned by VIFM** (no third-party
-IP in names, definitions, or behavioural indicators), (b) **applicable across
+IP in names, definitions, or behavioral indicators), (b) **applicable across
 sectors** — a universal core framework with optional sector-specific item packs —
 and (c) **defensible to clients** as research- and job-analysis-grounded.
 
 Design principles:
 
-1. **Clean-room authorship.** All names, definitions, and behavioural anchors
+1. **Clean-room authorship.** All names, definitions, and behavioral anchors
    are written from underlying *constructs* and primary sources — not adapted
    from any proprietary framework's text.
 2. **Construct overlap is expected and acceptable.** Capabilities such as
@@ -50,7 +50,7 @@ Design principles:
 
 **Authoring method for this draft:** competencies are derived top-down from each
 cluster's underlying capability area, drawing on the general
-industrial/organisational psychology literature on managerial and leadership
+industrial/organizational psychology literature on managerial and leadership
 competence and on VIFM's own finance curriculum — **not** by paraphrasing an
 existing commercial framework. Where a construct naturally resembles one in a
 common framework, that is incidental construct overlap, not derivation.
@@ -84,7 +84,7 @@ small.
 
 | Domain | Original cluster (v2) | Capability area |
 |---|---|---|
-| **THINKING** | Strategic & Commercial Reasoning | Direction-setting, business/financial judgement |
+| **THINKING** | Strategic & Commercial Reasoning | Direction-setting, business/financial judgment |
 | | Innovation & Complexity | Original thinking, sense-making, digital/data |
 | **RESULTS** | Delivery & Execution | Getting things done, accountability, process |
 | | Adaptability & Change | Operating amid uncertainty and change |
@@ -98,7 +98,7 @@ small.
 ## 4. Competencies (v2 draft — original names & definitions)
 
 > 38 competencies retained for scaffold parity. **Phase 1 is expected to change
-> this list.** Each definition is original and finance-contextualised.
+> this list.** Each definition is original and finance-contextualized.
 
 ### THINKING
 
@@ -108,7 +108,7 @@ small.
    direction.
 2. **Commercial & Market Awareness** — Reads the competitive and economic
    landscape of financial services to spot opportunities and risks that advance
-   organisational goals.
+   organizational goals.
 3. **Financial Literacy & Acumen** — Interprets statements, ratios, and
    capital/liquidity indicators and uses them to weigh trade-offs and justify
    decisions.
@@ -139,7 +139,7 @@ small.
 12. **Accountability for Commitments** — Holds self and others to what was
     promised, following through transparently on deadlines and quality.
 13. **Planning & Prioritisation** — Sequences and resources work so the most
-    important commitments are met in line with organisational goals.
+    important commitments are met in line with organizational goals.
 14. **Process Optimisation** — Designs and improves workflows for efficiency and
     control, with continuous improvement and without sacrificing compliance.
 
@@ -169,7 +169,7 @@ small.
 
 **Cluster 6 — Leading & Developing Others**
 24. **Coaching & Talent Growth** — Develops others toward their potential and the
-    organisation's needs through feedback, stretch, and support.
+    organization's needs through feedback, stretch, and support.
 25. **Building Cohesive Teams** — Forms teams with shared identity and purpose
     that combine diverse strengths to deliver together.
 26. **Cross-Functional Collaboration** — Partners across units and disciplines to
@@ -184,7 +184,7 @@ small.
 **Cluster 7 — Integrity & Character**
 29. **Self-Insight** — Uses feedback and reflection to understand own strengths,
     limits, and impact, and acts on that understanding.
-30. **Emotional Regulation & Empathy** — Recognises and manages own emotions and
+30. **Emotional Regulation & Empathy** — Recognizes and manages own emotions and
     reads others', responding in ways that fit the situation.
 31. **Principled Courage** — Raises difficult issues and says what needs to be
     said, even at personal or political cost.
@@ -207,7 +207,7 @@ small.
 
 ---
 
-## 5. Behavioural Anchored Rating Scale (BARS) — template + worked example
+## 5. Behavioral Anchored Rating Scale (BARS) — template + worked example
 
 VIFM-AC uses a **5-point BARS** (per the Blueprint, §6). Authoring template:
 

@@ -58,7 +58,7 @@ export const V2_NEW_COMPETENCIES: V2Competency[] = [
     nameEn: "Strategic & Commercial Insight",
     nameAr: "البصيرة الاستراتيجية والتجارية",
     descriptionEn:
-      "Reads the competitive, economic and regulatory landscape and anticipates how markets and client needs will shift. Converts that insight into a clear, prioritised direction framed around long-term value, and links day-to-day work to the commercial outcomes it should produce. Sets direction others can understand, align to and act on.",
+      "Reads the competitive, economic and regulatory landscape and anticipates how markets and client needs will shift. Converts that insight into a clear, prioritized direction framed around long-term value, and links day-to-day work to the commercial outcomes it should produce. Sets direction others can understand, align to and act on.",
     descriptionAr:
       "يقرأ المشهد التنافسي والاقتصادي والتنظيمي ويستشرف كيف ستتغير الأسواق واحتياجات العملاء. ويحوّل هذه البصيرة إلى توجّه واضح ذي أولويات مبني على القيمة طويلة الأمد، ويربط العمل اليومي بالنتائج التجارية المرجوّة منه. ويضع توجّهاً يستطيع الآخرون فهمه والالتفاف حوله والعمل به.",
     absorbs: [V1(1), V1(2), V1(41)],
@@ -70,7 +70,7 @@ export const V2_NEW_COMPETENCIES: V2Competency[] = [
     nameEn: "Navigating Complexity & Ambiguity",
     nameAr: "التعامل مع التعقيد والغموض",
     descriptionEn:
-      "Makes sense of high-volume, interdependent and sometimes conflicting information, and sees how decisions ripple across functions, markets and time. Stays effective and decisive when direction, data or conditions are unclear, making progress on what is known and adjusting as new information arrives. Brings clarity that lets the organisation act.",
+      "Makes sense of high-volume, interdependent and sometimes conflicting information, and sees how decisions ripple across functions, markets and time. Stays effective and decisive when direction, data or conditions are unclear, making progress on what is known and adjusting as new information arrives. Brings clarity that lets the organization act.",
     descriptionAr:
       "يستوعب المعلومات الكثيرة والمترابطة والمتعارضة أحياناً، ويرى كيف تنعكس القرارات عبر الوظائف والأسواق وعلى مدى الزمن. ويبقى فعّالاً وحاسماً عندما يكون الاتجاه أو البيانات أو الظروف غير واضحة، فيتقدّم بناءً على المعلوم ويعدّل مساره مع ورود معلومات جديدة. ويضفي وضوحاً يمكّن المؤسسة من التصرّف.",
     absorbs: [V1(7), V1(8), V1(15)],
@@ -82,7 +82,7 @@ export const V2_NEW_COMPETENCIES: V2Competency[] = [
     nameEn: "Delivery & Accountability",
     nameAr: "الإنجاز والمساءلة",
     descriptionEn:
-      "Takes personal responsibility for measurable results and follows through from commitment to completion, sustaining standards when conditions are difficult. Holds self and others to what was promised, owns mistakes openly and fixes them rather than shifting blame. Builds a track record of reliability the organisation can plan around.",
+      "Takes personal responsibility for measurable results and follows through from commitment to completion, sustaining standards when conditions are difficult. Holds self and others to what was promised, owns mistakes openly and fixes them rather than shifting blame. Builds a track record of reliability the organization can plan around.",
     descriptionAr:
       "يتحمّل المسؤولية الشخصية عن نتائج قابلة للقياس ويتابع من الالتزام حتى الإنجاز، محافظاً على المعايير عندما تصعب الظروف. ويُلزم نفسه والآخرين بما وُعد به، ويعترف بأخطائه علناً ويصلحها بدلاً من إلقاء اللوم. ويبني سجلاً من الموثوقية يمكن للمؤسسة أن تخطط على أساسه.",
     absorbs: [V1(11), V1(12)],
@@ -142,7 +142,7 @@ export const V2_NEW_COMPETENCIES: V2Competency[] = [
     nameEn: "Networks & Collaboration",
     nameAr: "بناء الشبكات والتعاون",
     descriptionEn:
-      "Builds and sustains useful relationships inside and outside the organisation, investing in them before they are needed. Reaches beyond their own team to coordinate, share information and solve problems jointly. Puts the wider result ahead of silo loyalty so the organisation wins as a whole.",
+      "Builds and sustains useful relationships inside and outside the organization, investing in them before they are needed. Reaches beyond their own team to coordinate, share information and solve problems jointly. Puts the wider result ahead of silo loyalty so the organization wins as a whole.",
     descriptionAr:
       "يبني علاقات مفيدة داخل المؤسسة وخارجها ويحافظ عليها، ويستثمر فيها قبل الحاجة إليها. ويتجاوز حدود فريقه للتنسيق وتبادل المعلومات وحل المشكلات بشكل مشترك. ويقدّم النتيجة الأشمل على الولاء للوحدات المنعزلة لتنجح المؤسسة ككل.",
     absorbs: [V1(23), V1(26)],

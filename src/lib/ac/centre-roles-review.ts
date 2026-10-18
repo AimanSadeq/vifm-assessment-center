@@ -95,7 +95,7 @@ export function reviewCentreRoles(input: {
 
   const blocking: string[] = [];
   for (const r of unfilled) {
-    blocking.push(`No ${r.name} has been assigned to this centre (${r.clause}).`);
+    blocking.push(`No ${r.name} has been assigned to this center (${r.clause}).`);
   }
   for (const u of uncertified) {
     blocking.push(`${u.name} is assigned as ${u.roleName} but has ${u.reason} (5.22, 6.2).`);
@@ -108,7 +108,7 @@ export function reviewCentreRoles(input: {
   for (const a of input.assignments) {
     if ((load.get(a.profile_id) ?? 0) >= 3 && !cautions.some((c) => c.startsWith(nameOf(a)))) {
       cautions.push(
-        `${nameOf(a)} holds ${load.get(a.profile_id)} roles at this centre. Workable, but the Centre Manager cannot also be the one checking their own work.`
+        `${nameOf(a)} holds ${load.get(a.profile_id)} roles at this center. Workable, but the Center Manager cannot also be the one checking their own work.`
       );
     }
   }

@@ -47,12 +47,12 @@ Caliber's `psychometrics-proposal.md` already points to.
    resistance at the item level.
 
 Below, each competency has **(A) a criterion-keyed SJT item** (MOST/LEAST
-forced-choice) and **(B) a behavioural interview (CBI) question** scored against
+forced-choice) and **(B) a behavioral interview (CBI) question** scored against
 BARS. The ipsative-vs-normative choice bites hardest on the **self-report
 scales** (see `competency-self-report-cluster1.md`), authored in both forms.
 
 > **Test-design note:** SJT options are shown A–D with the key stated; **at
-> delivery, option order is randomised**. SJT keys are theory/expert-seeded —
+> delivery, option order is randomized**. SJT keys are theory/expert-seeded —
 > confirm with an SME effectiveness panel + pilot item stats before high-stakes
 > use.
 

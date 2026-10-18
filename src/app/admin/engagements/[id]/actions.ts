@@ -364,7 +364,7 @@ export async function updateEngagementStatusAction(engagementId: string, status:
     if (!staffing.meetsFloors && !overridden) {
       return {
         error:
-          "This centre does not meet the assessor staffing rules: "
+          "This center does not meet the assessor staffing rules: "
           + staffing.blocking.join(" ")
           + " Fix the assignments, or record a reason for proceeding anyway.",
         staffing: staffing.blocking,
@@ -418,7 +418,7 @@ export async function updateEngagementStatusAction(engagementId: string, status:
     if (roles.blocking.length > 0 && !overridden) {
       return {
         error:
-          "This centre is not staffed to the standard yet: "
+          "This center is not staffed to the standard yet: "
           + roles.blocking.join(" ")
           + " Assign the missing roles and confirm competence, or record a reason for proceeding anyway.",
         staffing: roles.blocking,
@@ -1360,8 +1360,8 @@ export async function publishJoiningPackAction(engagementId: string, lateReason?
     return {
       error:
         (days < 0
-          ? "The centre has already started. "
-          : `The centre starts in ${days} day${days === 1 ? "" : "s"}. `) +
+          ? "The center has already started. "
+          : `The center starts in ${days} day${days === 1 ? "" : "s"}. `) +
         `VIFM's rule is at least ${PACK_NOTICE_DAYS} days' notice, so participants have time to prepare. ` +
         "To publish anyway, record why the notice is shorter.",
       needsLateReason: true,
@@ -1409,7 +1409,7 @@ export async function decideAdjustmentAction(values: {
     return {
       error:
         values.status === "agreed"
-          ? "Write what will actually be put in place, so the people running the centre can deliver it."
+          ? "Write what will actually be put in place, so the people running the center can deliver it."
           : "Record why the adjustment was not made. A refusal with no reason is the one that gets challenged.",
     };
   }
@@ -1568,7 +1568,7 @@ export async function assignCentreRoleAction(values: {
     if (isAuthorizationError(e)) return { error: e.message };
     throw e;
   }
-  if (!CENTRE_ROLE_MAP[values.roleKey]) return { error: "That is not a centre role." };
+  if (!CENTRE_ROLE_MAP[values.roleKey]) return { error: "That is not a center role." };
 
   const sb = createServiceClient();
   const { error } = await sb.from("ac_engagement_roles").insert({
@@ -1618,7 +1618,7 @@ export async function setRoleCompetenceAction(values: {
     if (isAuthorizationError(e)) return { error: e.message };
     throw e;
   }
-  if (!CENTRE_ROLE_MAP[values.roleKey]) return { error: "That is not a centre role." };
+  if (!CENTRE_ROLE_MAP[values.roleKey]) return { error: "That is not a center role." };
 
   const evidence = (values.evidence ?? "").trim();
   if (values.status === "competent" && evidence.length < 10) {
@@ -2127,7 +2127,7 @@ export async function generateTimetableDraftAction(values: {
     sb.from("ac_schedule_slots").select("id").eq("engagement_id", values.engagementId).limit(1),
   ]);
   if (existing && existing.length > 0) {
-    return { error: "This centre already has a timetable. Clear it first, or add slots by hand." };
+    return { error: "This center already has a timetable. Clear it first, or add slots by hand." };
   }
   if (!assignments || assignments.length === 0) {
     return { error: "No assessor assignments yet, so there is nothing to lay out." };
@@ -2203,8 +2203,8 @@ export async function saveCentreReviewAction(values: {
   if (values.complete && (!text(values.wentWell) || !text(values.didNot))) {
     return {
       error:
-        "A review needs both halves: what went well and what did not. A centre where nothing went wrong is a "
-        + "centre nobody looked at closely.",
+        "A review needs both halves: what went well and what did not. A center where nothing went wrong is a "
+        + "center nobody looked at closely.",
     };
   }
 

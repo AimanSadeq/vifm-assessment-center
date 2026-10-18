@@ -99,9 +99,9 @@ const STRINGS = {
     back: "Back",
     sub: "Competency Framework",
     tag: "Admin · Framework Reference",
-    eyebrow: "Behavioural Competency Model",
+    eyebrow: "Behavioral Competency Model",
     h1: "VIFM Competency Framework",
-    lede: "The VIFM-authored behavioural framework that anchors the Caliber platform - domains organised into clusters and individual competencies, each rated on a five-point behaviourally anchored scale.",
+    lede: "The VIFM-authored behavioral framework that anchors the Caliber platform - domains organized into clusters and individual competencies, each rated on a five-point behaviorally anchored scale.",
     statDomains: "Domains",
     statClusters: "Clusters",
     statCompetencies: "Competencies",
@@ -114,14 +114,14 @@ const STRINGS = {
     count: (shown: number, total: number) => `Showing ${shown} of ${total} competencies`,
     noResults: "No competencies match your search.",
     tabGrid: "Framework grid",
-    tabIndicators: "Behavioural indicators",
+    tabIndicators: "Behavioral indicators",
     downloadPdf: "Download PDF",
     statIndicators: "Indicators",
     positiveLabel: "Positive indicators",
     negativeLabel: "Negative indicators",
     noIndicators: "No indicators recorded for this competency.",
     indicatorsLede:
-      "Positive and negative behavioural indicators per competency - what strong looks like, and the warning signs. The detailed level beneath the framework grid.",
+      "Positive and negative behavioral indicators per competency - what strong looks like, and the warning signs. The detailed level beneath the framework grid.",
     comps: (n: number) => `${n} ${n === 1 ? "competency" : "competencies"}`,
     clusters: (n: number) => `${n} ${n === 1 ? "cluster" : "clusters"}`,
     provenance:
@@ -434,7 +434,7 @@ export function FrameworkGrid({
           </section>
         ) : (
           /* Behavioural indicators view (level 2): positive + negative per competency */
-          <section aria-label="Behavioural indicators" className="space-y-[18px]">
+          <section aria-label="Behavioral indicators" className="space-y-[18px]">
             {view.map(({ domain: d, clusters }) => {
               const comps = clusters.flatMap(({ comps: cs }) => cs);
               return (

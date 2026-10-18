@@ -470,7 +470,7 @@ export default async function CandidateSkillsPage({ params, searchParams }: Prop
                         <div className="flex flex-wrap gap-1">
                           {comp.score != null && (
                             <span
-                              title="Assessment Center (behavioural)"
+                              title="Assessment Center (behavioral)"
                               className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium ${signalToneClass("behavioural")}`}
                             >
                               AC · {comp.score}/5

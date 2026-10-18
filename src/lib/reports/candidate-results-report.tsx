@@ -37,17 +37,17 @@ export function CandidateResultsReport({ data }: AudienceReportProps) {
   const domains = groups.map((g) => ({ name: g.name, n: g.items.length }));
 
   return (
-    <Document title={`Assessment Results - ${data.candidateName}`} author="VIFM Behavioural Assessment">
+    <Document title={`Assessment Results - ${data.candidateName}`} author="VIFM Behavioral Assessment">
       {/* Cover */}
       <Page size="A4" style={sh.cover}>
         <CoverHero
-          eyebrow="VIFM Behavioural Assessment"
+          eyebrow="VIFM Behavioral Assessment"
           title="Your Assessment Results"
-          subtitle={data.targetRole ? `Assessed for ${data.targetRole}` : "Behavioural psychometric results"}
+          subtitle={data.targetRole ? `Assessed for ${data.targetRole}` : "Behavioral psychometric results"}
           candidateName={data.candidateName}
           audience={AUDIENCE}
           rows={[
-            ["Organisation", data.organizationName],
+            ["Organization", data.organizationName],
             ["Role assessed for", data.targetRole ?? "-"],
             ["Date completed", data.assessmentDates],
             ["Competencies measured", String(comps.length)],
@@ -61,12 +61,12 @@ export function CandidateResultsReport({ data }: AudienceReportProps) {
         <SectionHeader eyebrow="About this report" title="What was measured, and how to read it" />
 
         <Text style={sh.body}>
-          You completed the VIFM online behavioural psychometric assessment. It measures how you typically
+          You completed the VIFM online behavioral psychometric assessment. It measures how you typically
           work against the VIFM competency framework and rates each competency on a 1-5 scale. Your responses
           are compared against a reference group of professionals who completed the same assessment.
         </Text>
         <Text style={sh.body}>
-          This report describes your result on every competency that was measured, grouped by behavioural
+          This report describes your result on every competency that was measured, grouped by behavioral
           domain, with a short explanation of what each one assesses and a plain reading of your result. It
           reflects how you described your own way of working - it is a record of your results, not a hiring
           decision.
@@ -74,7 +74,7 @@ export function CandidateResultsReport({ data }: AudienceReportProps) {
 
         <Text style={[sh.eyebrow, { marginTop: 6 }]}>What this assessment covers</Text>
         <Text style={[sh.body, { marginBottom: 6 }]}>
-          Your competencies sit across the four VIFM behavioural domains. The assessment measured {comps.length} of
+          Your competencies sit across the four VIFM behavioral domains. The assessment measured {comps.length} of
           them in total.
         </Text>
         <View style={[sh.chipRow, { marginBottom: 12 }]}>
@@ -162,8 +162,8 @@ export function CandidateResultsReport({ data }: AudienceReportProps) {
 
         <View style={[sh.note, { marginTop: 8 }]} wrap={false}>
           <Text style={sh.noteText}>
-            These are your results on the VIFM behavioural assessment, valid as a guide for roughly the next
-            24 months. Any decision about role fit or next steps rests with the hiring organisation. If you would
+            These are your results on the VIFM behavioral assessment, valid as a guide for roughly the next
+            24 months. Any decision about role fit or next steps rests with the hiring organization. If you would
             like to talk through your results, VIFM is happy to help.
           </Text>
         </View>

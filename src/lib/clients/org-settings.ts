@@ -66,7 +66,7 @@ export async function updateOrgSettings(
     // an admin previewing with an ARC org id) - report it instead of a false
     // success toast while nothing was persisted.
     if (!data || data.length === 0) {
-      return { ok: false, error: "Organisation not found - the setting was not saved." };
+      return { ok: false, error: "Organization not found - the setting was not saved." };
     }
     return { ok: true };
   } catch {

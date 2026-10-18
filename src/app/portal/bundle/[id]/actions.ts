@@ -27,7 +27,7 @@ export async function clientInviteBundleCandidateAction(input: {
   const access = await resolvePortalAccess(input.orgParam);
   if (!access.ok || !access.orgId) return { error: "Not authorized." };
   const orgId = access.orgId;
-  if (!UUID_RE.test(input.bundleId)) return { error: "Invalid programme." };
+  if (!UUID_RE.test(input.bundleId)) return { error: "Invalid program." };
 
   const name = (input.fullName || "").trim();
   const email = (input.email || "").trim().toLowerCase();
@@ -41,7 +41,7 @@ export async function clientInviteBundleCandidateAction(input: {
     .eq("kind", "bundle")
     .eq("organization_id", orgId)
     .maybeSingle<{ id: string; service_keys: string[]; status: string }>();
-  if (!bundle || bundle.status !== "active") return { error: "This programme is not assigned to your organisation." };
+  if (!bundle || bundle.status !== "active") return { error: "This program is not assigned to your organization." };
 
   const metered = (bundle.service_keys ?? []).filter((k): k is BundleStage =>
     (RUNNABLE_BUNDLE_STAGES as readonly string[]).includes(k)
@@ -106,7 +106,7 @@ export async function inviteEngagementManagerAction(input: {
     .eq("id", input.candidateId)
     .eq("organization_id", access.orgId)
     .maybeSingle<{ id: string; full_name: string; organization_id: string | null }>();
-  if (!cand) return { error: "Candidate not found in your organisation." };
+  if (!cand) return { error: "Candidate not found in your organization." };
 
   const { data: survey, error } = await sb
     .from("hipo_engagement_surveys")

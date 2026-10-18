@@ -6,7 +6,7 @@ What Persona measures, how it is scored, what the two report types are for, and 
 
 ## 1. Why this exists
 
-Whenever a behavioural self-assessment informs a people decision, three questions follow it into the room: *What does the instrument actually measure? How is a single number derived from the answers? And what weight should the number be allowed to carry?* This brief answers those questions for VIFM Persona, the behavioural self-report instrument that sits alongside the VIFM-AC observed assessment and the Reflect 360 multi-rater view.
+Whenever a behavioral self-assessment informs a people decision, three questions follow it into the room: *What does the instrument actually measure? How is a single number derived from the answers? And what weight should the number be allowed to carry?* This brief answers those questions for VIFM Persona, the behavioral self-report instrument that sits alongside the VIFM-AC observed assessment and the Reflect 360 multi-rater view.
 
 Persona is a self-report screening and development signal. It is deliberately not a hiring decision and not an objective measure of ability. The design choices documented below all flow from that single positioning.
 
@@ -16,11 +16,11 @@ Persona is a self-report screening and development signal. It is deliberately no
 
 ### One framework, many instruments
 
-Persona is a behavioural self-report across the VIFM competency framework. A respondent rates a series of first-person statements about how they typically work, and those ratings roll up to a profile across the framework. Crucially, it is the *same* competency framework that the Reflect 360 uses, so a person's self-view and their others-view are expressed on identical dimensions and can be read side by side without translation.
+Persona is a behavioral self-report across the VIFM competency framework. A respondent rates a series of first-person statements about how they typically work, and those ratings roll up to a profile across the framework. Crucially, it is the *same* competency framework that the Reflect 360 uses, so a person's self-view and their others-view are expressed on identical dimensions and can be read side by side without translation.
 
 ### The competency framework
 
-The framework is organised as **21 competencies grouped into 8 clusters** (framework v2, active since 27 September 2026), which in turn sit under the four VIFM behavioural domains (THINKING, RESULTS, PEOPLE, SELF). The eight clusters are:
+The framework is organized as **21 competencies grouped into 8 clusters** (framework v2, active since 27 September 2026), which in turn sit under the four VIFM behavioral domains (THINKING, RESULTS, PEOPLE, SELF). The eight clusters are:
 
 - Strategic and Commercial Reasoning
 - Customer and Stakeholder Focus
@@ -56,7 +56,7 @@ Cluster averages are the mean of the competency scores within each cluster, and 
 1. **Exceptional** (4.5 and above) - a clear, distinctive strength to share and teach.
 2. **Proficient** (3.5 to 4.49) - solid, with room to deepen mastery and extend impact.
 3. **Developing** (2.5 to 3.49) - emerging; structured coaching, practice and stretch assignments help.
-4. **Requires Focus** (1.5 to 2.49) - a significant gap to prioritise with a formal development plan.
+4. **Requires Focus** (1.5 to 2.49) - a significant gap to prioritize with a formal development plan.
 5. **Critical Gap** (below 1.5) - urgent; immediate development action and close support are essential.
 
 ### Role fit (when a target role is bound)
@@ -82,7 +82,7 @@ A Persona sitting is run for one of two purposes, and the purpose changes both w
 
 A hiring report reads the self-profile against a target role as a screening signal that supports a human decision. It shows the role-fit percentage and band, the biggest gaps against the role target, and the strengths to leverage. Its per-competency narratives are deliberately written in self-report language - they describe what the candidate's own answers indicate, relative to the role target, as something to corroborate rather than a verdict. The narratives can be drafted by AI (grounded strictly in the pattern of the candidate's own answers - which statements they rated higher versus lower) and fall back to a deterministic, defensible narrative when AI is unavailable, so the report always renders the same evidence-anchored read.
 
-The hiring report is built to feed, not replace, the human stage. It is accompanied by a structured interview guide (so an interviewer can probe the gaps the self-profile raises with concrete behavioural questions) and a decision-integration worksheet (so the screening signal is recorded alongside interview and work evidence rather than standing alone). The report's own caption states the rule plainly: this is a screening signal, not a hiring decision, to be corroborated with a Reflect 360, a structured interview and work evidence.
+The hiring report is built to feed, not replace, the human stage. It is accompanied by a structured interview guide (so an interviewer can probe the gaps the self-profile raises with concrete behavioral questions) and a decision-integration worksheet (so the screening signal is recorded alongside interview and work evidence rather than standing alone). The report's own caption states the rule plainly: this is a screening signal, not a hiring decision, to be corroborated with a Reflect 360, a structured interview and work evidence.
 
 **Hiring reports are admin-gated.** Because a hiring report is a client and recruiter deliverable about a candidate, the report endpoint requires an authenticated admin caller. A candidate who reaches the assessment via a voucher or link - and therefore has no account - cannot pull their own fit report even if they know the session identifier.
 
@@ -90,15 +90,15 @@ The hiring report is built to feed, not replace, the human stage. It is accompan
 
 A development report is framed entirely as growth and is open to the taker as their own report. It presents a holistic narrative across the clusters, the self-profile against the role target as "current alignment" (with development priorities and strengths to build on rather than gaps to be judged on), a development-planning scaffold, and coaching prompts. Each per-competency note is forward-looking - what to build on and one concrete way to grow it (a stretch assignment, mentoring, or structured learning) - never a verdict.
 
-The development report closes the diagnose-to-deliver loop with a VIFM Academy course plan: the competency gaps are turned into a ranked list of VIFM programmes, each tagged with how strongly it targets the priority and with a high-fit marker on the strongest matches. The development report stays open to the taker precisely because it is theirs to act on, in contrast to the admin-gated hiring report.
+The development report closes the diagnose-to-deliver loop with a VIFM Academy course plan: the competency gaps are turned into a ranked list of VIFM programs, each tagged with how strongly it targets the priority and with a high-fit marker on the strongest matches. The development report stays open to the taker precisely because it is theirs to act on, in contrast to the admin-gated hiring report.
 
 ---
 
 ## 5. What Persona is, and what it is not
 
-- **It is a self-report screening and development signal.** It captures how a person sees their own typical behaviour across the framework. That is a genuine and useful source - but it is one source.
+- **It is a self-report screening and development signal.** It captures how a person sees their own typical behavior across the framework. That is a genuine and useful source - but it is one source.
 - **It is not a hiring decision.** The scoring deliberately has no reject path. A fit percentage caps how a screening conversation starts; it never closes one. A human makes every decision.
-- **It is not an objective measure of ability.** A self-rating reports a self-perception, not a demonstrated competence. Persona does not observe behaviour the way the VIFM-AC observed exercises do.
+- **It is not an objective measure of ability.** A self-rating reports a self-perception, not a demonstrated competence. Persona does not observe behavior the way the VIFM-AC observed exercises do.
 - **It must be corroborated.** The honest read of any Persona profile is partial until it is triangulated. Pair Persona (the self view) with a Reflect 360 (the others view) on the same framework, and add interview and work evidence. No decision should rest on Persona alone.
 
 These are not caveats bolted on at the end - they are stated on the face of every report, in both purposes, so a reader cannot mistake the instrument for more than it is.
@@ -107,9 +107,9 @@ These are not caveats bolted on at the end - they are stated on the face of ever
 
 ## 6. Response-style and consistency
 
-Self-report instruments are vulnerable to two patterns worth flagging: a respondent who rates everything uniformly high (an elevated, self-favouring profile), and a respondent whose answers to similar statements contradict each other (low internal consistency). Persona supports an advisory response-style indicator built from these two signals - profile elevation, and agreement between the normative Likert section and the ipsative forced-choice section that the bank also supports.
+Self-report instruments are vulnerable to two patterns worth flagging: a respondent who rates everything uniformly high (an elevated, self-favoring profile), and a respondent whose answers to similar statements contradict each other (low internal consistency). Persona supports an advisory response-style indicator built from these two signals - profile elevation, and agreement between the normative Likert section and the ipsative forced-choice section that the bank also supports.
 
-The indicator is **advisory only and never a blocker.** A flag asks a reader to interpret the profile with care and to lean harder on corroboration; it does not lower a score, fail a sitting, or change a decision. This matches how the platform treats validity signals elsewhere: an elevated or inconsistent profile is surfaced for human judgement, not acted on automatically. The ipsative forced-choice format (most-like-me / least-like-me across statements from different competencies) is included as a bias-resistant complement to the Likert section precisely because forced choice is harder to inflate uniformly.
+The indicator is **advisory only and never a blocker.** A flag asks a reader to interpret the profile with care and to lean harder on corroboration; it does not lower a score, fail a sitting, or change a decision. This matches how the platform treats validity signals elsewhere: an elevated or inconsistent profile is surfaced for human judgment, not acted on automatically. The ipsative forced-choice format (most-like-me / least-like-me across statements from different competencies) is included as a bias-resistant complement to the Likert section precisely because forced choice is harder to inflate uniformly.
 
 ---
 
@@ -117,7 +117,7 @@ The indicator is **advisory only and never a blocker.** A flag asks a reader to 
 
 ### Standards the instrument is held to
 
-Persona is designed and used in line with the recognised standards for the proper use of assessment:
+Persona is designed and used in line with the recognized standards for the proper use of assessment:
 
 - **ITC Guidelines on Test Use** - on the responsibilities of those who select, administer and interpret assessments.
 - **Standards for Educational and Psychological Testing** (AERA / APA / NCME, 2014) - referenced for evidence-based item development and for the discipline of matching claims to evidence.
@@ -145,13 +145,13 @@ Persona is fully bilingual. Every item, interpretation band, narrative and repor
 
 ## 9. Contact
 
-For methodology questions or research-collaboration enquiries, contact the VIFM consulting team: `contact@viftraining.com`.
+For methodology questions or research-collaboration inquiries, contact the VIFM consulting team: `contact@viftraining.com`.
 
 ---
 
 ## Reliability & Validity Evidence
 
-Two kinds of evidence: **(A)** established coefficients for the *method* (multi-item behavioural self-report), from the published literature; and **(B)** VIFM's own reliability procedures and their honest current status. We report (A) as evidence for the method, not as a claim about VIFM's specific item set.
+Two kinds of evidence: **(A)** established coefficients for the *method* (multi-item behavioral self-report), from the published literature; and **(B)** VIFM's own reliability procedures and their honest current status. We report (A) as evidence for the method, not as a claim about VIFM's specific item set.
 
 **A. Established coefficients for the method (published literature)**
 
@@ -167,4 +167,4 @@ Two kinds of evidence: **(A)** established coefficients for the *method* (multi-
 
 ---
 
-*VIFM Persona - Behavioural Self-Assessment - Methodology Brief v1.1 - Last updated 2026-09-30 (framework v2).*
+*VIFM Persona - Behavioral Self-Assessment - Methodology Brief v1.1 - Last updated 2026-09-30 (framework v2).*

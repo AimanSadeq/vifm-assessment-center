@@ -14,7 +14,7 @@ per cluster.
 matched for desirability; respondent marks MOST / LEAST like them; scored via
 **Thurstonian IRT** (Brown & Maydeu-Olivares, 2011). Codes (A–E) map to the
 competencies listed in each cluster. *Block tables show codes; at delivery,
-statement text is shown in randomised order.*
+statement text is shown in randomized order.*
 
 > Production steps (empirical desirability matching, mixed keying, calibration N,
 > fit checks) are in the Cluster 1 doc and apply identically here.
@@ -47,7 +47,7 @@ statement text is shown in randomised order.*
 **10. Proactive Initiative** — a. I act on problems without waiting to be told. (+) · b. I take the initiative to improve things. (+) · c. I wait for direction before acting. (R) · d. I look for opportunities and act on them. (+)
 **11. Outcome Ownership** — a. I see things through to a result. (+) · b. I keep pushing even when it's hard. (+) · c. I ease off when obstacles appear. (R) · d. I take personal responsibility for outcomes. (+)
 **12. Accountability for Commitments** — a. I do what I say I will do. (+) · b. I own up quickly when I can't meet a commitment. (+) · c. I make excuses when things slip. (R) · d. I hold myself to my promises. (+)
-**13. Planning & Prioritisation** — a. I plan my work around what matters most. (+) · b. I prioritise by impact and deadline. (+) · c. I tackle tasks in whatever order they arrive. (R) · d. I organise my work to meet key commitments. (+)
+**13. Planning & Prioritisation** — a. I plan my work around what matters most. (+) · b. I prioritize by impact and deadline. (+) · c. I tackle tasks in whatever order they arrive. (R) · d. I organize my work to meet key commitments. (+)
 **14. Process Optimisation** — a. I look for ways to make processes more efficient. (+) · b. I fix the root cause of recurring problems. (+) · c. I leave inefficient processes as they are. (R) · d. I improve how work gets done. (+)
 
 ### Forced-choice pool & blocks
@@ -56,7 +56,7 @@ statement text is shown in randomised order.*
 | A1/A2/A3 | I act on problems without being told / I take initiative to improve things / I act on opportunities |
 | B1/B2/B3 | I see things through to a result / I keep pushing when it's hard / I take responsibility for outcomes |
 | C1/C2/C3 | I do what I say I will do / I own up quickly when I can't deliver / I hold myself to my promises |
-| D1/D2/D3 | I plan around what matters most / I prioritise by impact and deadline / I organise work to meet commitments |
+| D1/D2/D3 | I plan around what matters most / I prioritize by impact and deadline / I organize work to meet commitments |
 | E1/E2/E3 | I make processes more efficient / I fix the root cause of problems / I improve how work gets done |
 
 **Blocks (5 competencies → 5 triplets):** 1: A1·B1·C1 · 2: B2·C2·D1 · 3: C3·D2·E1 · 4: D3·E2·A2 · 5: E3·A3·B3
@@ -69,7 +69,7 @@ statement text is shown in randomised order.*
 **15. Operating Through Uncertainty** — a. I stay effective when things are unclear. (+) · b. I make progress without complete information. (+) · c. I struggle when the way forward isn't clear. (R) · d. I'm comfortable acting amid uncertainty. (+)
 **16. Learning by Doing** — a. I learn quickly by trying things. (+) · b. I treat mistakes as a way to learn. (+) · c. I avoid tasks until I've been fully trained. (R) · d. I adjust my approach as I learn. (+)
 **17. Resilience Under Pressure** — a. I bounce back from setbacks. (+) · b. I keep performing through adversity. (+) · c. Setbacks knock me off course for a long time. (R) · d. I recover quickly when things go wrong. (+)
-**18. Mobilising Around Purpose** — a. I give people a clear sense of direction. (+) · b. I connect people's work to a bigger purpose. (+) · c. I struggle to get others energised behind a goal. (R) · d. I motivate people toward a shared goal. (+)
+**18. Mobilising Around Purpose** — a. I give people a clear sense of direction. (+) · b. I connect people's work to a bigger purpose. (+) · c. I struggle to get others energized behind a goal. (R) · d. I motivate people toward a shared goal. (+)
 
 ### Forced-choice pool & blocks
 | Code | Statement |
@@ -90,7 +90,7 @@ statement text is shown in randomised order.*
 **20. Persuasion & Buy-in** — a. I win people's genuine support for ideas. (+) · b. I build a convincing case. (+) · c. I find it hard to bring others around. (R) · d. I gain commitment, not just compliance. (+)
 **21. Constructive Conflict Handling** — a. I address disagreements directly and calmly. (+) · b. I keep conflict focused on the issue, not the person. (+) · c. I avoid dealing with conflict. (R) · d. I resolve tensions without drama. (+)
 **22. Principled Negotiation** — a. I find agreements that work for both sides. (+) · b. I look for the other party's underlying needs. (+) · c. I either give in or dig in when negotiating. (R) · d. I reach durable, fair agreements. (+)
-**23. Relationship Networks** — a. I build relationships across the organisation. (+) · b. I invest in connections before I need them. (+) · c. I keep to my own team and contacts. (R) · d. I maintain a strong network of relationships. (+)
+**23. Relationship Networks** — a. I build relationships across the organization. (+) · b. I invest in connections before I need them. (+) · c. I keep to my own team and contacts. (R) · d. I maintain a strong network of relationships. (+)
 
 ### Forced-choice pool & blocks
 | Code | Statement |
@@ -99,7 +99,7 @@ statement text is shown in randomised order.*
 | B1/B2/B3 | I win genuine support for ideas / I build a convincing case / I gain commitment, not just compliance |
 | C1/C2/C3 | I address disagreements calmly / I keep conflict on the issue / I resolve tensions without drama |
 | D1/D2/D3 | I find agreements that work for both sides / I look for the other side's real needs / I reach fair, durable agreements |
-| E1/E2/E3 | I build relationships across the organisation / I invest in connections before I need them / I maintain a strong network |
+| E1/E2/E3 | I build relationships across the organization / I invest in connections before I need them / I maintain a strong network |
 
 **Blocks (5 → 5 triplets):** 1: A1·B1·C1 · 2: B2·C2·D1 · 3: C3·D2·E1 · 4: D3·E2·A2 · 5: E3·A3·B3
 
@@ -173,5 +173,5 @@ statement text is shown in randomised order.*
 
 *With Cluster 1, this completes self-report coverage for all 38 competencies in
 both normative and ipsative forms. Next: the empirical desirability-rating step to
-finalise forced-choice blocks, and (separately) the engineering migration into
+finalize forced-choice blocks, and (separately) the engineering migration into
 Caliber.*

@@ -111,7 +111,7 @@ test("an exercise with no assessor and a slot with no room are cautions", () => 
   });
   assert.ok(r.problems.some((p) => /has no assessor scheduled/.test(p.message)));
   assert.ok(r.problems.some((p) => /has no room/.test(p.message)));
-  assert.deepEqual(r.blocking, [], "neither stops the centre running");
+  assert.deepEqual(r.blocking, [], "neither stops the center running");
 });
 
 test("exercises in the design with nothing scheduled are reported", () => {

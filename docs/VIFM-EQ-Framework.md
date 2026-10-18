@@ -8,20 +8,20 @@ How VIFM turns the Persona self-assessment into an emotional-intelligence profil
 
 ## 1. Purpose
 
-Emotional intelligence predicts how leaders handle themselves and their relationships - a distinct signal from cognitive ability or technical mastery. The VIFM EQ Profile is an **emotional-intelligence lens** on the existing VIFM Persona behavioural self-assessment. It adds **no new questions** - it re-reads the emotionally-loaded subset of the 41 competencies against the four Goleman quadrants.
+Emotional intelligence predicts how leaders handle themselves and their relationships - a distinct signal from cognitive ability or technical mastery. The VIFM EQ Profile is an **emotional-intelligence lens** on the existing VIFM Persona behavioral self-assessment. It adds **no new questions** - it re-reads the emotionally-loaded subset of the 41 competencies against the four Goleman quadrants.
 
 ## 2. The model: Goleman's four quadrants
 
-Daniel Goleman's mixed-model of emotional intelligence (Goleman 1995, 1998; operationalised with Boyatzis in the ESCI) organises emotional competencies on two axes - **Self vs Social** and **Recognition vs Regulation**:
+Daniel Goleman's mixed-model of emotional intelligence (Goleman 1995, 1998; operationalized with Boyatzis in the ESCI) organizes emotional competencies on two axes - **Self vs Social** and **Recognition vs Regulation**:
 
 | | Recognition | Regulation |
 |---|---|---|
 | **Self** | **Self-Awareness** - reading one's own emotions, limits, and worth | **Self-Management** - handling one's emotions, impulses, and adaptability |
-| **Social** | **Social Awareness (Empathy)** - reading others and the organisation | **Relationship Management** - influencing, developing, and mobilising others |
+| **Social** | **Social Awareness (Empathy)** - reading others and the organization | **Relationship Management** - influencing, developing, and mobilizing others |
 
 ## 3. The competency mapping (22 of 41)
 
-Unlike the DARE and Leadership lenses (which span the whole behavioural domain), emotional intelligence is a **bounded construct**: only the emotionally-loaded VIFM competencies map to it. **22 of the 41** are in scope; the remaining 19 (cognitive, commercial, and executional competencies) are explicitly outside the EI domain and are not scored by this report. This is a **content-mapping decision reviewed by VIFM**, not an empirically derived factor structure.
+Unlike the DARE and Leadership lenses (which span the whole behavioral domain), emotional intelligence is a **bounded construct**: only the emotionally-loaded VIFM competencies map to it. **22 of the 41** are in scope; the remaining 19 (cognitive, commercial, and executional competencies) are explicitly outside the EI domain and are not scored by this report. This is a **content-mapping decision reviewed by VIFM**, not an empirically derived factor structure.
 
 ### Self-Awareness (3)
 Self-Insight · Continuous Self-Development · Sustainable Wellbeing
@@ -39,7 +39,7 @@ Clear & Adaptive Communication · Persuasion & Buy-in · Coaching & Talent Growt
 Forward Strategy Setting · Commercial & Market Awareness · Financial Literacy & Acumen · Critical Analysis · Sound Judgement · Creative Problem-Solving · Navigating Complexity · Systems & Global Perspective · Digital & Data Fluency · Outcome Ownership · Accountability for Commitments · Planning & Prioritisation · Process Optimisation · Learning by Doing · Principled Courage · Adaptive Learning Capacity · Resource Mobilisation · Stakeholder Management · Value Creation
 
 ### Judgment-calls (most likely to be revised)
-- **Emotional Regulation & Empathy -> Social Awareness.** The VIFM competency name spans both regulation (self) and empathy (social); it is placed with empathy because its behavioural indicators weight the other-reading side. Flagged for a future item-level split.
+- **Emotional Regulation & Empathy -> Social Awareness.** The VIFM competency name spans both regulation (self) and empathy (social); it is placed with empathy because its behavioral indicators weight the other-reading side. Flagged for a future item-level split.
 - **Sustainable Wellbeing -> Self-Awareness** - read as awareness and stewardship of one's own state and limits (ESCI would place energy management under regulation).
 - **Proactive Initiative -> Self-Management** - Goleman/ESCI place initiative and achievement drive under self-management.
 - **Customer Orientation -> Social Awareness** - ESCI's service orientation.
@@ -58,14 +58,14 @@ Forward Strategy Setting · Commercial & Market Awareness · Financial Literacy 
 1. **Executive summary** - overall EQ index, quadrant scores, strongest + priority quadrant synthesis.
 2. **The Goleman grid** - the four quadrants charted as the canonical 2x2 with per-quadrant score bars.
 3. **Quadrant-by-quadrant breakdown** - every in-scope competency with its self-rating.
-4. **Development focus** - the priority quadrant's lowest-rated competencies (and the runner-up quadrant's), with catalogue development tips framed for a 30/60/90-day cycle.
+4. **Development focus** - the priority quadrant's lowest-rated competencies (and the runner-up quadrant's), with catalog development tips framed for a 30/60/90-day cycle.
 
 ## 6. Validity & honest disclosures
 
 - **Self-report.** EI self-ratings famously diverge from others' experience - pair with a **Reflect 360°** before any conclusion; the self-vs-others gap is itself a core EI signal.
-- **A content lens, not a clinical or ability test.** This is a re-read of behavioural self-ratings against Goleman's model - it is not the ESCI, the MSCEIT, or any normed EI instrument, and it should not be represented as one.
+- **A content lens, not a clinical or ability test.** This is a re-read of behavioral self-ratings against Goleman's model - it is not the ESCI, the MSCEIT, or any normed EI instrument, and it should not be represented as one.
 - **Bounded construct.** 22 of 41 competencies are in scope; the report states this and never scores out-of-domain competencies.
-- **Indicative until normed** (target n >= 200), and the mapping is a content decision open to industrial/organisational-psychology revision.
+- **Indicative until normed** (target n >= 200), and the mapping is a content decision open to industrial/organizational-psychology revision.
 
 ## 7. References
 

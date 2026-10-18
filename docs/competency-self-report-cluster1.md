@@ -43,7 +43,7 @@ competency = mean of its 4 items. Reverse items guard against acquiescence
 - a. I am comfortable interpreting financial statements and ratios. **(+)**
 - b. I use financial data to weigh trade-offs in decisions. **(+)**
 - c. I rely on others to explain the financial implications of choices. **(R)**
-- d. I can quickly read what a set of financial indicators is signalling. **(+)**
+- d. I can quickly read what a set of financial indicators is signaling. **(+)**
 
 ### 4. Critical Analysis
 - a. I test the assumptions behind a conclusion before accepting it. **(+)**
@@ -55,7 +55,7 @@ competency = mean of its 4 items. Reverse items guard against acquiescence
 - a. I make balanced decisions even when information is incomplete. **(+)**
 - b. I consider the knock-on consequences of my decisions. **(+)**
 - c. I delay decisions until I have complete certainty. **(R)**
-- d. People trust my judgement on difficult calls. **(+)**
+- d. People trust my judgment on difficult calls. **(+)**
 
 > **Scoring (normative):** competency score = mean of 4 items (1–5); cluster
 > score = mean of 5 competency scores. Directly comparable across people →
@@ -89,7 +89,7 @@ not impression management.
 | D3 | Critical Analysis | I weigh the evidence before deciding. |
 | E1 | Sound Judgement | I decide well even without complete information. |
 | E2 | Sound Judgement | I think through the knock-on effects of a decision. |
-| E3 | Sound Judgement | Others rely on my judgement in tough calls. |
+| E3 | Sound Judgement | Others rely on my judgment in tough calls. |
 
 ### Block design (balanced — each competency appears 3×, never twice in a block)
 
@@ -101,7 +101,7 @@ not impression management.
 | 4 | D3 · E2 · A2 |
 | 5 | E3 · A3 · B3 |
 
-*Each block shows the three statement texts (not the codes) in randomised order.*
+*Each block shows the three statement texts (not the codes) in randomized order.*
 
 > **Scoring (ipsative → TIRT):** each MOST/LEAST response implies pairwise
 > preferences within the block. A **Thurstonian IRT** model (Brown &
@@ -120,7 +120,7 @@ high-stakes use, the production version needs:
 
 1. **Empirical desirability matching.** Have a sample rate each statement's
    social desirability; build blocks from statements with *similar* ratings. (The
-   draft above is matched by judgement — confirm it with data.)
+   draft above is matched by judgment — confirm it with data.)
 2. **Mixed keying.** Include some **negatively-keyed** statements across blocks;
    mixing keyed direction improves trait recovery and model identification in
    TIRT (Brown & Maydeu-Olivares, 2011).
@@ -153,4 +153,4 @@ Halpern (1998); Kahneman & Klein (2009).
 ---
 
 *Next on approval: apply both forms across Clusters 2–8, and run the empirical
-desirability-rating step to finalise the forced-choice blocks.*
+desirability-rating step to finalize the forced-choice blocks.*

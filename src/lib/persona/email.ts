@@ -50,7 +50,7 @@ export async function emailVoucherLink(opts: {
   const html = wrap(
     `
     <p style="margin:0 0 12px">${hi}</p>
-    <p style="margin:0 0 12px">You have been invited to complete the <b>VIFM Persona</b> behavioural assessment. It is short and runs in your browser.</p>
+    <p style="margin:0 0 12px">You have been invited to complete the <b>VIFM Persona</b> behavioral assessment. It is short and runs in your browser.</p>
     <p style="margin:0 0 8px">Your access code: <b style="font-family:monospace">${opts.code}</b></p>
     <p style="margin:0 0 20px">
       <a href="${opts.url}" style="background:#010131;color:#fff;text-decoration:none;padding:10px 18px;border-radius:6px;display:inline-block">Start</a>

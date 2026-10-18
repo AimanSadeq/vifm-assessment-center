@@ -52,13 +52,13 @@ export async function suggestReflectValidationEvidence(
   const menu = relevantMenu(MENU, ["*"]);
   const user = buildUserPrompt({
     contextLines: [
-      { k: "Instrument", v: "Reflect 360 - multi-rater behavioural feedback" },
+      { k: "Instrument", v: "Reflect 360 - multi-rater behavioral feedback" },
       { k: "Framework", v: input.framework_name || "(unspecified)" },
       { k: "Competency", v: input.competency_name || "(unspecified)" },
       { k: "Definition", v: input.competency_description || "(no description on file)" },
     ],
     menu,
-    constructHint: "Leadership behaviour rated via multisource feedback",
+    constructHint: "Leadership behavior rated via multisource feedback",
   });
   return runEvidenceSuggester({
     system: buildSystemPrompt(
@@ -66,7 +66,7 @@ export async function suggestReflectValidationEvidence(
     ),
     user,
     menu,
-    constructFallback: input.competency_name || "360 behavioural competency",
+    constructFallback: input.competency_name || "360 behavioral competency",
     tag: "reflect-evidence",
   });
 }

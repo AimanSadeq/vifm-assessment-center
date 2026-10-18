@@ -7,7 +7,7 @@ are sector-neutral), in place of — or alongside — the **neutral SJT base** i
 
 Each item targets the same competency and preserves the same MOST/LEAST key logic
 as the neutral base, so scoring stays comparable. Confirm keys with sector SMEs +
-pilot stats before high-stakes use. Option order is randomised at delivery.
+pilot stats before high-stakes use. Option order is randomized at delivery.
 
 ---
 
@@ -15,7 +15,7 @@ pilot stats before high-stakes use. Option order is randomised at delivery.
 
 **1. Forward Strategy Setting.** You lead a retail banking unit. A fintech is
 rapidly taking payment share among under-30 customers, and the regulator has
-signalled open-banking rules within ~18 months; the board wants this quarter's
+signaled open-banking rules within ~18 months; the board wants this quarter's
 targets protected. MOST/LEAST:
 - A. Keep the team focused on this quarter; revisit the fintech threat next year.
 - B. Commission a scenario analysis of open-banking impact and shape a 2–3 year
@@ -99,7 +99,7 @@ and three vendors, with conflicting timelines and incomplete data. MOST/LEAST:
 **8. Systems & Global Perspective.** A risk model that works at home is to be
 applied to a cross-border GCC expansion. MOST/LEAST:
 - A. Apply the model unchanged to save time.
-- B. Assess how local regulation, currency, and customer behaviour differ, then
+- B. Assess how local regulation, currency, and customer behavior differ, then
   adapt the model.
 - C. Discard the model and rebuild from scratch unnecessarily.
 - D. Apply it but adjust only the currency field.
@@ -139,7 +139,7 @@ vendor delay. MOST/LEAST:
 
 **Key:** MOST = **B**; LEAST = **A**.
 
-**12. Accountability for Commitments.** You realise you'll miss a deadline you
+**12. Accountability for Commitments.** You realize you'll miss a deadline you
 promised a colleague. MOST/LEAST:
 - A. Say nothing and hope they don't notice.
 - B. Tell them as soon as you know, with a revised date and a plan.
@@ -161,7 +161,7 @@ them all well. MOST/LEAST:
 **14. Process Optimisation.** A reconciliation process takes three days with
 repeated rework. MOST/LEAST:
 - A. Accept it as the cost of accuracy.
-- B. Find where the rework originates, fix the root cause, then standardise the
+- B. Find where the rework originates, fix the root cause, then standardize the
   improved process.
 - C. Speed it up by skipping a control check.
 - D. Add overtime to finish faster.
@@ -201,7 +201,7 @@ MOST/LEAST:
 
 **Key:** MOST = **B**; LEAST = **A**.
 
-**18. Mobilising Around Purpose.** Your team is demoralised during a
+**18. Mobilising Around Purpose.** Your team is demoralized during a
 restructuring. MOST/LEAST:
 - A. Tell them to focus on their tasks and stop worrying.
 - B. Connect their work to a clear, credible picture of where the unit is heading
@@ -289,10 +289,10 @@ MOST/LEAST:
 
 **26. Cross-Functional Collaboration.** Your goals conflict with another unit's,
 yet both are needed for a client outcome. MOST/LEAST:
-- A. Optimise your own unit's metric and let them manage theirs.
+- A. Optimize your own unit's metric and let them manage theirs.
 - B. Align on the shared client outcome and negotiate the trade-offs jointly.
 - C. Escalate immediately for a ruling.
-- D. Quietly deprioritise the joint work.
+- D. Quietly deprioritize the joint work.
 
 **Key:** MOST = **B**; LEAST = **D**.
 
@@ -379,7 +379,7 @@ demands. MOST/LEAST:
 **35. Continuous Self-Development.** You receive critical feedback in a review.
 MOST/LEAST:
 - A. Defend yourself and move on.
-- B. Turn it into a concrete development plan and seek chances to practise.
+- B. Turn it into a concrete development plan and seek chances to practice.
 - C. Wait for the company to provide training.
 - D. Note it but take no action.
 
@@ -388,7 +388,7 @@ MOST/LEAST:
 **36. Composure Under Stress.** A systems outage hits during peak hours and
 everyone looks to you. MOST/LEAST:
 - A. Show visible panic and rush decisions.
-- B. Stay calm, prioritise, communicate clearly, and work the problem methodically.
+- B. Stay calm, prioritize, communicate clearly, and work the problem methodically.
 - C. Freeze and wait for instructions.
 - D. Project false calm and hide the severity from your team.
 

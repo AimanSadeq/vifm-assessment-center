@@ -147,7 +147,7 @@ function CohortReport({
         <div className="lead">
           {rtl
             ? "اللون يدل على المتوسط: الأخضر = أعلى، البرتقالي = منخفض. القيم بين 1 و5."
-            : "Colour = mean rating. Green = high, orange = low. Values 1-5."}
+            : "Color = mean rating. Green = high, orange = low. Values 1-5."}
         </div>
         <div className="heatmap-wrap">
           <table className="heatmap">
@@ -187,7 +187,7 @@ function CohortReport({
         <p className="lead">
           {rtl
             ? "لكل كفاية، نسبة المشاركين الذين يقع متوسط آراء الآخرين عنهم تحت النطاق المرجعي (<3.5)، داخله (3.5-4.25)، أو فوقه (>4.25). البرامج التدريبية تستهدف عادةً الكفايات التي تظهر فيها شريحة حمراء كبيرة."
-            : "For each competency, the share of participants whose Others-mean sits below the Favorable Zone (<3.5), within it (3.5-4.25), or above (>4.25). Training programmes typically target competencies showing a large red segment."}
+            : "For each competency, the share of participants whose Others-mean sits below the Favorable Zone (<3.5), within it (3.5-4.25), or above (>4.25). Training programs typically target competencies showing a large red segment."}
         </p>
         <div className="dist-bars">
           {scoring.competencies.map((c) => {
@@ -242,7 +242,7 @@ function CohortReport({
           <p className="lead">
             {rtl
               ? `مقارنة بين هذه الدورة و: ${scoring.prior_engagement_name ?? "التقييم السابق"}. الأسهم الخضراء = تحسن، الحمراء = تراجع، الرمادية = ثبات (±0.2).`
-              : `Comparison against ${scoring.prior_engagement_name ?? "the prior assessment"}. Green arrows = improvement, red = decline, grey = flat (±0.2).`}
+              : `Comparison against ${scoring.prior_engagement_name ?? "the prior assessment"}. Green arrows = improvement, red = decline, gray = flat (±0.2).`}
           </p>
 
           <div className="cohort-delta-overall">
@@ -275,7 +275,7 @@ function CohortReport({
           <p className="lead">
             {rtl
               ? "برامج VIFM المُرشّحة بناءً على مجموع الفجوات في كل كفاية على مستوى المشاركين كلهم. هذه الترتيبات تجعل البرامج التي تخدم أكبر عدد من القادة في المقدّمة."
-              : "VIFM programmes ranked by the aggregated gap across every participant - the programmes that serve the largest slice of the cohort sit at the top."}
+              : "VIFM programs ranked by the aggregated gap across every participant - the programs that serve the largest slice of the cohort sit at the top."}
           </p>
           <ol className="programme-list">
             {recommendations.map((p, i) => {
@@ -468,7 +468,7 @@ function ExecutiveSummaryPage({
       title: rtl ? "خريطة الكفايات الحرارية" : "Competency heatmap",
       desc: rtl
         ? "كل قائد وكل كفاية، ملوّنة لتبرز الأنماط فورًا."
-        : "Every leader, every competency, colour-coded so patterns jump out.",
+        : "Every leader, every competency, color-coded so patterns jump out.",
       headline:
         scoring.participant_count > 0 && scoring.competencies.length > 0
           ? rtl
@@ -520,7 +520,7 @@ function ExecutiveSummaryPage({
       who: rtl ? "مع مالك ميزانية التدريب" : "With the L&D budget owner",
       text: rtl
         ? "أي برامج VIFM نلتزم بها للربع القادم، مرتّبة حسب إجمالي فجوة المجموعة."
-        : "which VIFM programmes to commit to next quarter, ranked by aggregated cohort gap.",
+        : "which VIFM programs to commit to next quarter, ranked by aggregated cohort gap.",
       data: topProgramme
         ? rtl
           ? `الترشيح الأول: ${topProgramme.title_ar ?? topProgramme.title_en}`
@@ -617,7 +617,7 @@ const COHORT_CSS = `
   --tone-develop: #B45309;
 }
 /* landscape: the PDF route requests landscape:true, but with preferCSSPageSize
-   Chromium honours the CSS-declared size - a bare 'A4' is portrait and silently
+   Chromium honors the CSS-declared size - a bare 'A4' is portrait and silently
    overrode it, squashing the two-column executive-summary grid designed for
    side-by-side landscape columns. */
 @page { size: A4 landscape; margin: 14mm 14mm 14mm 14mm; }
@@ -706,26 +706,26 @@ h3 { color: var(--vifm-primary); font-size: 12pt; font-weight: 700; margin: 4mm 
 .cd-empty { color: var(--vifm-muted); font-style: italic; }
 .cd-missing { grid-column: 2 / -1; text-align: right; font-size: 9pt; }
 
-/* Cohort training plan - programme cards mirror the per-participant report */
-.programme-list { padding: 0; margin: 0; list-style: none; }
-.programme-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
-.programme-list > li:last-child { border-bottom: 0; }
-.programme-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
-.programme-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
-.programme-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
-.programme-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
-.programme-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
-.programme-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
-.programme-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
-.programme-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
-.programme-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
-.programme-cta { margin: 2.5mm 0 0 9mm; }
-.programme-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
+/* Cohort training plan - program cards mirror the per-participant report */
+.program-list { padding: 0; margin: 0; list-style: none; }
+.program-list > li { padding: 4mm 0; border-bottom: 0.6pt solid var(--vifm-border); page-break-inside: avoid; }
+.program-list > li:last-child { border-bottom: 0; }
+.program-head { display: flex; align-items: baseline; gap: 3mm; flex-wrap: wrap; }
+.program-rank { display: inline-flex; align-items: center; justify-content: center; width: 6mm; height: 6mm; border-radius: 50%; background: var(--vifm-soft); color: var(--vifm-primary); font-size: 9pt; font-weight: 700; }
+.program-title { font-size: 11.5pt; font-weight: 700; color: var(--vifm-primary); }
+.program-fit { display: inline-block; font-size: 8pt; font-weight: 700; color: #047857; background: #D1FAE5; border: 0.6pt solid #6EE7B7; padding: 0.5mm 2mm; border-radius: 6mm; letter-spacing: 0.04em; }
+.program-meta { display: flex; gap: 4mm; flex-wrap: wrap; color: var(--vifm-muted); font-size: 9pt; margin: 1.5mm 0 2mm 9mm; text-transform: capitalize; }
+.program-drivers { display: flex; gap: 2mm; flex-wrap: wrap; margin-left: 9mm; }
+.program-driver-chip { display: inline-block; background: var(--vifm-soft); color: var(--vifm-primary); padding: 0.6mm 2.4mm; border-radius: 3mm; font-size: 9pt; }
+.program-driver-math { color: var(--vifm-muted); font-size: 8.5pt; }
+.program-rationale { margin: 2mm 0 0 9mm; color: var(--vifm-muted); font-size: 9pt; font-style: italic; }
+.program-cta { margin: 2.5mm 0 0 9mm; }
+.program-cta-link { color: var(--vifm-accent); font-size: 9.5pt; font-weight: 600; text-decoration: none; }
 .unmapped-detail { margin-top: 3mm; color: var(--vifm-muted); font-size: 9pt; }
-.reflect-pdf[dir="rtl"] .programme-meta,
-.reflect-pdf[dir="rtl"] .programme-drivers,
-.reflect-pdf[dir="rtl"] .programme-rationale,
-.reflect-pdf[dir="rtl"] .programme-cta { margin-left: 0; margin-right: 9mm; }
+.reflect-pdf[dir="rtl"] .program-meta,
+.reflect-pdf[dir="rtl"] .program-drivers,
+.reflect-pdf[dir="rtl"] .program-rationale,
+.reflect-pdf[dir="rtl"] .program-cta { margin-left: 0; margin-right: 9mm; }
 
 /* Distribution stacked-bars */
 .dist-bars { display: grid; gap: 2mm; margin-bottom: 4mm; }

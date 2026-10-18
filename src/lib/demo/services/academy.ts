@@ -47,7 +47,7 @@ function lessonAttemptRows(
         prompt_en: `Which of the following best reflects the key takeaway of "${title}"?`,
         options_en: ["A targeted, evidence-based practice", "An unrelated control", "A deprecated approach", "None of the above"],
         correct_index: 0,
-        explanation_en: "The section emphasises applying the practice in a GCC finance context.",
+        explanation_en: "The section emphasizes applying the practice in a GCC finance context.",
       },
       {
         id: `q${i}-2`,
@@ -107,7 +107,7 @@ const mod: DemoServiceModule = {
       .limit(2);
     const courses = (courseRes.data ?? []) as { id: string; title_en: string; outline_en: unknown[] | null }[];
     if (courses.length === 0) {
-      return { service: SERVICE, label: LABEL, created: 0, note: "no courses in catalogue to enrol into" };
+      return { service: SERVICE, label: LABEL, created: 0, note: "no courses in catalog to enroll into" };
     }
 
     const candidateId = candIds[0];

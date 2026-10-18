@@ -192,9 +192,9 @@ export async function loadVoucherChecklistFacts(
   const p = service;
 
   const facts: ChecklistFacts = {
-    [`${p}.org`]: { done: Boolean(orgId), detail: orgId ? orgName ?? "Organisation linked" : orgName ? `${orgName} (name only, not linked to a client record)` : "No organisation" },
+    [`${p}.org`]: { done: Boolean(orgId), detail: orgId ? orgName ?? "Organization linked" : orgName ? `${orgName} (name only, not linked to a client record)` : "No organization" },
     [`${p}.contact`]: { done: Boolean(contact), detail: contact ? String(contact.contact_name ?? contact.contact_email) : "No client contact on the voucher" },
-    [`${p}.proposal`]: { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organisation" : "No linked organisation" },
+    [`${p}.proposal`]: { done: won, detail: won ? "Proposal won" : issued ? "Proposal issued, not yet accepted" : orgId ? "No proposal for this organization" : "No linked organization" },
     [`${p}.scope`]: scope,
     [`${p}.seats`]: { done: seats > 0, detail: `${vouchers.length} code${vouchers.length === 1 ? "" : "s"}, ${seats} seat${seats === 1 ? "" : "s"}` },
     [`${p}.expiry`]: { done: firstExpiry !== null && !allExpired, detail: firstExpiry === null ? "No expiry set" : allExpired ? "Expired" : `Expires ${new Date(firstExpiry).toISOString().slice(0, 10)}` },

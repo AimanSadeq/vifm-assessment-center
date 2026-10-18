@@ -403,7 +403,7 @@ export function RequisitionForm({
               <p className="text-xs text-muted-foreground">
                 {t(
                   "prehire.designFromJdHint",
-                  "Paste a job description (or upload a PDF/TXT). VIFM's AI maps it to the behavioural competency framework and pre-fills the quiz competency set below - the same engine the Assessment Center uses.",
+                  "Paste a job description (or upload a PDF/TXT). VIFM's AI maps it to the behavioral competency framework and pre-fills the quiz competency set below - the same engine the Assessment Center uses.",
                 )}
               </p>
               <Textarea

@@ -13,7 +13,7 @@ per competency.
 > keeps the same competencies and key logic. CBI is universal.
 
 > **Test-design note:** SJT options are shown A–D for readability, with the key
-> stated. **At delivery, option order is randomised.** SJT keys are
+> stated. **At delivery, option order is randomized.** SJT keys are
 > theory/expert-seeded and must be confirmed with an SME effectiveness-rating
 > panel + pilot item stats before high-stakes use.
 
@@ -45,13 +45,13 @@ conflicting timelines and incomplete data. MOST / LEAST:
 **Key:** MOST = **B**; LEAST = **A**.
 **(B) CBI.** "Describe a situation with many moving parts and unclear information
 you had to make sense of." *Probes:* How did you structure it? What did you
-prioritise?
+prioritize?
 
 ### 8. Systems & Global Perspective · *Earley & Ang (2003); Ang et al. (2007)*
 **(A) SJT.** An approach that works in one region/market is to be rolled out to a
 very different one. MOST / LEAST:
 - A. Apply it unchanged to save time.
-- B. Assess how local rules, conditions, and customer behaviour differ, then adapt
+- B. Assess how local rules, conditions, and customer behavior differ, then adapt
   it.
 - C. Discard it and rebuild from scratch unnecessarily.
 - D. Apply it but change only one minor element.
@@ -102,7 +102,7 @@ MOST / LEAST:
 got in the way? How did you sustain effort?
 
 ### 12. Accountability for Commitments · *Lerner & Tetlock (1999)*
-**(A) SJT.** You realise you'll miss a deadline you promised a colleague.
+**(A) SJT.** You realize you'll miss a deadline you promised a colleague.
 MOST / LEAST:
 - A. Say nothing and hope they don't notice.
 - B. Tell them as soon as you know, with a revised date and a plan.
@@ -130,12 +130,12 @@ How did you decide order? What did you renegotiate?
 **(A) SJT.** A routine process takes far too long with repeated rework.
 MOST / LEAST:
 - A. Accept it as the cost of accuracy.
-- B. Find where the rework originates, fix the root cause, then standardise the
+- B. Find where the rework originates, fix the root cause, then standardize the
   improved process.
 - C. Speed it up by skipping a quality/control check.
 - D. Add overtime to finish faster.
 
-**Key:** MOST = **B**; LEAST = **C** *(removing a control to optimise is the worst
+**Key:** MOST = **B**; LEAST = **C** *(removing a control to optimize is the worst
 option)*.
 **(B) CBI.** "Tell me about a process you improved." *Probes:* What was wrong? Root
 cause? Result?
@@ -182,7 +182,7 @@ clarified?
 did you learn? How did you re-engage?
 
 ### 18. Mobilising Around Purpose · *Bass (1985); Conger & Kanungo (1987)*
-**(A) SJT.** Your team is demoralised during a reorganisation. MOST / LEAST:
+**(A) SJT.** Your team is demoralized during a reorganization. MOST / LEAST:
 - A. Tell them to focus on their tasks and stop worrying.
 - B. Connect their work to a clear, credible picture of where the unit is heading
   and why it matters.
@@ -290,10 +290,10 @@ did you do about trust and shared goals?
 ### 26. Cross-Functional Collaboration · *Wageman (1995)*
 **(A) SJT.** Your goals conflict with another unit's, yet both are needed for the
 outcome. MOST / LEAST:
-- A. Optimise your own unit's metric and let them manage theirs.
+- A. Optimize your own unit's metric and let them manage theirs.
 - B. Align on the shared outcome and negotiate the trade-offs jointly.
 - C. Escalate immediately for a ruling.
-- D. Quietly deprioritise the joint work.
+- D. Quietly deprioritize the joint work.
 
 **Key:** MOST = **B**; LEAST = **D**.
 **(B) CBI.** "Tell me about delivering something that needed another unit with
@@ -404,7 +404,7 @@ did you adjust prior approaches?
 ### 35. Continuous Self-Development · *Maurer & Tarulli (1994)*
 **(A) SJT.** You receive critical feedback in a review. MOST / LEAST:
 - A. Defend yourself and move on.
-- B. Turn it into a concrete development plan and seek chances to practise.
+- B. Turn it into a concrete development plan and seek chances to practice.
 - C. Wait for the company to provide training.
 - D. Note it but take no action.
 
@@ -416,7 +416,7 @@ What prompted it? How did you apply it?
 **(A) SJT.** A major disruption hits at the worst possible time and everyone looks
 to you. MOST / LEAST:
 - A. Show visible panic and rush decisions.
-- B. Stay calm, prioritise, communicate clearly, and work the problem methodically.
+- B. Stay calm, prioritize, communicate clearly, and work the problem methodically.
 - C. Freeze and wait for instructions.
 - D. Project false calm and hide the severity from your team.
 

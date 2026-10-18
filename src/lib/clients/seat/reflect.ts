@@ -180,11 +180,11 @@ export async function ensureReflectShell(
   araOrgId: string | null,
   alloc: Allocation
 ): Promise<{ shellId: string } | { error: string }> {
-  if (!orgId) return { error: "Missing organisation" };
+  if (!orgId) return { error: "Missing organization" };
   // The shell engagement lives under ara_organizations.id. Without it we
   // cannot org-scope the engagement, so a self-serve cannot proceed.
   if (!araOrgId) {
-    return { error: "This client is not linked to a Reflect organisation yet. Ask VIFM to finish setup." };
+    return { error: "This client is not linked to a Reflect organization yet. Ask VIFM to finish setup." };
   }
 
   const cfg = cfgOf(alloc);

@@ -35,7 +35,7 @@ Most of the *assessment* machinery already exists. The net-new work is **assembl
 | Define "good" per role | ♻️ Reuse | Role profiles (`00014`/`00016`, `/admin/role-profiles`) + JD→competency extractor (`src/lib/ai/jd-competency-extractor.ts`) | Configure pilot roles + **cut-scores** |
 | English screen | ♻️ Reuse | Fluent (`src/lib/ai/fluent-english.ts`, `/ac/fluent`, candidate binding `00044`, server-held test `00045`) | Calibrate (QWK ≥ 0.70) + proctoring decision |
 | Competency / cognitive screen | ♻️ Reuse | Quiz generator (`src/lib/ai/quiz-generator.ts`, attempts `00017`) | Map item sets to role competencies |
-| Structured behavioural screen | ♻️ Reuse | CBI AI interview (`src/lib/ai/cbi-interviewer.ts`, `cbi_sessions` `00040`, **human-approve gate** `approveCbiToPipelineAction`) | Reuse the approve-gate as the no-auto-reject control |
+| Structured behavioral screen | ♻️ Reuse | CBI AI interview (`src/lib/ai/cbi-interviewer.ts`, `cbi_sessions` `00040`, **human-approve gate** `approveCbiToPipelineAction`) | Reuse the approve-gate as the no-auto-reject control |
 | Final-stage assessment (Decide tier) | ♻️ Reuse | AC exercises, wash-up engine, **OAR**, bias detection (`src/lib/scoring/`) | Per-role cut-scores; assessor calibration (later tier) |
 | Candidate token access (no account) | ♻️ Reuse (pattern) | ARA respondent flow (`src/lib/ara/respondent-access.ts`, middleware token bypass) | Adapt pattern to a multi-stage pre-hire journey |
 | Invitations / notifications | ♻️ Reuse | `src/lib/integrations/email.ts` + ARA bilingual email templates | New pre-hire invite/reminder templates |

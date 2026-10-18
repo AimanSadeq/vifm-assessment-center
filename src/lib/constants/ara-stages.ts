@@ -106,9 +106,9 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     number: 3,
     label_en: "Enterprise",
     label_ar: "مؤسسة",
-    scope_en: "The whole organisation, board-level",
+    scope_en: "The whole organization, board-level",
     scope_ar: "المنظمة بأكملها، على مستوى مجلس الإدارة",
-    tagline_en: "Where does the whole organisation stand on AI?",
+    tagline_en: "Where does the whole organization stand on AI?",
     tagline_ar: "أين تقف المنظمة بأكملها من الذكاء الاصطناعي؟",
     is_pro_bono: false,
     // Same model one level up: every division's units, plus the organisation-
@@ -130,7 +130,7 @@ export const ARA_STAGE_DEFINITIONS: ReadonlyArray<{
     number: 1,
     label_en: "Personal",
     label_ar: "شخصي",
-    scope_en: "One person - self-assessment of AI behaviours",
+    scope_en: "One person - self-assessment of AI behaviors",
     scope_ar: "شخص واحد - تقييم ذاتي لسلوكيات الذكاء الاصطناعي",
     tagline_en: "How AI-ready are you, personally?",
     tagline_ar: "ما مدى جاهزيتك الشخصية للذكاء الاصطناعي؟",
@@ -323,6 +323,6 @@ export const ARA_STAGE_CAPABILITIES: ReadonlyArray<{
   // Outputs unique to Personal
   { group: "Personal-only", feature_en: "VIFM training course recommendations", feature_ar: "توصيات دورات VIFM",
     individual: true, department: true, division: true, enterprise: true },
-  { group: "Personal-only", feature_en: "Maturity-stage narrative (Emerging / Practising / Embedded)", feature_ar: "وصف مرحلة النضج",
+  { group: "Personal-only", feature_en: "Maturity-stage narrative (Emerging / Practicing / Embedded)", feature_ar: "وصف مرحلة النضج",
     individual: true, department: false, division: false, enterprise: false },
 ];

@@ -236,9 +236,9 @@ export function TechSandboxReport({ data }: { data: SessionReport }) {
 
         {data.recommendedCourses.length > 0 ? (
           <View wrap={false}>
-            <Text style={s.sectionLabel}>RECOMMENDED VIFM ACADEMY PROGRAMMES</Text>
+            <Text style={s.sectionLabel}>RECOMMENDED VIFM ACADEMY PROGRAMS</Text>
             <Text style={s.pillarDef}>
-              Suggested development programmes from the VIFM training catalogue, matched to this
+              Suggested development programs from the VIFM training catalog, matched to this
               assessment&apos;s domain and the candidate&apos;s development areas.
             </Text>
             {data.recommendedCourses.map((c) => (

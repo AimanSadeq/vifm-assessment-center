@@ -40,7 +40,7 @@ export type QuizGeneratorInput = {
 const SYSTEM_PROMPT = (
   `You are a learning-and-development question author for VIFM. ` +
   `You write short, sharp quizzes that probe whether a learner UNDERSTANDS ` +
-  `a behavioural competency well enough to apply it on the job - not just ` +
+  `a behavioral competency well enough to apply it on the job - not just ` +
   `whether they can recall a definition. You write in clear professional English. ` +
   `When asked to provide Arabic, you use Modern Standard Arabic suitable for ` +
   `GCC banking and government professionals - never machine-translation tone.`
@@ -82,7 +82,7 @@ function buildInstructions(input: QuizGeneratorInput) {
     `Target level: ${input.targetScore} of 5`,
     `Gap context: ${gap}`,
     "",
-    positives ? `POSITIVE BEHAVIOURAL INDICATORS:\n${positives}` : "",
+    positives ? `POSITIVE BEHAVIORAL INDICATORS:\n${positives}` : "",
     negatives ? `NEGATIVE INDICATORS (anti-patterns):\n${negatives}` : "",
     tips ? `DEVELOPMENT TIPS:\n${tips}` : "",
     "",
@@ -329,7 +329,7 @@ export function buildFallbackQuizDeck(input: {
     for (const pos of c.positives.slice(0, 2)) {
       items.push(
         tf(
-          `In the context of "${c.name}", is the following an effective professional behaviour?\n\n"${pos}"`,
+          `In the context of "${c.name}", is the following an effective professional behavior?\n\n"${pos}"`,
           true,
           `This is a positive indicator of ${c.name} - it reflects the competency well.`
         )
@@ -338,7 +338,7 @@ export function buildFallbackQuizDeck(input: {
     for (const neg of c.negatives.slice(0, 1)) {
       items.push(
         tf(
-          `In the context of "${c.name}", is the following an effective professional behaviour?\n\n"${neg}"`,
+          `In the context of "${c.name}", is the following an effective professional behavior?\n\n"${neg}"`,
           false,
           `This is a negative indicator (anti-pattern) of ${c.name} - it works against the competency.`
         )

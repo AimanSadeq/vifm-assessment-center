@@ -281,7 +281,7 @@ export function LeadershipReportPdf({ data, provisional }: { data: LeadershipPdf
         <Text style={s.h2}>4 · Development Tips &amp; Activities</Text>
         <Text style={[s.para, { marginBottom: 10 }]}>
           Targeted tips and on-the-job activities for the five lowest-rated competencies (the development areas above) - concrete,
-          GCC-contextualised actions to start over a 30/60/90-day cycle, ideally with a manager or coach.
+          GCC-contextualized actions to start over a 30/60/90-day cycle, ideally with a manager or coach.
         </Text>
         {data.developmentPlan.map((d) => (
           <View key={d.name} style={s.devItem} wrap={false}>
@@ -300,7 +300,7 @@ export function LeadershipReportPdf({ data, provisional }: { data: LeadershipPdf
                 </View>
               ))
             ) : (
-              <Text style={s.tipEmpty}>No catalogue tips for this competency yet - set a development objective with a coach.</Text>
+              <Text style={s.tipEmpty}>No catalog tips for this competency yet - set a development objective with a coach.</Text>
             )}
           </View>
         ))}

@@ -196,7 +196,7 @@ async function computeOrgComparison(orgId: string, orgName: string | null): Prom
   }
   if (overallN === 0) return null;
   return {
-    label: orgName?.trim() || "Organisation",
+    label: orgName?.trim() || "Organization",
     overall: overallSum / overallN,
     byFactor: Object.fromEntries(
       Object.entries(byFactor).map(([k, v]) => [k, v!.n > 0 ? v!.sum / v!.n : 0])

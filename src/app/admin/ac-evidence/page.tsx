@@ -100,7 +100,7 @@ export default async function AcEvidencePage() {
       </div>
       <p className="text-sm text-muted-foreground mb-5">
         Per-competency research provenance. Anchor each competency to the published
-        assessment-centre / competency-modelling literature so a client spot-check on any
+        assessment-center / competency-modeling literature so a client spot-check on any
         competency has a defensible answer. Only <strong>Documented</strong> (human-verified)
         anchors are surfaced in client deliverables.
       </p>

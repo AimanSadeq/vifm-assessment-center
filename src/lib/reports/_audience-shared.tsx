@@ -171,7 +171,7 @@ export function CoverHero(props: {
       </View>
       <View style={sh.coverFooter}>
         <Text style={sh.coverFooterText}>
-          Virginia Institute of Finance and Management · Behavioural Psychometric Assessment · {props.audience}
+          Virginia Institute of Finance and Management · Behavioral Psychometric Assessment · {props.audience}
         </Text>
       </View>
     </View>
@@ -196,7 +196,7 @@ export function Footer({ name, audience }: { name: string; audience: string }) {
     <View style={sh.footer} fixed>
       <Text style={sh.confidential}>STRICTLY CONFIDENTIAL</Text>
       <Text style={sh.footerText}>
-        {name} · {audience} · VIFM Behavioural Assessment
+        {name} · {audience} · VIFM Behavioral Assessment
       </Text>
     </View>
   );
@@ -269,7 +269,7 @@ export function buildDecisionPoints(
       lead: `Fit score ${oar.toFixed(1)} of 5.`,
       text:
         `The average result across all ${total} competencies, weighted to the role. At ${oar.toFixed(1)} it sits ` +
-        `${rel} the Competent bar (3.0) - a ${fitBand(rec).toLowerCase()}. It summarises the rows below; it is ` +
+        `${rel} the Competent bar (3.0) - a ${fitBand(rec).toLowerCase()}. It summarizes the rows below; it is ` +
         `not a pass mark.`,
     });
   }
@@ -296,7 +296,7 @@ export function buildDecisionPoints(
     lead: `${strengths.length} clear ${strengths.length === 1 ? "strength" : "strengths"}.`,
     text: strengths.length
       ? `${strengths.length === 1 ? "One competency was scored" : `${strengths.length} competencies were scored`} ` +
-        `4 or 5 - ${names(strengths)}. A 4-5 (Strength / Significant Strength) means the behaviour showed ` +
+        `4 or 5 - ${names(strengths)}. A 4-5 (Strength / Significant Strength) means the behavior showed ` +
         `consistently and beyond what the role requires: what the candidate brings from day one.`
       : `No competency reached the 4-5 strength band; the profile clusters around the Competent line.`,
   });
@@ -386,7 +386,7 @@ export function behaviourPrediction(c: ReportCompetencyData): string {
   if (s === 3) return "This candidate is likely to meet the role bar on this in most situations.";
   if (s === 2) return "This candidate may apply this less consistently than the role needs; targeted support is indicated.";
   if (s === 1) return "This candidate is likely to find this challenging without development; treat it as a priority gap.";
-  return "Not enough evidence was gathered to predict behaviour on this competency.";
+  return "Not enough evidence was gathered to predict behavior on this competency.";
 }
 
 /** "Where they stand" development statement for the manager report. */
@@ -410,7 +410,7 @@ export function developmentTipsFor(c: ReportCompetencyData): string[] {
     "Ask them to coach a peer in this area - teaching it deepens the strength and spreads it.",
   ];
   return [
-    "Agree one specific, observable behaviour to practise over the next 30 days.",
+    "Agree one specific, observable behavior to practice over the next 30 days.",
     "Build in feedback on it after key meetings or deliverables, and review what changed.",
     "Pair them with a colleague who is strong here and compare approaches.",
   ];

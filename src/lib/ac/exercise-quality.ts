@@ -40,7 +40,7 @@ export const EXERCISE_CHECKS: ExerciseCheckDef[] = [
   {
     key: "face_validity",
     label: "Face validity",
-    question: "Will a participant recognise this as a fair test of the role, rather than a puzzle?",
+    question: "Will a participant recognize this as a fair test of the role, rather than a puzzle?",
     clause: "4.36",
   },
   {
@@ -77,7 +77,7 @@ export const EXERCISE_CHECKS: ExerciseCheckDef[] = [
     key: "evidence_sufficiency",
     label: "Evidence can be collected",
     question:
-      "For every criterion mapped to this exercise, will it produce enough behaviour to rate that criterion on?",
+      "For every criterion mapped to this exercise, will it produce enough behavior to rate that criterion on?",
     clause: "4.36 / 4.20",
   },
 ];
@@ -144,7 +144,7 @@ export function reviewExerciseQuality(input: {
   }
   if (needsTrial) {
     problems.push(
-      `${input.exerciseName} has never been used at a centre and has no trial recorded. A new exercise is trialled on people representative of the intended participants, who are not themselves participants (4.37).`
+      `${input.exerciseName} has never been used at a center and has no trial recorded. A new exercise is trialed on people representative of the intended participants, who are not themselves participants (4.37).`
     );
   }
 

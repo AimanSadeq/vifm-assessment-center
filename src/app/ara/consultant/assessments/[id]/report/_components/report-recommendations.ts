@@ -39,18 +39,18 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
   strategy: {
     b1: [
       R("Name an executive AI sponsor", "Appoint a named board-level owner for AI with a standing slot on the executive agenda. Without a sponsor, AI work stays departmental and unfunded.", "quick", "Low", "A named sponsor and a recurring executive agenda item."),
-      R("Write a one-page AI position", "Draft a single page stating why AI matters to this organisation, which business outcomes it serves, and what is explicitly out of scope for now.", "quick", "Low", "An approved one-page AI position statement."),
+      R("Write a one-page AI position", "Draft a single page stating why AI matters to this organization, which business outcomes it serves, and what is explicitly out of scope for now.", "quick", "Low", "An approved one-page AI position statement."),
       R("Set a first-year ambition", "Agree three measurable outcomes AI should deliver within twelve months, tied to existing corporate KPIs rather than technology milestones.", "build", "Medium", "Three board-agreed, KPI-linked AI outcomes."),
     ],
     b2: [
       R("Convert the position into a funded strategy", "Turn the stated ambition into a documented AI strategy with an owner, a budget line, and a delivery horizon per objective.", "quick", "Medium", "A board-approved AI strategy with an allocated budget."),
-      R("Prioritise use cases against value and risk", "Score candidate use cases on business value and delivery risk, then commit to the top three. Publish what was deprioritised and why.", "build", "Medium", "A ranked, published use-case portfolio with three committed initiatives."),
-      R("Align AI to the national agenda", "Map the strategy to the relevant national AI programme so public-sector stakeholders and regulators see the alignment explicitly.", "build", "Low", "Documented alignment to national AI priorities."),
+      R("Prioritize use cases against value and risk", "Score candidate use cases on business value and delivery risk, then commit to the top three. Publish what was deprioritized and why.", "build", "Medium", "A ranked, published use-case portfolio with three committed initiatives."),
+      R("Align AI to the national agenda", "Map the strategy to the relevant national AI program so public-sector stakeholders and regulators see the alignment explicitly.", "build", "Low", "Documented alignment to national AI priorities."),
     ],
     b3: [
       R("Put AI on the quarterly board agenda", "Move AI from ad-hoc updates to a standing quarterly board review with a consistent dashboard of adoption, value delivered, and risk.", "quick", "Low", "Four scheduled board reviews with a fixed reporting pack."),
       R("Fund a multi-year AI roadmap", "Extend planning beyond the current budget year: a two-to-three-year roadmap with staged investment gates tied to delivered value.", "build", "High", "An approved multi-year roadmap with staged funding gates."),
-      R("Benchmark against regional peers", "Commission a structured comparison against comparable GCC organisations to set an evidence-based target rather than an internal one.", "build", "Medium", "A peer benchmark report with a revised target maturity."),
+      R("Benchmark against regional peers", "Commission a structured comparison against comparable GCC organizations to set an evidence-based target rather than an internal one.", "build", "Medium", "A peer benchmark report with a revised target maturity."),
     ],
     b4: [
       R("Publish the AI value case externally", "Convert internal results into a public position: an annual AI statement covering outcomes delivered, governance posture, and forward commitments.", "quick", "Medium", "A published annual AI statement."),
@@ -60,12 +60,12 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
   },
   data: {
     b1: [
-      R("Inventory the critical data sources", "List the systems holding the data any AI use case would need, with a named contact per system. You cannot govern what has never been catalogued.", "quick", "Medium", "A data inventory covering the critical systems."),
+      R("Inventory the critical data sources", "List the systems holding the data any AI use case would need, with a named contact per system. You cannot govern what has never been cataloged.", "quick", "Medium", "A data inventory covering the critical systems."),
       R("Assign first data owners", "Name an accountable owner for the three most business-critical datasets, with a one-line remit each.", "quick", "Low", "Three named data owners with documented remits."),
       R("Classify sensitive data", "Run a first-pass classification separating personal, confidential, and open data so early AI work cannot touch what it should not.", "build", "Medium", "A classification applied to the critical inventory."),
     ],
     b2: [
-      R("Stand up a data steward model", "Formalise ownership into a steward network with defined responsibilities, meeting cadence, and an escalation path.", "quick", "Medium", "An operating steward network with documented responsibilities."),
+      R("Stand up a data steward model", "Formalize ownership into a steward network with defined responsibilities, meeting cadence, and an escalation path.", "quick", "Medium", "An operating steward network with documented responsibilities."),
       R("Define data quality KPIs", "Agree measurable quality thresholds - completeness, accuracy, timeliness - for the datasets feeding priority use cases, and start reporting them.", "build", "Medium", "Published quality KPIs with a monthly reporting cycle."),
       R("Make DPIAs a gate, not a formality", "Require a data protection impact assessment before any AI system processes personal data, owned by a named reviewer.", "build", "Medium", "A DPIA gate embedded in the intake process."),
     ],
@@ -97,7 +97,7 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
       R("Prove sovereignty controls", "Evidence that AI workloads and their data remain within the required jurisdiction, with configuration to back the claim.", "build", "Medium", "Documented, evidenced data-residency controls."),
     ],
     b4: [
-      R("Optimise cost per outcome", "Introduce cost attribution per use case and set efficiency targets, so scale does not simply mean spend.", "quick", "Medium", "Cost-per-use-case reporting with efficiency targets."),
+      R("Optimize cost per outcome", "Introduce cost attribution per use case and set efficiency targets, so scale does not simply mean spend.", "quick", "Medium", "Cost-per-use-case reporting with efficiency targets."),
       R("Build for portability", "Reduce single-vendor lock-in on the critical path so model and platform choices stay reversible.", "build", "High", "A documented exit path for each critical dependency."),
       R("Offer AI as an internal platform", "Package the environment so business units can self-serve within guardrails instead of queueing for central delivery.", "transform", "High", "A self-service internal AI platform in use by multiple units."),
     ],
@@ -119,20 +119,20 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
       R("Measure capability, not attendance", "Replace completion rates with demonstrated-competence measures tied to real deliverables.", "build", "Medium", "Competence-based reporting replacing attendance metrics."),
     ],
     b4: [
-      R("Institutionalise the academy", "Formalise AI capability building into a standing internal academy with owned curricula and a refresh cycle.", "build", "High", "An operating internal AI academy."),
+      R("Institutionalize the academy", "Formalize AI capability building into a standing internal academy with owned curricula and a refresh cycle.", "build", "High", "An operating internal AI academy."),
       R("Plan succession for critical AI roles", "Identify single points of failure in AI capability and build named successors.", "build", "Medium", "Succession cover for every critical AI role."),
       R("Export capability to the sector", "Offer capability building to partners or the wider sector - a mark of leading maturity and a talent magnet.", "transform", "High", "An external capability-building offer in market."),
     ],
   },
   culture: {
     b1: [
-      R("Communicate the AI intent openly", "State plainly what AI is for here - and what it is not for, particularly regarding jobs. Silence is filled by rumour.", "quick", "Low", "A published, plainly-worded AI intent message."),
+      R("Communicate the AI intent openly", "State plainly what AI is for here - and what it is not for, particularly regarding jobs. Silence is filled by rumor.", "quick", "Low", "A published, plainly-worded AI intent message."),
       R("Create a safe question channel", "Give staff a named route to ask about AI without appearing resistant or uninformed.", "quick", "Low", "An open question channel with published answers."),
-      R("Show one relevant example", "Demonstrate one AI application in this organisation's own context - abstract explanation does not move belief.", "build", "Medium", "A live demonstration delivered to staff."),
+      R("Show one relevant example", "Demonstrate one AI application in this organization's own context - abstract explanation does not move belief.", "build", "Medium", "A live demonstration delivered to staff."),
     ],
     b2: [
       R("Cascade the message through line managers", "Equip managers to hold the AI conversation with their teams; adoption is decided at that level, not in corporate communications.", "quick", "Medium", "Managers briefed with a conversation toolkit."),
-      R("Recognise early adopters visibly", "Make experimentation visibly safe and rewarded, so willingness spreads beyond the initial enthusiasts.", "quick", "Low", "A recognition mechanism with named examples."),
+      R("Recognize early adopters visibly", "Make experimentation visibly safe and rewarded, so willingness spreads beyond the initial enthusiasts.", "quick", "Low", "A recognition mechanism with named examples."),
       R("Surface and answer the objections", "Collect the real concerns - job security, quality, accountability - and respond to each in writing.", "build", "Medium", "A published response to the top staff concerns."),
     ],
     b3: [
@@ -142,13 +142,13 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
     ],
     b4: [
       R("Devolve experimentation budgets", "Let teams fund their own small AI experiments within guardrails - the practical marker of an embedded culture.", "quick", "Medium", "Devolved experimentation budgets in use."),
-      R("Institutionalise learning from failure", "Run structured reviews of AI initiatives that did not work and publish the lessons internally.", "build", "Low", "A published internal lessons library."),
+      R("Institutionalize learning from failure", "Run structured reviews of AI initiatives that did not work and publish the lessons internally.", "build", "Low", "A published internal lessons library."),
       R("Make AI fluency a leadership expectation", "Write AI fluency into leadership competencies and promotion criteria.", "transform", "Medium", "AI fluency embedded in leadership criteria."),
     ],
   },
   governance: {
     b1: [
-      R("Publish an acceptable-use policy", "Issue a short, readable policy covering what staff may and may not do with AI tools and organisational data. This is the single highest-value first control.", "quick", "Low", "A published, acknowledged acceptable-use policy."),
+      R("Publish an acceptable-use policy", "Issue a short, readable policy covering what staff may and may not do with AI tools and organizational data. This is the single highest-value first control.", "quick", "Low", "A published, acknowledged acceptable-use policy."),
       R("Name an accountable owner", "Assign accountability for AI governance to a named individual, even before a committee exists.", "quick", "Low", "A named AI governance owner."),
       R("Log where AI is already used", "Create a register of AI systems and tools in use, however informal - governance starts with visibility.", "build", "Medium", "An AI use register covering known systems."),
     ],
@@ -176,17 +176,17 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
     ],
     b2: [
       R("Deliver the first pilot to a real measure", "Complete the pilot and report the actual outcome against the pre-agreed measure, including if it fell short.", "quick", "Medium", "One completed pilot with pre/post evidence."),
-      R("Build a prioritised use-case portfolio", "Move from opportunistic single cases to a ranked portfolio scored on value, risk, and readiness.", "build", "Medium", "A ranked portfolio reviewed on a set cadence."),
+      R("Build a prioritized use-case portfolio", "Move from opportunistic single cases to a ranked portfolio scored on value, risk, and readiness.", "build", "Medium", "A ranked portfolio reviewed on a set cadence."),
       R("Assign business owners, not IT owners", "Make the process owner accountable for the outcome so value is pursued after go-live.", "build", "Low", "A named business owner on every active use case."),
     ],
     b3: [
-      R("Productionise the strongest pilots", "Take the one or two best-performing pilots into business-as-usual with formal handover, support, and monitoring.", "quick", "Medium", "Pilots operating in production under BAU support."),
-      R("Measure realised benefit, not projected", "Track the value actually delivered post-go-live against the original case, and publish the variance.", "build", "Medium", "Realised-benefit reporting on live use cases."),
+      R("Productionize the strongest pilots", "Take the one or two best-performing pilots into business-as-usual with formal handover, support, and monitoring.", "quick", "Medium", "Pilots operating in production under BAU support."),
+      R("Measure realized benefit, not projected", "Track the value actually delivered post-go-live against the original case, and publish the variance.", "build", "Medium", "Realized-benefit reporting on live use cases."),
       R("Retire what is not working", "Formally stop use cases that have not delivered, freeing capacity and building credibility.", "build", "Low", "A documented stop/continue decision per use case."),
     ],
     b4: [
       R("Scale the portfolio across functions", "Extend proven patterns into adjacent functions rather than starting each case from scratch.", "build", "High", "Proven patterns replicated in new functions."),
-      R("Industrialise the delivery pipeline", "Standardise intake, build, and handover so new use cases move through a repeatable pipeline.", "build", "High", "A standardised delivery pipeline with cycle-time metrics."),
+      R("Industrialize the delivery pipeline", "Standardize intake, build, and handover so new use cases move through a repeatable pipeline.", "build", "High", "A standardized delivery pipeline with cycle-time metrics."),
       R("Redesign processes around AI", "Move beyond automating current steps to redesigning the process itself - where the step-change value sits.", "transform", "High", "At least one process redesigned rather than automated."),
     ],
   },
@@ -197,7 +197,7 @@ const LIBRARY: Record<AraPillarId, Record<Band, Recommendation[]>> = {
       R("Establish a human review point", "Ensure a person reviews model output before it affects a customer or an employee decision.", "build", "Medium", "A defined human review step on consequential outputs."),
     ],
     b2: [
-      R("Version and record every model", "Track model versions and the data they were trained or configured on, so behaviour changes can be explained.", "quick", "Medium", "Version records for all active models."),
+      R("Version and record every model", "Track model versions and the data they were trained or configured on, so behavior changes can be explained.", "quick", "Medium", "Version records for all active models."),
       R("Set performance thresholds", "Define the minimum acceptable performance per model and what happens when it is breached.", "build", "Medium", "Documented thresholds and breach actions."),
       R("Test for bias before deployment", "Run a fairness check on models affecting people, and record the result whichever way it falls.", "build", "Medium", "A pre-deployment fairness test on record."),
     ],

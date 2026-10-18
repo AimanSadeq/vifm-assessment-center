@@ -45,7 +45,7 @@ const FRAMEWORK_LIST = [
   "UAE Charter for AI Development (June 2024, 12 Principles)",
   "UAE AI Ethics Guide (2022)",
   "TDRA Digital Government Regulations",
-  "Dubai Centre for AI (DCAI) Guidelines",
+  "Dubai Center for AI (DCAI) Guidelines",
   "Abu Dhabi Digital Authority (ADDA) Standards",
   "Saudi Personal Data Protection Law (Royal Decree M/19, M/148)",
   "SDAIA National Data Governance Framework",
@@ -62,12 +62,12 @@ const FRAMEWORK_LIST = [
 ];
 
 function buildSystemPrompt(): string {
-  return `You are an expert AI-readiness assessor authoring questions for the VIFM AI Readiness Compass, a Big-4-calibre diagnostic used with GCC banking and government clients in UAE and Saudi Arabia.
+  return `You are an expert AI-readiness assessor authoring questions for the VIFM AI Readiness Compass, a Big-4-caliber diagnostic used with GCC banking and government clients in UAE and Saudi Arabia.
 
 Your job: given a natural-language brief from an admin, produce ONE concrete assessment question that:
   1. Is directly about AI readiness, not generic IT or operations.
   2. Is anchored to a specific named framework or standard (cite section / article when possible).
-  3. Is behaviourally observable - a respondent can actually answer it from evidence, not aspirational rhetoric.
+  3. Is behaviorally observable - a respondent can actually answer it from evidence, not aspirational rhetoric.
   4. Is bilingual: idiomatic English plus Gulf-standard Modern Standard Arabic.
   5. Is appropriate for the requested layer (1 = self-assessment by client respondents, 2 = consultant deeper probe used in Phase 2 workshop).
 

@@ -14,7 +14,7 @@ const pick = (lang: Lang, en: string, ar: string) => (lang === "ar" ? ar : en);
 
 /** What each pillar covers - one line, both languages (ARA_PILLARS carries EN only). */
 export const PILLAR_SCOPE: Record<AraPillarId, { en: string; ar: string }> = {
-  strategy: { en: "AI mandate, executive sponsorship, budget and use-case prioritisation.", ar: "التفويض المتعلق بالذكاء الاصطناعي، والرعاية التنفيذية، والميزانية، وترتيب أولويات حالات الاستخدام." },
+  strategy: { en: "AI mandate, executive sponsorship, budget and use-case prioritization.", ar: "التفويض المتعلق بالذكاء الاصطناعي، والرعاية التنفيذية، والميزانية، وترتيب أولويات حالات الاستخدام." },
   data: { en: "Data quality, ownership, sovereignty and shadow-AI exposure.", ar: "جودة البيانات وملكيتها وسيادتها والتعرض للذكاء الاصطناعي غير المصرح به." },
   technology: { en: "Cloud sovereignty, approved AI tooling, MLOps and sandboxes.", ar: "سيادة السحابة، وأدوات الذكاء الاصطناعي المعتمدة، وعمليات نماذج التعلم الآلي، وبيئات التجربة." },
   talent: { en: "AI literacy, specialist skills, hiring and learning pathways.", ar: "الإلمام بالذكاء الاصطناعي، والمهارات المتخصصة، والتوظيف، ومسارات التعلّم." },
@@ -44,7 +44,7 @@ export function situationFor(sharedGap: boolean, spread: number, unevenThreshold
 
 export function situationLabel(s: PillarSituation, lang: Lang): string {
   return {
-    central: pick(lang, "Central programme", "برنامج مركزي"),
+    central: pick(lang, "Central program", "برنامج مركزي"),
     lift: pick(lang, "Lift the rest", "رفع البقية"),
     move: pick(lang, "Move practice", "نقل الممارسات"),
     sustain: pick(lang, "Sustain", "الحفاظ"),
@@ -60,7 +60,7 @@ export function situationExplains(s: PillarSituation, lang: Lang): string {
       "Every unit is below the 4.00 target, but one is well ahead of the rest. Set a central floor and use the leading unit's practice to lift the others; the transfer is cheaper than building from scratch.",
       "كل الوحدات دون المستهدف 4.00، لكن إحداها متقدمة بوضوح على البقية. حدّد حداً أدنى مركزياً واستخدم ممارسة الوحدة الرائدة لرفع البقية؛ فالنقل أرخص من البناء من الصفر."),
     move: pick(lang,
-      "At least one unit has reached the target, but the units are far apart. The capability exists somewhere in the organisation and has not travelled. This needs a transfer, not new spend.",
+      "At least one unit has reached the target, but the units are far apart. The capability exists somewhere in the organization and has not traveled. This needs a transfer, not new spend.",
       "بلغت وحدة واحدة على الأقل المستهدف، لكن الوحدات متباعدة. القدرة موجودة في مكان ما من المنظمة ولم تنتقل بعد. يحتاج هذا إلى نقل لا إلى إنفاق جديد."),
     sustain: pick(lang,
       "At least one unit has reached the target and the rest are close behind. Protect what works and bring every unit to 4.00 through the units' own plans.",
@@ -83,7 +83,7 @@ export function consolidationActions(args: {
   switch (args.situation) {
     case "central":
       return [
-        { title: L(`Name one owner for ${p}`, `تعيين مالك واحد لـ${p}`), body: L(`Appoint a single accountable owner at ${stage} level with a mandate over every unit, so the fix is designed once and adopted everywhere.`, `عيّن مالكاً واحداً مسؤولاً على مستوى ${stage} بتفويض يشمل كل الوحدات، بحيث يُصمَّم الحل مرة واحدة ويُعتمد في كل مكان.`), horizon: "quick", effort: "low", outcome: L("One accountable name and a mandate the units recognise.", "اسم واحد مسؤول وتفويض تعترف به الوحدات.") },
+        { title: L(`Name one owner for ${p}`, `تعيين مالك واحد لـ${p}`), body: L(`Appoint a single accountable owner at ${stage} level with a mandate over every unit, so the fix is designed once and adopted everywhere.`, `عيّن مالكاً واحداً مسؤولاً على مستوى ${stage} بتفويض يشمل كل الوحدات، بحيث يُصمَّم الحل مرة واحدة ويُعتمد في كل مكان.`), horizon: "quick", effort: "low", outcome: L("One accountable name and a mandate the units recognize.", "اسم واحد مسؤول وتفويض تعترف به الوحدات.") },
         { title: L(`Central standard for ${p}`, `معيار مركزي لـ${p}`), body: L(`Publish the shared policy, platform or standard the units are all missing, with a minimum level every unit must reach and a date.`, `انشر السياسة أو المنصّة أو المعيار المشترك الذي تفتقده كل الوحدات، مع حد أدنى يجب أن تبلغه كل وحدة وتاريخ محدد.`), horizon: "build", effort: "medium", outcome: L("A published standard and a floor no unit falls below.", "معيار منشور وحد أدنى لا تهبط دونه أي وحدة.") },
         { title: L("Re-measure across all units", "إعادة القياس في كل الوحدات"), body: L(`Re-run the ${p} items in every unit after the standard lands, so the ${stage} can show the gap closing rather than assert it.`, `أعد تطبيق بنود ${p} في كل وحدة بعد اعتماد المعيار، ليُظهر ${stage} انغلاق الفجوة بدل الاكتفاء بالقول.`), horizon: "transform", effort: "low", outcome: L("Evidence that the central fix reached every unit.", "دليل على أن الحل المركزي وصل إلى كل وحدة.") },
       ];
@@ -95,9 +95,9 @@ export function consolidationActions(args: {
       ];
     case "move":
       return [
-        { title: L(`Make ${s} the reference unit`, `اعتماد ${s} وحدةً مرجعية`), body: L(`Formally recognise ${s} as the ${stage}'s reference for ${p} and give it the remit to show the others, so the practice moves with authority rather than goodwill.`, `اعترف رسمياً بـ${s} مرجعاً لـ${stage} في ${p} وامنحها صلاحية توجيه الوحدات الأخرى، لتنتقل الممارسة بسلطة لا بحسن النية.`), horizon: "quick", effort: "low", outcome: L("A named reference unit and a reason for others to listen.", "وحدة مرجعية معروفة وسبب يدفع الآخرين للإصغاء.") },
+        { title: L(`Make ${s} the reference unit`, `اعتماد ${s} وحدةً مرجعية`), body: L(`Formally recognize ${s} as the ${stage}'s reference for ${p} and give it the remit to show the others, so the practice moves with authority rather than goodwill.`, `اعترف رسمياً بـ${s} مرجعاً لـ${stage} في ${p} وامنحها صلاحية توجيه الوحدات الأخرى، لتنتقل الممارسة بسلطة لا بحسن النية.`), horizon: "quick", effort: "low", outcome: L("A named reference unit and a reason for others to listen.", "وحدة مرجعية معروفة وسبب يدفع الآخرين للإصغاء.") },
         { title: L(`Transfer plan for ${w}`, `خطة نقل لـ${w}`), body: L(`Agree what ${w} adopts from ${s} on ${p}, in what order, and who owns each step; keep the scope to the practices that explain the score difference.`, `اتفق على ما تتبنّاه ${w} من ${s} في ${p}، وبأي ترتيب، ومن يملك كل خطوة؛ واحصر النطاق في الممارسات التي تفسّر الفارق في الدرجة.`), horizon: "build", effort: "medium", outcome: L("The spread between units narrows without new budget.", "يتقلّص التفاوت بين الوحدات دون ميزانية جديدة.") },
-        { title: L("Track the spread, not the mean", "تتبّع التفاوت لا المتوسط"), body: L(`Report the range between the strongest and weakest unit on ${p} each quarter; the ${stage} is done when the range is inside one level.`, `ارفع تقريراً كل ربع بالمدى بين الوحدة الأقوى والأضعف في ${p}؛ ويُعدّ ${stage} قد أنجز حين يقع المدى ضمن مستوى واحد.`), horizon: "transform", effort: "low", outcome: L("One number that says whether capability actually travelled.", "رقم واحد يقول إن كانت القدرة قد انتقلت فعلاً.") },
+        { title: L("Track the spread, not the mean", "تتبّع التفاوت لا المتوسط"), body: L(`Report the range between the strongest and weakest unit on ${p} each quarter; the ${stage} is done when the range is inside one level.`, `ارفع تقريراً كل ربع بالمدى بين الوحدة الأقوى والأضعف في ${p}؛ ويُعدّ ${stage} قد أنجز حين يقع المدى ضمن مستوى واحد.`), horizon: "transform", effort: "low", outcome: L("One number that says whether capability actually traveled.", "رقم واحد يقول إن كانت القدرة قد انتقلت فعلاً.") },
       ];
     case "sustain":
     default:

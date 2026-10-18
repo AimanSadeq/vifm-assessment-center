@@ -33,7 +33,7 @@ export default async function ReflectRespondPage({ params }: Params) {
           <p className="text-sm text-muted-foreground leading-relaxed">
             {rtl
               ? `شكرًا لمساهمتك في تقييم ${ctx.participant.full_name}. تظل إجاباتك مجهولة الهوية ضمن نتائج المجموعة، وسيتسلم ${ctx.participant.full_name} تقريرًا موحّدًا بعد إغلاق نافذة التقييم.`
-              : `Thank you for your contribution to ${ctx.participant.full_name}'s development. Your responses stay anonymised in the group view; ${ctx.participant.full_name} will receive a consolidated report once the field window closes.`}
+              : `Thank you for your contribution to ${ctx.participant.full_name}'s development. Your responses stay anonymized in the group view; ${ctx.participant.full_name} will receive a consolidated report once the field window closes.`}
           </p>
           <div className="mt-6 inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Aperture className="h-3.5 w-3.5" />

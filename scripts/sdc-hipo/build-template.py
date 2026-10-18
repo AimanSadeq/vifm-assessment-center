@@ -63,7 +63,7 @@ rows = [
     ("p", "What this is", "The workbook for writing the 30 scenario questions (3 per SDC competency) that form Part 1 of the SDC HiPo assessment. Part 2 is the timed Logica reasoning tests. Total time limit agreed with SDC: 2 hours."),
     ("p", "Content basis", "SDC competency names and grade requirements (SDC mapping, Grade 4 = Grade 5 per Suzanne, 6 Oct 2026) and the 160 indicators in SDC_HiPo_Caliber_Detailed_Assessor_Indicators_v3.xlsx (sheets 'Indicators (v3)' and 'Grade requirements' here)."),
     ("h", "What you fill in", None),
-    ("p", "Yellow cells", "Sheet 'Scenarios': the situation, the four responses, what level each response reflects, its v3 indicator ID, and the status. Grey cells are fixed or calculated: do not edit them."),
+    ("p", "Yellow cells", "Sheet 'Scenarios': the situation, the four responses, what level each response reflects, its v3 indicator ID, and the status. Gray cells are fixed or calculated: do not edit them."),
     ("p", "Blue text", "Assumptions you can change (sheets 'Time budget' and 'Scoring (proposed)')."),
     ("p", "Worked examples", "Sheet 'Worked examples' has three complete Innovation scenarios (Basic, Proficient, Advanced) in this exact format. You may adopt them as the Innovation rows or replace them."),
     ("p", "Starting points", "Sheet 'Existing VIFM items' gives the closest item from Caliber's existing scenario bank for each SDC competency. They are generic and not level-keyed: adapt the situation to SDC and rewrite the responses to one per level."),
@@ -79,12 +79,12 @@ rows = [
     ("p", "4. Best response", "The Advanced response must genuinely be the most effective in that situation, not an over-engineered answer."),
     ("p", "5. Counter-evidence", "The Counter-evidence response should be tempting: a mistake people really make, matching one negative indicator."),
     ("p", "6. No give-aways", "Do not let wording reveal the level (for example, putting 'strategic' or 'stakeholders' only in the best response)."),
-    ("p", "7. One behaviour", "One clear action per response. Avoid 'always' and 'never'. Plain English, no jargon."),
+    ("p", "7. One behavior", "One clear action per response. Avoid 'always' and 'never'. Plain English, no jargon."),
     ("p", "8. Fairness", "Gender-neutral, culturally appropriate for KSA, no knowledge of SDC internals needed to answer."),
     ("p", "9. Stand-alone", "Each scenario stands alone; do not refer to other scenarios or to 'option A', as order is shuffled."),
     ("h", "Scoring (proposed)", None),
     ("p", "Method", "See sheet 'Scoring (proposed)': points for the level of the response chosen as MOST effective, plus a point for choosing the Counter-evidence response as LEAST effective. Each competency gets a level from its 3 scenarios, compared with the required level for the candidate's grade. Final scoring rules are set after internal review and the pilot."),
-    ("p", "Reporting", "Results are reported as judgement in realistic situations, not as observed behaviour."),
+    ("p", "Reporting", "Results are reported as judgment in realistic situations, not as observed behavior."),
     ("h", "Timeline", None),
     ("p", "Sun 11 Oct", "One sample scenario per competency (10 in total), status 'Ready for review', to Aiman. After review they go to Suzanne as the samples she asked for."),
     ("p", "Wed 14 Oct", "All 30 scenarios complete; SDC sign-off on scenarios and sample reports."),
@@ -114,7 +114,7 @@ for kind, a, b in rows:
 
 # ---------------- Indicators (v3) ----------------
 iv = wb.create_sheet("Indicators (v3)")
-header(iv, 1, ["Category", "SDC competency", "v3 proficiency level", "Response level", "Indicator ID", "Observable behavioural indicator", "Evidence type"],
+header(iv, 1, ["Category", "SDC competency", "v3 proficiency level", "Response level", "Indicator ID", "Observable behavioral indicator", "Evidence type"],
        [12, 34, 24, 16, 12, 80, 26])
 for k, i in enumerate(IND, 2):
     for c, v in enumerate([i["category"], i["competency"], i["level"], i["option_level"], i["id"], i["text"], i["evidence"]], 1):
@@ -147,7 +147,7 @@ for k, (lvl, p) in enumerate(pts, 2):
 header(sc, 7, ["Response chosen as LEAST effective", "Points", "Note"])
 sc.cell(row=8, column=1, value="Counter-evidence").font = font()
 c = sc.cell(row=8, column=2, value=1); c.font = font(color=BLUE)
-sc.cell(row=8, column=3, value="Recognising the common mistake earns a point; any other LEAST choice earns 0.").font = font(color="7F7F7F")
+sc.cell(row=8, column=3, value="Recognizing the common mistake earns a point; any other LEAST choice earns 0.").font = font(color="7F7F7F")
 header(sc, 10, ["Per scenario", "Points", "Note"])
 sc.cell(row=11, column=1, value="Maximum points per scenario").font = font()
 sc.cell(row=11, column=2, value="=MAX(B2:B5)+B8").font = font()
@@ -212,7 +212,7 @@ def scenario_sheet(ws, first_row, rows):
 
 s = wb.create_sheet("Scenarios", 1)
 s["A1"] = "SDC HiPo: scenario questions (Part 1, untimed)"; s["A1"].font = font(size=14, bold=True, color=NAVY)
-s["A2"] = "Candidates answer for each scenario: 'Which response is the MOST effective? Which is the LEAST effective?' Fill the yellow cells; grey cells are fixed or calculated."
+s["A2"] = "Candidates answer for each scenario: 'Which response is the MOST effective? Which is the LEAST effective?' Fill the yellow cells; gray cells are fixed or calculated."
 s["A2"].font = font(italic=True, color="7F7F7F")
 rows = []
 for cat, comp in comps:
@@ -241,7 +241,7 @@ EX = [
       ("Pilot a small shared dashboard with the colleagues who use the summary, check time saved and accuracy, then offer it to other departments.", "Advanced", "IN-A3"),
       ("Keep the current method, since the summary is always delivered on time and nobody has complained.", "Counter-evidence", "IN-N1")]),
     ("Proficient",
-     "Your team manages bookings for guided heritage tours. Cancellations have risen for three months in a row. A colleague proposes adopting the online booking flow used by another destination. Your manager is sceptical and says the current process has always worked, but has asked for your view before next week's team meeting.",
+     "Your team manages bookings for guided heritage tours. Cancellations have risen for three months in a row. A colleague proposes adopting the online booking flow used by another destination. Your manager is skeptical and says the current process has always worked, but has asked for your view before next week's team meeting.",
      [("Agree with your manager that the current process works and that the rise is probably seasonal.", "Counter-evidence", "IN-N2"),
       ("Compare the proposed flow and two other options against the cancellation data, then recommend one with the evidence.", "Proficient", "IN-P2"),
       ("Propose a time-limited trial linked to visitor-experience targets, with success measures agreed with operations and a plan to extend it if it works.", "Advanced", "IN-A2"),

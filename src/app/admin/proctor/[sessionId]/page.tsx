@@ -140,7 +140,7 @@ export default async function ProctorReportPage({ params }: { params: { sessionI
             <h2 className="text-sm font-semibold text-[#010131]">AI integrity review</h2>
             <span className="text-xs text-muted-foreground">
               {review.configured
-                ? `${review.analyzed} of ${review.total} frames analysed`
+                ? `${review.analyzed} of ${review.total} frames analyzed`
                 : "AI not configured - motion only"}{" "}
               · {fmt(session.ai_reviewed_at)}
             </span>

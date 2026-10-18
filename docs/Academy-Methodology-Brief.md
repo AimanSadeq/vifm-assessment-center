@@ -6,7 +6,7 @@
 
 ## 1. Why this exists
 
-VIFM is, at its root, a training company. Its assessment modules - the VIFM-AC observed assessment, the AI Readiness Compass, Reflect 360, Persona, Fluent - are all *diagnostic*: they tell an organisation where a person or a workforce stands. A diagnosis is only useful if something can be done about it, so the platform runs a four-step loop: **diagnose -> recommend -> deliver -> certify.** The diagnostic modules produce gaps; the VIFM Courses recommender turns those gaps into a ranked list of relevant VIFM programmes; **VIFM Academy is the deliver step**; and VIFM Credentials is the certify step.
+VIFM is, at its root, a training company. Its assessment modules - the VIFM-AC observed assessment, the AI Readiness Compass, Reflect 360, Persona, Fluent - are all *diagnostic*: they tell an organization where a person or a workforce stands. A diagnosis is only useful if something can be done about it, so the platform runs a four-step loop: **diagnose -> recommend -> deliver -> certify.** The diagnostic modules produce gaps; the VIFM Courses recommender turns those gaps into a ranked list of relevant VIFM programs; **VIFM Academy is the deliver step**; and VIFM Credentials is the certify step.
 
 This brief documents the deliver step and its tie to certify. Academy takes a VIFM course and turns it into a self-paced learning experience for a candidate, with a knowledge-check at the end of each lesson, a completion gate, and - only when that gate is cleared - an automatically issued, publicly verifiable completion credential.
 
@@ -18,7 +18,7 @@ The single most important design decision in Academy is the pass-gate: a course 
 
 ### A course is a structure of lessons
 
-Academy does not author new content. It consumes the VIFM course catalogue (the same `vifm_courses` records the recommender ranks) and renders one of them as a learning experience. A course carries a structured outline - the seven content blocks of a VIFM programme, including the lesson-by-lesson outline.
+Academy does not author new content. It consumes the VIFM course catalog (the same `vifm_courses` records the recommender ranks) and renders one of them as a learning experience. A course carries a structured outline - the seven content blocks of a VIFM program, including the lesson-by-lesson outline.
 
 A **lesson** in Academy maps to exactly one top-level section of the course outline. The mapping is deliberate and explicit: `src/lib/academy/lesson-key.ts` builds an index-prefixed, slugified key for each outline section (`lessonKeyFor(title, index)`), and recovers the section index back from that key (`indexFromLessonKey`). The index prefix means the key stays unique and resolvable even when two sections share a title, or a section has an Arabic-only title with no Latin characters. Both the course-consumption page (which renders the lesson navigation) and the lesson page (which resolves a key back to its outline section) import the same helper, so the slug is consistent across the two surfaces.
 
@@ -42,7 +42,7 @@ The AI call is best-effort. When `ANTHROPIC_API_KEY` is absent, or the model ret
 
 ### Scoring is points-weighted and server-side
 
-When a learner finishes a lesson check (`POST /api/academy/lesson/[attemptId]/complete`), the route scores the stored answers against the stored questions: each question carries points (easy 10, medium 15, hard 20), and `score_pct = round(earned / possible * 10000) / 100`. A lesson is **passed** when `score_pct >= passing_score_pct` (default 70). Scoring runs server-side against the stored deck, and the route is idempotent - a re-POST recomputes the same pass/fail without mutating an already-finalised row.
+When a learner finishes a lesson check (`POST /api/academy/lesson/[attemptId]/complete`), the route scores the stored answers against the stored questions: each question carries points (easy 10, medium 15, hard 20), and `score_pct = round(earned / possible * 10000) / 100`. A lesson is **passed** when `score_pct >= passing_score_pct` (default 70). Scoring runs server-side against the stored deck, and the route is idempotent - a re-POST recomputes the same pass/fail without mutating an already-finalized row.
 
 ### Idempotent at every step
 
@@ -65,7 +65,7 @@ The credential is the hand-off into the certify step. It is publicly verifiable:
 ## 5. What Academy is, and what it is not
 
 - **It is a delivery and completion-certification step, not an independent proficiency exam.** Academy certifies that a learner *completed a course and passed its knowledge-checks*. The credential is a completion claim about that course, not a norm-referenced or criterion-validated measure of standalone competence.
-- **The knowledge-checks are AI-generated and grounded in the course outline, not a calibrated item bank.** There is no IRT calibration, no item-difficulty modelling, no published norms behind a lesson check. Difficulty labels are authoring guidance, not psychometric parameters.
+- **The knowledge-checks are AI-generated and grounded in the course outline, not a calibrated item bank.** There is no IRT calibration, no item-difficulty modeling, no published norms behind a lesson check. Difficulty labels are authoring guidance, not psychometric parameters.
 - **The pass threshold is a fixed mastery cut (default 70 percent), not a percentile.** A learner is compared against the bar, not against a peer distribution.
 - **It does not replace the diagnostic modules.** Academy delivers against a gap that a VIFM-AC, ARC, Reflect 360, Persona, or Fluent diagnosis surfaced. It closes the loop; it does not re-open the diagnosis.
 
@@ -83,7 +83,7 @@ This is the load-bearing design choice of the entire module. A "course complete"
 
 ### Enforced in lock-step at three sites
 
-The same passed-not-attempted rule, with the same default-70 threshold and the same empty-outline-counts-as-one-lesson convention, is enforced at three places that can each finalise a course:
+The same passed-not-attempted rule, with the same default-70 threshold and the same empty-outline-counts-as-one-lesson convention, is enforced at three places that can each finalize a course:
 
 1. The course page's Complete button path, via `POST /api/academy/complete`.
 2. The course-level completion route itself (`/api/academy/complete`), which calls `markEnrollmentComplete`.
@@ -101,7 +101,7 @@ Credential issuance is best-effort by design: `issueCredential` logs and returns
 
 ### Standards the module is held to
 
-Academy is a completion-certification mechanism, so the recognised standards apply to how its credential may be relied upon:
+Academy is a completion-certification mechanism, so the recognized standards apply to how its credential may be relied upon:
 
 - **ITC Guidelines on Test Use** - on the responsibilities of those who administer and interpret assessment results, including not over-claiming what a knowledge-check establishes.
 - **Standards for Educational and Psychological Testing** (AERA / APA / NCME, 2014) - referenced for the discipline of matching claims to evidence. Academy's claim is scoped precisely to course completion at a stated pass standard, not to independent proficiency, because that is what the evidence supports.
@@ -130,7 +130,7 @@ Academy is bilingual. A course outline carries English and Arabic titles, and th
 
 ## 9. Contact
 
-For methodology questions or research-collaboration enquiries, contact the VIFM consulting team: `contact@viftraining.com`.
+For methodology questions or research-collaboration inquiries, contact the VIFM consulting team: `contact@viftraining.com`.
 
 ---
 

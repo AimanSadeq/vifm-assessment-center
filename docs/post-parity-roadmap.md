@@ -111,7 +111,7 @@ components.
 
 Shipped in commit `3b190cc`. New `src/lib/ara/email.ts` module with
 bilingual templates (en / ar / bilingual HTML) for both events.
-Honours `assessment.is_sandbox` → SANDBOX_EMAIL_REDIRECT, falls back
+Honors `assessment.is_sandbox` → SANDBOX_EMAIL_REDIRECT, falls back
 to a console mock when AZURE_* env vars are unset, always writes
 to `ara_email_log` (even mocks). New `<SendInvitationButton />` per
 respondent row in `/ara/consultant/assessments/[id]` Respondents tab.
@@ -154,8 +154,8 @@ deployed environment.
 |---|---|
 | Bilingual AI quiz output (set `bilingual: true`, render *_ar fields) | ✅ Shipped 2026-04-28 (commit `3fdaeee`) |
 | Candidate layout chrome translation (Portal subtitle, Sign Out, footer) | ✅ Shipped 2026-04-28 (commit `3fdaeee`) |
-| Defence-in-depth `requireRole(["admin"])` on key AC admin actions | ✅ Shipped 2026-04-28 — `addCandidateAction`, `setCandidateRoleProfileAction`, `bulkAssignRoleProfilesAction`, `bulkExtractJdsAction`, `bulkCreateRoleProfilesAction` |
-| Quiz finalisation as SECURITY DEFINER Postgres RPC | **Deferred — gold-plating.** Migration 00019's `candidate_quiz_attempts_immutable_check` trigger already blocks candidate-side score writes; service-role completion goes through a separate path that bypasses the trigger. Moving scoring to a SECURITY DEFINER RPC would eliminate one remaining attack-shape (candidate calls the action via DevTools fetch with a crafted payload) but the action's auth-aware read-then-service-role-write pattern already validates ownership before the score lands. Reopen if a real attack surfaces. |
+| Defense-in-depth `requireRole(["admin"])` on key AC admin actions | ✅ Shipped 2026-04-28 — `addCandidateAction`, `setCandidateRoleProfileAction`, `bulkAssignRoleProfilesAction`, `bulkExtractJdsAction`, `bulkCreateRoleProfilesAction` |
+| Quiz finalization as SECURITY DEFINER Postgres RPC | **Deferred — gold-plating.** Migration 00019's `candidate_quiz_attempts_immutable_check` trigger already blocks candidate-side score writes; service-role completion goes through a separate path that bypasses the trigger. Moving scoring to a SECURITY DEFINER RPC would eliminate one remaining attack-shape (candidate calls the action via DevTools fetch with a crafted payload) but the action's auth-aware read-then-service-role-write pattern already validates ownership before the score lands. Reopen if a real attack surfaces. |
 
 ## Explicitly skipped
 
@@ -163,6 +163,6 @@ deployed environment.
 |---|---|
 | Mobile / responsive | CLAUDE.md is desktop-only by design |
 | Competitor blind-spot pages (Dashboard, Skill Visualization, Report Manager, 11 Control Panel sub-tabs) | No recording available; guessing would waste effort |
-| Color customisation / Sidebar reordering | Brand kit is fixed |
+| Color customization / Sidebar reordering | Brand kit is fixed |
 | Full AC re-engagement workflow (G7) | Quiz retake covers the candidate side; product input needed for the admin queue |
 | Cert builder | No certificate concept yet |

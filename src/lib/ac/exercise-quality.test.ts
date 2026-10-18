@@ -71,8 +71,8 @@ test("a trial clears it, and a pilot is reported separately (4.38)", () => {
   assert.equal(piloted.piloted, true);
 });
 
-test("an exercise already used live is not asked to be trialled retrospectively", () => {
-  const r = reviewExerciseQuality({ exerciseName: "Old favourite", checks: allPass, trials: [], usedLive: true });
+test("an exercise already used live is not asked to be trialed retrospectively", () => {
+  const r = reviewExerciseQuality({ exerciseName: "Old favorite", checks: allPass, trials: [], usedLive: true });
   assert.equal(r.needsTrial, false);
 });
 

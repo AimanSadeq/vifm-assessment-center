@@ -137,7 +137,7 @@ export async function createVoucherBatchAction(formData: FormData) {
   const newRollupStageRaw = String(formData.get("newRollupStage") ?? "").trim();
   if (poolRespondents && (existingParent || newRollupName)) {
     if (!parsed.data.organizationId) {
-      return { ok: false as const, error: "Tag a client organisation before rolling a cohort up - a rollup lives inside a client." };
+      return { ok: false as const, error: "Tag a client organization before rolling a cohort up - a rollup lives inside a client." };
     }
     // The code's label becomes the unit's name in the consolidated report. Two
     // unlabelled department codes under one rollup both fall back to the
@@ -159,7 +159,7 @@ export async function createVoucherBatchAction(formData: FormData) {
         .maybeSingle<{ id: string; organization_id: string | null; engagement_stage: string }>();
       if (!parent) return { ok: false as const, error: "That rollup no longer exists." };
       if (parent.organization_id !== parsed.data.organizationId) {
-        return { ok: false as const, error: "That rollup belongs to a different client organisation." };
+        return { ok: false as const, error: "That rollup belongs to a different client organization." };
       }
       const parentRank = stageRank[parent.engagement_stage as keyof typeof stageRank] ?? 0;
       if (parentRank <= childRank) {

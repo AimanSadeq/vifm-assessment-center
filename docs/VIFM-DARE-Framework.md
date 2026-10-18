@@ -8,18 +8,18 @@ How VIFM turns the Persona self-assessment into a view of a person's decision-ro
 
 ## 1. Purpose
 
-Organisations rarely fail for lack of decisions - they fail because the wrong people hold the wrong decision roles. The VIFM DARE Framework is a **decision-rights lens** built on top of the existing VIFM Persona behavioural self-assessment. It adds **no new questions** - it re-reads the same 41-competency self-ratings against the four canonical decision roles, so a person (and their organisation) can see which seat at the decision table their current behavioural strengths best equip them for, and what to develop for the seat they want.
+Organizations rarely fail for lack of decisions - they fail because the wrong people hold the wrong decision roles. The VIFM DARE Framework is a **decision-rights lens** built on top of the existing VIFM Persona behavioral self-assessment. It adds **no new questions** - it re-reads the same 41-competency self-ratings against the four canonical decision roles, so a person (and their organization) can see which seat at the decision table their current behavioral strengths best equip them for, and what to develop for the seat they want.
 
 ## 2. The model: four decision roles
 
-Adapted from the decision-rights literature (McKinsey's DARE roles; cf. Bain's RAPID), expressed as VIFM behavioural constructs:
+Adapted from the decision-rights literature (McKinsey's DARE roles; cf. Bain's RAPID), expressed as VIFM behavioral constructs:
 
-- **D - Decide.** Own the call: commit the organisation, be accountable for the outcome, and hold the line under pressure and ambiguity. The scarce role - most organisations have too many deciders per decision.
-- **A - Advise.** Improve others' decisions: bring domain perspective, candour, and trusted relationships to the table without needing the vote.
-- **R - Recommend.** Build the case: analyse, frame real options, and bring forward a persuasive, evidence-based recommendation.
-- **E - Execute.** Deliver the decision: mobilise people, process, and resources so the call becomes results.
+- **D - Decide.** Own the call: commit the organization, be accountable for the outcome, and hold the line under pressure and ambiguity. The scarce role - most organizations have too many deciders per decision.
+- **A - Advise.** Improve others' decisions: bring domain perspective, candor, and trusted relationships to the table without needing the vote.
+- **R - Recommend.** Build the case: analyze, frame real options, and bring forward a persuasive, evidence-based recommendation.
+- **E - Execute.** Deliver the decision: mobilize people, process, and resources so the call becomes results.
 
-No role is senior to another - effective organisations need strength in all four, and a person's profile typically shifts across their career (R -> A/E -> D is a common arc).
+No role is senior to another - effective organizations need strength in all four, and a person's profile typically shifts across their career (R -> A/E -> D is a common arc).
 
 ## 3. The 41-competency mapping
 
@@ -39,7 +39,7 @@ Planning & Prioritisation · Process Optimisation · Resource Mobilisation · Pr
 
 ### Judgment-calls (most likely to be revised)
 - **Composure Under Stress -> D** (steadiness *at the decision point*) while **Resilience Under Pressure -> E** (endurance *across delivery cycles*).
-- **Constructive Conflict Handling -> A** - read as the adviser's candour: challenging a decision safely before it is made.
+- **Constructive Conflict Handling -> A** - read as the adviser's candor: challenging a decision safely before it is made.
 - **Value Creation -> D** - choosing where to commit resources for value is the decider's question; the *analysis* of value sits in R via Critical Analysis.
 - **Self-Insight -> A** - good advisers know the limits of their own expertise.
 
@@ -66,13 +66,13 @@ Planning & Prioritisation · Process Optimisation · Resource Mobilisation · Pr
 1. **Executive summary** - primary decision role, the four role scores, and a synthesis.
 2. **DARE profile** - the four role scores charted side by side.
 3. **Role-by-role breakdown** - every competency with its self-rating, grouped by role.
-4. **Development focus** - the lowest-rated competencies in the person's *primary* and *aspired* roles, with catalogue development tips.
+4. **Development focus** - the lowest-rated competencies in the person's *primary* and *aspired* roles, with catalog development tips.
 
 ## 7. Validity & honest disclosures
 
 - **Self-report.** How a person sees themselves, not how others see them - pair with a Reflect 360 before restructuring anyone's decision rights.
-- **A lens, not a licence.** The profile describes behavioural readiness for a role in a decision process; it does not allocate authority - that is an organisational-design decision.
-- **Indicative until normed** (target n >= 200), and the mapping is a content decision open to industrial/organisational-psychology revision.
+- **A lens, not a license.** The profile describes behavioral readiness for a role in a decision process; it does not allocate authority - that is an organizational-design decision.
+- **Indicative until normed** (target n >= 200), and the mapping is a content decision open to industrial/organizational-psychology revision.
 
 ## 8. References
 

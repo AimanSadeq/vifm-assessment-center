@@ -96,7 +96,7 @@ export default async function BespokeServicesPage({ searchParams }: { searchPara
             <div>
               <div className="text-sm font-semibold">Role Readiness (Persona + Techno)</div>
               <p className="mt-0.5 max-w-xl text-xs text-white/70">
-                Bundle behavioural + technical into one candidate sitting with a ready/not-ready verdict and an
+                Bundle behavioral + technical into one candidate sitting with a ready/not-ready verdict and an
                 auto development plan. Configure a role once - it surfaces here and on the landing.
               </p>
             </div>

@@ -354,7 +354,7 @@ function renderProposalDoc(
         .map(
           (b) =>
             `<tr><td>${esc(b.name)}</td><td colspan="3">${esc(b.services)}${
-              b.licenses > 0 ? ` &middot; ${num(b.licenses)} licence${b.licenses === 1 ? "" : "s"}` : ""
+              b.licenses > 0 ? ` &middot; ${num(b.licenses)} license${b.licenses === 1 ? "" : "s"}` : ""
             }</td><td class="num">${money(b.price)}</td></tr>`,
         )
         .join("\n      ")}
@@ -363,8 +363,8 @@ function renderProposalDoc(
   </table>
   <table>
     <tbody>
-      ${lic.hasBundleDiscount ? `<tr><td class="tot-label">Committed-licence discount (${num(lic.bundleDiscountPct)}%)</td><td class="num">- ${money(lic.discountAmount)}</td></tr>` : ""}
-      <tr><td class="tot-label">Committed annual all-access licence</td><td class="num">${money(lic.annualLicence)}</td></tr>
+      ${lic.hasBundleDiscount ? `<tr><td class="tot-label">Committed-license discount (${num(lic.bundleDiscountPct)}%)</td><td class="num">- ${money(lic.discountAmount)}</td></tr>` : ""}
+      <tr><td class="tot-label">Committed annual all-access license</td><td class="num">${money(lic.annualLicence)}</td></tr>
       ${lic.hasSupport ? `<tr><td class="tot-label">Support &amp; SLA (${num(lic.supportPct)}%)</td><td class="num">${money(lic.supportAmount)}</td></tr>` : ""}
       ${lic.isSovereign && lic.sovereignAnnual > 0 ? `<tr><td class="tot-label">Sovereign annual (dedicated in-country)</td><td class="num">${money(lic.sovereignAnnual)}</td></tr>` : ""}
       <tr><td class="tot-label">Annual recurring</td><td class="num">${money(lic.annualRecurring)}</td></tr>
@@ -390,7 +390,7 @@ function renderProposalDoc(
   ${
     lic.hasPilot && lic.pilot
       ? `<h3>Pilot option</h3>
-  <div class="terms-box">A fixed-price pilot of ${num(lic.pilot.cohort)} participant${lic.pilot.cohort === 1 ? "" : "s"} over ${num(lic.pilot.durationWeeks)} week${lic.pilot.durationWeeks === 1 ? "" : "s"} at ${money(lic.pilot.price)}. On conversion to the annual licence within 90 days, ${num(lic.pilot.creditPct)}% of the pilot fee (${money(lic.pilot.creditAmount)}) is credited against Year 1. The pilot is an alternative entry path and is not included in the Year-1 total above.</div>`
+  <div class="terms-box">A fixed-price pilot of ${num(lic.pilot.cohort)} participant${lic.pilot.cohort === 1 ? "" : "s"} over ${num(lic.pilot.durationWeeks)} week${lic.pilot.durationWeeks === 1 ? "" : "s"} at ${money(lic.pilot.price)}. On conversion to the annual license within 90 days, ${num(lic.pilot.creditPct)}% of the pilot fee (${money(lic.pilot.creditAmount)}) is credited against Year 1. The pilot is an alternative entry path and is not included in the Year-1 total above.</div>`
       : ""
   }
   ${bundleContentsHtml(lic.bundles, "en")}`
@@ -406,11 +406,11 @@ function renderProposalDoc(
         .map(
           (pr) =>
             `<tr><td>${esc(pr.name)}</td><td>${
-              pr.isFixed ? "Included in the licence" : `Up to ${num(pr.volume)} ${esc(pr.basis)} per year`
+              pr.isFixed ? "Included in the license" : `Up to ${num(pr.volume)} ${esc(pr.basis)} per year`
             }</td></tr>`,
         )
         .join("\n      ")}
-      ${lic.bundles.map((b) => `<tr><td>${esc(b.name)}</td><td>Included in the licence</td></tr>`).join("\n      ")}
+      ${lic.bundles.map((b) => `<tr><td>${esc(b.name)}</td><td>Included in the license</td></tr>`).join("\n      ")}
     </tbody>
   </table>
   ${lic.hasBuffer ? `<p class="scope-note">Committed volumes include a ${num(lic.bufferPct)}% usage buffer at no additional charge; excess usage is invoiced quarterly in arrears at the quoted unit prices.</p>` : ""}`
@@ -452,7 +452,7 @@ function renderProposalDoc(
         ? esc(eng.groups.filter((g) => g.name.trim()).map((g) => g.name).join("  ·  "))
         : `${esc(eng.name)} <span class="seats">${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}</span>`
     }</h3>
-    <p>A full assessment-center engagement delivered and facilitated by VIFM consultants. Trained assessors observe each delegate across a set of role-relevant exercises (e.g. in-basket, role-play, group exercise, case study, oral presentation), classifying behaviour against the VIFM competency framework on a defined BARS scale.</p>
+    <p>A full assessment-center engagement delivered and facilitated by VIFM consultants. Trained assessors observe each delegate across a set of role-relevant exercises (e.g. in-basket, role-play, group exercise, case study, oral presentation), classifying behavior against the VIFM competency framework on a defined BARS scale.</p>
     <p class="deliv-head">How it runs</p>
     <ul class="deliv">
       <li><b>Design &amp; setup</b> - exercises, the exercise-to-competency matrix, role-player briefs and assessor calibration are configured to ${esc(p.clientName)}'s target role(s).</li>
@@ -491,7 +491,7 @@ function renderProposalDoc(
         : "";
   const combinedCommercial = `${
     combinedServicesTable
-      ? `<h3>${combinedServicesMode === "licence" ? "Platform licence" : "Assessment services"}</h3>
+      ? `<h3>${combinedServicesMode === "licence" ? "Platform license" : "Assessment services"}</h3>
   ${combinedServicesTable}`
       : ""
   }${
@@ -509,21 +509,21 @@ function renderProposalDoc(
     (isCombined
       ? `We are pleased to present this combined proposal for ${p.clientName}, bringing together ${combinedSvcList || "VIFM's talent-intelligence services"}${eng ? ` and a consultant-led ${esc(eng.name)} engagement` : ""} in a single commercial. Each element is scoped and priced under its own subtotal below, with one combined total; the technical approach and delivery plan follow.`
       : isEngagement && eng
-      ? `We are pleased to present this proposal for a ${esc(eng.name)} engagement for ${p.clientName}, assessing ${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}. This is a consultant-led programme - trained assessors, structured role-relevant exercises, a defensible overall assessment rating and 1:1 developmental feedback - supported by the VIFM Caliber® platform. The approach, delivery plan and commercial detail are set out below.`
+      ? `We are pleased to present this proposal for a ${esc(eng.name)} engagement for ${p.clientName}, assessing ${num(eng.participants)} participant${eng.participants === 1 ? "" : "s"}. This is a consultant-led program - trained assessors, structured role-relevant exercises, a defensible overall assessment rating and 1:1 developmental feedback - supported by the VIFM Caliber® platform. The approach, delivery plan and commercial detail are set out below.`
       : isLicence
-        ? `We are pleased to present this proposal for an annual, all-access licence to the VIFM Caliber® Talent Intelligence Platform for ${p.clientName}, combining ${serviceList || "VIFM's talent-intelligence services"} into one candidate journey, one admin console and combined bilingual reporting. The commercial model is a committed annual licence; the technical approach, delivery plan and full licence build-up are set out below.`
-        : `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the programme is set out below with its technical approach, delivery plan and commercial detail.`);
+        ? `We are pleased to present this proposal for an annual, all-access license to the VIFM Caliber® Talent Intelligence Platform for ${p.clientName}, combining ${serviceList || "VIFM's talent-intelligence services"} into one candidate journey, one admin console and combined bilingual reporting. The commercial model is a committed annual license; the technical approach, delivery plan and full license build-up are set out below.`
+        : `We are pleased to present this proposal for the deployment of ${serviceList || "VIFM's talent-intelligence services"} for ${p.clientName}, covering ${num(totalParticipants)} participant${totalParticipants === 1 ? "" : "s"}. Delivered on the VIFM Caliber® Talent Intelligence Platform, the program is set out below with its technical approach, delivery plan and commercial detail.`);
 
   const validUntil = p.validUntil ? fmtDate(p.validUntil) : null;
 
   // Cover subtitle names the commercial shape of the offer, per pricing mode.
   const coverSubtitle =
     isCombined
-      ? "Combined programme &middot; Platform services + consultant engagement"
+      ? "Combined program &middot; Platform services + consultant engagement"
       : isEngagement && eng
       ? `${esc(eng.name)} &middot; Consultant-led professional-services engagement`
       : isLicence
-        ? "Annual all-access licence &middot; VIFM Caliber&reg; Talent Intelligence Platform"
+        ? "Annual all-access license &middot; VIFM Caliber&reg; Talent Intelligence Platform"
         : "Talent-intelligence solution &middot; VIFM Caliber&reg;";
 
   // City, Country under the client name on the cover (either part optional).
@@ -569,7 +569,7 @@ function renderProposalDoc(
     const recovered = exposure * (gainPct / 100);
     const investment = p.total || 0;
     const timesOver = investment > 0 ? recovered / investment : 0;
-    return `<p><strong>Indicative return.</strong> At an average annual salary of ${money(avgSalary)} and ${num(hires)} hire${hires === 1 ? "" : "s"} per year, the cost of a single mis-hire - conservatively 1.5&times; salary, about ${money(misHire)} - puts roughly ${money(exposure)} of value at risk each year. Improving selection accuracy by even ${gainPct}% recovers on the order of ${money(recovered)} annually${timesOver > 0 ? `, around ${timesOver.toFixed(1)}&times; the ${isLicence ? "Year-1" : "total"} investment in this programme` : ""}. These figures are illustrative, based on the inputs provided, and are not a guarantee of outcome.</p>`;
+    return `<p><strong>Indicative return.</strong> At an average annual salary of ${money(avgSalary)} and ${num(hires)} hire${hires === 1 ? "" : "s"} per year, the cost of a single mis-hire - conservatively 1.5&times; salary, about ${money(misHire)} - puts roughly ${money(exposure)} of value at risk each year. Improving selection accuracy by even ${gainPct}% recovers on the order of ${money(recovered)} annually${timesOver > 0 ? `, around ${timesOver.toFixed(1)}&times; the ${isLicence ? "Year-1" : "total"} investment in this program` : ""}. These figures are illustrative, based on the inputs provided, and are not a guarantee of outcome.</p>`;
   })();
 
   // ── Sample reports (Section 19). Lists the reports/deliverables INCLUDED in the
@@ -586,7 +586,7 @@ function renderProposalDoc(
     .join("\n    ");
   const engReportsBlock = eng
     ? `<h3>${esc(eng.name)}</h3><ul class="deliv">
-      <li>Individual assessment-centre report per delegate (competency profile, Overall Assessment Rating and development focus)</li>
+      <li>Individual assessment-center report per delegate (competency profile, Overall Assessment Rating and development focus)</li>
       <li>Cohort integration read-out for the sponsoring team</li>
       <li>1:1 developmental feedback session per delegate</li>
     </ul>`
@@ -596,12 +596,12 @@ function renderProposalDoc(
   // ── Computed sections: editable intro PROSE (secBody) + a generated table kept LIVE
   // below it, so a text edit never freezes the pricing / evidence. ──
   const commercialIntroHtml = isCombined
-    ? `<p>The commercial model combines ${combinedServicesMode === "licence" ? "an <strong>annual all-access licence</strong>" : "<strong>per-participant platform services</strong>"}${eng ? " with a bespoke <strong>professional-services engagement</strong>" : ""}. Each block is itemised under its own subtotal below, closed by a single combined total.</p>`
+    ? `<p>The commercial model combines ${combinedServicesMode === "licence" ? "an <strong>annual all-access license</strong>" : "<strong>per-participant platform services</strong>"}${eng ? " with a bespoke <strong>professional-services engagement</strong>" : ""}. Each block is itemized under its own subtotal below, closed by a single combined total.</p>`
     : isEngagement && eng
       ? `<p>The commercial model is a bespoke <strong>professional-services engagement</strong>, priced by line item below - fixed design and reporting fees, per-participant assessment, consultant-day assessor time, and per-delegate developmental feedback.</p>`
       : isLicence && lic
-        ? `<p>The commercial model is a committed <strong>annual all-access licence</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-licence discount. Support &amp; SLA is included as a percentage of the licence, and one-time implementation covers onboarding, configuration, integration and training.</p>`
-        : `<p>The commercial model is a straightforward per-participant fee: each selected service is priced per participant and itemised below.</p>`;
+        ? `<p>The commercial model is a committed <strong>annual all-access license</strong> to the Caliber platform: the selected services are volume-priced a la carte, then bundled at a committed-license discount. Support &amp; SLA is included as a percentage of the license, and one-time implementation covers onboarding, configuration, integration and training.</p>`
+        : `<p>The commercial model is a straightforward per-participant fee: each selected service is priced per participant and itemized below.</p>`;
   const commercialTableHtml = isCombined
     ? combinedCommercial
     : isEngagement && eng
@@ -640,7 +640,7 @@ function renderProposalDoc(
   const commercialTableForVariant =
     variant === "technical" ? "" : variant === "financial" ? bundledCommercial : commercialTableHtml;
   const sampleReportsProseHtml = `<p>The reports and deliverables included in the agreed scope are listed below, per selected
-    service. Each is produced as a professionally formatted, bilingual-capable PDF. Anonymised sample candidate and
+    service. Each is produced as a professionally formatted, bilingual-capable PDF. Anonymized sample candidate and
     cohort reports for every scoped service are available on request and can be appended to the signed statement of
     work.</p>`;
 
@@ -842,10 +842,10 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
     `<p>The Virginia Institute of Finance and Management (VIFM) is a finance and management institute serving the
   GCC, combining professional training with a purpose-built talent-intelligence platform, VIFM Caliber&reg;.
   Caliber delivers structured, bilingual (English/Arabic) assessment across the full talent lifecycle - from
-  pre-hire screening and technical certification to behavioural profiling, cognitive aptitude, English
+  pre-hire screening and technical certification to behavioral profiling, cognitive aptitude, English
   placement, 360&deg; leadership feedback and organizational AI-readiness.</p>
   <p>Every instrument is built on a documented methodology, delivered securely (server-held answer keys,
-  per-administration randomisation), and produces defensible, review-ready outputs. Where AI contributes to
+  per-administration randomization), and produces defensible, review-ready outputs. Where AI contributes to
   scoring, it operates under documented human oversight; where credentials are issued, they are publicly
   verifiable. Published methodology briefs for each instrument are available on request and form part of this
   proposal by reference.</p>`,
@@ -858,7 +858,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
       p.clientRegion ? ` operating in ${jurisdiction}` : ""
     } seeking a structured, defensible view of the capability of ${num(totalParticipants)} participant${
       totalParticipants === 1 ? "" : "s"
-    } through ${esc(serviceList)}. The programme is expected to produce individual-level reporting for
+    } through ${esc(serviceList)}. The program is expected to produce individual-level reporting for
   development and decision support, together with cohort-level analytics for the sponsoring team.</p>
   <p>The solution set out below addresses these requirements with instruments that are bilingual where the
   audience requires it, auditable end to end, and aligned with the data-protection expectations that apply in
@@ -882,18 +882,18 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   ${secBody("Psychometric foundations", `<p>The proposed instrument${scopeWithSeats.length === 1 ? " is" : "s are"} built on documented measurement
   foundations rather than ad-hoc question sets:</p>
   <ul>
-    <li><b>A common competency spine</b> - behavioural measurement maps to the VIFM behavioural framework, four domains (Thinking, Results, People and Self) with a defined competency set under each, so results from different instruments describe people in one shared language.</li>
-    <li><b>Recognised scales</b> - behavioural ratings use defined anchor scales; English placement is aligned to the CEFR (A1-C2); cognitive and technical results are reported as banded levels with their basis stated.</li>
-    <li><b>Curated item banks</b> - items are drafted, SME-reviewed and versioned; option order is re-randomised per administration to protect item integrity.</li>
+    <li><b>A common competency spine</b> - behavioral measurement maps to the VIFM behavioral framework, four domains (Thinking, Results, People and Self) with a defined competency set under each, so results from different instruments describe people in one shared language.</li>
+    <li><b>Recognized scales</b> - behavioral ratings use defined anchor scales; English placement is aligned to the CEFR (A1-C2); cognitive and technical results are reported as banded levels with their basis stated.</li>
+    <li><b>Curated item banks</b> - items are drafted, SME-reviewed and versioned; option order is re-randomized per administration to protect item integrity.</li>
     <li><b>Response-quality safeguards</b> - where the construct warrants it, instruments carry distortion and consistency checks (e.g. social-desirability signals on self-report measures) that are surfaced to the reviewing consultant rather than silently auto-scored.</li>
     <li><b>Reliability monitoring</b> - internal-consistency statistics are tracked as response volumes grow, and norm-referenced reporting is enabled only when the underlying sample is adequate.</li>
-    <li><b>Honest reporting tiers</b> - each result is explicitly labelled indicative or certified; certified outcomes exist only where a documented cut-score and review process stand behind them.</li>
+    <li><b>Honest reporting tiers</b> - each result is explicitly labeled indicative or certified; certified outcomes exist only where a documented cut-score and review process stand behind them.</li>
   </ul>`)}` : ""}
 
   ${inc("Methodology & quality standards") ? `<h2><span class="no">${NO("Methodology & quality standards")}.</span>Methodology &amp; quality standards</h2>
   ${secBody("Methodology & quality standards", `<ul>
     <li><b>Documented methodology per instrument</b> - each assessment ships with a published methodology brief covering construct, scoring model and honest limits; these briefs accompany this proposal on request.</li>
-    <li><b>Alignment with recognised guidance</b> - programme design is aligned with ISO 10667 (assessment service delivery) and, for assessment-centre work, the International Taskforce Guidelines (6th edition).</li>
+    <li><b>Alignment with recognized guidance</b> - program design is aligned with ISO 10667 (assessment service delivery) and, for assessment-center work, the International Taskforce Guidelines (6th edition).</li>
     <li><b>Secure administration</b> - answer keys are held server-side and never reach the participant's browser; grading is server-side; sessions are single-use.</li>
     <li><b>Integrity monitoring, honestly framed</b> - assessments capture advisory integrity signals (tab activity, paste events, response timing, and optional camera proctoring where enabled) that prompt human review of a flagged administration. This is monitoring, not invigilation - no signal ever auto-fails a participant.</li>
     <li><b>Human oversight of AI scoring</b> - where AI contributes to scoring or content generation, outputs are calibrated and a person retains review authority; no automated decision is final.</li>
@@ -902,8 +902,8 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
 
   ${inc("Platform, integration & security") ? `<h2><span class="no">${NO("Platform, integration & security")}.</span>Platform, integration &amp; security</h2>
   ${secBody("Platform, integration & security", `<ul>
-    <li><b>Delivery platform</b> - the programme runs on VIFM Caliber&reg;, a cloud platform requiring no client-side installation; participants join through personal invitation links on any modern browser.</li>
-    <li><b>Programme visibility</b> - the sponsoring team receives live completion monitoring during the assessment window, with reminders managed by VIFM.</li>
+    <li><b>Delivery platform</b> - the program runs on VIFM Caliber&reg;, a cloud platform requiring no client-side installation; participants join through personal invitation links on any modern browser.</li>
+    <li><b>Program visibility</b> - the sponsoring team receives live completion monitoring during the assessment window, with reminders managed by VIFM.</li>
     <li><b>Verifiable outcomes</b> - certified credentials carry a public verification link, so any third party can confirm authenticity without contacting VIFM.</li>
     <li><b>Data portability</b> - results export in standard formats (CSV / JSON) for the client's HRIS or ATS; individual reports are delivered as PDF.</li>
     <li><b>Integration</b> - single sign-on or deeper system integration can be scoped in the statement of work where required.</li>
@@ -915,7 +915,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   <table>
     <thead><tr><th>Phase</th><th>Indicative timing</th><th>Key activities</th><th>Outputs</th></tr></thead>
     <tbody>
-      <tr><td><b>1 &middot; Mobilisation</b></td><td>Week 1</td><td>Kickoff, single point of contact confirmed, participant list received, scope and languages confirmed</td><td>Agreed schedule; communications pack</td></tr>
+      <tr><td><b>1 &middot; Mobilization</b></td><td>Week 1</td><td>Kickoff, single point of contact confirmed, participant list received, scope and languages confirmed</td><td>Agreed schedule; communications pack</td></tr>
       <tr><td><b>2 &middot; Configuration</b></td><td>Week 2</td><td>Solution configured on Caliber, invitations prepared, pilot run with a small group</td><td>Validated setup; pilot sign-off</td></tr>
       <tr><td><b>3 &middot; Assessment window</b></td><td>Week 3</td><td>Invitations issued in waves, completion monitored, reminders managed, participant support</td><td>Completion dashboard; interim status reports</td></tr>
       <tr><td><b>4 &middot; Reporting &amp; debrief</b></td><td>Week 4</td><td>Individual reports released, cohort analytics compiled, sponsor debrief session</td><td>Full deliverable set; debrief and recommendations</td></tr>
@@ -936,8 +936,8 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
     <li>Assessment data is processed in line with applicable data-protection law: UAE Federal Decree-Law No. 45 of 2021, the Saudi Personal Data Protection Law, and the GDPR where relevant.</li>
     <li>Participant consent is captured before any assessment data is collected; participation records carry an audit trail.</li>
     <li>Data is encrypted in transit and at rest; access is role-based and limited to what each role requires; answer keys and scoring logic never reach the participant's device.</li>
-    <li>Personal data is retained for a maximum of 24 months unless contractually extended, after which it is purged under VIFM's retention procedures; erasure requests are honoured within the engagement's legal constraints.</li>
-    <li>Individual results are released only to the sponsoring organization's authorised recipients; anonymity thresholds protect multi-rater feedback contributors.</li>
+    <li>Personal data is retained for a maximum of 24 months unless contractually extended, after which it is purged under VIFM's retention procedures; erasure requests are honored within the engagement's legal constraints.</li>
+    <li>Individual results are released only to the sponsoring organization's authorized recipients; anonymity thresholds protect multi-rater feedback contributors.</li>
   </ul>`)}
 
   ${inc("AI governance & standards") ? `<h2><span class="no">${NO("AI governance & standards")}.</span>AI governance &amp; standards</h2>
@@ -951,15 +951,15 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
 
   ${inc("Service level & support") ? `<h2 style="page-break-before: always;"><span class="no">${NO("Service level & support")}.</span>Service level &amp; support</h2>
   ${secBody("Service level & support", `<ul>
-    <li><b>Named team</b> - an engagement lead and a delivery coordinator are assigned for the duration of the programme (see Section ${NO("Project governance & team")}).</li>
-    <li><b>Support window</b> - programme and participant support during GCC business hours (Sunday-Thursday), with initial response within one business day.</li>
+    <li><b>Named team</b> - an engagement lead and a delivery coordinator are assigned for the duration of the program (see Section ${NO("Project governance & team")}).</li>
+    <li><b>Support window</b> - program and participant support during GCC business hours (Sunday-Thursday), with initial response within one business day.</li>
     <li><b>Participant support</b> - access issues, invitation resends and completion queries are handled by VIFM directly, keeping the client's coordinator out of day-to-day traffic.</li>
     <li><b>Continuity</b> - the platform is operated to avoid participant-visible interruptions during the agreed assessment window; planned maintenance is scheduled around it.</li>
     ${isLicence ? "" : `<li><b>Formal SLA</b> - where the client requires committed availability and response metrics, they are documented in the statement of work.</li>`}
   </ul>
   ${
     isLicence
-      ? `<p class="scope-note">The following service levels apply under the annual licence:</p>
+      ? `<p class="scope-note">The following service levels apply under the annual license:</p>
   <ul>
     <li><b>Platform uptime</b> - 99.5% monthly uptime guarantee, excluding scheduled maintenance.</li>
     <li><b>Response times</b> - critical issues within 4 business hours; standard requests within 1 business day.</li>
@@ -970,12 +970,12 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   }`)}` : ""}
 
   ${inc("Relevant experience") ? `<h2><span class="no">${NO("Relevant experience")}.</span>Relevant experience</h2>
-  ${secBody("Relevant experience", `<p>VIFM delivers assessment and development programmes for banking, government and corporate organizations
+  ${secBody("Relevant experience", `<p>VIFM delivers assessment and development programs for banking, government and corporate organizations
   across the GCC. The Caliber platform carries seven instrument families spanning talent acquisition and
-  talent development - behavioural profiling, cognitive aptitude, technical certification, English placement,
+  talent development - behavioral profiling, cognitive aptitude, technical certification, English placement,
   pre-hire screening, 360&deg; leadership feedback and organizational AI-readiness - delivered bilingually as
   standard.</p>
-  <p>Client references and anonymised case summaries relevant to this engagement are available on request,
+  <p>Client references and anonymized case summaries relevant to this engagement are available on request,
   subject to the confidentiality commitments we make to every client - the same commitments this proposal
   makes to ${esc(p.clientName)}.</p>`)}` : ""}
 
@@ -997,7 +997,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   }
   ${!showPrices ? "" : (() => {
     const feesSentence = isVat(taxMode)
-      ? `Fees are quoted in ${esc(cur)} and are inclusive of value-added tax (VAT) at ${taxRate}%, itemised above.`
+      ? `Fees are quoted in ${esc(cur)} and are inclusive of value-added tax (VAT) at ${taxRate}%, itemized above.`
       : taxMode === "wht15"
         ? `Fees are quoted in ${esc(cur)}, exclusive of VAT and gross of withholding tax as noted above.`
         : `Fees are quoted in ${esc(cur)} and are exclusive of any applicable taxes, which will be added at the prevailing rate where required.`;
@@ -1012,7 +1012,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
   </ul>
   <h3>Not included</h3>
   <ul>
-    <li>On-site delivery, travel and accommodation; instrument customisation beyond the stated scope; additional participants beyond the quoted volumes (chargeable at the quoted per-participant rate); and any third-party costs - each quotable separately on request.</li>
+    <li>On-site delivery, travel and accommodation; instrument customization beyond the stated scope; additional participants beyond the quoted volumes (chargeable at the quoted per-participant rate); and any third-party costs - each quotable separately on request.</li>
   </ul>` : ""}
 
   ${inc("Assumptions & exclusions") ? `<h2><span class="no">${NO("Assumptions & exclusions")}.</span>Assumptions &amp; exclusions</h2>
@@ -1020,7 +1020,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
     <li>${esc(p.clientName)} provides a complete, accurate participant list (names and email addresses) before the assessment window opens, and nominates a single point of contact empowered to make scheduling decisions.</li>
     <li>Participants have access to a suitable device and internet connection; assessments are completed remotely unless otherwise agreed in writing.</li>
     <li>Volumes are as quoted; material changes to volumes, scope or languages are handled by written change request and may revise fees and timeline.</li>
-    <li>The indicative timeline assumes client-side communications are issued within the agreed windows; delays in participant mobilisation extend the schedule, not the price.</li>
+    <li>The indicative timeline assumes client-side communications are issued within the agreed windows; delays in participant mobilization extend the schedule, not the price.</li>
     <li>This proposal does not constitute a contract; the engagement commences on signature of a statement of work referencing this proposal.</li>
   </ul>`)}` : ""}
 
@@ -1034,13 +1034,13 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
     <li><b>Limitation of liability.</b> Neither party is liable for indirect or consequential loss. Each party's aggregate liability under this engagement is capped at the total fees paid or payable under it, save for liability that cannot be limited by law. Assessment outputs inform - and do not replace - the client's own decisions; VIFM is not liable for employment decisions made by the client.</li>
     <li><b>Term and termination.</b> Either party may terminate for convenience on 30 days' written notice, or immediately on the other's material, uncured breach. On termination, the client pays for work performed and deliverables completed to the termination date.</li>
     <li><b>Force majeure.</b> Neither party is liable for delay or failure caused by events beyond its reasonable control, provided it notifies the other promptly and mitigates the impact.</li>
-    <li><b>Non-solicitation.</b> During the engagement and for six months after, neither party will actively solicit for employment the other's personnel directly engaged in the delivery of this programme.</li>
+    <li><b>Non-solicitation.</b> During the engagement and for six months after, neither party will actively solicit for employment the other's personnel directly engaged in the delivery of this program.</li>
     <li><b>Governing law.</b> This proposal and any resulting engagement are governed by the laws of ${jurisdiction}, and the parties submit to the exclusive jurisdiction of its courts, unless the signed statement of work provides otherwise.</li>
     <li><b>Entire agreement and precedence.</b> The signed statement of work, together with this proposal, constitutes the entire agreement for the engagement. In case of conflict, the signed statement of work prevails over this proposal.</li>
     ${
       isLicence && lic
-        ? `<li><b>Committed volumes and usage buffer.</b> The licence includes the committed annual volumes set out in Section ${NO("Commercial proposal")}, with a ${num(lic.bufferPct)}% usage buffer at no additional charge. Usage beyond the committed volume plus buffer is invoiced quarterly in arrears at the quoted unit prices; unused volume does not roll over unless agreed in writing.</li>
-    <li><b>Renewal.</b> The licence term is 12 months, renewable, with 60 days' notice of non-renewal.${lic.upliftPct ? ` Where a multi-year term is agreed, the annual recurring charge is capped at a ${num(lic.upliftPct)}% uplift per year.` : ""}</li>
+        ? `<li><b>Committed volumes and usage buffer.</b> The license includes the committed annual volumes set out in Section ${NO("Commercial proposal")}, with a ${num(lic.bufferPct)}% usage buffer at no additional charge. Usage beyond the committed volume plus buffer is invoiced quarterly in arrears at the quoted unit prices; unused volume does not roll over unless agreed in writing.</li>
+    <li><b>Renewal.</b> The license term is 12 months, renewable, with 60 days' notice of non-renewal.${lic.upliftPct ? ` Where a multi-year term is agreed, the annual recurring charge is capped at a ${num(lic.upliftPct)}% uplift per year.` : ""}</li>
     <li><b>Exit and data export.</b> On termination or expiry, ${esc(p.clientName)} receives a full export of its data in standard formats within 15 business days, followed by certified deletion under VIFM's retention procedures.</li>
     <li><b>Service credits.</b> The service credits set out in Section ${NO("Service level & support")} are the client's exclusive remedy for any failure to meet the availability guarantee.</li>
     <li><b>Suspension.</b> VIFM may suspend access for undisputed amounts overdue by more than 30 days, on 10 business days' prior written notice.</li>`
@@ -1055,16 +1055,16 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
       <tr><td><b>Participant</b></td><td>An individual invited by ${esc(p.clientName)} to complete one or more of the scoped assessments.</td></tr>
       <tr><td><b>Sitting</b></td><td>One completed administration of an instrument by one participant.</td></tr>
       <tr><td><b>Instrument</b></td><td>A named VIFM assessment service (e.g. ${esc(serviceLabels[0] ?? "Persona")}) with its own documented methodology.</td></tr>
-      <tr><td><b>Indicative result</b></td><td>A development-grade output without a formal cut-score; labelled as such and not a credential.</td></tr>
+      <tr><td><b>Indicative result</b></td><td>A development-grade output without a formal cut-score; labeled as such and not a credential.</td></tr>
       <tr><td><b>Certified credential</b></td><td>An outcome issued only where a documented cut-score is met; publicly verifiable by its verification link.</td></tr>
       <tr><td><b>Assessment window</b></td><td>The agreed period during which participants complete their sittings.</td></tr>
       <tr><td><b>Statement of work (SOW)</b></td><td>The signed document that puts this proposal into effect and governs the engagement.</td></tr>
       ${
         isLicence && lic
-          ? `<tr><td><b>Committed Volume</b></td><td>The maximum annual usage of a service included in the licence, shown as "Up to N per year" in the scope and commercial tables.</td></tr>
+          ? `<tr><td><b>Committed Volume</b></td><td>The maximum annual usage of a service included in the license, shown as "Up to N per year" in the scope and commercial tables.</td></tr>
       <tr><td><b>Usage Buffer</b></td><td>A further ${num(lic.bufferPct)}% of each committed volume, provided at no charge before excess usage applies.</td></tr>
       <tr><td><b>Excess Usage</b></td><td>Usage beyond the committed volume plus buffer, invoiced quarterly in arrears at the quoted unit prices.</td></tr>
-      <tr><td><b>Annual Recurring</b></td><td>The committed annual licence plus support &amp; SLA (and any sovereign annual charge) - the recurring yearly fee, exclusive of one-time implementation.</td></tr>
+      <tr><td><b>Annual Recurring</b></td><td>The committed annual license plus support &amp; SLA (and any sovereign annual charge) - the recurring yearly fee, exclusive of one-time implementation.</td></tr>
       <tr><td><b>Sovereign Deployment</b></td><td>An optional dedicated in-country platform instance for data residency, adding a one-time setup fee and an annual charge.</td></tr>`
           : ""
       }
@@ -1079,7 +1079,7 @@ ${wordSafe ? "" : `<link rel="preconnect" href="https://fonts.googleapis.com" />
       <li><b>3.</b> VIFM issues the statement of work referencing <b>${ref}</b> for signature.</li>
       <li><b>4.</b> Kickoff is scheduled within five business days of the signed statement of work.</li>
     </ul>
-    <p>Signature below confirms acceptance of this proposal (reference <b>${ref}</b>) and authorises VIFM to
+    <p>Signature below confirms acceptance of this proposal (reference <b>${ref}</b>) and authorizes VIFM to
     prepare the statement of work. The engagement commences on signature of the statement of work.</p>`)}
     <div class="sig-grid">
       <div class="sig">

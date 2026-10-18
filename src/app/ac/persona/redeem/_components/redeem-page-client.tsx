@@ -30,7 +30,7 @@ export function PersonaRedeemPageClient({ initialCode }: { initialCode: string }
             <p className="mt-3 text-base leading-relaxed text-white/75">
               {ar
                 ? "أدخل رمز القسيمة الذي زوّدتك به مؤسستك، ثم أكمل تقييمًا سلوكيًا ذاتيًا قصيرًا. تعرض الشاشة التالية نطاق تقييمك بالضبط - قد يكون الإطار الكامل أو مجموعة مركّزة اختارتها مؤسستك. لا حاجة لحساب."
-                : "Enter the voucher code your organisation gave you, then complete a short behavioural self-assessment. The next screen shows exactly what your assessment covers - it may be the full framework or a focused set your organisation chose. No account needed."}
+                : "Enter the voucher code your organization gave you, then complete a short behavioral self-assessment. The next screen shows exactly what your assessment covers - it may be the full framework or a focused set your organization chose. No account needed."}
             </p>
           </div>
         </div>

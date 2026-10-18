@@ -201,7 +201,7 @@ export async function computeAraDistortion(assessmentId: string): Promise<Distor
         `${Math.round(extremityPct * 100)}% of answers at the extreme (${
           mean > 4 ? "leaning positive - possible faking-good" :
           mean < 2 ? "leaning negative - possible faking-bad" :
-          "highly polarised pattern"
+          "highly polarized pattern"
         })`
       );
     }

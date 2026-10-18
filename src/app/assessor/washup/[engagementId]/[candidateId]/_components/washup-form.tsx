@@ -95,7 +95,7 @@ export function WashupForm({
   // the centre was designed, so assessors are not left to judge it per candidate.
   const otherMethods =
     rule.other_methods_rule === "context_only"
-      ? "Results from tests, questionnaires, interviews and 360s are context only on this centre. A competency rating comes from exercise evidence."
+      ? "Results from tests, questionnaires, interviews and 360s are context only on this center. A competency rating comes from exercise evidence."
       : rule.other_methods_rule === "documented_conversion"
         ? `Results from other methods convert onto this scale by the agreed rule: ${rule.other_methods_note ?? "see the engagement record"}`
         : null;
@@ -737,13 +737,13 @@ export function WashupForm({
               {chairCandidates.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}
-                  {c.isNamedChair ? " (named chair for this centre)" : ""}
+                  {c.isNamedChair ? " (named chair for this center)" : ""}
                 </option>
               ))}
             </select>
             <p className="text-xs text-muted-foreground">
               The chair is answerable for the discussion following the agreed design, for every assessor being
-              heard, and for the outcome resting on evidence from this centre.
+              heard, and for the outcome resting on evidence from this center.
             </p>
 
             {contributingAssessors.length > 0 && (
@@ -782,7 +782,7 @@ export function WashupForm({
                     onChange={(e) => setExternalUsed(e.target.checked)}
                   />
                   <span>
-                    Evidence from outside the centre was presented
+                    Evidence from outside the center was presented
                     {engagement.external_evidence_framework ? (
                       <span className="block text-xs text-muted-foreground">
                         Agreed framework: {engagement.external_evidence_framework}
@@ -796,15 +796,15 @@ export function WashupForm({
                     rows={2}
                     value={externalNote}
                     onChange={(e) => setExternalNote(e.target.value)}
-                    placeholder="What was presented, and why it is relevant to the criteria. The centre manager agrees this before it is presented."
+                    placeholder="What was presented, and why it is relevant to the criteria. The center manager agrees this before it is presented."
                   />
                 )}
               </div>
             ) : (
               <p className="pt-2 text-xs text-muted-foreground">
                 {engagement?.external_evidence_rule === "not_permitted"
-                  ? "Evidence from outside the centre does not count towards a rating here. Ratings come from what was observed."
-                  : "This centre has not recorded whether evidence from outside it may be used, so it may not be used."}
+                  ? "Evidence from outside the center does not count towards a rating here. Ratings come from what was observed."
+                  : "This center has not recorded whether evidence from outside it may be used, so it may not be used."}
               </p>
             )}
           </div>
@@ -865,7 +865,7 @@ function ComputedOverallRating({
           </div>
         </div>
         <p className="mt-1 text-xs text-muted-foreground">
-          This centre is for selection, so the overall rating is the weighted average of the agreed competency
+          This center is for selection, so the overall rating is the weighted average of the agreed competency
           ratings. It is not entered by hand.
         </p>
 
@@ -912,7 +912,7 @@ function ComputedOverallRating({
           <span>
             The panel disagrees with this rating
             <span className="block text-xs text-muted-foreground">
-              Recorded with the result. The calculated rating remains the centre outcome.
+              Recorded with the result. The calculated rating remains the center outcome.
             </span>
           </span>
         </label>

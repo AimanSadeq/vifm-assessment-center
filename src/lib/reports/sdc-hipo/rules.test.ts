@@ -133,12 +133,12 @@ test("IDP items: gaps target the required level, the strength one level up, with
 test("IDP content: every Learning line follows the approved shape", () => {
   // Ali, 17 Oct 2026: a final automated check on every Learning line. Learn (the
   // competency's module first), apply, and something measurable or evidenced;
-  // British spelling; readable length. His own 16 Oct lines set the shape, so a
+  // American spelling (Caliber standard, Aiman 18 Oct 2026); readable length. His own 16 Oct lines set the shape, so a
   // single sentence with a measure in it (RO Basic) is accepted.
   const actions = (idpContent as unknown as { actions: Record<string, Record<string, { learning: string }>> }).actions;
   const EVIDENCE =
     /\b(record|recording|document|documenting|gather|gathering|note|show|demonstrate|reflect|present|review|complete|share|track|measurable|measure|test|evaluate|compare)\b/i;
-  const US_SPELLING = /\b(practiced|anonymized|recognizing|organizational|behaviors?|judgment|center|program)\b/;
+  const UK_SPELLING = /\b(practised|anonymised|recognising|organisational|behaviours?|judgement|centre|programme|prioritis\w+|analys(e|ed|ing)|colour|labelled|whilst)\b/i; // keep-british
   for (const code of SDC_CODES) {
     const want = MODULE[code].match(/^M(\d)/)![1];
     for (const [level, a] of Object.entries(actions[code])) {
@@ -148,13 +148,13 @@ test("IDP content: every Learning line follows the approved shape", () => {
       assert.match(line, EVIDENCE, `${id}: needs an evidence or measure word (record, document, gather feedback, track...)`);
       const words = line.split(/\s+/).length;
       assert.ok(words >= 15 && words <= 45, `${id}: ${words} words, expected 15 to 45`);
-      assert.doesNotMatch(line, US_SPELLING, `${id}: British spelling`);
+      assert.doesNotMatch(line, UK_SPELLING, `${id}: American spelling`);
       assert.ok(line.endsWith("."), `${id}: ends with a full stop`);
     }
   }
 });
 
-test("IDP content: every Learning action starts with the competency's programme module", () => {
+test("IDP content: every Learning action starts with the competency's program module", () => {
   // Ali, 14 Oct 2026: the card header (MODULE) and the Learning line must name the same module.
   const actions = (idpContent as unknown as { actions: Record<string, Record<string, { learning: string }>> }).actions;
   for (const code of SDC_CODES) {
@@ -277,7 +277,7 @@ test("reports: a Grade 5 summary shows leadership as development only", () => {
   const html = renderSdcSummaryHtml(built.data);
   assert.equal(html.match(/Development only/g)?.length, 5);
   assert.match(html, /Leadership competencies are not required below Grade 7/);
-  assert.ok(!html.includes("Prepared for"), "no organisation line without an organisation");
+  assert.ok(!html.includes("Prepared for"), "no organization line without an organization");
 });
 
 test("Ali's review, 14 Oct: top three priorities, direction not a promise, baseline, target and owner, a rushed sitting flagged", () => {
@@ -295,13 +295,13 @@ test("Ali's review, 14 Oct: top three priorities, direction not a promise, basel
   assert.equal(summary.match(/<li><svg[^>]*>.*?<\/svg><span><b>[^<]+<\/b>: [A-Za-z ]+, required/g)?.length, 3, "three priorities (no strengths at this level)");
 
   const idp = renderSdcIdpHtml(built.data);
-  assert.match(idp, /Development direction \(Proficient behaviours\)/);
-  assert.ok(!/Goal behaviours \(/.test(idp), "no 'goal behaviours' label");
+  assert.match(idp, /Development direction \(Proficient behaviors\)/);
+  assert.ok(!/Goal behaviors \(/.test(idp), "no 'goal behaviors' label");
   assert.match(idp, /Below Basic now, developing towards Basic, the level required for Grade 5|Basic now, developing towards Proficient, the level required for Grade 5/);
   assert.match(idp, /Baseline<\/div>(Below Basic|Basic) on the Caliber scenarios, 1[0-8] October 2026/);
   assert.match(idp, /90-day target<\/div>By day 90/);
   assert.match(idp, /Evidence owner<\/div>Line manager confirms; VIFM coach records/);
-  assert.match(idp, /a change of level is confirmed only by the post-programme reassessment/);
+  assert.match(idp, /a change of level is confirmed only by the post-program reassessment/);
   assert.match(idp, /Check before use/);
 
   // A normal sitting carries no note; the group report marks only the rushed one.

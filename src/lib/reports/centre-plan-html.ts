@@ -96,7 +96,7 @@ export function buildCentrePlanHtml(data: CentrePlanData): string {
       </tr>`
         )
         .join("")
-    : `<tr><td colspan="2" class="gap">No centre roles assigned yet (4.42, 5.16).</td></tr>`;
+    : `<tr><td colspan="2" class="gap">No center roles assigned yet (4.42, 5.16).</td></tr>`;
 
   const approved = e.plan_approved_at
     ? `<p><strong>Agreed with the client.</strong> ${esc(e.plan_approved_client_name ?? "Client representative")}, ${esc(fmtDate(e.plan_approved_at))}.</p>`
@@ -104,7 +104,7 @@ export function buildCentrePlanHtml(data: CentrePlanData): string {
 
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
-<title>Centre plan - ${esc(e.name)}</title>
+<title>Center plan - ${esc(e.name)}</title>
 <style>
   @page { size: A4; margin: 18mm 16mm; }
   body { font-family: "Open Sans", Arial, sans-serif; color: #111232; font-size: 10.5pt; line-height: 1.5; }
@@ -123,12 +123,12 @@ export function buildCentrePlanHtml(data: CentrePlanData): string {
   footer { margin-top: 26px; border-top: 1px solid #e6e9f2; padding-top: 6px; color: #8a91a8; font-size: 8.5pt; }
 </style></head>
 <body>
-  <h1>Centre plan</h1>
+  <h1>Center plan</h1>
   <p class="sub">${esc(e.name)}${data.organisationName ? ` &middot; ${esc(data.organisationName)}` : ""}</p>
-  <p class="sub">${esc(acPurposeLabel(e.purpose as string | null))} centre &middot; ${esc(e.target_role ?? "role not stated")} &middot; ${esc(fmtDate(e.start_date))} to ${esc(fmtDate(e.end_date))}</p>
+  <p class="sub">${esc(acPurposeLabel(e.purpose as string | null))} center &middot; ${esc(e.target_role ?? "role not stated")} &middot; ${esc(fmtDate(e.start_date))} to ${esc(fmtDate(e.end_date))}</p>
   ${approved}
 
-  <h2>1. Why this centre, in this shape <span class="clause">4.1, 3.26</span></h2>
+  <h2>1. Why this center, in this shape <span class="clause">4.1, 3.26</span></h2>
   ${para(e.design_rationale, "4.1")}
   <h3 style="font-size:10pt;margin:10px 0 2px;">Alternatives considered</h3>
   ${para(e.alternatives_considered, "4.1")}
@@ -161,15 +161,15 @@ export function buildCentrePlanHtml(data: CentrePlanData): string {
       ? esc(e.other_methods_note ?? "Converted by a stated rule.")
       : e.other_methods_rule === "context_only"
         ? "Tests, questionnaires, interviews and 360s inform the discussion but never move a rating."
-        : '<span class="gap">Not decided for this centre (4.32).</span>'
+        : '<span class="gap">Not decided for this center (4.32).</span>'
   }</p>
-  <h3 style="font-size:10pt;margin:10px 0 2px;">Evidence from outside the centre <span class="clause">7.14 to 7.16</span></h3>
+  <h3 style="font-size:10pt;margin:10px 0 2px;">Evidence from outside the center <span class="clause">7.14 to 7.16</span></h3>
   <p>${
     e.external_evidence_rule === "permitted"
       ? esc(e.external_evidence_framework ?? "Permitted under an agreed framework.")
       : e.external_evidence_rule === "not_permitted"
-        ? "Not permitted. Ratings rest on evidence gathered at this centre."
-        : '<span class="gap">Not decided for this centre (7.14).</span>'
+        ? "Not permitted. Ratings rest on evidence gathered at this center."
+        : '<span class="gap">Not decided for this center (7.14).</span>'
   }</p>
 
   <h2>5. How the rating is reached <span class="clause">7.3, 7.4</span></h2>
@@ -211,7 +211,7 @@ export function buildCentrePlanHtml(data: CentrePlanData): string {
 
   <footer>
     Generated ${esc(data.generatedAt)} &middot; VIFM Caliber &middot; This plan is the record of what was agreed for this
-    centre. Where a section says nothing is recorded, that gap is real and is shown rather than hidden.
+    center. Where a section says nothing is recorded, that gap is real and is shown rather than hidden.
   </footer>
 </body></html>`;
 }

@@ -52,7 +52,7 @@ const SYSTEM_EN =
   "- For EACH task, write 2 to 3 sentences. FIRST explain what the missed checkpoints / the " +
   "underlying competency mean (use the task's description, its framework reference, and the " +
   "SPECIFIC missed checkpoint labels supplied). THEN give 1 to 2 concrete development tips - what " +
-  "to study or practise to close the gap.\n" +
+  "to study or practice to close the gap.\n" +
   "- Ground every sentence strictly in the supplied data (description, framework reference, and the " +
   "exact missed checkpoint labels). Do NOT fabricate facts, scores, or checkpoints beyond what is " +
   "supplied.\n" +
@@ -93,7 +93,7 @@ export function fallbackTechBlockNote(ctx: TechBlockNoteContext): TechBlockNote 
   const reviewAr = ctx.frameworkRef?.trim() || topicAr;
   const en =
     `This task assessed ${topicEn}. The candidate missed: ${missedEn}. ` +
-    `To develop, review ${reviewEn} and practise ${ctx.nameEn} with worked examples and supervised feedback.`;
+    `To develop, review ${reviewEn} and practice ${ctx.nameEn} with worked examples and supervised feedback.`;
   const ar =
     `قيّمت هذه المهمة ${topicAr}. لم يجتز المرشح: ${missedAr}. ` +
     `للتطوير، راجع ${reviewAr} ومارس ${ctx.nameAr || ctx.nameEn} عبر أمثلة محلولة وتغذية راجعة موجَّهة.`;

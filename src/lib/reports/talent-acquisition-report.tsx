@@ -42,17 +42,17 @@ export function TalentAcquisitionReport({ data }: AudienceReportProps) {
   const rc = fitColor(data.recommendation);
 
   return (
-    <Document title={`Talent Acquisition Report - ${data.candidateName}`} author="VIFM Behavioural Assessment">
+    <Document title={`Talent Acquisition Report - ${data.candidateName}`} author="VIFM Behavioral Assessment">
       {/* Cover */}
       <Page size="A4" style={sh.cover}>
         <CoverHero
-          eyebrow="Behavioural Psychometric · For Talent Acquisition"
+          eyebrow="Behavioral Psychometric · For Talent Acquisition"
           title="Talent Acquisition Report"
           subtitle={data.targetRole ? `Selection for ${data.targetRole}` : "Structured selection report"}
           candidateName={data.candidateName}
           audience={AUDIENCE}
           rows={[
-            ["Organisation", data.organizationName],
+            ["Organization", data.organizationName],
             ["Target role", data.targetRole ?? "-"],
             ["Requisition", data.engagementName],
             ["Date completed", data.assessmentDates],
@@ -115,7 +115,7 @@ export function TalentAcquisitionReport({ data }: AudienceReportProps) {
         <SectionHeader eyebrow="What was measured" title="Competencies, results & what each assesses" />
         <Text style={[sh.body, { marginBottom: 8 }]}>
           Each competency below maps to the role&apos;s success profile and was scored 1-5 by the VIFM online
-          behavioural psychometric assessment. The bar for this role is Competent (3/5).
+          behavioral psychometric assessment. The bar for this role is Competent (3/5).
         </Text>
         {comps.map((c) => {
           const score = c.consensusScore ?? 0;
@@ -167,7 +167,7 @@ export function TalentAcquisitionReport({ data }: AudienceReportProps) {
             "Same assessment, same scoring: every applicant completes the identical online psychometric, removing interviewer bias.",
             "Job-relevant: every competency maps to the role's success profile, and the bar is set before the assessment.",
             "Consistent: the same competencies and 1-5 scale apply to every applicant for the role.",
-            "Objective: responses are scored against a fixed competency framework, not a single rater's judgement.",
+            "Objective: responses are scored against a fixed competency framework, not a single rater's judgment.",
             "A fit signal, never an automatic decision: a person makes the hiring call.",
           ].map((x, i) => (
             <View key={i} style={sh.liRow}>
@@ -179,8 +179,8 @@ export function TalentAcquisitionReport({ data }: AudienceReportProps) {
 
         <View style={sh.note}>
           <Text style={sh.noteText}>
-            Measured across {comps.length} behavioural competencies mapped to the role profile, via the VIFM online
-            behavioural psychometric assessment. Fit score is the overall rating out of 5; the role bar is Competent
+            Measured across {comps.length} behavioral competencies mapped to the role profile, via the VIFM online
+            behavioral psychometric assessment. Fit score is the overall rating out of 5; the role bar is Competent
             (3/5); coverage is the share of competencies at or above the bar. Results are most relevant for the next
             ~24 months. For internal talent-acquisition use.
           </Text>

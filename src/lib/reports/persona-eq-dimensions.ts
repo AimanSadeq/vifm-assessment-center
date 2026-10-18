@@ -76,7 +76,7 @@ export const EQ_META: Record<
     short: "Empathy",
     axis: "Social · Recognition",
     hex: "#d97706",
-    blurb: "Reading other people and the organisation - empathy, cultural sensitivity, and service orientation.",
+    blurb: "Reading other people and the organization - empathy, cultural sensitivity, and service orientation.",
   },
   relationship_management: {
     label: "Relationship Management",

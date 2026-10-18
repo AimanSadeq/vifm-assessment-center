@@ -107,7 +107,7 @@ export function buildPersonalAnalysis(args: {
         }
       : stage.id === "practising"
       ? {
-          en: `Overall, this candidate is actively building their AI practice (${ov} / 5). They apply AI to real work with growing judgement - expect a short, manageable ramp-up rather than a standing start.`,
+          en: `Overall, this candidate is actively building their AI practice (${ov} / 5). They apply AI to real work with growing judgment - expect a short, manageable ramp-up rather than a standing start.`,
           ar: `إجمالاً، يبني هذا المرشح ممارسته للذكاء الاصطناعي بنشاط (${ov} / 5). ويطبّقه على عمل فعلي بحُكم متنامٍ - فتوقّع فترة تأهيل قصيرة ومنطقية لا بدايةً من الصفر.`,
         }
       : {
@@ -351,7 +351,7 @@ const FACTOR_DEVELOPMENT: Record<AraIndividualFactorId, { whyNow: AnalysisBlock;
       ar: "الانفتاح على إعادة التعلّم - مع وعي واضح بأين تخفق النماذج وما الآمن مشاركته - هو الأساس الذي يقوم عليه كل ما عداه. وبدونه لا تثبت المكاسب ويتسلّل الخطر.",
     },
     action: {
-      en: "This month (70%): deliberately relearn one familiar workflow with an AI tool, and before each use ask 'where could this be wrong, and is this data safe to share?'. Add a short responsible-AI / data-handling module (10%) and talk one tricky judgement call through with your manager (20%).",
+      en: "This month (70%): deliberately relearn one familiar workflow with an AI tool, and before each use ask 'where could this be wrong, and is this data safe to share?'. Add a short responsible-AI / data-handling module (10%) and talk one tricky judgment call through with your manager (20%).",
       ar: "هذا الشهر (70%): أعد تعلّم سير عمل مألوف عمداً باستخدام أداة ذكاء اصطناعي، واسأل قبل كل استخدام: 'أين قد يكون هذا خاطئاً، وهل هذه البيانات آمنة للمشاركة؟'. أضِف وحدة قصيرة في الذكاء الاصطناعي المسؤول والتعامل مع البيانات (10%) وناقش قراراً صعباً واحداً مع مديرك (20%).",
     },
   },
@@ -454,7 +454,7 @@ export function buildDevelopmentAnalysis(args: {
           }
         : d <= -0.75
         ? {
-            en: "Your scenario and knowledge answers came out stronger than your own self-rating - you may be underselling yourself. Back your judgement a little more, especially when helping others.",
+            en: "Your scenario and knowledge answers came out stronger than your own self-rating - you may be underselling yourself. Back your judgment a little more, especially when helping others.",
             ar: "جاءت إجاباتك في السيناريو والمعرفة أقوى من تقييمك الذاتي - وقد تبخس نفسك حقها. ثِق بحُكمك أكثر قليلاً، خصوصاً حين تساعد الآخرين.",
           }
         : {

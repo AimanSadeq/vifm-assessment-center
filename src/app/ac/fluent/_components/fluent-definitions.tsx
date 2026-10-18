@@ -39,7 +39,7 @@ const SKILLS: Def[] = [
 
 const WRITING_CRIT: Def[] = [
   { term: { en: "Task achievement", ar: "تحقيق المهمة" }, desc: { en: "How fully and relevantly the response answers the prompt.", ar: "مدى استيفاء الإجابة للمطلوب وملاءمتها للمهمة." } },
-  { term: { en: "Coherence & cohesion", ar: "الترابط والتماسك" }, desc: { en: "Logical organisation and the linking of ideas.", ar: "التنظيم المنطقي للأفكار والربط بينها." } },
+  { term: { en: "Coherence & cohesion", ar: "الترابط والتماسك" }, desc: { en: "Logical organization and the linking of ideas.", ar: "التنظيم المنطقي للأفكار والربط بينها." } },
   { term: { en: "Lexical resource", ar: "الثروة اللغوية" }, desc: { en: "Range and precision of vocabulary.", ar: "اتساع المفردات ودقتها." } },
   { term: { en: "Grammar range & accuracy", ar: "القواعد ودقتها" }, desc: { en: "Variety and correctness of grammatical structures.", ar: "تنوّع التراكيب النحوية وصحتها." } },
   { term: { en: "Register (business-like)", ar: "الأسلوب المهني" }, desc: { en: "A professional tone appropriate to a workplace email/message.", ar: "أسلوب مهني يناسب رسائل العمل." } },

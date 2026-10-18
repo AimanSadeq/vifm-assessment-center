@@ -199,7 +199,7 @@ export function ConsentForm({ candidateId, pack }: Props) {
                   onCheckedChange={(checked) => setResearchConsent(checked === true)}
                 />
                 <Label htmlFor="research-consent" className="text-sm leading-relaxed text-muted-foreground">
-                  My anonymised results may be used to check that the assessment works as it should. You can take
+                  My anonymized results may be used to check that the assessment works as it should. You can take
                   part without agreeing to this.
                 </Label>
               </div>

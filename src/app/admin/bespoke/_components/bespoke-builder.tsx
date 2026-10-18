@@ -440,7 +440,7 @@ export function BespokeBuilder({ clients, initialBundles = [], initialMode }: {
             <div className="space-y-1.5">
               <Label htmlFor="b-name-en" className="text-xs">Name (English)</Label>
               <Input id="b-name-en" value={nameEn} onChange={(e) => setNameEn(e.target.value)}
-                placeholder="e.g. Graduate Talent Programme" />
+                placeholder="e.g. Graduate Talent Program" />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="b-name-ar" className="text-xs">Name (Arabic)</Label>
@@ -573,7 +573,7 @@ export function BespokeBuilder({ clients, initialBundles = [], initialMode }: {
                 </div>
               </div>
               <p className="mt-0.5 text-[11px] text-muted-foreground">
-                Scope the behavioural self-assessment to the competencies that matter for this package. Default is the full instrument.
+                Scope the behavioral self-assessment to the competencies that matter for this package. Default is the full instrument.
               </p>
               <div className="mt-2 max-h-64 space-y-2 overflow-y-auto pr-1">
                 {COMPETENCY_CLUSTERS.map((g) => {
@@ -637,7 +637,7 @@ export function BespokeBuilder({ clients, initialBundles = [], initialMode }: {
           ) : (
             <Select value={clientKey} onValueChange={setClientKey}>
               <SelectTrigger className="w-full sm:w-80">
-                <SelectValue placeholder="Select a client organisation" />
+                <SelectValue placeholder="Select a client organization" />
               </SelectTrigger>
               <SelectContent>
                 {clients.map((c) => (
@@ -781,7 +781,7 @@ export function BespokeBuilder({ clients, initialBundles = [], initialMode }: {
           )}
           <p className="mt-4 border-t pt-3 text-[11px] leading-relaxed text-muted-foreground">
             Saved bundles appear on the assigned client&apos;s portal under &quot;Your tailored
-            programmes&quot;, alongside Role Readiness. Archiving removes the tile.
+            programs&quot;, alongside Role Readiness. Archiving removes the tile.
           </p>
         </div>
       </div>

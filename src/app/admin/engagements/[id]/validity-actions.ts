@@ -69,11 +69,11 @@ export async function scheduleFollowupsAction(engagementId: string) {
   const { data: eng } = await sb.from("engagements").select("end_date, start_date").eq("id", engagementId).maybeSingle();
   if (!eng) return { error: "Engagement not found." };
   const endDate = (eng.end_date as string | null) ?? (eng.start_date as string | null);
-  if (!endDate) return { error: "Set the centre's dates first: follow-ups are counted from the last day of the centre." };
+  if (!endDate) return { error: "Set the center's dates first: follow-ups are counted from the last day of the center." };
 
   const { data: oars } = await sb.from("overall_assessment_ratings").select("candidate_id").eq("engagement_id", engagementId);
   const rated = Array.from(new Set(((oars ?? []) as { candidate_id: string }[]).map((o) => o.candidate_id)));
-  if (rated.length === 0) return { error: "Nobody has a finalised overall rating yet, so there is nothing to follow up." };
+  if (rated.length === 0) return { error: "Nobody has a finalized overall rating yet, so there is nothing to follow up." };
 
   const rows = rated.flatMap((candidateId) =>
     followupDueDates(endDate).map((d) => ({ engagement_id: engagementId, candidate_id: candidateId, wave: d.wave, due_on: d.dueOn }))
@@ -101,7 +101,7 @@ export async function recordFollowupAction(values: {
   if ("error" in who) return who;
   const rating = values.performanceRating == null || values.performanceRating === 0 ? null : Math.round(Number(values.performanceRating));
   if (rating !== null && (rating < 1 || rating > 5)) {
-    return { error: "The performance rating is on the same 1 to 5 scale as the centre." };
+    return { error: "The performance rating is on the same 1 to 5 scale as the center." };
   }
   if (values.status === "collected" && values.inRole === true && rating === null) {
     return { error: "Someone who went into the role needs a performance rating, or the follow-up is not evidence of anything." };

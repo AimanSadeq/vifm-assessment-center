@@ -35,7 +35,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Configure exercises",
         blurb:
-          "The exercise library carries timing, briefing and role-player content. Each exercise maps to specific competencies so every behaviour is observed consistently.",
+          "The exercise library carries timing, briefing and role-player content. Each exercise maps to specific competencies so every behavior is observed consistently.",
         href: "/admin/exercises",
       },
       {
@@ -53,7 +53,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Analytics and reliability",
         blurb:
-          "Inter-rater reliability (ICC), bias detection by assessor, competency strengths and gaps, and per-candidate OAR scores validate the rigour of the assessment.",
+          "Inter-rater reliability (ICC), bias detection by assessor, competency strengths and gaps, and per-candidate OAR scores validate the rigor of the assessment.",
         href: "/admin/analytics",
       },
     ],
@@ -105,13 +105,13 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Redeem a voucher",
         blurb:
-          "Candidates enter a code from their organisation, binding the result to the sponsoring client - no account needed.",
+          "Candidates enter a code from their organization, binding the result to the sponsoring client - no account needed.",
         href: "/ac/fluent/redeem",
       },
       {
         title: "Cohort results",
         blurb:
-          "Aggregated placement results across takers, filtered by organisation, with confidence bands and integrity signals per candidate.",
+          "Aggregated placement results across takers, filtered by organization, with confidence bands and integrity signals per candidate.",
         href: "/ac/fluent/cohort",
       },
       {
@@ -129,7 +129,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Partner training courses",
         blurb:
-          "Curate recommended partner English programmes that appear on placement reports based on each candidate's CEFR level.",
+          "Curate recommended partner English programs that appear on placement reports based on each candidate's CEFR level.",
         href: "/admin/fluent/partner-courses",
       },
     ],
@@ -153,9 +153,9 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
         href: "/admin/tech-assessment/items",
       },
       {
-        title: "Certification programmes",
+        title: "Certification programs",
         blurb:
-          "Create standalone certification programmes tied to technical functions, issue participant tokens, and track enrolment toward a credential.",
+          "Create standalone certification programs tied to technical functions, issue participant tokens, and track enrollment toward a credential.",
         href: "/admin/tech-assessment/programs",
       },
       {
@@ -219,7 +219,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Persona self-assessment",
         blurb:
-          "The entry point to the behavioural competency self-assessment, with quick-start options for standalone assessments, vouchers, results and cohort analytics.",
+          "The entry point to the behavioral competency self-assessment, with quick-start options for standalone assessments, vouchers, results and cohort analytics.",
         href: "/ac/persona",
       },
       {
@@ -258,7 +258,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "What ARC measures",
         blurb:
-          "ARC scores organisational AI readiness across eight pillars - Strategy, Data, Technology, Talent, Culture, Governance, Operations, Model Management - with a perception-vs-reality check. Bilingual (EN/AR) throughout.",
+          "ARC scores organizational AI readiness across eight pillars - Strategy, Data, Technology, Talent, Culture, Governance, Operations, Model Management - with a perception-vs-reality check. Bilingual (EN/AR) throughout.",
         href: "/ara",
       },
       {
@@ -270,7 +270,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Set up an assessment",
         blurb:
-          "The consultant configures an engagement in a short wizard: organisation, stage (department / division / enterprise), pillars in scope, pillar weights, and who responds - plus optional individual and agentic-AI layers.",
+          "The consultant configures an engagement in a short wizard: organization, stage (department / division / enterprise), pillars in scope, pillar weights, and who responds - plus optional individual and agentic-AI layers.",
         href: "/ara/consultant/assessments/new",
       },
       {
@@ -308,7 +308,7 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
       {
         title: "Create an engagement",
         blurb:
-          "A 5-step wizard sets organisation, competency framework, rater levels, participants and launch settings. AI turns the client's corporate values into observable behaviours.",
+          "A 5-step wizard sets organization, competency framework, rater levels, participants and launch settings. AI turns the client's corporate values into observable behaviors.",
         href: "/reflect/consultant/engagements/new",
       },
       {
@@ -338,9 +338,9 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
         href: "/admin/readiness",
       },
       {
-        title: "Start a programme",
+        title: "Start a program",
         blurb:
-          "Create a readiness engagement by picking a client, naming the programme and (optionally) a target role - ready to enrol candidates.",
+          "Create a readiness engagement by picking a client, naming the program and (optionally) a target role - ready to enroll candidates.",
         href: "/admin/readiness",
       },
       {
@@ -358,21 +358,21 @@ export const GUIDED_DEMO_TRACKS: GuidedDemoTrack[] = [
     routePrefixes: ["/courses", "/admin/courses"],
     steps: [
       {
-        title: "Browse the catalogue",
+        title: "Browse the catalog",
         blurb:
-          "The public, industry-specific course library, filtered by domain and level - each programme shows duration, languages and certification.",
+          "The public, industry-specific course library, filtered by domain and level - each program shows duration, languages and certification.",
         href: "/courses",
       },
       {
         title: "Request a quote",
         blurb:
-          "An organisation submits a quote request with group size and preferred start date; the lead flows to the VIFM sales queue for follow-up.",
+          "An organization submits a quote request with group size and preferred start date; the lead flows to the VIFM sales queue for follow-up.",
         href: "/courses",
       },
       {
-        title: "Manage the catalogue",
+        title: "Manage the catalog",
         blurb:
-          "VIFM staff review every active course, apply filters, and manage the catalogue - with options to import new content or flag duplicates.",
+          "VIFM staff review every active course, apply filters, and manage the catalog - with options to import new content or flag duplicates.",
         href: "/admin/courses",
       },
       {

@@ -784,7 +784,7 @@ function AcEngagementInline({
           <Input id="ac-role" value={targetRole} onChange={(e) => setTargetRole(e.target.value)} placeholder={t("start.ac.targetRolePh")} />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="ac-purpose">What is this centre for?</Label>
+          <Label htmlFor="ac-purpose">What is this center for?</Label>
           <select
             id="ac-purpose"
             className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm"

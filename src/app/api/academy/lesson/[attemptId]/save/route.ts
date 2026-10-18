@@ -53,7 +53,7 @@ export async function POST(
     }
     if (attempt.status !== "in_progress") {
       return NextResponse.json(
-        { error: "this attempt has already been finalised" },
+        { error: "this attempt has already been finalized" },
         { status: 409 }
       );
     }

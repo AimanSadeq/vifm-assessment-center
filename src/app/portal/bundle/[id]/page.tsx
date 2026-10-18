@@ -116,7 +116,7 @@ export default async function PortalBundlePage({
           <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{bundle.description}</p>
         )}
         <p className="mt-1 text-xs text-muted-foreground">
-          A tailored VIFM package - {services.length} service{services.length === 1 ? "" : "s"} bundled for your organisation.
+          A tailored VIFM package - {services.length} service{services.length === 1 ? "" : "s"} bundled for your organization.
         </p>
       </div>
 

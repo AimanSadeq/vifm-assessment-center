@@ -101,7 +101,7 @@ export function buildCentreManual(input: ManualInput): {
 
   sections.push({
     id: "purpose",
-    heading: "What this centre is for",
+    heading: "What this center is for",
     clause: "3.7 / 4.39",
     audience: ALL_ROLES,
     confidential: false,
@@ -109,8 +109,8 @@ export function buildCentreManual(input: ManualInput): {
       text(e.pack_purpose_statement),
       e.target_role ? `Target role: ${text(e.target_role)}.` : "",
       e.purpose === "selection"
-        ? "This is a selection centre. The overall rating is calculated from the agreed competency ratings using the weights fixed at design time; it is not agreed in the room."
-        : "This is a development centre. The overall rating is agreed by the assessors in discussion, and every participant is owed feedback.",
+        ? "This is a selection center. The overall rating is calculated from the agreed competency ratings using the weights fixed at design time; it is not agreed in the room."
+        : "This is a development center. The overall rating is agreed by the assessors in discussion, and every participant is owed feedback.",
     ]
       .filter(Boolean)
       .join("\n\n"),
@@ -204,7 +204,7 @@ export function buildCentreManual(input: ManualInput): {
     confidential: false,
     body: [
       e.integration_method === "weighted_average"
-        ? "The overall rating is the weighted average of the agreed competency ratings. It is calculated, not entered by hand. The panel may record disagreement; the calculation stands as the centre's outcome."
+        ? "The overall rating is the weighted average of the agreed competency ratings. It is calculated, not entered by hand. The panel may record disagreement; the calculation stands as the center's outcome."
         : "The overall rating is agreed by the assessors in discussion at the wash-up.",
       e.other_methods_rule === "context_only"
         ? "Results from tests, questionnaires, interviews and 360s may inform the discussion but never move a competency rating."
@@ -212,8 +212,8 @@ export function buildCentreManual(input: ManualInput): {
           ? `Results from other methods convert to the rating scale by this rule: ${text(e.other_methods_note)}`
           : "No rule has been recorded for results from methods other than exercises, so they may not move a rating.",
       e.external_evidence_rule === "permitted"
-        ? `Evidence from outside the centre may be used under this framework: ${text(e.external_evidence_framework)}`
-        : "Evidence from outside the centre does not count towards a rating.",
+        ? `Evidence from outside the center may be used under this framework: ${text(e.external_evidence_framework)}`
+        : "Evidence from outside the center does not count towards a rating.",
       "Every assessor's evidence is heard before a rating is set, and the chair of the discussion is recorded with it.",
     ].join("\n\n"),
   });
@@ -240,7 +240,7 @@ export function buildCentreManual(input: ManualInput): {
 
   sections.push({
     id: "staff",
-    heading: "Who is running the centre",
+    heading: "Who is running the center",
     clause: "4.42 / 5.16 / 6.1",
     audience: ALL_ROLES,
     confidential: false,
@@ -255,8 +255,8 @@ export function buildCentreManual(input: ManualInput): {
     confidential: false,
     body: [
       "Anything that could affect how a result should be read - an interruption, illness, a technology failure, a departure from the timetable - is recorded in the delivery log on the engagement, with what was done about it. Record it on the day; memory is not a record.",
-      "A participant disturbed or taken ill is entitled to be re-assessed. Raise it with the centre manager, who arranges it.",
-      "A participant may raise a concern before, during or after the centre, from their own portal or through the named contact. Raising one does not affect their results.",
+      "A participant disturbed or taken ill is entitled to be re-assessed. Raise it with the center manager, who arranges it.",
+      "A participant may raise a concern before, during or after the center, from their own portal or through the named contact. Raising one does not affect their results.",
       text(e.participant_contact_name)
         ? `The named contact for participants is ${text(e.participant_contact_name)}${text(e.participant_contact_email) ? ` (${text(e.participant_contact_email)})` : ""}.`
         : "No named contact has been recorded for participants yet.",
@@ -272,7 +272,7 @@ export function buildCentreManual(input: ManualInput): {
     body: [
       "This manual contains exercise material. Its value depends on participants not having seen it, and these exercises are used again.",
       "Do not copy, forward or store it outside the systems VIFM provides. Do not leave printed copies in the assessment rooms at the end of the day.",
-      "Every copy issued is recorded against the person it went to. Confirm with the centre administrator when you have returned or destroyed yours.",
+      "Every copy issued is recorded against the person it went to. Confirm with the center administrator when you have returned or destroyed yours.",
       `Participant records are held for ${text(e.retention_months) || 24} months from the assessment date and then deleted.`,
     ].join("\n\n"),
   });
@@ -284,7 +284,7 @@ export function buildCentreManual(input: ManualInput): {
       group: "Manuals",
       clause: "5.25.1",
       items: [
-        { label: "Centre manual (full)", detail: "Centre manager", fromDesign: true },
+        { label: "Center manual (full)", detail: "Center manager", fromDesign: true },
         ...Array.from(new Set(input.roles.map((r) => r.roleKey))).map((k) => ({
           label: `Role manual: ${k.replace(/_/g, " ")}`,
           detail: input.roles.filter((r) => r.roleKey === k).map((r) => r.name).join(", "),
@@ -309,7 +309,7 @@ export function buildCentreManual(input: ManualInput): {
       clause: "5.25.3",
       items: [
         { label: "Observation and rating forms", detail: "In the platform; paper backup if the venue has no reliable network", fromDesign: true },
-        { label: "Competency definitions and behavioural indicators", fromDesign: true },
+        { label: "Competency definitions and behavioral indicators", fromDesign: true },
       ],
     },
     {

@@ -34,7 +34,7 @@ export async function inviteSeatDelegates(opts: {
   if (service === "arc") return inviteArc(args);
   if (service === "reflect") return inviteReflect(args);
   if (service === "prehire") return invitePrehire(args);
-  return { error: "Not a VIFM-managed programme." };
+  return { error: "Not a VIFM-managed program." };
 }
 
 export async function getSeatActivity(

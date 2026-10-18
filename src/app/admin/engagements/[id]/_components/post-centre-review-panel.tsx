@@ -79,7 +79,7 @@ export function PostCentreReviewPanel({
     <Card className="mt-6">
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <CardTitle className="text-base">
-          After the centre
+          After the center
           {completedAt ? (
             <span className="ms-2 rounded bg-emerald-100 px-1.5 py-0.5 text-xs font-normal text-emerald-900">
               Reviewed {formatLocalDate(completedAt)}
@@ -102,7 +102,7 @@ export function PostCentreReviewPanel({
 
       <CardContent className="space-y-4 text-sm">
         <p className="text-muted-foreground">
-          Learning points from running this centre, and what changed as a result. The standard requires the
+          Learning points from running this center, and what changed as a result. The standard requires the
           recommendations to inform the design of the next one (9.13), which they cannot do if nobody wrote them
           down.
         </p>
@@ -110,7 +110,7 @@ export function PostCentreReviewPanel({
         {fbOpen && (
           <div className="space-y-2 rounded border p-3">
             <p className="text-xs text-muted-foreground">
-              Your view of the centre itself - not of any participant. Everyone who worked it is asked (9.2).
+              Your view of the center itself - not of any participant. Everyone who worked it is asked (9.2).
             </p>
             <Textarea
               rows={2}
@@ -190,7 +190,7 @@ export function PostCentreReviewPanel({
                 rows={2}
                 value={form.didNot}
                 onChange={(e) => set("didNot", e.target.value)}
-                placeholder="A centre where nothing went wrong is a centre nobody looked at closely."
+                placeholder="A center where nothing went wrong is a center nobody looked at closely."
               />
             </Field>
             <Field label="How participants found it" clause="9.1 / 9.3">
@@ -274,7 +274,7 @@ export function PostCentreReviewPanel({
         <div className="border-t pt-3">
           <div className="font-medium">Part of a series</div>
           <p className="text-xs text-muted-foreground">
-            Where several centres are meant to run to the same design, naming the series lets drift between them be
+            Where several centers are meant to run to the same design, naming the series lets drift between them be
             found (5.19). Results are only comparable within a series, so this is declared rather than guessed.
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -330,8 +330,8 @@ export function PostCentreReviewPanel({
               ))}
               {consistency.withoutReview.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  No post-centre review yet for: {consistency.withoutReview.map((c) => c.name).join(", ")}. A change
-                  in a centre with no review has no recorded reason behind it.
+                  No post-center review yet for: {consistency.withoutReview.map((c) => c.name).join(", ")}. A change
+                  in a center with no review has no recorded reason behind it.
                 </p>
               )}
             </div>

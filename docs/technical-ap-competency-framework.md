@@ -6,7 +6,7 @@
 
 ## 1. Purpose & use cases
 A professional, online-assessable **technical** (functional) competency framework -
-not behaviour. Two uses from one instrument: **hire / screen** candidates, and
+not behavior. Two uses from one instrument: **hire / screen** candidates, and
 **evaluate / develop** an existing team.
 
 ## 2. The model (3 tiers)
@@ -28,7 +28,7 @@ Function (Accounts Payable)   a JOB / role - NOT banded
 ### 1. Sub-Ledger Accounting Mechanics
 | Competency | Skills (measured by questions) | Reference |
 |---|---|---|
-| Chart of Accounts (CoA) Mapping | Opex vs Capex Classification · Cost-Centre / Project Coding | AICPA / CIMA (CGMA) |
+| Chart of Accounts (CoA) Mapping | Opex vs Capex Classification · Cost-Center / Project Coding | AICPA / CIMA (CGMA) |
 | Accrual & Cut-off Precision | Month-End Unvouched Liabilities · Open-PO Commitment Tracking | IFRS / US GAAP |
 | Double-Entry Adjustment Logic | Credit Notes & Short Payments · Correcting Journal Entries | AICPA / CIMA |
 | Amortization & Prepaid Recognition | Multi-Period Service Identification · Deferred Expense Scheduling | IFRS / US GAAP |
@@ -74,7 +74,7 @@ skills. Band per competency (60/85). Report shows each **category** with its
 competencies, each competency's **band + score + reference**, and development
 pointers. Category gets a roll-up (e.g. "3 of 4 competencies Advanced"), no band.
 
-## 5. Customisation from a job description
+## 5. Customization from a job description
 Default = general AP (above). A client JD lets the extractor add/rename competencies
 and skills to the role - a custom technical assessment on the same model.
 

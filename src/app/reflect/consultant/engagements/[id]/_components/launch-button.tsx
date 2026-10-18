@@ -23,7 +23,7 @@ export function LaunchButton({ engagementId, frameworkApproved = true }: { engag
     return (
       <span
         className="inline-flex items-center gap-1.5 rounded-md border border-dashed px-3 py-1.5 text-xs font-medium text-muted-foreground"
-        title="Approve the framework first - a consultant must review the AI-decomposed behaviours before raters are invited"
+        title="Approve the framework first - a consultant must review the AI-decomposed behaviors before raters are invited"
       >
         <Rocket className="h-3.5 w-3.5" /> Approve framework to launch
       </span>

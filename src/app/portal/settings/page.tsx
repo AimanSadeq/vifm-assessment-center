@@ -23,7 +23,7 @@ export default async function PortalSettingsPage({
   if (!orgId) {
     return (
       <p className="rounded-lg border bg-card p-6 text-sm text-muted-foreground">
-        No organisation context. Please contact your VIFM consultant.
+        No organization context. Please contact your VIFM consultant.
       </p>
     );
   }
@@ -34,9 +34,9 @@ export default async function PortalSettingsPage({
     <div className="space-y-6">
       <BackLink href={`/portal${orgSuffix}`} label="Back to portal" />
       <div>
-        <h1 className="text-2xl font-semibold text-primary">Organisation settings</h1>
+        <h1 className="text-2xl font-semibold text-primary">Organization settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Assessment-integrity options for your organisation&apos;s sittings.
+          Assessment-integrity options for your organization&apos;s sittings.
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export default async function PortalSettingsPage({
           Independent of the toggle above, every assessment runs with the platform&apos;s
           standard integrity layer: answer keys held server-side and never sent to the
           browser, single-use test sessions, time limits with auto-submit, per-sitting option
-          randomisation, and an advisory Integrity Signal (tab-switching, paste activity,
+          randomization, and an advisory Integrity Signal (tab-switching, paste activity,
           mid-test IP changes, and an AI-likeness estimate on writing). These signals inform a
           human decision - no result is ever auto-rejected.
         </p>

@@ -124,7 +124,7 @@ export async function POST(req: Request) {
     } catch (e) {
       if (e instanceof BankUnavailableError) {
         return NextResponse.json(
-          { error: "This assessment is being finalised in this language and cannot be started right now. Please try again shortly." },
+          { error: "This assessment is being finalized in this language and cannot be started right now. Please try again shortly." },
           { status: 503 }
         );
       }

@@ -226,7 +226,7 @@ export default async function EvidencePage() {
             <span>
               <span className="font-semibold text-foreground">{grounded} of {EVIDENCE_INSTRUMENTS.length} instruments are literature-grounded.</span>{" "}
               Where an instrument is still <span className="font-medium">indicative</span> (AI-generated items, no local norms or IRT
-              calibration yet), it is labelled as such and issues no credential - overclaiming validity would undermine the very
+              calibration yet), it is labeled as such and issues no credential - overclaiming validity would undermine the very
               defensibility this page exists to demonstrate. Reliability and norm studies are documented as the path to full
               validation, not as already met.
             </span>

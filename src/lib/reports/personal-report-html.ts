@@ -270,7 +270,7 @@ export function renderPersonalReportHtml(d: PersonalReportData): string {
       const word = Math.abs(diff) < 0.05 ? T(L, "level with", "على مستوى") : diff > 0 ? T(L, "above", "أعلى من") : T(L, "below", "أدنى من");
       return `${word} ${lbl} (${f2(v)})`;
     };
-    const bits = [rel(d.unit?.overall, T(L, "the unit average", "متوسط الوحدة")), rel(d.org?.overall, T(L, "the organisation average", "متوسط المنظمة"))].filter(Boolean);
+    const bits = [rel(d.unit?.overall, T(L, "the unit average", "متوسط الوحدة")), rel(d.org?.overall, T(L, "the organization average", "متوسط المنظمة"))].filter(Boolean);
     // Which factor explains the gap: the largest deficit vs the unit.
     let driver = "";
     if (d.unit) {

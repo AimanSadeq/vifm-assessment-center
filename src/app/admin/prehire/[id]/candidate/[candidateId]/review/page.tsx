@@ -31,7 +31,7 @@ type StageRow = {
 const STAGE_LABEL: Record<string, string> = {
   quiz: "Competency Quiz",
   fluent: "English (Fluent®)",
-  cbi: "Behavioural Interview (AI)",
+  cbi: "Behavioral Interview (AI)",
   assessment_center: "Assessment Center",
 };
 
@@ -184,7 +184,7 @@ export default async function PrehireReviewPage({
             <ShieldAlert className="h-4 w-4" /> Integrity signals (advisory)
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Prompts for a human glance - never an automatic action. Legitimate behaviour (a phone
+            Prompts for a human glance - never an automatic action. Legitimate behavior (a phone
             call, a slow connection, no microphone) produces the same traces.
           </p>
           <div className="mt-2 space-y-2">

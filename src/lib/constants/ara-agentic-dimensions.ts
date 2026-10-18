@@ -91,7 +91,7 @@ export const ARA_AGENTIC_DIMENSIONS: AraAgenticDimension[] = [
     name_en: "Auditability & Traceability",
     name_ar: "قابلية التدقيق والتتبّع",
     description_en:
-      "Reconstructable logs of every consequential agent action, an audit trail fit for a regulator, and monitoring that flags out-of-scope behaviour.",
+      "Reconstructable logs of every consequential agent action, an audit trail fit for a regulator, and monitoring that flags out-of-scope behavior.",
     description_ar:
       "سجلات قابلة لإعادة التتبّع لكل إجراء مؤثّر للوكيل، ومسار تدقيق يصلح لجهة تنظيمية، ومراقبة تنبّه إلى السلوك خارج النطاق.",
     anchor_pillar: "governance",

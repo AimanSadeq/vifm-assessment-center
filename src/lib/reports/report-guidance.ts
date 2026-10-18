@@ -32,14 +32,14 @@ export function guidanceSections(p: AgreementPrefill): GuidanceSection[] {
   // 1. Purpose, and the uses it rules out (8.4.1).
   const purposeBlocks: GuidanceBlock[] = [];
   if (p.purpose === "selection") {
-    purposeBlocks.push({ kind: "p", text: `This was a selection centre. Its results are designed to inform a choice between candidates for ${role}.` });
+    purposeBlocks.push({ kind: "p", text: `This was a selection center. Its results are designed to inform a choice between candidates for ${role}.` });
   } else if (p.purpose === "development") {
-    purposeBlocks.push({ kind: "p", text: "This was a development centre. Its results are designed to show each participant's strengths and development needs, and to shape their development plan." });
-    purposeBlocks.push({ kind: "warn", text: "Do not use these results for selection, promotion or redundancy decisions. The centre was not designed for that, and participants took part on the understanding that it was for their development." });
+    purposeBlocks.push({ kind: "p", text: "This was a development center. Its results are designed to show each participant's strengths and development needs, and to shape their development plan." });
+    purposeBlocks.push({ kind: "warn", text: "Do not use these results for selection, promotion or redundancy decisions. The center was not designed for that, and participants took part on the understanding that it was for their development." });
   } else if (p.purpose === "succession") {
-    purposeBlocks.push({ kind: "p", text: `This was a succession centre. Its results are designed to show how ready each participant is for ${role} or roles like it, and what would close the gap.` });
+    purposeBlocks.push({ kind: "p", text: `This was a succession center. Its results are designed to show how ready each participant is for ${role} or roles like it, and what would close the gap.` });
   } else {
-    purposeBlocks.push({ kind: "warn", text: "The purpose of this centre has not been recorded. Agree with VIFM what the results may be used for before relying on them." });
+    purposeBlocks.push({ kind: "warn", text: "The purpose of this center has not been recorded. Agree with VIFM what the results may be used for before relying on them." });
   }
   purposeBlocks.push({ kind: "p", text: "Using the results for any other purpose, or for a different role, needs agreement with VIFM first and, because the data is personal, may need the participants' consent." });
   sections.push({ heading: "What these results are for", blocks: purposeBlocks });
@@ -48,10 +48,10 @@ export function guidanceSections(p: AgreementPrefill): GuidanceSection[] {
   const readBlocks: GuidanceBlock[] = [
     { kind: "p", text: "Each competency is rated on one five-point scale. \"No Evidence\" means the competency was not observed well enough to rate; it is not a low score." },
     { kind: "table", head: ["Rating", "Meaning"], rows: BARS_SCALE.map((l) => [String(l.level), l.labelEn]) },
-    { kind: "p", text: "Every competency was observed in at least two exercises. VIFM's standard is for every participant to be rated by at least two assessors, and any exception is recorded on the centre's file. The ratings in a report were agreed by the assessors together, on the recorded evidence, after all the exercises." },
+    { kind: "p", text: "Every competency was observed in at least two exercises. VIFM's standard is for every participant to be rated by at least two assessors, and any exception is recorded on the center's file. The ratings in a report were agreed by the assessors together, on the recorded evidence, after all the exercises." },
   ];
   if (p.ratingRule === "calculated") {
-    readBlocks.push({ kind: "p", text: "The overall rating was calculated, not agreed in the room: it is the weighted average of the competency ratings, using weights fixed before the centre, rounded to the nearest whole point. Where the panel disagreed with the calculated rating, the report says so and gives the panel's reasons." });
+    readBlocks.push({ kind: "p", text: "The overall rating was calculated, not agreed in the room: it is the weighted average of the competency ratings, using weights fixed before the center, rounded to the nearest whole point. Where the panel disagreed with the calculated rating, the report says so and gives the panel's reasons." });
     if (p.weights.length) {
       readBlocks.push({ kind: "table", head: ["Competency", "Weight"], rows: p.weights.map((w) => [w.competency, w.weight]) });
     }
@@ -70,7 +70,7 @@ export function guidanceSections(p: AgreementPrefill): GuidanceSection[] {
   const limits: string[] = [
     "The results describe how each person behaved in simulated work tasks on the day. That is strong evidence, but it is a sample, not a full picture of how they perform in the job.",
     "Every rating carries some measurement error. A difference of one point between two people is too small to decide on by itself; look at the pattern across the competencies instead.",
-    `The results apply to ${role} and to this design. Do not compare them with results from a centre that assessed different competencies or used different exercises.`,
+    `The results apply to ${role} and to this design. Do not compare them with results from a center that assessed different competencies or used different exercises.`,
     `People develop, so results age. They are kept for ${p.retentionMonths} months and then deleted; treat older results with more caution than recent ones.`,
   ];
   const limitBlocks: GuidanceBlock[] = [{ kind: "list", items: limits }];
@@ -81,19 +81,19 @@ export function guidanceSections(p: AgreementPrefill): GuidanceSection[] {
   const decide: string[] = [
     "Decisions are yours. The reports are evidence to inform a decision; VIFM does not make the decision.",
     "Weigh the results alongside the other evidence you hold, such as interviews, references and performance records.",
-    "Make sure the people deciding are supported by someone trained to interpret assessment centre results, as agreed for this centre.",
+    "Make sure the people deciding are supported by someone trained to interpret assessment center results, as agreed for this center.",
     "Before a decision that goes against someone, check that the evidence in their report supports it. Each report sets out, competency by competency, what was observed.",
   ];
   if (p.fairnessApplies) {
-    decide.push("VIFM checks outcomes for this centre for unfair effects on any group of participants. If a concern is flagged, review it with VIFM before deciding.");
+    decide.push("VIFM checks outcomes for this center for unfair effects on any group of participants. If a concern is flagged, review it with VIFM before deciding.");
   }
   sections.push({ heading: "Making the decision", blocks: [{ kind: "list", items: decide }] });
 
   // 5. Handling the reports.
   const handling: string[] = [
     p.recipients
-      ? `Reports from this centre go only to: ${p.recipients}. Anyone else needs the participant's express permission, which VIFM asks for on your behalf.`
-      : "Reports go only to the recipients agreed for this centre. Anyone else needs the participant's express permission, which VIFM asks for on your behalf.",
+      ? `Reports from this center go only to: ${p.recipients}. Anyone else needs the participant's express permission, which VIFM asks for on your behalf.`
+      : "Reports go only to the recipients agreed for this center. Anyone else needs the participant's express permission, which VIFM asks for on your behalf.",
     "Keep reports secure and do not copy them into other systems without agreement.",
     `Participants may appeal against their result within ${p.appealWindowDays} days of receiving it. If a decision depends on a result under appeal, wait for the outcome.`,
     "Tell participants the decision, and tell VIFM when you have done so, so the record is complete.",
@@ -142,7 +142,7 @@ export function buildReportGuidanceHtml(p: AgreementPrefill, generatedAt: string
   };
   const meta = [
     p.clientName,
-    p.purpose ? `${PURPOSE_WORD[p.purpose]} centre` : null,
+    p.purpose ? `${PURPOSE_WORD[p.purpose]} center` : null,
     p.targetRole,
     p.centreDates,
   ].filter(Boolean).map(esc).join(" &middot; ");
@@ -173,6 +173,6 @@ export function buildReportGuidanceHtml(p: AgreementPrefill, generatedAt: string
   <h1>Using these results</h1>
   <p class="sub">${esc(p.centreName)}${meta ? `<br/>${meta}` : ""}</p>
   ${guidanceSections(p).map((s) => `<h2>${esc(s.heading)}</h2>${renderBlocks(s.blocks)}`).join("\n")}
-  <footer>Virginia Institute of Finance and Management &middot; Generated ${esc(generatedAt)} from the centre as designed in Caliber. This note accompanies the individual reports from this centre and does not replace them.</footer>
+  <footer>Virginia Institute of Finance and Management &middot; Generated ${esc(generatedAt)} from the center as designed in Caliber. This note accompanies the individual reports from this center and does not replace them.</footer>
 </body></html>`;
 }

@@ -22,7 +22,7 @@ export type EngagementItem = {
 export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
   {
     key: "future_here",
-    en: "They talk about their future in terms of this organisation.",
+    en: "They talk about their future in terms of this organization.",
     ar: "يتحدث عن مستقبله المهني في إطار هذه المؤسسة.",
   },
   {
@@ -43,22 +43,22 @@ export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
   },
   {
     key: "purpose_alignment",
-    en: "They connect their work to the organisation's purpose and priorities.",
+    en: "They connect their work to the organization's purpose and priorities.",
     ar: "يربط عمله برسالة المؤسسة وأولوياتها.",
   },
   {
     key: "internal_appetite",
-    en: "They actively seek bigger responsibility inside this organisation.",
+    en: "They actively seek bigger responsibility inside this organization.",
     ar: "يسعى بنشاط إلى تحمل مسؤوليات أكبر داخل هذه المؤسسة.",
   },
   {
     key: "advocacy",
-    en: "They speak positively about this organisation to others.",
+    en: "They speak positively about this organization to others.",
     ar: "يتحدث بإيجابية عن هذه المؤسسة أمام الآخرين.",
   },
   {
     key: "pride",
-    en: "They show pride in being part of this organisation.",
+    en: "They show pride in being part of this organization.",
     ar: "يُظهر اعتزازه بانتمائه إلى هذه المؤسسة.",
   },
   {
@@ -78,7 +78,7 @@ export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
   },
   {
     key: "values_alignment",
-    en: "Their day-to-day behaviour reflects the organisation's values.",
+    en: "Their day-to-day behavior reflects the organization's values.",
     ar: "يعكس سلوكه اليومي قيم المؤسسة.",
   },
   {
@@ -88,7 +88,7 @@ export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
   },
   {
     key: "long_term",
-    en: "They make decisions with the organisation's long-term interests in mind.",
+    en: "They make decisions with the organization's long-term interests in mind.",
     ar: "يتخذ قراراته بما يخدم مصلحة المؤسسة على المدى الطويل.",
   },
   {
@@ -120,7 +120,7 @@ export const HIPO_ENGAGEMENT_ITEMS: EngagementItem[] = [
   },
   {
     key: "recommend_org",
-    en: "I believe they would recommend this organisation as a place to work.",
+    en: "I believe they would recommend this organization as a place to work.",
     ar: "أعتقد أنه سيوصي بهذه المؤسسة كمكان جيد للعمل.",
   },
 ];

@@ -50,7 +50,7 @@ export default async function FluentRedeemPage({ searchParams }: Props) {
             )}
             {!blocked && (
               <p className="mt-3 text-base leading-relaxed text-white/75">
-                Enter the voucher code your organisation gave you, then take a four-skill,
+                Enter the voucher code your organization gave you, then take a four-skill,
                 CEFR-aligned English placement. No account needed.
               </p>
             )}

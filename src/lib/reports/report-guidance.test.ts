@@ -22,16 +22,16 @@ const prefill = (engagement: Record<string, unknown>) =>
 const text = (engagement: Record<string, unknown>) =>
   JSON.stringify(guidanceSections(prefill(engagement)));
 
-test("a development centre warns against selection, promotion or redundancy use", () => {
+test("a development center warns against selection, promotion or redundancy use", () => {
   assert.match(text({ purpose: "development" }), /Do not use these results for selection, promotion or redundancy/);
   assert.doesNotMatch(text({ purpose: "selection" }), /Do not use these results/);
 });
 
 test("with no purpose recorded the note says so rather than guessing", () => {
-  assert.match(text({}), /purpose of this centre has not been recorded/);
+  assert.match(text({}), /purpose of this center has not been recorded/);
 });
 
-test("a calculated centre explains the rule and lists the weights", () => {
+test("a calculated center explains the rule and lists the weights", () => {
   const t = text({ purpose: "selection" });
   assert.match(t, /overall rating was calculated/);
   assert.match(t, /Strategic Thinking/);

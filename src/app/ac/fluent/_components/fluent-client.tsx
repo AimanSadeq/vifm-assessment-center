@@ -91,7 +91,7 @@ const T = {
     transcriptHeading: "Your transcript",
     beginTitle: "Begin your placement",
     beginSub: "About {min} minutes · four skills · an indicative CEFR level the moment you finish.",
-    beginSubOrg: "About {min} minutes · four skills. Your results are shared with the organisation that invited you, not shown here.",
+    beginSubOrg: "About {min} minutes · four skills. Your results are shared with the organization that invited you, not shown here.",
     oneTimer: "One countdown covers all four skills - there are no per-section timers.",
     targetLen: "Target length: about {min}-{max} words. The countdown covers the whole test, not this task.",
     howToTitle: "How to answer",
@@ -1081,7 +1081,7 @@ export function FluentClient({
           <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
             {rtl
               ? "تمت مشاركة نتائجك مع الجهة الطالبة ولا تُعرض هنا. شكرًا لك."
-              : "Your results have been shared with the requesting organisation and are not shown here. Thank you."}
+              : "Your results have been shared with the requesting organization and are not shown here. Thank you."}
           </p>
           {/* No "Start over" on the one-shot voucher flow - the link is single-use
               and the server refuses a resubmit, so offering it only misleads. */}

@@ -48,9 +48,9 @@ Requirement" for this role).
 > Typical assessment scope: **6–8 competencies per assessment** (Blueprint §3.4).
 > The profile may list more; the assessment matrix selects the priority set.
 
-### Role-specific behavioural indicators
+### Role-specific behavioral indicators
 For each selected competency, 2–4 positive indicators drawn from this role's
-critical incidents (anonymised):
+critical incidents (anonymized):
 
 - **[Competency]:**
   - …

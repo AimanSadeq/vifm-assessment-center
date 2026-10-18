@@ -25,13 +25,13 @@ export function DemoRequestDialog({ open, onOpenChange }: { open: boolean; onOpe
         ) : (
           <form onSubmit={submit} className="space-y-3">
             <h3 className="text-lg font-semibold">Request a demo</h3>
-            <p className="text-sm text-white/60">Tell us about your organisation and we&rsquo;ll arrange a walkthrough.</p>
+            <p className="text-sm text-white/60">Tell us about your organization and we&rsquo;ll arrange a walkthrough.</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <input className={input} placeholder="Full name" value={form.name} onChange={set('name')} />
               <input className={input} type="email" placeholder="Work email" value={form.email} onChange={set('email')} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input className={input} placeholder="Organisation" value={form.organisation} onChange={set('organisation')} />
+              <input className={input} placeholder="Organization" value={form.organisation} onChange={set('organisation')} />
               <input className={input} placeholder="Your role" value={form.role} onChange={set('role')} />
             </div>
             <input className={input} placeholder="Phone (optional)" value={form.phone} onChange={set('phone')} />

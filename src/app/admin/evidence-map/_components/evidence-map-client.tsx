@@ -159,7 +159,7 @@ function Dashboard({ metrics }: { metrics: EvidenceMetrics }) {
         title="Reflect 360®"
         stats={[
           { label: "Competencies", value: fmt(metrics.reflect.competencies) },
-          { label: "Behaviours", value: fmt(metrics.reflect.behaviors) },
+          { label: "Behaviors", value: fmt(metrics.reflect.behaviors) },
           { label: "AI-authored", value: fmt(metrics.reflect.behaviorsAi), accent: "text-amber-700" },
           { label: "Responses", value: fmt(metrics.reflect.responses) },
         ]}

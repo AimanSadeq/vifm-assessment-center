@@ -33,7 +33,7 @@ The fastest, highest-leverage move is **Bucket 1** — it's entirely within your
 
 ## Bucket 2 — Closeable with a document or sign-off (writeable now)
 
-These need no new data — just a written artefact, like the methodology briefs we just shipped.
+These need no new data — just a written artifact, like the methodology briefs we just shipped.
 
 | Cell(s) | Now | To green |
 |---|---|---|
@@ -63,7 +63,7 @@ These cells are already live; they flip themselves when the sample threshold is 
 
 ## Bucket 4 — Needs a real empirical study (plan + data + analysis)
 
-These are the honest red cells. They can't be documented away; they require accumulated responses and a statistical analysis. Group them into one validation programme rather than chasing cell-by-cell.
+These are the honest red cells. They can't be documented away; they require accumulated responses and a statistical analysis. Group them into one validation program rather than chasing cell-by-cell.
 
 | Category | Instruments still missing | What it takes |
 |---|---|---|
@@ -73,13 +73,13 @@ These are the honest red cells. They can't be documented away; they require accu
 | Criterion validity | Psy | A predictive study against an outcome (job performance / supervisor rating). Only worth it if Psy is used for selection. |
 | Norms (GCC) | ARC-Org, ARC-Ind | Accumulate a representative GCC reference sample; publish percentiles per band. |
 
-**Owner:** VIFM + (ideally) an external psychometric reviewer. **Effort:** quarters, gated on data volume. **Sequencing:** prioritise CFA on whichever instrument hits N first (likely ARC-Ind via the free Snapshot), since the analysis pipeline then transfers to the others.
+**Owner:** VIFM + (ideally) an external psychometric reviewer. **Effort:** quarters, gated on data volume. **Sequencing:** prioritize CFA on whichever instrument hits N first (likely ARC-Ind via the free Snapshot), since the analysis pipeline then transfers to the others.
 
 ---
 
 ## Bucket 5 — Honest reclassification candidates (your call)
 
-A few cells are marked **missing** but are arguably **n/a by design** — reclassifying them is more honest than leaving a red "gap" we never intend to close. These are claims judgements, so they need your sign-off before I change the map:
+A few cells are marked **missing** but are arguably **n/a by design** — reclassifying them is more honest than leaving a red "gap" we never intend to close. These are claims judgments, so they need your sign-off before I change the map:
 
 | Cell | Now | Proposed | Rationale |
 |---|---|---|---|
@@ -92,10 +92,10 @@ Everything else currently red is a real, intended-to-close gap and should stay r
 ## Recommended order
 
 1. **Bucket 1 now** — verify anchors across all seven instruments (turns 7 cells green this week).
-2. **Bucket 5** — confirm the two reclassifications (turns 2 cells from red to honest grey).
+2. **Bucket 5** — confirm the two reclassifications (turns 2 cells from red to honest gray).
 3. **Bucket 2** — face-validity reviews + finish the Psy brief (turns ~5 cells green over a few days each).
 4. **Bucket 3** — keep intake flowing; wire the α/CFA/ICC computation when the first instrument crosses threshold.
-5. **Bucket 4** — stand up one validation programme, CFA-first on the highest-N instrument, and let the pipeline transfer.
+5. **Bucket 4** — stand up one validation program, CFA-first on the highest-N instrument, and let the pipeline transfer.
 
 ---
 

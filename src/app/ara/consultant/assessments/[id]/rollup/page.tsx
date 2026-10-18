@@ -84,7 +84,7 @@ export default async function AraRollupReportPage({
   }
 
   const rollup = await computeUnitRollup(assessment.id, weighting);
-  const orgName = (rtl ? assessment.organization?.name_ar : null) || assessment.organization?.name || T("Organisation", "المنظمة");
+  const orgName = (rtl ? assessment.organization?.name_ar : null) || assessment.organization?.name || T("Organization", "المنظمة");
   const stageDef = ARA_STAGE_MAP[assessment.engagement_stage];
   const stageLabel = (rtl ? stageDef?.label_ar : stageDef?.label_en) ?? assessment.engagement_stage;
   const stageLower = rtl ? stageLabel : stageLabel.toLowerCase();
@@ -211,7 +211,7 @@ export default async function AraRollupReportPage({
   for (const { s, situation } of situations) {
     const p = pillarName(s.pillar_id);
     if (situation === "central") {
-      if (centralPillars.length < 3) roadmapItems.push({ name: T(`Name the owner: ${p}`, `تعيين المالك: ${p}`), detail: T("Central programme", "برنامج مركزي"), horizon: "quick", rank: 0 });
+      if (centralPillars.length < 3) roadmapItems.push({ name: T(`Name the owner: ${p}`, `تعيين المالك: ${p}`), detail: T("Central program", "برنامج مركزي"), horizon: "quick", rank: 0 });
       roadmapItems.push({ name: T(`Central standard: ${p}`, `معيار مركزي: ${p}`), detail: T("Every unit inherits it", "ترثه كل الوحدات"), horizon: "build", rank: 0 });
     } else if (situation === "lift") {
       roadmapItems.push({ name: T(`Playbook from ${localiseUnit(s.strongest)}: ${p}`, `دليل من ${localiseUnit(s.strongest)}: ${p}`), detail: T("Lift the rest", "رفع البقية"), horizon: "quick", rank: 1 });
@@ -421,7 +421,7 @@ export default async function AraRollupReportPage({
             ))}
           </div>
           <p className="report-body report-muted" style={{ fontSize: "8.5pt", marginTop: "6pt" }}>
-            {T("4.00 is the AI Ready target, not the maximum. Colours on every chart in this report follow these five levels.", "4.00 هو مستهدف الجاهزية للذكاء الاصطناعي، لا الحد الأقصى. تتبع الألوان في كل مخططات هذا التقرير هذه المستويات الخمسة.")}
+            {T("4.00 is the AI Ready target, not the maximum. Colors on every chart in this report follow these five levels.", "4.00 هو مستهدف الجاهزية للذكاء الاصطناعي، لا الحد الأقصى. تتبع الألوان في كل مخططات هذا التقرير هذه المستويات الخمسة.")}
           </p>
 
           <h3 className="report-h3" style={{ marginTop: "14pt" }}>{T("The two findings only a consolidation can make", "النتيجتان اللتان لا يقدّمهما إلا التقرير الموحّد")}</h3>
@@ -435,7 +435,7 @@ export default async function AraRollupReportPage({
             <div style={{ ...panel, borderInlineStartColor: TOKENS.amber }}>
               <p style={{ ...eyebrowStyle, color: "#b45309" }}>{T("Uneven pillar", "ركيزة متفاوتة")}</p>
               <p className="report-body" style={{ margin: 0 }}>
-                {T(`A pillar where the strongest and weakest unit are ${UNEVEN_THRESHOLD.toFixed(2)} or more apart. Usually capability that exists somewhere and has not travelled. This report found`, `ركيزة تبعد فيها الوحدة الأقوى عن الأضعف ${UNEVEN_THRESHOLD.toFixed(2)} فأكثر. غالباً قدرة موجودة في مكان ما ولم تنتقل. وجد هذا التقرير`)} <strong>{rollup.unevenPillars.length}</strong>.
+                {T(`A pillar where the strongest and weakest unit are ${UNEVEN_THRESHOLD.toFixed(2)} or more apart. Usually capability that exists somewhere and has not traveled. This report found`, `ركيزة تبعد فيها الوحدة الأقوى عن الأضعف ${UNEVEN_THRESHOLD.toFixed(2)} فأكثر. غالباً قدرة موجودة في مكان ما ولم تنتقل. وجد هذا التقرير`)} <strong>{rollup.unevenPillars.length}</strong>.
               </p>
             </div>
           </div>
@@ -444,7 +444,7 @@ export default async function AraRollupReportPage({
           <ul className="report-body" style={{ margin: "6pt 0 0", paddingInlineStart: "16pt" }}>
             <li>{T("Units ranked on one scale, with the departments inside each division where the scope is an enterprise.", "ترتيب الوحدات على مقياس واحد، مع الإدارات داخل كل قطاع حين يكون النطاق منشأة.")}</li>
             <li>{T("Every unit against every pillar: the matrix, the profile radar and the spread chart.", "كل وحدة مقابل كل ركيزة: المصفوفة، ورادار الملف، ومخطط التفاوت.")}</li>
-            <li>{T("The agenda matrix that sorts each pillar into central programme, practice transfer or sustain.", "مصفوفة الأجندة التي تصنّف كل ركيزة إلى برنامج مركزي أو نقل ممارسات أو حفاظ.")}</li>
+            <li>{T("The agenda matrix that sorts each pillar into central program, practice transfer or sustain.", "مصفوفة الأجندة التي تصنّف كل ركيزة إلى برنامج مركزي أو نقل ممارسات أو حفاظ.")}</li>
             <li>{T(`One deep-dive page per pillar (${rollup.pillars.length} in scope), each with actions at ${stageLower} level.`, `صفحة تعمّق لكل ركيزة (${rollup.pillars.length} ضمن النطاق)، ولكل منها إجراءات على مستوى ${stageLabel}.`)}</li>
             {workforce.length > 0 && <li>{T("Workforce readiness across units, where the individual layer ran.", "جاهزية القوى العاملة عبر الوحدات، حيث فُعّلت الطبقة الفردية.")}</li>}
             <li>{T("A twelve-month roadmap, matched VIFM training, next steps and the method.", "خارطة طريق لاثني عشر شهراً، وبرامج VIFM التدريبية المطابقة، والخطوات التالية، والمنهجية.")}</li>
@@ -515,7 +515,7 @@ export default async function AraRollupReportPage({
           <h2 className="report-h2">{T("Units by pillar", "الوحدات حسب الركيزة")}</h2>
           <p className="report-body">
             {T(
-              `Every unit against every pillar it was assessed on. Blank means the pillar was not in that unit's scope, which is not the same as a low score. Colour is the maturity level, so a row of green with one red cell is a targeted problem, and a uniformly amber column is a problem the whole ${stageLower} shares.`,
+              `Every unit against every pillar it was assessed on. Blank means the pillar was not in that unit's scope, which is not the same as a low score. Color is the maturity level, so a row of green with one red cell is a targeted problem, and a uniformly amber column is a problem the whole ${stageLower} shares.`,
               `كل وحدة مقابل كل ركيزة قُيِّمت عليها. الخلية الفارغة تعني أن الركيزة لم تكن ضمن نطاق تلك الوحدة، وهذا يختلف عن الدرجة المنخفضة. يمثّل اللون مستوى النضج؛ فصفٌّ أخضر بخلية حمراء واحدة مشكلة محدّدة، وعمودٌ كهرماني بالكامل مشكلة يتقاسمها ${stageLabel} كله.`
             )}
           </p>
@@ -598,7 +598,7 @@ export default async function AraRollupReportPage({
           <h2 className="report-h2">{T("Shared gaps and uneven pillars", "الفجوات المشتركة والركائز المتفاوتة")}</h2>
           <p className="report-body">
             {T(
-              "This is the finding a single unit's report cannot produce. A gap every unit shares is usually structural and is fixed once, centrally. A pillar where the units are far apart is usually capability that already exists somewhere in the organisation and has not travelled.",
+              "This is the finding a single unit's report cannot produce. A gap every unit shares is usually structural and is fixed once, centrally. A pillar where the units are far apart is usually capability that already exists somewhere in the organization and has not traveled.",
               "هذه هي النتيجة التي لا يستطيع تقرير وحدة واحدة إنتاجها. الفجوة التي تتقاسمها كل الوحدات غالباً هيكلية وتُعالَج مرة واحدة مركزياً. أما الركيزة التي تتباعد فيها الوحدات فغالباً قدرة موجودة أصلاً في مكان ما من المنظمة ولم تنتقل بعد."
             )}
           </p>
@@ -646,7 +646,7 @@ export default async function AraRollupReportPage({
           <h3 className="report-h3" style={{ marginTop: "14pt" }}>{T("The agenda matrix", "مصفوفة الأجندة")}</h3>
           <p className="report-body" style={{ marginBottom: "4pt" }}>
             {T(
-              "Each pillar placed by whether every unit is below 4.00 (right half: a shared gap) or at least one unit has reached it (left half), and by how far apart the units are (up). Bottom-right needs one central programme; top-right needs the leading unit's practice plus a central floor; top-left needs a transfer and no new spend; bottom-left is sustained through the units' own plans.",
+              "Each pillar placed by whether every unit is below 4.00 (right half: a shared gap) or at least one unit has reached it (left half), and by how far apart the units are (up). Bottom-right needs one central program; top-right needs the leading unit's practice plus a central floor; top-left needs a transfer and no new spend; bottom-left is sustained through the units' own plans.",
               "تُوضع كل ركيزة بحسب ما إذا كانت كل الوحدات دون 4.00 (النصف الأيمن: فجوة مشتركة) أو بلغت وحدة واحدة على الأقل المستهدف (النصف الأيسر)، وبحسب تباعد الوحدات (عمودياً). أسفل اليمين يحتاج برنامجاً مركزياً واحداً؛ أعلى اليمين يحتاج ممارسة الوحدة الرائدة مع حد أدنى مركزي؛ أعلى اليسار يحتاج نقلاً دون إنفاق جديد؛ وأسفل اليسار يُحافَظ عليه عبر خطط الوحدات."
             )}
           </p>
@@ -748,11 +748,11 @@ export default async function AraRollupReportPage({
             <Callout tone="info" title={T("People versus systems", "الأفراد مقابل الأنظمة")}>
               {(() => {
                 const sys = rollup.overall;
-                if (sys == null || wfOverall == null) return T("The organisational pillars and the individual factors are on the same 1-5 scale.", "الركائز المؤسسية والعوامل الفردية على المقياس نفسه من 1 إلى 5.");
+                if (sys == null || wfOverall == null) return T("The organizational pillars and the individual factors are on the same 1-5 scale.", "الركائز المؤسسية والعوامل الفردية على المقياس نفسه من 1 إلى 5.");
                 const d = wfOverall - sys;
                 return rtl
                   ? `يسجّل الأفراد ${wfOverall.toFixed(2)} مقابل ${sys.toFixed(2)} للأنظمة والعمليات - ${Math.abs(d) < 0.25 ? "الجانبان متقاربان، فالخطة يمكن أن تسير على المسارين معاً." : d > 0 ? "الأفراد متقدّمون على مؤسستهم؛ الأولوية للمنصّات والسياسات والبيانات كي لا يُهدَر هذا الاستعداد." : "المؤسسة متقدّمة على أفرادها؛ الأولوية لبناء القدرات، فالمنصّات موجودة والناس لم يلحقوا بها بعد."}`
-                  : `People score ${wfOverall.toFixed(2)} against ${sys.toFixed(2)} for systems and processes - ${Math.abs(d) < 0.25 ? "the two sides are close, so the plan can run on both tracks at once." : d > 0 ? "the people are ahead of their organisation; platforms, policy and data are the priority so that readiness is not wasted." : "the organisation is ahead of its people; capability building is the priority, because the platforms exist and the people have not caught up."}`;
+                  : `People score ${wfOverall.toFixed(2)} against ${sys.toFixed(2)} for systems and processes - ${Math.abs(d) < 0.25 ? "the two sides are close, so the plan can run on both tracks at once." : d > 0 ? "the people are ahead of their organization; platforms, policy and data are the priority so that readiness is not wasted." : "the organization is ahead of its people; capability building is the priority, because the platforms exist and the people have not caught up."}`;
               })()}
             </Callout>
           </section>
@@ -785,14 +785,14 @@ export default async function AraRollupReportPage({
           <section className="report-page">
             <SectionHeader
               eyebrow={T("Capability building", "بناء القدرات")}
-              title={T("VIFM programmes matched to the units", "برامج VIFM المطابقة للوحدات")}
-              kicker={T("Each unit's report recommends training for its own gaps. Pooled here, ranked by how many units the same programme serves - the ones several units need are the ones worth running once, centrally.", "يوصي تقرير كل وحدة ببرامج لفجواتها. تُجمَّع هنا وتُرتَّب بحسب عدد الوحدات التي يخدمها البرنامج نفسه - فالبرامج التي تحتاجها عدة وحدات هي التي تستحق التنفيذ مرة واحدة مركزياً.")}
+              title={T("VIFM programs matched to the units", "برامج VIFM المطابقة للوحدات")}
+              kicker={T("Each unit's report recommends training for its own gaps. Pooled here, ranked by how many units the same program serves - the ones several units need are the ones worth running once, centrally.", "يوصي تقرير كل وحدة ببرامج لفجواتها. تُجمَّع هنا وتُرتَّب بحسب عدد الوحدات التي يخدمها البرنامج نفسه - فالبرامج التي تحتاجها عدة وحدات هي التي تستحق التنفيذ مرة واحدة مركزياً.")}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10pt" }}>
               {training.map((c, i) => (
                 <article key={`${c.code ?? i}`} style={{ padding: "10pt 12pt", border: `1pt solid ${TOKENS.line}`, borderRadius: "3pt", background: "white", breakInside: "avoid" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "8pt" }}>
-                    <span style={{ fontSize: "7.5pt", letterSpacing: rtl ? 0 : "0.09em", textTransform: "uppercase", color: TOKENS.mute, fontWeight: 600 }}>{c.code ?? T("Programme", "برنامج")} · {c.days} {T("days", "أيام")}</span>
+                    <span style={{ fontSize: "7.5pt", letterSpacing: rtl ? 0 : "0.09em", textTransform: "uppercase", color: TOKENS.mute, fontWeight: 600 }}>{c.code ?? T("Program", "برنامج")} · {c.days} {T("days", "أيام")}</span>
                     <span style={{ fontSize: "8pt", fontWeight: 700, color: c.units.length > 1 ? TOKENS.emerald : TOKENS.mute }}>{c.units.length} {leafWord(c.units.length)}</span>
                   </div>
                   <h4 style={{ fontSize: "11pt", fontWeight: 600, color: TOKENS.navy, margin: "4pt 0 4pt", lineHeight: 1.3 }}>{c.title}</h4>
@@ -806,24 +806,24 @@ export default async function AraRollupReportPage({
 
         {/* ─── Next steps + method ─── */}
         <section className="report-page">
-          <SectionHeader eyebrow={T("Next steps", "الخطوات التالية")} title={T("From comparison to programme", "من المقارنة إلى البرنامج")} />
+          <SectionHeader eyebrow={T("Next steps", "الخطوات التالية")} title={T("From comparison to program", "من المقارنة إلى البرنامج")} />
           <ol className="report-body" style={{ margin: "0", paddingInlineStart: "18pt" }}>
             <li style={{ marginBottom: "6pt" }}>{T(`Share each unit's own report with its head, and this consolidation with the ${stageLower} leadership. The unit reports carry the detail; this one carries the comparison.`, `شارك تقرير كل وحدة مع رئيسها، وهذا التقرير الموحّد مع قيادة ${stageLabel}. تحمل تقارير الوحدات التفاصيل؛ ويحمل هذا التقرير المقارنة.`)}</li>
             <li style={{ marginBottom: "6pt" }}>{shared.length > 0
-              ? T(`Stand up the central programme for the ${shared.length} shared gap${shared.length === 1 ? "" : "s"}, starting with ${pillarName(shared[0].pillar_id)}.`, `أطلق البرنامج المركزي لـ${shared.length} ${shared.length === 1 ? "فجوة مشتركة" : "فجوات مشتركة"}، بدءاً بـ${pillarName(shared[0].pillar_id)}.`)
-              : T("No central programme is needed: no pillar is below target everywhere. Fund the units' own plans.", "لا حاجة لبرنامج مركزي: لا ركيزة دون المستهدف في كل مكان. موّل خطط الوحدات نفسها.")}</li>
+              ? T(`Stand up the central program for the ${shared.length} shared gap${shared.length === 1 ? "" : "s"}, starting with ${pillarName(shared[0].pillar_id)}.`, `أطلق البرنامج المركزي لـ${shared.length} ${shared.length === 1 ? "فجوة مشتركة" : "فجوات مشتركة"}، بدءاً بـ${pillarName(shared[0].pillar_id)}.`)
+              : T("No central program is needed: no pillar is below target everywhere. Fund the units' own plans.", "لا حاجة لبرنامج مركزي: لا ركيزة دون المستهدف في كل مكان. موّل خطط الوحدات نفسها.")}</li>
             <li style={{ marginBottom: "6pt" }}>{rollup.unevenPillars.length > 0
               ? T(`Specify the ${rollup.unevenPillars.length} practice transfer${rollup.unevenPillars.length === 1 ? "" : "s"} in the Phase 2 workshop - the unit already scoring highest has practice worth moving.`, `حدّد ${rollup.unevenPillars.length} ${rollup.unevenPillars.length === 1 ? "عملية نقل ممارسات" : "عمليات نقل ممارسات"} في ورشة المرحلة الثانية - لدى الوحدة الأعلى درجة ممارسة تستحق النقل.`)
               : T("The units are consistent; use the Phase 2 workshop to validate the shared picture rather than to broker transfers.", "الوحدات متّسقة؛ استخدم ورشة المرحلة الثانية للتحقق من الصورة المشتركة لا للتوسط في عمليات نقل.")}</li>
             {rollup.uncoveredPillars.length > 0 && <li style={{ marginBottom: "6pt" }}>{T(`Assess ${rollup.uncoveredPillars.map(pillarName).join(", ")} at ${stageLower} level, where ${rollup.uncoveredPillars.length === 1 ? "it is" : "they are"} actually set.`, `قيّم ${rollup.uncoveredPillars.map(pillarName).join("، ")} على مستوى ${stageLabel}، حيث تُحدَّد فعلاً.`)}</li>}
-            <li>{T("Re-run the same instrument in twelve months. The consolidation then reports the change in the spread, which is the honest measure of whether capability travelled.", "أعد تطبيق الأداة نفسها بعد اثني عشر شهراً. عندها يرصد التقرير الموحّد التغيّر في التفاوت، وهو المقياس الصادق لانتقال القدرة.")}</li>
+            <li>{T("Re-run the same instrument in twelve months. The consolidation then reports the change in the spread, which is the honest measure of whether capability traveled.", "أعد تطبيق الأداة نفسها بعد اثني عشر شهراً. عندها يرصد التقرير الموحّد التغيّر في التفاوت، وهو المقياس الصادق لانتقال القدرة.")}</li>
           </ol>
 
           <div style={{ ...panel, marginTop: "14pt" }}>
             <h3 className="report-h3" style={{ marginTop: 0 }}>{T("Phase 2 consultant workshop", "ورشة المستشار - المرحلة الثانية")}</h3>
             <p className="report-body" style={{ margin: 0 }}>
               {T(
-                "Every score in this document is self-reported by the units' respondents. Phase 2 is the facilitated session where a VIFM consultant tests those answers against evidence, records a validated band beside the self-assessed one, and turns the transfers above into named counterparts and dates. It is where a consolidation stops being a comparison and becomes a programme.",
+                "Every score in this document is self-reported by the units' respondents. Phase 2 is the facilitated session where a VIFM consultant tests those answers against evidence, records a validated band beside the self-assessed one, and turns the transfers above into named counterparts and dates. It is where a consolidation stops being a comparison and becomes a program.",
                 "كل درجة في هذه الوثيقة مبلَّغة ذاتياً من مشاركي الوحدات. المرحلة الثانية هي الجلسة الميسَّرة التي يختبر فيها مستشار VIFM تلك الإجابات مقابل الأدلة، ويسجّل نطاقاً مُتحقَّقاً منه إلى جانب النطاق الذاتي، ويحوّل عمليات النقل أعلاه إلى نظراء محددين بالاسم وتواريخ. وهي حيث يتوقف التقرير الموحّد عن كونه مقارنة ليصبح برنامجاً."
               )}
             </p>

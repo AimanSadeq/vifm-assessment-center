@@ -34,7 +34,7 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
   {
     slug: "assessment-center",
     service: "Assessment Center",
-    tagline: "Observed behavioural competency assessment",
+    tagline: "Observed behavioral competency assessment",
     eyebrow: "VIFM Assessment Center®",
     file: "AC-Methodology-Brief.md",
     filename: "VIFM-Assessment-Center-Methodology-Brief.pdf",
@@ -43,7 +43,7 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
   {
     slug: "ai-readiness",
     service: "AI Readiness (AR Compass)",
-    tagline: "Organisational and individual AI readiness",
+    tagline: "Organizational and individual AI readiness",
     eyebrow: "VIFM AI Readiness Compass®",
     file: "ARA-Methodology-Brief.md",
     filename: "VIFM-AI-Readiness-Compass-Methodology-Brief.pdf",
@@ -70,7 +70,7 @@ export const METHODOLOGY_BRIEFS: readonly MethodologyBrief[] = [
   {
     slug: "persona",
     service: "Persona",
-    tagline: "Behavioural competency self-assessment",
+    tagline: "Behavioral competency self-assessment",
     eyebrow: "VIFM Persona®",
     file: "Persona-Methodology-Brief.md",
     filename: "VIFM-Persona-Methodology-Brief.pdf",

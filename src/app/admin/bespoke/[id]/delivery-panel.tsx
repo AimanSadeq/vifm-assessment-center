@@ -158,7 +158,7 @@ export function DeliveryPanel({
               rows={4}
               value={fieldsText}
               onChange={(e) => setFieldsText(e.target.value)}
-              placeholder={"One per line, all required:\nGender | Male; Female\nYears with the organisation | Less than 2; 2 to 5; More than 5\nCity"}
+              placeholder={"One per line, all required:\nGender | Male; Female\nYears with the organization | Less than 2; 2 to 5; More than 5\nCity"}
             />
             <p className="mt-1 text-xs text-muted-foreground">&quot;Label | option; option&quot; makes a pick-list; a label alone is free text.</p>
           </div>

@@ -41,7 +41,7 @@ export function SeatDistributeClient({
   if (!hasAllocation) {
     return (
       <div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">
-        No seats allocated for this programme yet. Please contact your VIFM consultant.
+        No seats allocated for this program yet. Please contact your VIFM consultant.
       </div>
     );
   }

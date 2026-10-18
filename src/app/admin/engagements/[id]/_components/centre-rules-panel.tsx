@@ -107,7 +107,7 @@ export function CentreRulesPanel({
     toast.success(
       rule === "permitted"
         ? "Recorded. Assessors will see the framework at the wash-up."
-        : "Recorded. Ratings come from centre evidence alone."
+        : "Recorded. Ratings come from center evidence alone."
     );
     router.refresh();
   };
@@ -195,7 +195,7 @@ export function CentreRulesPanel({
       toast.error(typeof res.error === "string" ? res.error : "Could not record the reason.");
       return;
     }
-    toast.success("Reason recorded. The centre can now be activated.");
+    toast.success("Reason recorded. The center can now be activated.");
     setReason("");
     router.refresh();
   };
@@ -203,7 +203,7 @@ export function CentreRulesPanel({
   return (
     <Card className="mt-6">
       <CardHeader className="pb-3">
-        <CardTitle className="text-base">How this centre runs</CardTitle>
+        <CardTitle className="text-base">How this center runs</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -219,7 +219,7 @@ export function CentreRulesPanel({
 
         {report.blocking.length > 0 ? (
           <div className="rounded border border-rose-300 bg-rose-50 p-3">
-            <p className="font-medium text-rose-900">This centre cannot be activated yet</p>
+            <p className="font-medium text-rose-900">This center cannot be activated yet</p>
             <ul className="mt-1 list-disc ps-5 text-rose-900">
               {report.blocking.map((b) => (
                 <li key={b}>{b}</li>
@@ -365,7 +365,7 @@ export function CentreRulesPanel({
             )}
             {!methodsRule && (
               <p className="text-xs text-amber-800">
-                Not decided for this centre. Until it is, assessors see other results with no guidance on what to do
+                Not decided for this center. Until it is, assessors see other results with no guidance on what to do
                 with them.
               </p>
             )}
@@ -377,7 +377,7 @@ export function CentreRulesPanel({
             whether it may count AT ALL; silence means assessors decide case by
             case, differently for different participants. */}
         <div className="border-t pt-3">
-          <p className="font-medium">Evidence from outside the centre</p>
+          <p className="font-medium">Evidence from outside the center</p>
           <p className="text-xs text-muted-foreground">
             A previous appraisal, a manager&apos;s opinion, an earlier assessment. Say whether any of it may count
             towards a rating here.
@@ -387,7 +387,7 @@ export function CentreRulesPanel({
               {
                 value: "not_permitted" as const,
                 label: "It may not",
-                hint: "Ratings come from what was observed at this centre. The safer answer, and a complete one.",
+                hint: "Ratings come from what was observed at this center. The safer answer, and a complete one.",
               },
               {
                 value: "permitted" as const,
@@ -425,7 +425,7 @@ export function CentreRulesPanel({
             )}
             {!extRule && (
               <p className="text-xs text-amber-800">
-                Not decided for this centre. Until it is, the wash-up will not let outside evidence count towards a
+                Not decided for this center. Until it is, the wash-up will not let outside evidence count towards a
                 rating.
               </p>
             )}
@@ -436,7 +436,7 @@ export function CentreRulesPanel({
           <p className="font-medium">Who was allocated here, and why</p>
           <p className="text-xs text-muted-foreground">
             Group composition changes what a participant gets the chance to show, particularly in a group exercise.
-            The standard asks that diversity be taken into account when allocating people to centres and to groups,
+            The standard asks that diversity be taken into account when allocating people to centers and to groups,
             and that the reasoning be written down (5.37).
           </p>
           <div className="mt-2 space-y-2">
@@ -444,7 +444,7 @@ export function CentreRulesPanel({
               rows={2}
               value={grouping}
               onChange={(e) => setGrouping(e.target.value)}
-              placeholder="For example: participants split across two centres by availability, with each group mixed by function and seniority so no group exercise is dominated by one department."
+              placeholder="For example: participants split across two centers by availability, with each group mixed by function and seniority so no group exercise is dominated by one department."
             />
             <Button size="sm" variant="outline" onClick={saveGrouping} disabled={busy}>
               Save

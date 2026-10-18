@@ -28,7 +28,7 @@ export async function emailEngagementInvitation(opts: {
   const html = wrap(`
     <p style="margin:0 0 12px">Dear ${opts.managerName},</p>
     <p style="margin:0 0 12px">As part of <b>${opts.candidateName}</b>'s VIFM High-Potential Profile, we would value your view as their line manager. The survey is a set of short statements and takes about five minutes.</p>
-    <p style="margin:0 0 12px">Your answers feed the profile's Engagement reading. They are a management judgement, not a test of ${opts.candidateName} - please answer candidly based on what you observe.</p>
+    <p style="margin:0 0 12px">Your answers feed the profile's Engagement reading. They are a management judgment, not a test of ${opts.candidateName} - please answer candidly based on what you observe.</p>
     <p style="margin:0 0 16px"><a href="${opts.url}" style="display:inline-block;background:#010131;color:#fff;padding:10px 18px;border-radius:6px;text-decoration:none;font-weight:700">Open the survey</a></p>
     <p style="margin:0 0 4px;font-size:12px;color:#6b7280">Or copy this link into your browser:</p>
     <p style="margin:0 0 12px;font-size:12px;color:#6b7280;word-break:break-all">${opts.url}</p>

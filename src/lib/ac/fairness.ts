@@ -83,13 +83,13 @@ export function computeAcFairness(
       ...base,
       report: null,
       reason:
-        "This is a development centre, so no one is selected and there is no selection rate to compare. "
+        "This is a development center, so no one is selected and there is no selection rate to compare. "
         + "Fairness here is a question about the development recommendations people received, which the "
         + "competency results answer better than a 4/5ths table.",
     };
   }
   if (rated.length === 0) {
-    return { ...base, report: null, reason: "No participant has a finalised overall rating yet." };
+    return { ...base, report: null, reason: "No participant has a finalized overall rating yet." };
   }
   if (disclosed.length === 0) {
     return {
@@ -97,7 +97,7 @@ export function computeAcFairness(
       report: null,
       reason:
         "No participant has given any demographic information, so there is nothing to compare. "
-        + "It is voluntary, and a centre where everyone declines is a legitimate outcome, not an error.",
+        + "It is voluntary, and a center where everyone declines is a legitimate outcome, not an error.",
     };
   }
 

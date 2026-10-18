@@ -209,7 +209,7 @@ const reflectAdapter: EvidenceAdapter = {
   table: "reflect_competencies",
   basePath: "/admin/evidence/reflect",
   blurb:
-    "Per-competency research provenance for the 360 feedback frameworks. Anchor each competency to the multisource-feedback and competency-modelling literature.",
+    "Per-competency research provenance for the 360 feedback frameworks. Anchor each competency to the multisource-feedback and competency-modeling literature.",
   async listItems() {
     const sb = createServiceClient();
     const { data } = await sb

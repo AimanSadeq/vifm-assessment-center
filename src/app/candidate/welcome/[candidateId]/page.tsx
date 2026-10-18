@@ -175,7 +175,7 @@ export default async function CandidateWelcomePage({ params, searchParams }: Pro
               )}
               {decisionNote && <p className="mt-2 text-muted-foreground">{decisionNote}</p>}
               <p className="mt-2 text-xs text-muted-foreground">
-                The decision is made by the organisation you were assessed for. If you want to discuss it, use the
+                The decision is made by the organization you were assessed for. If you want to discuss it, use the
                 contact on your report, or raise it below.
               </p>
             </div>

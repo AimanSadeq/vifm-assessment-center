@@ -34,7 +34,7 @@ export function RedeemClient({
           <div className="rounded-xl border bg-card p-6 text-center">
             <h1 className="text-lg font-semibold text-[#010131]">Missing voucher code</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Open the link your organisation sent you - it includes the code.
+              Open the link your organization sent you - it includes the code.
             </p>
           </div>
         ) : (

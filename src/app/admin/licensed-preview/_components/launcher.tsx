@@ -73,7 +73,7 @@ export function PreviewLauncher() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
-            <Label className="text-xs">Organisation name</Label>
+            <Label className="text-xs">Organization name</Label>
             <Input value={org} onChange={(e) => setOrg(e.target.value)} placeholder="e.g. Ministry of Finance" onKeyDown={(e) => e.key === "Enter" && launch()} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -99,7 +99,7 @@ export function PreviewLauncher() {
             <p className="text-[11px] text-muted-foreground">Paste a public logo image URL. Falls back to an initials mark.</p>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs">Accent colour</Label>
+            <Label className="text-xs">Accent color</Label>
             <div className="flex flex-wrap items-center gap-2">
               {ACCENTS.map((c) => (
                 <button

@@ -21,7 +21,7 @@ export function StartReadinessProgram({ orgs }: { orgs: { id: string; name: stri
     start(async () => {
       const res = await createReadinessProgramAction({ organizationId: org, name, targetRole: role });
       if ("error" in res) { toast.error(res.error); return; }
-      toast.success("Programme created");
+      toast.success("Program created");
       router.push(`/admin/engagements/${res.id}`);
     });
 
@@ -29,7 +29,7 @@ export function StartReadinessProgram({ orgs }: { orgs: { id: string; name: stri
     return (
       <Card>
         <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
-          <span className="text-muted-foreground">No client organisations yet - add one before starting a programme.</span>
+          <span className="text-muted-foreground">No client organizations yet - add one before starting a program.</span>
           <Link href="/admin/clients" className="font-medium text-accent hover:underline">Add a client →</Link>
         </CardContent>
       </Card>
@@ -39,7 +39,7 @@ export function StartReadinessProgram({ orgs }: { orgs: { id: string; name: stri
   if (!open) {
     return (
       <Button onClick={() => setOpen(true)} className="bg-[#010131] hover:bg-[#121140]">
-        <Plus className="mr-2 h-4 w-4" /> Start a Succession Readiness programme
+        <Plus className="mr-2 h-4 w-4" /> Start a Succession Readiness program
       </Button>
     );
   }
@@ -48,7 +48,7 @@ export function StartReadinessProgram({ orgs }: { orgs: { id: string; name: stri
     <Card>
       <CardContent className="space-y-3 p-4">
         <div className="flex items-center justify-between">
-          <p className="font-semibold text-[#010131]">New Succession Readiness programme</p>
+          <p className="font-semibold text-[#010131]">New Succession Readiness program</p>
           <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
         <p className="text-xs text-muted-foreground">
@@ -64,7 +64,7 @@ export function StartReadinessProgram({ orgs }: { orgs: { id: string; name: stri
             </select>
           </label>
           <label className="text-sm">
-            <span className="text-xs font-medium text-slate-500">Programme name</span>
+            <span className="text-xs font-medium text-slate-500">Program name</span>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Senior Manager Succession 2026" className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm" />
           </label>
           <label className="text-sm">

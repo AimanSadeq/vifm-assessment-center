@@ -81,7 +81,8 @@ table.rk { table-layout:fixed; }
 .mbox > div { background:var(--off); border:1px solid var(--gray); border-radius:5px; padding:5px 8px; font-size:8.8px; line-height:1.35; }
 .mbox .k { display:flex; align-items:center; gap:4px; font-size:7.4px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:1px; }
 .flow > * + * { margin-top:14px; }
-.flow > .closing { margin-top:16px; }
+/* Sign-off stands clear of the block above it (Ali, 17 Oct 2026, second note). */
+.flow > .closing { margin-top:30px; }
 .contband { border-bottom:2px solid var(--navy); padding:0 0 5px; margin:4px 0 12px; font-size:10px; color:var(--mid); }
 .stack { display:flex; flex-direction:column; gap:10px; }
 .blk { margin-top:14px; }
@@ -93,7 +94,7 @@ table.rk { table-layout:fixed; }
 .flag .ic { flex:0 0 auto; margin-top:1px; color:var(--amber); }
 .rk .chk { display:inline-block; margin-left:3px; font-size:7px; font-weight:700; background:var(--amberbg); color:var(--amber); border-radius:3px; padding:0 3px; vertical-align:middle; }
 .idpk .kpi { padding:5px 10px; } .idpk .kpi .v { font-size:15px; }
-.sig { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:4px; }
+.sig { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:10px; }
 .sig div { border-top:1px solid var(--text); padding-top:3px; font-size:8.5px; color:var(--muted); }
 .fnote { font-size:7.6px; }
 /* Roomy IDP: larger type when the plan still fits the two pages of the approved

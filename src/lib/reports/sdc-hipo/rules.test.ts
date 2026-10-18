@@ -130,6 +130,30 @@ test("IDP items: gaps target the required level, the strength one level up, with
   }
 });
 
+test("IDP content: every Learning line follows the approved shape", () => {
+  // Ali, 17 Oct 2026: a final automated check on every Learning line. Learn (the
+  // competency's module first), apply, and something measurable or evidenced;
+  // British spelling; readable length. His own 16 Oct lines set the shape, so a
+  // single sentence with a measure in it (RO Basic) is accepted.
+  const actions = (idpContent as unknown as { actions: Record<string, Record<string, { learning: string }>> }).actions;
+  const EVIDENCE =
+    /\b(record|recording|document|documenting|gather|gathering|note|show|demonstrate|reflect|present|review|complete|share|track|measurable|measure|test|evaluate|compare)\b/i;
+  const US_SPELLING = /\b(practiced|anonymized|recognizing|organizational|behaviors?|judgment|center|program)\b/;
+  for (const code of SDC_CODES) {
+    const want = MODULE[code].match(/^M(\d)/)![1];
+    for (const [level, a] of Object.entries(actions[code])) {
+      const id = `${code} ${level}`;
+      const line = a.learning;
+      assert.match(line, new RegExp(`^Apply Module ${want}\\b`), `${id}: should open with "Apply Module ${want}"`);
+      assert.match(line, EVIDENCE, `${id}: needs an evidence or measure word (record, document, gather feedback, track...)`);
+      const words = line.split(/\s+/).length;
+      assert.ok(words >= 15 && words <= 45, `${id}: ${words} words, expected 15 to 45`);
+      assert.doesNotMatch(line, US_SPELLING, `${id}: British spelling`);
+      assert.ok(line.endsWith("."), `${id}: ends with a full stop`);
+    }
+  }
+});
+
 test("IDP content: every Learning action starts with the competency's programme module", () => {
   // Ali, 14 Oct 2026: the card header (MODULE) and the Learning line must name the same module.
   const actions = (idpContent as unknown as { actions: Record<string, Record<string, { learning: string }>> }).actions;

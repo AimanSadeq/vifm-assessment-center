@@ -5,17 +5,17 @@
    "Basic": {
     "job": "Pick one task you repeat every week, list two ways to simplify it, try one and note the time saved.",
     "coaching": "Discuss with your coach one improvement idea you hesitated to raise, and plan how to propose it.",
-    "learning": "Module 3 session on innovation and problem solving; apply one idea-generation technique to a live task."
+    "learning": "Apply Module 3 innovation and problem-solving techniques to a recurring task. Generate at least two improvement ideas, test one, and record the impact on time, quality or efficiency."
    },
    "Proficient": {
     "job": "Lead a small improvement in your team's process: compare at least two options, pilot one for a month and measure the result.",
     "coaching": "Review the pilot results with your coach, including what you would change and how you handled resistance.",
-    "learning": "Module 3 innovation and problem-solving content; use the business challenge to test a new approach."
+    "learning": "Apply Module 3 innovation and problem-solving techniques, practised in the business challenge, to a team process improvement. Compare at least two options and document the measured result."
    },
    "Advanced": {
     "job": "Sponsor a cross-department pilot linked to an SDC priority, with agreed success measures and a decision point to scale or stop.",
     "coaching": "Work with your coach on building support for experimentation among senior stakeholders.",
-    "learning": "Module 3 strategy and innovation sessions and the capstone project; share lessons with other departments."
+    "learning": "Apply Module 3 strategy and innovation techniques, practised in the capstone project, to a cross-department pilot. Share the lessons with other departments and record which are adopted."
    }
   },
   "RO": {
@@ -27,24 +27,24 @@
    "Proficient": {
     "job": "Own a team deliverable with competing priorities; set milestones, track progress and adjust the plan when obstacles appear.",
     "coaching": "Use coaching to work through one trade-off between priorities and how you communicated it.",
-    "learning": "Module 3 business acumen and decision-making sessions; apply one prioritisation tool to the deliverable."
+    "learning": "Apply Module 3 business acumen and decision-making techniques to a team deliverable with competing priorities. Use one prioritisation tool and record the milestone decisions it shaped."
    },
    "Advanced": {
     "job": "Set a stretching outcome for a cross-team initiative, align resources around it and report progress to senior management monthly.",
     "coaching": "Discuss with your coach how you sustain performance when conditions change mid-delivery.",
-    "learning": "Module 3 and the capstone business project; present results and lessons in the C-suite presentation."
+    "learning": "Apply Module 3 business acumen through the capstone business project to deliver a measurable cross-team outcome. Present achievements, challenges and lessons learned to the C-suite, documenting feedback and agreed next steps."
    }
   },
   "ECC": {
    "Basic": {
     "job": "In your next three meetings, summarise what others said before giving your view, and share notes with colleagues afterwards.",
     "coaching": "Ask your coach for feedback on how clearly you communicate in writing, using two recent emails.",
-    "learning": "Module 2 communication and collaboration sessions; practise active listening in the workplace application."
+    "learning": "Apply Module 2 communication and collaboration techniques in the workplace application. Practise active listening with colleagues and note the feedback they give on how well they felt heard."
    },
    "Proficient": {
     "job": "Lead a joint task with another team: agree roles, hold regular check-ins and resolve one disagreement directly.",
     "coaching": "Prepare with your coach for a conversation with a stakeholder who sees the work differently.",
-    "learning": "Module 2 sessions on influence, feedback and collaboration; apply them to the team-based challenge."
+    "learning": "Apply Module 2 influence, feedback and collaboration techniques, practised in the team-based challenge, to a joint task with another team. Document which technique you used when a disagreement arose."
    },
    "Advanced": {
     "job": "Bring together stakeholders from several functions around a shared outcome, and run the forum that keeps them aligned.",
@@ -56,12 +56,12 @@
    "Basic": {
     "job": "Review the policies that apply to your role with your manager and confirm how you handle confidential information.",
     "coaching": "Discuss with your coach a time you made a mistake, how you acknowledged it and what you learned.",
-    "learning": "Module 1 sessions on personal accountability and leadership standards."
+    "learning": "Apply Module 1 leadership standards to your responsibilities. Review relevant policies with your line manager and demonstrate appropriate handling of confidential information, using an anonymised example without disclosing sensitive details."
    },
    "Proficient": {
     "job": "When you see a practice that conflicts with policy or values, raise it constructively with the right person and record the outcome.",
     "coaching": "Work through a real ethical dilemma from your role with your coach, weighing the competing interests.",
-    "learning": "Module 1 leadership standards content; review SDC's code of conduct and its practical cases."
+    "learning": "Apply Module 1 leadership standards to a realistic ethical dilemma aligned with SDC's applicable policies. Document the options, appropriate escalation route and rationale for your recommended action."
    },
    "Advanced": {
     "job": "Act as the integrity reference point on a sensitive initiative, setting clear standards and holding others to them.",
@@ -73,12 +73,12 @@
    "Basic": {
     "job": "Keep a commitment log for one month: what you promised, when, and whether it was delivered; tell people early about any slip.",
     "coaching": "Review the log with your coach and agree one habit that improves follow-through.",
-    "learning": "Module 1 sessions on personal accountability and leadership mindset."
+    "learning": "Apply Module 1 personal accountability and leadership mindset principles to your own commitments. Review your commitment log against them and note the pattern behind any slips and what you will change."
    },
    "Proficient": {
     "job": "Take end-to-end ownership of one improvement, including follow-through after launch and correcting what does not work.",
     "coaching": "Use coaching to plan the difficult conversations needed when commitments are at risk.",
-    "learning": "Module 1 accountability content; apply it to your stretch assignment."
+    "learning": "Apply Module 1 accountability principles to your stretch assignment. Define the commitments you own in it and show how you kept them visible and corrected what slipped."
    },
    "Advanced": {
     "job": "Define clear ownership for every outcome in a team or project, and review accountability openly at each milestone.",
@@ -90,29 +90,29 @@
    "Basic": {
     "job": "Read SDC's strategy and explain to your manager how your work contributes to two of its priorities.",
     "coaching": "Discuss with your coach one decision where you considered the wider context, and what you would do differently.",
-    "learning": "Module 3 strategy session and its pre-reading."
+    "learning": "Apply Module 3 strategy tools and the pre-reading to SDC's strategy. Map how your area supports two SDC priorities and record what the map changed in your own work."
    },
    "Proficient": {
     "job": "Lead a short horizon-scan of external trends affecting your area and present the implications to your department head.",
     "coaching": "Pair with a senior sponsor to test the assumptions behind your department's plan.",
-    "learning": "Module 3 strategy content and the business simulation."
+    "learning": "Apply Module 3 strategy tools, practised in the business simulation, to a horizon scan of your area. Structure the scan with one framework from the module and document the trends it surfaced."
    },
    "Advanced": {
     "job": "Shape a two-to-three-year direction for your function, testing assumptions with scenarios and aligning stakeholders behind it.",
     "coaching": "Use coaching to prepare how you will present and defend a long-term view to the executive team.",
-    "learning": "Module 3 strategy content and the capstone project with its C-suite presentation."
+    "learning": "Apply Module 3 strategy and scenario-planning techniques through the capstone project to develop a two-to-three-year strategic direction for your function. Present alternative scenarios, implications and recommendations, recording leadership feedback and agreed next steps."
    }
   },
   "DSP": {
    "Basic": {
     "job": "Hold a monthly check-in with your team on commitments and standards, and remove one obstacle each month.",
     "coaching": "Review with your coach how you balance short-term delivery with your team's workload.",
-    "learning": "Module 2 team leadership sessions."
+    "learning": "Apply Module 2 team leadership techniques to a monthly check-in with your team on commitments and standards. Run it with one technique from the module and gather the team's feedback."
    },
    "Proficient": {
     "job": "Set clear performance expectations for your team, review them with data each month and adjust resources where needed.",
     "coaching": "Discuss with your coach a trade-off between short-term results and team capability, and how you decided.",
-    "learning": "Module 2 performance and feedback content; Module 3 business acumen sessions."
+    "learning": "Apply Module 2 performance and feedback techniques, supported by Module 3 business acumen, to written expectations for your team. Review them with data monthly and document any resource adjustments."
    },
    "Advanced": {
     "job": "Design a system that sustains performance in your area, such as a capability plan or a performance rhythm, and track its effect.",
@@ -124,29 +124,29 @@
    "Basic": {
     "job": "For your next three decisions, write down the information used, the options considered and a simple action plan.",
     "coaching": "Review one of these decisions with your coach after it plays out.",
-    "learning": "Module 3 decision-making session; apply one decision tool to a live choice."
+    "learning": "Apply Module 3 decision-making techniques to a real workplace decision. Document the alternatives, selection criteria and rationale, then reflect on how the technique improved your decision-making process."
    },
    "Proficient": {
     "job": "Lead a decision that involves other stakeholders: evaluate alternatives and risks, decide on time and adjust the plan as conditions change.",
     "coaching": "Use coaching to review how you balanced speed and evidence in that decision.",
-    "learning": "Module 3 decision-making and problem-solving content and the business simulation."
+    "learning": "Apply Module 3 decision-making and problem-solving tools, practised in the business simulation, to a decision involving other stakeholders. Evaluate the alternatives and risks in writing and record the decision date."
    },
    "Advanced": {
     "job": "Lead a high-impact decision under uncertainty, with a plan that sets priorities, contingencies and clear accountabilities.",
     "coaching": "Discuss with your coach how you integrate conflicting views before deciding.",
-    "learning": "Module 3 decision-making content and the capstone project."
+    "learning": "Apply Module 3 decision-making techniques through the capstone project to evaluate a high-impact decision under uncertainty. Develop contingency options, document key assumptions and review their validity as new information becomes available."
    }
   },
   "IM": {
    "Basic": {
     "job": "Recognise one specific contribution from a colleague each week, and explain how it helped the team's goal.",
     "coaching": "Discuss with your coach what motivates the people you work with most closely.",
-    "learning": "Module 2 sessions on team leadership and feedback."
+    "learning": "Apply Module 2 feedback and motivation techniques by recognising specific contributions linked to team goals. Record the recognition provided and gather feedback on its relevance and motivational impact."
    },
    "Proficient": {
     "job": "In each team meeting, link current work to the team's purpose, and hold a development conversation with each team member this quarter.",
     "coaching": "Use coaching to plan how to keep engagement up through a demanding period.",
-    "learning": "Module 2 coaching and motivation content; apply it in the team-based challenge."
+    "learning": "Apply Module 2 coaching and motivation techniques, practised in the team-based challenge, to a development conversation with each team member. Record the agreed actions and complete a short team engagement check."
    },
    "Advanced": {
     "job": "Lead your team or project through a significant change, communicating purpose and adapting your approach to different people's needs.",
@@ -168,7 +168,7 @@
    "Advanced": {
     "job": "Take visible responsibility for a difficult leadership decision, explain it openly and model the values it reflects.",
     "coaching": "Discuss with your coach how your conduct sets the tone across the organisation.",
-    "learning": "Module 4 executive presence content and the capstone presentation."
+    "learning": "Apply Module 4 executive presence and leadership principles to a challenging workplace decision. Communicate the rationale, demonstrate consistency with organisational values and gather feedback on how your actions influenced others."
    }
   }
  },

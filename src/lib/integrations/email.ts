@@ -74,12 +74,12 @@ function getGraphClient(): Client | null {
 
 const TEMPLATES: Record<EmailTemplate, { subject: string; body: string }> = {
   platform_demo_request: {
-    subject: "New demo request - {{organization}}",
+    subject: "New demo request - {{organisation}}",
     body: `A demo request was submitted from the Caliber landing page.
 
 Name: {{name}}
 Work email: {{email}}
-Organization: {{organization}}
+Organization: {{organisation}}
 Role: {{role}}
 Phone: {{phone}}
 

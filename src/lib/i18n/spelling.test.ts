@@ -30,6 +30,7 @@ const STORED_NAMES = /British Psychological Society|Design and Delivery of Asses
 function offenders(text: string): string[] {
   const cleaned = text
     .replace(/\$\{[^}]*\}/g, " ") // template expressions are code (enum values, identifiers)
+    .replace(/\{\{[^}]*\}\}/g, " ") // i18n placeholders are keys the code passes, not copy
     .replace(STORED_NAMES, " ")
     .replace(/\S+:\/\/\S+/g, " ")
     .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, " ");

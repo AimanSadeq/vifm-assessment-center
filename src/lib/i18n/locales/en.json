@@ -3558,7 +3558,7 @@
         "frameworkManual": "Built manually (add competencies on detail page)"
       },
       "reviewToggle": "Review the framework before launching",
-      "reviewCount": "{{competencies}} competencies · {{behaviors}} behaviors",
+      "reviewCount": "{{competencies}} competencies · {{behaviours}} behaviors",
       "loading": "Loading…",
       "downloadPdf": "Download PDF",
       "emptyFramework": "No competencies yet - the framework is empty.",

@@ -14,7 +14,7 @@ This guide walks through the full lifecycle for each role.
    - [Delegate (respondent) roadmap](#delegate-respondent-roadmap)
    - [Client roadmap](#client-roadmap)
 3. [Detailed walkthroughs](#detailed-walkthroughs)
-   - [Consultant — running an organizational engagement](#consultant--running-an-organisational-engagement)
+   - [Consultant — running an organizational engagement](#consultant--running-an-organizational-engagement)
    - [Delegate — completing a respondent survey](#delegate--completing-a-respondent-survey)
    - [Personal — taking the free snapshot](#personal--taking-the-free-snapshot)
    - [Client — receiving and using the report](#client--receiving-and-using-the-report)

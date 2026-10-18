@@ -32,7 +32,7 @@ This guide walks through the full lifecycle for each role.
 | **Exercises** | In-Basket · Role Play · Group Exercise · Case Study · Oral Presentation · CBI |
 | **Scoring** | BARS 1–5 per competency; Overall Assessment Rating (OAR) 1–5 → Ready Now / Ready with Development / Not Ready |
 | **Reports** | 6-page bilingual candidate report + 4-page personalized Learning Plan (30/60/90-day roadmap + recommended VIFM programs) |
-| **Compliance** | UAE PDPL · Saudi PDPL · GDPR · ISO 10667 · ITF AC Guidelines (6th ed.) · BPS Design and Delivery of Assessment Centres (2015): every platform-side clause built, see [Running a center to the standard](#11-running-a-centre-to-the-standard) |
+| **Compliance** | UAE PDPL · Saudi PDPL · GDPR · ISO 10667 · ITF AC Guidelines (6th ed.) · BPS Design and Delivery of Assessment Centres (2015): every platform-side clause built, see [Running a center to the standard](#11-running-a-center-to-the-standard) |
 
 **Entry points by role:**
 

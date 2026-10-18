@@ -82,7 +82,7 @@ table.rk { table-layout:fixed; }
 .mbox .k { display:flex; align-items:center; gap:4px; font-size:7.4px; letter-spacing:1px; text-transform:uppercase; color:var(--accent); font-weight:700; margin-bottom:1px; }
 .flow > * + * { margin-top:14px; }
 /* Sign-off stands clear of the block above it (Ali, 17 Oct 2026, second note). */
-.flow > .closing { margin-top:30px; }
+.flow > .closing { margin-top:60px; }
 .contband { border-bottom:2px solid var(--navy); padding:0 0 5px; margin:4px 0 12px; font-size:10px; color:var(--mid); }
 .stack { display:flex; flex-direction:column; gap:10px; }
 .blk { margin-top:14px; }

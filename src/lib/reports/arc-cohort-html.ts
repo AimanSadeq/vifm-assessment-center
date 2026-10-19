@@ -273,6 +273,8 @@ ul.items li:last-child { border-bottom:0; }
 .score { flex:0 0 auto; min-width:30px; text-align:center; font-weight:700; font-size:10px; border-radius:6px; padding:2px 5px; margin-top:4px; }
 .heat { display:flex; flex-wrap:wrap; gap:2px; } .heat .cell { display:inline-block; min-width:26px; text-align:center; font-size:7.5px; font-weight:700; padding:2px 3px; border-radius:3px; }
 .levels td { padding:3px 6px; font-size:9px; }
+.gloss td { padding:3px 6px 3px 0; font-size:8.8px; line-height:1.4; vertical-align:top; }
+.gloss td.term { font-weight:700; color:var(--navy); width:118px; }
 .note { font-size:9.5px; color:#334155; margin:0; }
 .fc { border-top:3px solid var(--line); }
 .hl { font-size:15px; font-weight:700; color:var(--navy); line-height:1.25; margin:2px 0 4px; }
@@ -318,7 +320,7 @@ export function buildArcCohortReportHtml(input: ArcCohortReportInput): string {
   // 1. Cover -----------------------------------------------------------------
   const toc: string[] = ["Executive summary", "Participation"];
   if (org) toc.push("Organizational readiness by pillar", "Where the delegates agree, and where they do not", "Organizational strengths and gaps by question");
-  toc.push("Workforce readiness by factor", "How the delegates are distributed", "Workforce strengths and gaps by question", "Development priorities", "About this report");
+  toc.push("Workforce readiness by factor", "How the delegates are distributed", "Workforce strengths and gaps by question", "Development priorities", "About this report", "Glossary of terms");
   pages.push(`${topBar(company, "Cohort dashboard")}
 <div class="cover-band"><div class="eyebrow">AI Readiness Compass  |  Cohort dashboard</div>
   <h1>${esc(company)}</h1>
@@ -537,10 +539,73 @@ ${org ? `<div class="card blk"><div class="eyebrow">${svg("grid")} For the organ
   <p class="note">Scores describe self-reported and demonstrated readiness at the time of the assessment. They are a development signal, not a selection decision, and organizational ratings are the delegates' perception of ${esc(company)}, not an audit. Individual results are confidential to each delegate and appear nowhere in this document; the cohort view is shared with ${esc(company)} at the organizational level only.</p>
   <p class="note" style="margin-top:6px">Prepared by the Virginia Institute of Finance and Management on the Caliber platform, ${esc(generatedAt)}.</p></div>`);
 
+  // 12. Glossary -------------------------------------------------------------
+  pages.push(`${topBar(company, "Glossary")}
+<h2>Glossary of terms used in this report</h2>
+<div class="grid2 blk" style="align-items:start">
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${glossary("Scores and the target", [
+      ["1 to 5 scale", "Every question is scored from 1 (lowest) to 5 (highest). A factor or pillar score is the plain average of its questions; the cohort figure is the average across the counted delegates."],
+      ["Target (4.0)", "The benchmark on both layers: confident, routine use of AI for a delegate, and an Advanced practice for a pillar. \"Below target\" counts the delegates under 4.0; a \"gap\" is the distance from the cohort mean to 4.0."],
+      ["Cohort mean", "The average of the completed delegates' scores, after any internal test runs have been removed."],
+      ["At or above target (questions)", "The delegates who scored 4 or 5 on that one question."],
+      ["Strongest practices, widest gaps", "The questions with the highest and lowest cohort means, named so the averages can be traced to concrete behaviors."],
+    ])}
+    ${glossary("Workforce readiness stages (per delegate)", ARA_INDIVIDUAL_MATURITY_STAGES.slice().reverse().map((s, i) => [`${s.name_en} (${["4.0 to 5.0", "3.0 to 3.9", "1.0 to 2.9"][i]})`, s.blurb_en] as [string, string]))}
+    ${glossary("Factor tones", [
+      [`${ARA_FACTOR_TONES.strong.en} (4.0 and above)`, "The cohort average meets the target on that factor."],
+      [`${ARA_FACTOR_TONES.developing.en} (3.0 to 3.9)`, "Below target but past the halfway point; the natural focus for a short program."],
+      [`${ARA_FACTOR_TONES.opportunity.en} (below 3.0)`, "Well below target; development here moves overall readiness most. The lowest factor is called the main opportunity."],
+    ])}
+    ${glossary("Population standing", [
+      ["Percentile", `Where the cohort mean sits among every personal snapshot taken on the platform to date: the 58th percentile means the cohort scores at or above 58 percent of everyone assessed. Published once ${MIN_NORM_SAMPLE} snapshots exist.`],
+      ["All assessed average", "The mean of that same population, drawn on the radar and under each factor card for comparison."],
+    ])}
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    ${glossary("Organizational maturity levels (per pillar)", ARA_MATURITY_LEVELS.map((l) => [`L${l.level} ${l.label_en} (${l.min.toFixed(1)} to ${l.max.toFixed(1)})`, LEVEL_READING[l.level]] as [string, string]))}
+    ${glossary("Organizational readiness bands (overall)", ARA_OVERALL_BANDS.map((b) => [`${b.label_en} (${b.min.toFixed(1)} to ${b.max.toFixed(1)})`, BAND_READING[b.label_en] ?? ""] as [string, string]))}
+    ${glossary("Agreement between delegates", [
+      ["Lowest, highest, spread", "The lowest and highest single-delegate rating of a pillar; the spread is the difference between them."],
+      ["Consistent, Mixed, Divided", "Set by the standard deviation of the delegates' pillar scores: under 0.6 consistent (one organization-wide picture), under 0.9 mixed, otherwise divided (delegates describe different realities, usually by team or role)."],
+      ["Shared gap", "A pillar every delegate rates below target: a central fix rather than a team-by-team one."],
+    ])}
+    ${glossary("Participation and data", [
+      ["Redeemed, opened, completed, scored", "Vouchers used; delegates who opened the assessment; delegates who finished it; delegates with enough scored answers to place on the scale."],
+      ["Snapshot and deep dive", "Snapshot: self-report statements rated 1 to 5. Deep dive: the same plus scenario and knowledge-check questions that test judgment rather than self-view."],
+      ["Practice data", "Sittings taken on practice codes. Reported, but not compared with the population."],
+      ["Program ranking", "Programs come from the VIFM catalog by pillar and factor tags, ranked by the gap to target multiplied by the program's relevance to that pillar or factor. \"Addresses\" names the two strongest drivers."],
+    ])}
+  </div>
+</div>`);
+
   const total = pages.length;
   const body = pages.map((p, i) => `<div class="page">${p}${pfoot(company, i + 1, total)}</div>`).join("");
   return doc(`${company}: AI readiness cohort dashboard`, body);
 }
+
+/** One glossary block: a titled list of term and definition rows. */
+function glossary(title: string, rows: [string, string][]): string {
+  return `<div class="card"><div class="eyebrow">${svg("info")} ${esc(title)}</div><table class="gloss">${rows.map(([t, d]) => `<tr><td class="term">${esc(t)}</td><td>${esc(d)}</td></tr>`).join("")}</table></div>`;
+}
+
+/** How to read each pillar maturity level; the labels and ranges come from ARA_MATURITY_LEVELS. */
+const LEVEL_READING: Record<number, string> = {
+  1: "The practice is not yet recognized as needed; nothing systematic is in place.",
+  2: "The need is recognized and activity exists in pockets, driven by individuals rather than the organization.",
+  3: "The practice is established but applied unevenly; results depend on who is involved.",
+  4: "The practice is consistent, owned and managed across the organization.",
+  5: "The practice is embedded, measured and continuously improved; a reference point for others.",
+};
+
+/** How to read each overall organizational band; the labels and ranges come from ARA_OVERALL_BANDS. */
+const BAND_READING: Record<string, string> = {
+  "Not Ready": "Most pillars are unaware or barely exploring; foundations come before any AI program.",
+  "Early Stage": "Exploration has begun; a few pillars show activity but none is consistent.",
+  "In Progress": "Practices are forming across the pillars; the work is making them consistent.",
+  "Advanced": "The organization meets the target: practices are consistent and managed.",
+  "AI Leader": "Practices are embedded and improving; the organization can set the pace for others.",
+};
 
 /** Anonymous dots on a 1-5 axis, stacked where they coincide, with the mean and the target. */
 function dotStrip(values: number[], mean: number | null, W = 540): string {

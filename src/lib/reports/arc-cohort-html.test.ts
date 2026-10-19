@@ -15,13 +15,15 @@ const render = (detail = FIXTURE_DETAIL) =>
 test("dashboard: both layers, every page, organizational level only", () => {
   const html = render();
   const pages = html.match(/<div class="page">/g)?.length ?? 0;
-  assert.equal(pages, 11);
-  assert.match(html, /Page 11 of 11/);
+  assert.equal(pages, 12);
+  assert.match(html, /Page 12 of 12/);
   for (const section of [
     "Executive summary", "Participation", "Organizational readiness by pillar", "Where the delegates agree",
     "Organizational strengths and gaps by question", "Workforce readiness by factor", "How the delegates are distributed",
-    "Workforce strengths and gaps by question", "Development priorities", "About this report",
+    "Workforce strengths and gaps by question", "Development priorities", "About this report", "Glossary of terms",
   ]) assert.match(html, new RegExp(section), section);
+  // The glossary defines the stage, level and band words the report uses.
+  for (const term of ["Embedded \\(4.0 to 5.0\\)", "L2 Exploring \\(2.0 to 2.9\\)", "Early Stage \\(2.0 to 2.9\\)", "Consistent, Mixed, Divided", "Percentile"]) assert.match(html, new RegExp(term), term);
   // Pillars and factors are all present.
   for (const p of ["Strategy &amp; Vision", "Data Foundations", "Model Management &amp; Monitoring"]) assert.match(html, new RegExp(p));
   for (const f of ["AI Sense-Check", "AI Working Practice", "AI Collaboration", "AI Adaptive Mindset"]) assert.match(html, new RegExp(f));
@@ -40,7 +42,7 @@ test("dashboard: both layers, every page, organizational level only", () => {
 
 test("dashboard: personal-only cohort drops the organizational pages", () => {
   const html = render({ ...FIXTURE_DETAIL, org: null });
-  assert.equal(html.match(/<div class="page">/g)?.length, 8);
+  assert.equal(html.match(/<div class="page">/g)?.length, 9);
   assert.doesNotMatch(html, /Organizational readiness by pillar/);
   assert.match(html, /Workforce readiness by factor/);
 });

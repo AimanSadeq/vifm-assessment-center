@@ -323,7 +323,8 @@ Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to do
 - [x] **Organisational pillars** (Aiman 19 Oct: "these need to be part of the report"). ITQAN's vouchers are enterprise-stage, all 8 pillars, 5 items per pillar, personal layer on, one sitting per person (not pooled). New `company-cohort-detail.ts` pools the counted delegates' pillar answers (mean, range, sd, maturity level, below-target, item-level means); `arc-cohort-html.ts` is now an 11-page dashboard (cover with two gauges, executive summary, participation, 3 organisational pages, 3 workforce pages, development priorities from both recommenders, method). Personal-only cohorts get 8 pages. Fixture `arc-cohort-fixture.ts`; local render check in scratchpad `arc-cohort/render.ts` (overflow check per page).
 - [x] Merged to master 19 Oct (d9d91b97). Aiman: "The report looks amazing."
 - [x] Glossary page (Aiman 19 Oct: definitions of L1 to L5, Embedded, Practicing, Emerging): page 12, `feat/arc-cohort-glossary` ad53ea37, merged on "merge". Stage definitions are the platform's own blurbs; the level and band readings are new wording (offered for edit, none requested).
-- [ ] Aiman deploys master; then the WhatsApp reply to Ahmad (draft given 19 Oct; add: the dashboard now includes the pillars and a glossary, and the ZIP shows "Preparing N reports" while it builds).
+- [x] Deployed 19 Oct (master fab77d4d). Aiman sent Ahmad the WhatsApp (route, the two buttons, 12-page dashboard with pillars and glossary, ZIP progress state).
+- [ ] Open: confirm with Ahmad that the ITQAN ZIP now completes (timing not measurable from the session); Arabic cohort dashboard if a client asks; wording of the L1 to L5 level readings if Aiman wants changes.
 - Open: Arabic cohort PDF (personal ZIP already supports `language=ar`); whether the cohort PDF should go to the client directly or via Ahmad.
 
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)

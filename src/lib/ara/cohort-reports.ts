@@ -1,6 +1,11 @@
 import JSZip from "jszip";
+import type { Browser } from "puppeteer-core";
 import { createServiceClient } from "@/lib/supabase/server";
-import { buildPersonalReportPdf } from "@/lib/reports/personal-report-build";
+import {
+  buildPersonalReportPdf,
+  launchPersonalReportBrowser,
+  type PersonalReportBatch,
+} from "@/lib/reports/personal-report-build";
 import { computeCompanyCohortInsight } from "@/lib/ara/company-cohort";
 import { cohortZipFilename } from "@/lib/ara/cohort-filenames";
 
@@ -13,16 +18,20 @@ export { safeFileSegment, cohortZipFilename } from "@/lib/ara/cohort-filenames";
  * one download instead of eleven.
  *
  * Each PDF is produced by the same builder as the delegate's own download, so
- * the client receives exactly what the delegate saw. Reports are rendered one
- * at a time: each render opens its own headless browser, and the cohorts are
- * small (a voucher batch, not a workforce). Anything that could not be
- * rendered is listed in a README inside the archive rather than dropped.
+ * the client receives exactly what the delegate saw. One headless browser is
+ * opened for the whole batch and a few reports render at a time (the first
+ * version launched Chromium per report and ran them one after another, which
+ * on Render took longer than the HTTP timeout for a cohort of a dozen).
+ * Anything that could not be rendered is listed in a README inside the
+ * archive rather than dropped.
  *
  * Authorization is the caller's job (admin only).
  */
 
 /** Hard cap so a mistyped company name cannot turn into a very long render. */
 export const COHORT_ZIP_MAX_REPORTS = 60;
+/** Pages rendering at once on the shared browser. */
+const CONCURRENCY = 3;
 
 export type CohortZipResult =
   | { ok: true; zip: Buffer; filename: string; included: number; skipped: string[] }
@@ -61,31 +70,57 @@ export async function buildCohortReportsZip(opts: {
     skipped.push(`${r.name}: over the limit of ${COHORT_ZIP_MAX_REPORTS} reports per download`);
   }
 
-  for (const r of picked) {
-    const token = tokenById.get(r.respondent_id);
-    if (!token) {
-      skipped.push(`${r.name}: no access token on record`);
-      continue;
-    }
-    try {
-      const result = await buildPersonalReportPdf({ token, lang });
-      if (!result.ok) {
-        skipped.push(`${r.name}: ${result.error}`);
-        continue;
+  let browser: Browser;
+  try {
+    browser = await launchPersonalReportBrowser();
+  } catch (e) {
+    console.error("[arc cohort zip] browser launch failed", e);
+    throw new Error("PDF_RENDERER_UNAVAILABLE");
+  }
+  const batch: PersonalReportBatch = { browser, orgComparison: new Map() };
+  // Rendered PDFs in cohort order, so the archive lists delegates predictably.
+  const rendered: ({ name: string; filename: string; pdf: Buffer } | null)[] = new Array(picked.length).fill(null);
+
+  try {
+    let next = 0;
+    const worker = async () => {
+      while (next < picked.length) {
+        const i = next++;
+        const r = picked[i];
+        const token = tokenById.get(r.respondent_id);
+        if (!token) {
+          skipped.push(`${r.name}: no access token on record`);
+          continue;
+        }
+        try {
+          const result = await buildPersonalReportPdf({ token, lang, batch });
+          if (!result.ok) {
+            skipped.push(`${r.name}: ${result.error}`);
+            continue;
+          }
+          rendered[i] = { name: r.name, filename: result.filename, pdf: result.pdf };
+        } catch (e) {
+          console.error(`[arc cohort zip] ${r.name}:`, e instanceof Error ? e.message : e);
+          skipped.push(`${r.name}: the report could not be rendered; try again in a moment`);
+        }
       }
-      let path = result.filename;
-      let n = 2;
-      while (taken.has(path)) {
-        path = result.filename.replace(/\.pdf$/i, `_${n}.pdf`);
-        n += 1;
-      }
-      taken.add(path);
-      zip.file(path, result.pdf);
-      included += 1;
-    } catch (e) {
-      console.error(`[arc cohort zip] ${r.name}:`, e instanceof Error ? e.message : e);
-      skipped.push(`${r.name}: the report could not be rendered; try again in a moment`);
+    };
+    await Promise.all(Array.from({ length: Math.min(CONCURRENCY, picked.length) }, worker));
+  } finally {
+    await browser.close().catch(() => {});
+  }
+
+  for (const item of rendered) {
+    if (!item) continue;
+    let path = item.filename;
+    let n = 2;
+    while (taken.has(path)) {
+      path = item.filename.replace(/\.pdf$/i, `_${n}.pdf`);
+      n += 1;
     }
+    taken.add(path);
+    zip.file(path, item.pdf);
+    included += 1;
   }
 
   if (included === 0) {

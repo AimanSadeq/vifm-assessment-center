@@ -35,11 +35,22 @@ export type BuildPersonalReportResult =
   | { ok: true; pdf: Buffer; filename: string }
   | { ok: false; status: number; error: string };
 
+/**
+ * Shared state for a batch of reports (the cohort ZIP): one Chromium for every
+ * render instead of one per report, and the organization-wide comparison
+ * computed once per organization instead of once per delegate.
+ */
+export type PersonalReportBatch = {
+  browser?: Browser;
+  orgComparison?: Map<string, Promise<CohortComparison | null>>;
+};
+
 export async function buildPersonalReportPdf(opts: {
   token: string;
   lang?: string | null;
   /** View-only lens override (?present=), never changes the stored sitting. */
   present?: string | null;
+  batch?: PersonalReportBatch;
 }): Promise<BuildPersonalReportResult> {
   const ctx = await loadRespondentByToken(opts.token);
   if (!ctx) return { ok: false, status: 404, error: "Token not found" };
@@ -131,9 +142,21 @@ export async function buildPersonalReportPdf(opts: {
         respondents: wf.completed_count,
       };
     }
-    org = ctx.assessment.organization_id
-      ? await computeOrgComparison(ctx.assessment.organization_id, ctx.assessment.organization?.name ?? null)
-      : null;
+    if (ctx.assessment.organization_id) {
+      const orgId = ctx.assessment.organization_id;
+      const orgName = ctx.assessment.organization?.name ?? null;
+      const cache = opts.batch?.orgComparison;
+      if (cache) {
+        let p = cache.get(orgId);
+        if (!p) {
+          p = computeOrgComparison(orgId, orgName);
+          cache.set(orgId, p);
+        }
+        org = await p;
+      } else {
+        org = await computeOrgComparison(orgId, orgName);
+      }
+    }
     // If the organisation has only this one unit, the two rows would be the
     // same number twice; keep the more specific one.
     if (org && unit && org.respondents === unit.respondents) org = null;
@@ -159,7 +182,7 @@ export async function buildPersonalReportPdf(opts: {
   };
 
   const html = renderPersonalReportHtml(data);
-  const pdf = await renderHtmlToPdfBuffer(html);
+  const pdf = await renderHtmlToPdfBuffer(html, opts.batch?.browser);
   const safeName = ctx.respondent.name.replace(/[^a-zA-Z0-9\s]/g, "").replace(/\s+/g, "_") || "Report";
   return { ok: true, pdf, filename: `VIFM_AI_Readiness_Report_${safeName}_${lang}.pdf` };
 }
@@ -211,16 +234,20 @@ async function computeOrgComparison(orgId: string, orgName: string | null): Prom
  * survive the build). Waits for fonts so Arabic glyphs are shaped from the
  * loaded Noto face rather than whatever the Chromium build has on the system.
  */
-async function renderHtmlToPdfBuffer(html: string): Promise<Buffer> {
+async function renderHtmlToPdfBuffer(html: string, shared?: Browser): Promise<Buffer> {
   let browser: Browser;
-  try {
-    browser = await launchPdfBrowser({ defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 } });
-  } catch (launchErr) {
-    console.error("[personal report] browser launch failed", launchErr);
-    throw new Error("PDF_RENDERER_UNAVAILABLE");
+  if (shared) {
+    browser = shared;
+  } else {
+    try {
+      browser = await launchPersonalReportBrowser();
+    } catch (launchErr) {
+      console.error("[personal report] browser launch failed", launchErr);
+      throw new Error("PDF_RENDERER_UNAVAILABLE");
+    }
   }
+  const page = await browser.newPage();
   try {
-    const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0", timeout: 60_000 });
     await page.evaluate(async () => {
       const f = (document as unknown as { fonts?: { ready?: Promise<unknown> } }).fonts;
@@ -229,6 +256,13 @@ async function renderHtmlToPdfBuffer(html: string): Promise<Buffer> {
     const pdf = await page.pdf({ format: "A4", printBackground: true, preferCSSPageSize: true });
     return Buffer.from(pdf);
   } finally {
-    await browser.close().catch(() => {});
+    await page.close().catch(() => {});
+    // A shared browser belongs to the batch that opened it.
+    if (!shared) await browser.close().catch(() => {});
   }
+}
+
+/** The browser a batch should open once and pass to every buildPersonalReportPdf call. */
+export function launchPersonalReportBrowser(): Promise<Browser> {
+  return launchPdfBrowser({ defaultViewport: { width: 1200, height: 900, deviceScaleFactor: 1 } });
 }

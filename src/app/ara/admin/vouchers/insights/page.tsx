@@ -17,7 +17,6 @@ import {
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import {
@@ -31,6 +30,7 @@ import {
 } from "@/lib/ara/company-cohort";
 import { CohortCsvButton } from "./_components/cohort-csv-button";
 import { ExcludeToggle } from "./_components/exclude-toggle";
+import { CohortDownloadButton } from "./_components/cohort-download-button";
 
 export const dynamic = "force-dynamic";
 
@@ -213,17 +213,19 @@ async function CompanyDetail({ company }: { company: string }) {
           </Link>
           {insight.completed > 0 && (
             <div className="flex flex-wrap justify-end gap-2">
-              <Button size="sm" variant="outline" className="gap-1" asChild>
-                <a href={`/api/ara/admin/vouchers/zip?company=${encodeURIComponent(insight.company_label)}`}>
-                  <FolderArchive className="h-3.5 w-3.5" /> All personal reports (ZIP)
-                </a>
-              </Button>
+              <CohortDownloadButton
+                href={`/api/ara/admin/vouchers/zip?company=${encodeURIComponent(insight.company_label)}`}
+                label="All personal reports (ZIP)"
+                busyLabel={`Preparing ${insight.completed} report${insight.completed === 1 ? "" : "s"}…`}
+                icon={<FolderArchive className="h-3.5 w-3.5" />}
+              />
               {scoredCount > 0 && (
-                <Button size="sm" variant="outline" className="gap-1" asChild>
-                  <a href={`/api/ara/admin/vouchers/cohort-pdf?company=${encodeURIComponent(insight.company_label)}`}>
-                    <FileText className="h-3.5 w-3.5" /> Cohort report (PDF)
-                  </a>
-                </Button>
+                <CohortDownloadButton
+                  href={`/api/ara/admin/vouchers/cohort-pdf?company=${encodeURIComponent(insight.company_label)}`}
+                  label="Cohort dashboard (PDF)"
+                  busyLabel="Building the dashboard…"
+                  icon={<FileText className="h-3.5 w-3.5" />}
+                />
               )}
             </div>
           )}

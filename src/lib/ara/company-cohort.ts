@@ -73,7 +73,13 @@ export type ExcludedRedemption = {
 };
 
 /** A cohort delegate, with the redemption that admits them to the cohort. */
-export type CohortRespondent = WorkforceRespondent & { redemption_id: string };
+export type CohortRespondent = WorkforceRespondent & {
+  redemption_id: string;
+  /** The sitting this redemption provisioned (or joined, for a pooled code). */
+  assessment_id: string | null;
+  /** "individual" for a personal ARC; department / division / enterprise when the voucher also carried the organizational pillars. */
+  engagement_stage: string | null;
+};
 
 export type CompanyCohortInsight = {
   company_key: string;
@@ -103,6 +109,11 @@ export type CompanyCohortInsight = {
   norms_ready: boolean;
   norm_sample_size: number;
   overall_percentile: number | null;
+  /** Per-factor percentile of the cohort average in the same pool (null until norms are ready). */
+  factor_percentiles: Record<AraIndividualFactorId, number | null>;
+  /** Population means, for "cohort vs everyone assessed so far" comparisons (null until norms are ready). */
+  norm_factor_means: Record<AraIndividualFactorId, number | null>;
+  norm_overall_mean: number | null;
 };
 
 // ── Shared redemption-row shape (PostgREST embeds FKs as arrays) ──
@@ -132,8 +143,8 @@ type RedemptionJoinRow = {
       }
     | null;
   assessment:
-    | { assessment_tier: string | null; is_sandbox: boolean | null }[]
-    | { assessment_tier: string | null; is_sandbox: boolean | null }
+    | { id: string; assessment_tier: string | null; is_sandbox: boolean | null; engagement_stage: string | null }[]
+    | { id: string; assessment_tier: string | null; is_sandbox: boolean | null; engagement_stage: string | null }
     | null;
 };
 
@@ -145,7 +156,7 @@ function firstOf<T>(v: T[] | T | null | undefined): T | null {
 const REDEMPTION_SELECT =
   "id, company_name, redeemed_at, excluded_at, ara_respondent_id, ara_assessment_id, " +
   "respondent:ara_respondents(id, name, email, completed_at, first_opened_at, individual_only), " +
-  "assessment:ara_assessments(assessment_tier, is_sandbox)";
+  "assessment:ara_assessments(id, assessment_tier, is_sandbox, engagement_stage)";
 
 /**
  * Enumerate every company that has at least one voucher redemption, with a
@@ -213,6 +224,16 @@ type QMeta = {
   questionType: AraQuestionType;
   scoreMap: Record<string, number> | null;
 };
+
+const nullByFactor = (): Record<AraIndividualFactorId, number | null> => ({
+  thinking_sense_check: null,
+  results_working_practice: null,
+  people_collaboration: null,
+  self_adaptive_mindset: null,
+});
+
+const meanOf = (xs: number[]): number | null =>
+  xs.length > 0 ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
 
 const freshAcc = (): Record<AraIndividualFactorId, { sum: number; count: number }> => ({
   thinking_sense_check: { sum: 0, count: 0 },
@@ -283,6 +304,8 @@ export async function computeCompanyCohortInsight(
     type ScorableRespondent = {
       id: string;
       redemption_id: string;
+      assessment_id: string | null;
+      engagement_stage: string | null;
       name: string;
       email: string;
       completed_at: string | null;
@@ -310,6 +333,8 @@ export async function computeCompanyCohortInsight(
         scorable.set(resp.id, {
           id: resp.id,
           redemption_id: r.id,
+          assessment_id: assess?.id ?? r.ara_assessment_id ?? null,
+          engagement_stage: assess?.engagement_stage ?? null,
           name: resp.name,
           email: resp.email,
           completed_at: resp.completed_at,
@@ -423,6 +448,8 @@ export async function computeCompanyCohortInsight(
       return {
         respondent_id: r.id,
         redemption_id: r.redemption_id,
+        assessment_id: r.assessment_id,
+        engagement_stage: r.engagement_stage,
         name: r.name,
         email: r.email,
         completed_at: r.completed_at,
@@ -483,12 +510,23 @@ export async function computeCompanyCohortInsight(
     let norms_ready = false;
     let norm_sample_size = 0;
     let overall_percentile: number | null = null;
+    let norm_overall_mean: number | null = null;
+    const factor_percentiles = nullByFactor();
+    const norm_factor_means = nullByFactor();
     try {
       const norms = await computePersonalNorms();
       norm_sample_size = norms.sampleSize;
       norms_ready = norms.ready && norms.sampleSize >= MIN_NORM_SAMPLE;
-      if (norms_ready && cohort_overall != null) {
-        overall_percentile = percentileRank(cohort_overall, norms.overall);
+      if (norms_ready) {
+        if (cohort_overall != null) overall_percentile = percentileRank(cohort_overall, norms.overall);
+        norm_overall_mean = meanOf(norms.overall);
+        for (const id of ARA_INDIVIDUAL_FACTOR_IDS) {
+          const dist = norms.perFactor[id] ?? [];
+          norm_factor_means[id] = meanOf(dist);
+          const avg = factor_averages.find((f) => f.factor_id === id);
+          factor_percentiles[id] =
+            avg && avg.respondent_count > 0 && dist.length > 0 ? percentileRank(avg.average, dist) : null;
+        }
       }
     } catch {
       // Norms are a best-effort enrichment; ignore failures.
@@ -512,6 +550,9 @@ export async function computeCompanyCohortInsight(
       norms_ready,
       norm_sample_size,
       overall_percentile,
+      factor_percentiles,
+      norm_factor_means,
+      norm_overall_mean,
     };
   } catch (e) {
     console.error("[ara] computeCompanyCohortInsight error:", e);
@@ -561,5 +602,8 @@ function emptyScoredInsight(
     norms_ready: false,
     norm_sample_size: 0,
     overall_percentile: null,
+    factor_percentiles: nullByFactor(),
+    norm_factor_means: nullByFactor(),
+    norm_overall_mean: null,
   };
 }

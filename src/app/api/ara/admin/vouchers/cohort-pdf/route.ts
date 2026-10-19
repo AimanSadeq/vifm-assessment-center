@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
-import { computeCompanyCohortInsight } from "@/lib/ara/company-cohort";
-import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
+import { createServiceClient } from "@/lib/supabase/server";
+import { computeCompanyCohortDetail } from "@/lib/ara/company-cohort-detail";
+import { recommendCoursesForIndividualSnapshot, recommendCoursesForPillarScores } from "@/lib/recommender/courses";
 import { renderHtmlToPdfBuffer } from "@/lib/reports/html-to-pdf";
 import { buildArcCohortReportHtml, cohortReportFilename } from "@/lib/reports/arc-cohort-html";
 
@@ -9,12 +10,15 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const fetchCache = "force-no-store";
 export const revalidate = 0;
+export const maxDuration = 120;
 
 /**
  * GET /api/ara/admin/vouchers/cohort-pdf?company=<label>
  *
- * The client-facing cohort report for one voucher company: organizational
- * level only (no delegate names). Admin only.
+ * The client-facing cohort dashboard for one voucher company: the
+ * organizational pillars (when the vouchers carried them) and the workforce
+ * readiness factors, organizational level only (no delegate names or scores).
+ * Admin only.
  */
 export async function GET(request: Request) {
   const caller = await getCurrentCaller();
@@ -26,18 +30,27 @@ export async function GET(request: Request) {
   if (!company) return NextResponse.json({ error: "Choose a company." }, { status: 400 });
 
   try {
-    const insight = await computeCompanyCohortInsight(company);
-    if (!insight) return NextResponse.json({ error: "No cohort data for this company yet." }, { status: 404 });
+    const detail = await computeCompanyCohortDetail(company);
+    if (!detail) return NextResponse.json({ error: "No cohort data for this company yet." }, { status: 404 });
+    const { insight, org } = detail;
 
-    const courses =
+    const sb = createServiceClient();
+    const [personalCourses, pillarCourses] = await Promise.all([
       insight.cohort_overall != null
-        ? await recommendCoursesForIndividualSnapshot({ factorScores: insight.factor_scores_for_recommender, limit: 5 })
-        : [];
+        ? recommendCoursesForIndividualSnapshot({ factorScores: insight.factor_scores_for_recommender, limit: 5 })
+        : Promise.resolve([]),
+      org && org.pillars.length > 0
+        ? recommendCoursesForPillarScores({
+            pillarScores: Object.fromEntries(org.pillars.map((p) => [p.pillar_id, p.mean])),
+            limit: 5,
+            client: sb,
+          })
+        : Promise.resolve([]),
+    ]);
+
     const generatedAt = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
-    const html = buildArcCohortReportHtml({ insight, courses, generatedAt });
-    const pdf = await renderHtmlToPdfBuffer(html, {
-      pageFooter: { left: `AI Readiness Compass  |  ${insight.company_label}  |  Cohort report  |  VIFM, confidential` },
-    });
+    const html = buildArcCohortReportHtml({ detail, personalCourses, pillarCourses, generatedAt });
+    const pdf = await renderHtmlToPdfBuffer(html);
 
     return new NextResponse(new Uint8Array(pdf), {
       headers: {

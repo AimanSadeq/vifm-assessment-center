@@ -566,6 +566,45 @@ export async function recommendCoursesForAraAssessment(args: {
   return rankFromPillarTags(tags, gaps, limit, AI_RELEVANT_VERTICALS);
 }
 
+/**
+ * Pillar recommender for a COHORT: the caller already holds pillar means (for
+ * example the average of a voucher company's per-person enterprise sittings),
+ * so there is no single assessment row to read. Gap = target - mean on the
+ * 1-5 scale; pillars within MIN_MEANINGFUL_GAP of the target drive nothing.
+ * Ranking and the AI-vertical preference are the same as the assessment path.
+ */
+export async function recommendCoursesForPillarScores(args: {
+  pillarScores: Partial<Record<string, number | null>>;
+  target?: number;
+  limit?: number;
+  client?: Awaited<ReturnType<typeof createClient>>;
+}): Promise<RecommendedCourse[]> {
+  const limit = args.limit ?? TAG_LIMIT_DEFAULT;
+  const target = args.target ?? 4;
+  const sb = args.client ?? (await createClient());
+
+  const gaps = Object.entries(args.pillarScores)
+    .filter((e): e is [string, number] => typeof e[1] === "number" && Number.isFinite(e[1]))
+    .map(([pillar_id, score]) => ({
+      pillar_id,
+      name: PILLAR_LABELS[pillar_id] ?? pillar_id,
+      gap: Math.round((target - score) * 100) / 100,
+    }))
+    .filter((g) => g.gap >= MIN_MEANINGFUL_GAP);
+  if (gaps.length === 0) return [];
+
+  const tagsRes = await sb
+    .from("vifm_course_pillar_tags")
+    .select(
+      "course_id, pillar_id, relevance_weight, rationale, " +
+      "vifm_courses(id, code, title_en, title_ar, vertical, level, " +
+      "default_duration_days, min_duration_days, max_duration_days, is_active)"
+    )
+    .in("pillar_id", gaps.map((g) => g.pillar_id));
+  const tags = (tagsRes.data ?? []) as unknown as PillarTagJoin[];
+  return rankFromPillarTags(tags, gaps, limit, AI_RELEVANT_VERTICALS);
+}
+
 // ──────────────────────────────────────────────────────────────
 // Internal - ranking aggregator (shared between AC and ARA)
 // ──────────────────────────────────────────────────────────────

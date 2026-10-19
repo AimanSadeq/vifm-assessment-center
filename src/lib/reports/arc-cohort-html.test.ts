@@ -23,6 +23,9 @@ const insight: CompanyCohortInsight = {
   started: 11,
   completed: 11,
   purged: 0,
+  excluded: [
+    { redemption_id: "x1", name: "Ahmad Trial", email: "ahmad@viftraining.com", completed_at: "2026-10-14T08:00:00Z", excluded_at: "2026-10-19T08:00:00Z" },
+  ],
   factor_averages: [
     factor("thinking_sense_check", 3.4, 7),
     factor("results_working_practice", 4.2, 2),
@@ -32,6 +35,7 @@ const insight: CompanyCohortInsight = {
   cohort_overall: 3.6,
   respondents: Array.from({ length: 11 }, (_, i) => ({
     respondent_id: `r${i}`,
+    redemption_id: `d${i}`,
     name: `Delegate Secret ${i}`,
     email: `secret${i}@itqan.example`,
     completed_at: "2026-10-15T08:00:00Z",
@@ -75,6 +79,8 @@ test("cohort report: organizational level only, every section present", () => {
   // No names, no emails, no per-person rows.
   assert.doesNotMatch(html, /Delegate Secret/);
   assert.doesNotMatch(html, /itqan\.example/);
+  // Excluded test runs are not mentioned either.
+  assert.doesNotMatch(html, /Ahmad Trial|viftraining\.com/);
   // The reading names the weakest factor as the main opportunity.
   assert.match(html, /main opportunity/);
   // House style: American spelling.

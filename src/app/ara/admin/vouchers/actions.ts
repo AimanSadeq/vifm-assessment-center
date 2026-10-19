@@ -371,6 +371,26 @@ export async function setVoucherStatusAction(id: string, status: "active" | "dis
   return { ok: true as const };
 }
 
+/**
+ * Mark a voucher redemption as a test run (excluded from its company cohort:
+ * insights, CSV, ZIP and cohort PDF), or restore it. The delegate's own run and
+ * report are untouched. Admin-only.
+ */
+export async function setRedemptionExcludedAction(redemptionId: string, excluded: boolean) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const id = z.string().uuid().safeParse(redemptionId);
+  if (!id.success) return { ok: false as const, error: "Invalid redemption" };
+  const sb = createServiceClient();
+  const { error } = await sb
+    .from("ara_voucher_redemptions")
+    .update({ excluded_at: excluded ? new Date().toISOString() : null })
+    .eq("id", id.data);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/ara/admin/vouchers/insights");
+  return { ok: true as const };
+}
+
 const clientSchema = z.object({
   name: z.string().min(2).max(300),
   nameAr: z.string().max(300).optional(),

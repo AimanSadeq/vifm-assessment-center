@@ -12,6 +12,7 @@ import {
   Info,
   FolderArchive,
   FileText,
+  EyeOff,
 } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -29,6 +30,7 @@ import {
   computeCompanyCohortInsight,
 } from "@/lib/ara/company-cohort";
 import { CohortCsvButton } from "./_components/cohort-csv-button";
+import { ExcludeToggle } from "./_components/exclude-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -359,7 +361,10 @@ async function CompanyDetail({ company }: { company: string }) {
           <div className="flex items-center justify-between gap-3">
             <div>
               <CardTitle className="text-lg">Delegates</CardTitle>
-              <CardDescription>Per-person factor scores. Visible to VIFM admins only.</CardDescription>
+              <CardDescription>
+                Per-person factor scores. Visible to VIFM admins only. Use &quot;Test run&quot; to keep an internal trial
+                out of the cohort figures and downloads.
+              </CardDescription>
             </div>
             {insight.respondents.length > 0 && <CohortCsvButton insight={insight} />}
           </div>
@@ -379,7 +384,8 @@ async function CompanyDetail({ company }: { company: string }) {
                         {f.domain}
                       </th>
                     ))}
-                    <th className="py-2 font-medium">Overall</th>
+                    <th className="py-2 pe-3 font-medium">Overall</th>
+                    <th className="py-2 font-medium"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -406,13 +412,38 @@ async function CompanyDetail({ company }: { company: string }) {
                           </td>
                         );
                       })}
-                      <td className="py-2 tabular-nums font-semibold">
+                      <td className="py-2 pe-3 tabular-nums font-semibold">
                         {r.overall != null ? r.overall.toFixed(1) : <span className="text-muted-foreground font-normal">-</span>}
+                      </td>
+                      <td className="py-2 text-end">
+                        <ExcludeToggle redemptionId={r.redemption_id} excluded={false} name={r.name} />
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+          {insight.excluded.length > 0 && (
+            <div className="mt-5 border-t border-border pt-4">
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <EyeOff className="h-4 w-4 text-muted-foreground" /> Test runs, not counted
+                <span className="text-muted-foreground font-normal">({insight.excluded.length})</span>
+              </p>
+              <ul className="mt-2 space-y-1.5">
+                {insight.excluded.map((x) => (
+                  <li key={x.redemption_id} className="flex items-center justify-between gap-3 text-sm">
+                    <div>
+                      <span className="font-medium">{x.name}</span>
+                      {x.email && <span className="text-xs text-muted-foreground ms-2">{x.email}</span>}
+                      <span className="text-xs text-muted-foreground ms-2">
+                        excluded {fmtDate(x.excluded_at)}
+                      </span>
+                    </div>
+                    <ExcludeToggle redemptionId={x.redemption_id} excluded name={x.name} />
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
         </CardContent>

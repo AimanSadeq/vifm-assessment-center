@@ -64,6 +64,17 @@ export type CompanyCohortSummary = {
   is_practice_only: boolean;
 };
 
+export type ExcludedRedemption = {
+  redemption_id: string;
+  name: string;
+  email: string;
+  completed_at: string | null;
+  excluded_at: string;
+};
+
+/** A cohort delegate, with the redemption that admits them to the cohort. */
+export type CohortRespondent = WorkforceRespondent & { redemption_id: string };
+
 export type CompanyCohortInsight = {
   company_key: string;
   company_label: string;
@@ -73,10 +84,15 @@ export type CompanyCohortInsight = {
   completed: number;
   /** Redemptions whose run was purged (assessment/respondent FK set null). */
   purged: number;
+  /**
+   * Redemptions an admin marked as test runs (ara_voucher_redemptions.excluded_at).
+   * Not counted anywhere above or below; listed so the admin can restore them.
+   */
+  excluded: ExcludedRedemption[];
   // Factor rollup (shapes shared with the departmental-plus-personal workforce rollup).
   factor_averages: WorkforceFactorAverage[];
   cohort_overall: number | null;
-  respondents: WorkforceRespondent[];
+  respondents: CohortRespondent[];
   factor_scores_for_recommender: Record<AraIndividualFactorId, number>;
   /** Overall-maturity histogram across scored delegates. */
   band_distribution: { emerging: number; practising: number; embedded: number };
@@ -91,8 +107,10 @@ export type CompanyCohortInsight = {
 
 // ── Shared redemption-row shape (PostgREST embeds FKs as arrays) ──
 type RedemptionJoinRow = {
+  id: string;
   company_name: string | null;
   redeemed_at: string | null;
+  excluded_at: string | null;
   ara_respondent_id: string | null;
   ara_assessment_id: string | null;
   respondent:
@@ -125,7 +143,7 @@ function firstOf<T>(v: T[] | T | null | undefined): T | null {
 }
 
 const REDEMPTION_SELECT =
-  "company_name, redeemed_at, ara_respondent_id, ara_assessment_id, " +
+  "id, company_name, redeemed_at, excluded_at, ara_respondent_id, ara_assessment_id, " +
   "respondent:ara_respondents(id, name, email, completed_at, first_opened_at, individual_only), " +
   "assessment:ara_assessments(assessment_tier, is_sandbox)";
 
@@ -153,6 +171,9 @@ export async function listCompanyCohorts(): Promise<CompanyCohortSummary[]> {
     for (const r of data as unknown as RedemptionJoinRow[]) {
       const key = normalizeCompanyKey(r.company_name);
       if (!key) continue;
+      // Test runs stay out of the picker's funnel; the company still lists if
+      // it has any counted redemption.
+      if (r.excluded_at) continue;
       const resp = firstOf(r.respondent);
       const assess = firstOf(r.assessment);
       const existing =
@@ -228,13 +249,28 @@ export async function computeCompanyCohortInsight(
         .range(from, to)
     );
 
-    const rows = (allRedemptions as unknown as RedemptionJoinRow[]).filter(
+    const companyRows = (allRedemptions as unknown as RedemptionJoinRow[]).filter(
       (r) => normalizeCompanyKey(r.company_name) === wantKey
     );
-    if (rows.length === 0) return null;
+    if (companyRows.length === 0) return null;
 
     const companyLabel =
-      (rows.find((r) => (r.company_name ?? "").trim())?.company_name ?? "").trim() || wantKey;
+      (companyRows.find((r) => (r.company_name ?? "").trim())?.company_name ?? "").trim() || wantKey;
+
+    // Test runs (admin-excluded) are listed for restore and counted nowhere else.
+    const excluded: ExcludedRedemption[] = companyRows
+      .filter((r) => r.excluded_at)
+      .map((r) => {
+        const resp = firstOf(r.respondent);
+        return {
+          redemption_id: r.id,
+          name: resp?.name ?? "(run purged)",
+          email: resp?.email ?? "",
+          completed_at: resp?.completed_at ?? null,
+          excluded_at: r.excluded_at as string,
+        };
+      });
+    const rows = companyRows.filter((r) => !r.excluded_at);
 
     // 2. Funnel + the scorable (non-purged) respondent set.
     let redeemed = 0;
@@ -246,6 +282,7 @@ export async function computeCompanyCohortInsight(
 
     type ScorableRespondent = {
       id: string;
+      redemption_id: string;
       name: string;
       email: string;
       completed_at: string | null;
@@ -272,6 +309,7 @@ export async function computeCompanyCohortInsight(
       if (!scorable.has(resp.id)) {
         scorable.set(resp.id, {
           id: resp.id,
+          redemption_id: r.id,
           name: resp.name,
           email: resp.email,
           completed_at: resp.completed_at,
@@ -282,12 +320,13 @@ export async function computeCompanyCohortInsight(
 
     const respondentRows = Array.from(scorable.values());
     if (respondentRows.length === 0) {
-      // Everyone purged - report the funnel but no scores.
+      // Everyone purged or excluded - report the funnel but no scores.
       return emptyScoredInsight(wantKey, companyLabel, {
         redeemed,
         started,
         completed,
         purged,
+        excluded,
         tier_counts,
         is_practice_only: allPractice,
       });
@@ -321,6 +360,7 @@ export async function computeCompanyCohortInsight(
         started,
         completed,
         purged,
+        excluded,
         tier_counts,
         is_practice_only: allPractice,
       });
@@ -363,7 +403,7 @@ export async function computeCompanyCohortInsight(
 
     // 6. Per-respondent summaries + cohort accumulators.
     const cohortAcc = freshAcc();
-    const respondents: WorkforceRespondent[] = respondentRows.map((r) => {
+    const respondents: CohortRespondent[] = respondentRows.map((r) => {
       const buckets = perRespondent.get(r.id);
       const per_factor = ARA_INDIVIDUAL_FACTOR_IDS.reduce<Record<AraIndividualFactorId, number | null>>(
         (acc, id) => {
@@ -382,6 +422,7 @@ export async function computeCompanyCohortInsight(
       const overall = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
       return {
         respondent_id: r.id,
+        redemption_id: r.redemption_id,
         name: r.name,
         email: r.email,
         completed_at: r.completed_at,
@@ -460,6 +501,7 @@ export async function computeCompanyCohortInsight(
       started,
       completed,
       purged,
+      excluded,
       factor_averages,
       cohort_overall,
       respondents,
@@ -486,6 +528,7 @@ function emptyScoredInsight(
     started: number;
     completed: number;
     purged: number;
+    excluded: ExcludedRedemption[];
     tier_counts: { snapshot: number; deep_dive: number };
     is_practice_only: boolean;
   }
@@ -497,6 +540,7 @@ function emptyScoredInsight(
     started: funnel.started,
     completed: funnel.completed,
     purged: funnel.purged,
+    excluded: funnel.excluded,
     factor_averages: ARA_INDIVIDUAL_FACTOR_IDS.map((id) => ({
       factor_id: id,
       average: 0,

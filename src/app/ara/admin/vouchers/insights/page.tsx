@@ -10,10 +10,13 @@ import {
   FlaskConical,
   ArrowRight,
   Info,
+  FolderArchive,
+  FileText,
 } from "lucide-react";
 import { BackLink } from "@/components/shared/back-link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RecommendedCoursesPanel } from "@/components/shared/recommended-courses-panel";
 import { recommendCoursesForIndividualSnapshot } from "@/lib/recommender/courses";
 import {
@@ -202,9 +205,27 @@ async function CompanyDetail({ company }: { company: string }) {
             )}
           </div>
         </div>
-        <Link href="/ara/admin/vouchers/insights" className="text-sm text-accent hover:underline">
-          All cohorts
-        </Link>
+        <div className="flex flex-col items-end gap-2">
+          <Link href="/ara/admin/vouchers/insights" className="text-sm text-accent hover:underline">
+            All cohorts
+          </Link>
+          {insight.completed > 0 && (
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button size="sm" variant="outline" className="gap-1" asChild>
+                <a href={`/api/ara/admin/vouchers/zip?company=${encodeURIComponent(insight.company_label)}`}>
+                  <FolderArchive className="h-3.5 w-3.5" /> All personal reports (ZIP)
+                </a>
+              </Button>
+              {scoredCount > 0 && (
+                <Button size="sm" variant="outline" className="gap-1" asChild>
+                  <a href={`/api/ara/admin/vouchers/cohort-pdf?company=${encodeURIComponent(insight.company_label)}`}>
+                    <FileText className="h-3.5 w-3.5" /> Cohort report (PDF)
+                  </a>
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Completion funnel */}

@@ -305,6 +305,16 @@ matrix, PVM logic-input, read-only SQL).
 - [ ] Verify end-to-end on deployed app: email a delegate, redeem one-click, complete, receive results PDF
 - [ ] Phase 4 polish (optional): full funnel analytics, deep-dive tier option (currently snapshot-only)
 
+### Cohort downloads for voucher clients (Ahmad, 2026-10-19)
+Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to download all 11 personal reports at once and (b) why there is no organisational insight report for the cohort. Before this, the insights page offered only per-person downloads and a CSV. Aiman: "Build both, ZIP download first then the cohort PDF"; cohort PDF is **organisational only** (no delegate names or per-person scores).
+- [x] Branch `feat/arc-cohort-zip-pdf` (c7b62719), pushed, awaiting Aiman's "Merge" then Render deploy.
+- [x] ZIP: `GET /api/ara/admin/vouchers/zip?company=<label>&language=en|ar` renders every completed delegate's Personal AI Readiness Report with the existing builder (`buildPersonalReportPdf`) and returns one archive (`VIFM_AI_Readiness_Reports_<company>_<lang>.zip`; README.txt lists anything skipped; cap 60 reports). Admin only.
+- [x] Cohort PDF: `GET /api/ara/admin/vouchers/cohort-pdf?company=<label>` renders a two-page organisational report (`src/lib/reports/arc-cohort-html.ts`): cohort score and stage, funnel, population percentile (or the MIN_NORM_SAMPLE note), readiness by factor with below-target counts, plain-language readings (weakest factor = "main opportunity"), maturity spread, top-5 recommended VIFM programs from the existing recommender, method note. English only for now. Admin only.
+- [x] Buttons "All personal reports (ZIP)" and "Cohort report (PDF)" in the cohort header on `/ara/admin/vouchers/insights?company=...` (ZIP shows once anyone completed; PDF once anyone is scored).
+- [x] Tests `src/lib/reports/arc-cohort-html.test.ts` (organisational-only guard, graceful no-norms/no-courses, safe file names); full suite 205 passing; typecheck, lint clean; fixture rendered to PDF locally and checked (2 pages, no orphaned headings).
+- [ ] After deploy: Aiman replies to Ahmad (route: ARA admin -> Vouchers -> company insights -> the two buttons). Draft on request.
+- Open: Arabic cohort PDF (personal ZIP already supports `language=ar`); whether the cohort PDF should go to the client directly or via Ahmad.
+
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)
 
 **Outcome: DNS/auth is fully healthy - nothing to fix.** Original worry was that

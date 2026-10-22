@@ -297,7 +297,9 @@ export function buildArcCohortReportHtml(input: ArcCohortReportInput): string {
   const { detail, generatedAt } = input;
   const { insight, org, personal_items } = detail;
   const company = insight.company_label;
-  const scored = insight.respondents.filter((r) => r.overall != null).length;
+  // Only completed delegates carry cohort figures; an unfinished sitting is never averaged in.
+  const scoredRs = insight.respondents.filter((r) => r.completed_at && r.overall != null);
+  const scored = scoredRs.length;
   const completedDates = insight.respondents.map((r) => r.completed_at).filter((d): d is string => !!d);
   const stage = insight.cohort_overall != null ? getIndividualMaturityStage(insight.cohort_overall) : null;
   const wfTone = toneOf(insight.cohort_overall);
@@ -313,7 +315,7 @@ export function buildArcCohortReportHtml(input: ArcCohortReportInput): string {
   const weakestP = pillarsByMean[0], strongestP = pillarsByMean[pillarsByMean.length - 1];
   const allOrgItems = org ? org.pillars.flatMap((p) => p.items.map((it) => ({ ...it, pillar: p.name_en }))) : [];
   const allPersonalItems = ARA_INDIVIDUAL_FACTORS.flatMap((f) => personal_items[f.id].map((it) => ({ ...it, factor: f.name_en })));
-  const atOrAbove = insight.respondents.filter((r) => r.overall != null && r.overall >= TARGET).length;
+  const atOrAbove = scoredRs.filter((r) => r.overall! >= TARGET).length;
 
   const pages: string[] = [];
 
@@ -466,12 +468,12 @@ ${factors.map(({ f, avg, below, n, t, pctl, pop }) => `
 
   // 8. Workforce distribution -------------------------------------------------
   const bins = (id: AraIndividualFactorId) => {
-    const vals = insight.respondents.map((r) => r.per_factor[id]).filter((v): v is number => v != null);
+    const vals = scoredRs.map((r) => r.per_factor[id]).filter((v): v is number => v != null);
     const b = [0, 0, 0, 0];
     for (const v of vals) b[v >= 4 ? 3 : v >= 3 ? 2 : v >= 2 ? 1 : 0] += 1;
     return [{ label: "1 to 1.9", count: b[0] }, { label: "2 to 2.9", count: b[1] }, { label: "3 to 3.9", count: b[2] }, { label: "4 to 5", count: b[3], highlight: true }];
   };
-  const overallVals = insight.respondents.map((r) => r.overall).filter((v): v is number => v != null);
+  const overallVals = scoredRs.map((r) => r.overall!);
   const spread = overallVals.length > 1 ? Math.max(...overallVals) - Math.min(...overallVals) : 0;
   pages.push(`${topBar(company, "Workforce readiness")}
 <h2>How the delegates are distributed</h2>
@@ -508,7 +510,7 @@ ${heatLegend}</div>`}`);
   // 10. Development priorities ------------------------------------------------
   const courseTable = (rows: RecommendedCourse[]) => rows.length === 0
     ? `<p class="note">No gap wide enough to recommend a program here.</p>`
-    : `<table><tr><th style="width:18px">#</th><th>Program</th><th style="width:72px">Level</th><th style="width:52px">Length</th><th>Addresses</th></tr>${rows.map((c, i) => `<tr><td>${i + 1}</td><td><b>${esc(c.title_en)}</b>${c.course_code ? ` <span class="small muted">${esc(c.course_code)}</span>` : ""}</td><td>${esc(c.level)}</td><td>${c.default_duration_days} day${c.default_duration_days === 1 ? "" : "s"}</td><td class="small">${esc(c.drivers.slice().sort((a, b) => b.contribution - a.contribution).slice(0, 2).map((d) => d.label).join(", "))}</td></tr>`).join("")}</table>`;
+    : `<table><tr><th style="width:18px">#</th><th>Program</th><th style="width:72px">Level</th><th style="width:52px">Length</th><th>Addresses</th></tr>${rows.map((c, i) => `<tr><td>${i + 1}</td><td><b>${esc(c.title_en)}</b>${c.course_code ? ` <span class="small muted">${esc(c.course_code)}</span>` : ""}</td><td>${esc(c.level)}</td><td>${c.default_duration_days} day${c.default_duration_days === 1 ? "" : "s"}</td><td class="small">${esc(Array.from(new Set(c.drivers.slice().sort((a, b) => b.contribution - a.contribution).map((d) => d.label))).slice(0, 2).join(", "))}</td></tr>`).join("")}</table>`;
   pages.push(`${topBar(company, "Development priorities")}
 <h2>Development priorities</h2>
 ${org ? `<div class="card blk"><div class="eyebrow">${svg("grid")} For the organization: programs matched to the pillar gaps</div>${courseTable(input.pillarCourses.slice(0, 5))}

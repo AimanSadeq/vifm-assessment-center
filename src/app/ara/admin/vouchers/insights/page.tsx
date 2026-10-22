@@ -180,7 +180,8 @@ async function CompanyDetail({ company }: { company: string }) {
   const overallTone = tone(insight.cohort_overall);
   const stage = insight.cohort_overall != null ? getIndividualMaturityStage(insight.cohort_overall) : null;
   const mixedTier = insight.tier_counts.snapshot > 0 && insight.tier_counts.deep_dive > 0;
-  const scoredCount = insight.respondents.filter((r) => r.overall != null).length;
+  // Cohort figures count completed delegates only; in-progress rows keep their partial numbers in the table.
+  const scoredCount = insight.respondents.filter((r) => r.completed_at && r.overall != null).length;
 
   return (
     <div className="space-y-6">

@@ -40,6 +40,16 @@ test("dashboard: both layers, every page, organizational level only", () => {
   assert.doesNotMatch(html, /<script/);
 });
 
+test("dashboard: an unfinished sitting is never counted in the cohort figures", () => {
+  const unfinished = { ...FIXTURE_DETAIL.insight.respondents[0], respondent_id: "open", redemption_id: "dopen", completed_at: null, overall: 1.2, per_factor: { thinking_sense_check: 1, results_working_practice: 1, people_collaboration: 1, self_adaptive_mindset: 1 } };
+  const insight = { ...FIXTURE_DETAIL.insight, respondents: [...FIXTURE_DETAIL.insight.respondents, unfinished], started: 12 };
+  const html = render({ ...FIXTURE_DETAIL, insight });
+  // Scored stays at the 11 completed delegates; the 1.0 sitting is not in the distribution.
+  assert.match(html, /<div class="v">11<\/div><div class="small muted">of 14 vouchers redeemed/);
+  assert.match(html, /11 scored delegates by overall readiness stage/);
+  assert.doesNotMatch(html, /from 1\.2 to/);
+});
+
 test("dashboard: personal-only cohort drops the organizational pages", () => {
   const html = render({ ...FIXTURE_DETAIL, org: null });
   assert.equal(html.match(/<div class="page">/g)?.length, 9);

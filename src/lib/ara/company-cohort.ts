@@ -427,15 +427,21 @@ export async function computeCompanyCohortInsight(
     }
 
     // 6. Per-respondent summaries + cohort accumulators.
+    //    Every respondent gets their partial per-factor numbers (the admin
+    //    table shows them as "In progress"), but the COHORT figures (averages,
+    //    below-target counts, bands, percentile, recommender input) count
+    //    completed delegates only, so an unfinished sitting cannot skew them
+    //    and "scored" can never exceed "completed" (Aiman, 22 Oct 2026).
     const cohortAcc = freshAcc();
     const respondents: CohortRespondent[] = respondentRows.map((r) => {
       const buckets = perRespondent.get(r.id);
+      const counts = !!r.completed_at;
       const per_factor = ARA_INDIVIDUAL_FACTOR_IDS.reduce<Record<AraIndividualFactorId, number | null>>(
         (acc, id) => {
           const b = buckets?.[id];
           const avg = b && b.count > 0 ? b.sum / b.count : null;
           acc[id] = avg;
-          if (avg != null) {
+          if (avg != null && counts) {
             cohortAcc[id].sum += avg;
             cohortAcc[id].count += 1;
           }
@@ -468,6 +474,7 @@ export async function computeCompanyCohortInsight(
       {} as Record<AraIndividualFactorId, number>
     );
     for (const r of respondents) {
+      if (!r.completed_at) continue;
       for (const id of ARA_INDIVIDUAL_FACTOR_IDS) {
         const v = r.per_factor[id];
         if (v != null && v < TARGET) belowTarget[id] += 1;
@@ -496,10 +503,10 @@ export async function computeCompanyCohortInsight(
       return acc;
     }, {} as Record<AraIndividualFactorId, number>);
 
-    // 7. Overall-maturity band histogram (only delegates with a real overall).
+    // 7. Overall-maturity band histogram (completed delegates with a real overall).
     const band_distribution = { emerging: 0, practising: 0, embedded: 0 };
     for (const r of respondents) {
-      if (r.overall == null) continue;
+      if (r.overall == null || !r.completed_at) continue;
       const stage = getIndividualMaturityStage(r.overall).id;
       if (stage === "embedded") band_distribution.embedded += 1;
       else if (stage === "practising") band_distribution.practising += 1;

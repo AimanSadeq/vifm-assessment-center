@@ -60,6 +60,10 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 
 ## ⭐ SDC HiPo assessment (Soudah Development Company)
 
+### Day 2 (22 Oct): Ali's status questions before the progress report to Suzanne
+- Ali asked (22 Oct 11:16 KSA) what "Signed in" vs "In progress" means and whether two days "In progress" is expected. Answered by email from Aiman's mailbox (22 Oct): Signed in = email entered, no consent; In progress = from consent until every section is submitted, survives logouts; two days idle = the follow-up threshold, so the person shows in the follow-up list with the reminder text.
+- Live picture 22 Oct (testers excluded): 50 on roster, 5 completed, 1 in progress (first scenario answered 20 Oct 14:48 KSA, nothing since), 2 signed in only, 42 not started. Ali released the link 19 Oct 14:48 KSA; `complete_by` set (1 Nov, end of day UTC).
+
 ### Launch day check (19 Oct, from Ali's forward of Suzanne's thread)
 - Suzanne (19 Oct 12:27 KSA): SDC will put the shared link `https://caliber.viftraining.com/bundle/redeem?code=BND-U3HN-NCXK` in their own announcement; no links from VIFM. Launch 20 Oct about 3 pm KSA; closing 1 Nov 11:59 pm KSA agreed. Ali asked Aiman "Can we do this?" Answer: yes, that is what the roster-gated link is for.
 - Verified in the database 19 Oct: roster = Suzanne's 50 exactly (no one missing, no extras) + 5 VIFM testers; `held = true`, `released_at = null` (Ali releases tomorrow at 3 pm as he wrote); link `expires_at = 2026-11-01 23:59:59 UTC`, which is 2:59 am KSA on 2 Nov, three hours later than the agreed 11:59 pm KSA (lenient direction; the closing-date control saves end of day UTC). `complete_by` (the date candidates see on the welcome screen) is still null: Ali to set it in "Deadline and reminders".
@@ -323,7 +327,9 @@ Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to do
 - [x] **Organisational pillars** (Aiman 19 Oct: "these need to be part of the report"). ITQAN's vouchers are enterprise-stage, all 8 pillars, 5 items per pillar, personal layer on, one sitting per person (not pooled). New `company-cohort-detail.ts` pools the counted delegates' pillar answers (mean, range, sd, maturity level, below-target, item-level means); `arc-cohort-html.ts` is now an 11-page dashboard (cover with two gauges, executive summary, participation, 3 organisational pages, 3 workforce pages, development priorities from both recommenders, method). Personal-only cohorts get 8 pages. Fixture `arc-cohort-fixture.ts`; local render check in scratchpad `arc-cohort/render.ts` (overflow check per page).
 - [x] Merged to master 19 Oct (d9d91b97). Aiman: "The report looks amazing."
 - [x] Glossary page (Aiman 19 Oct: definitions of L1 to L5, Embedded, Practicing, Emerging): page 12, `feat/arc-cohort-glossary` ad53ea37, merged on "merge". Stage definitions are the platform's own blurbs; the level and band readings are new wording (offered for edit, none requested).
-- [ ] Aiman deploys master; then the WhatsApp reply to Ahmad (draft given 19 Oct; add: the dashboard now includes the pillars and a glossary, and the ZIP shows "Preparing N reports" while it builds).
+- [x] Deployed 19 Oct (master fab77d4d). Aiman sent Ahmad the WhatsApp (route, the two buttons, 12-page dashboard with pillars and glossary, ZIP progress state).
+- [x] 22 Oct: Ahmad Rashid's "ITQAN-SNB" FYI (19 Oct 12:17 KSA) carried the first two-page ITQAN cohort PDF, which read "Completed 9, 10 scored" (an unfinished sitting was averaged in) and repeated a driver label in the programs table. Aiman ruled **cohort figures count completed delegates only**; in-progress rows keep partial numbers in the admin table. `fix/arc-cohort-completed-only` e3d34d28, merged to master on "merge" 22 Oct. ITQAN's figures move slightly after deploy; the 12-page dashboard supersedes the PDF Ahmad has.
+- [ ] Open: confirm with Ahmad that the ITQAN ZIP now completes (timing not measurable from the session); Arabic cohort dashboard if a client asks; wording of the L1 to L5 level readings if Aiman wants changes.
 - Open: Arabic cohort PDF (personal ZIP already supports `language=ar`); whether the cohort PDF should go to the client directly or via Ahmad.
 
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)

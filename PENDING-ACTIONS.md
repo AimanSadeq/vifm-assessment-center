@@ -328,6 +328,7 @@ Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to do
 - [x] Merged to master 19 Oct (d9d91b97). Aiman: "The report looks amazing."
 - [x] Glossary page (Aiman 19 Oct: definitions of L1 to L5, Embedded, Practicing, Emerging): page 12, `feat/arc-cohort-glossary` ad53ea37, merged on "merge". Stage definitions are the platform's own blurbs; the level and band readings are new wording (offered for edit, none requested).
 - [x] Deployed 19 Oct (master fab77d4d). Aiman sent Ahmad the WhatsApp (route, the two buttons, 12-page dashboard with pillars and glossary, ZIP progress state).
+- [x] 22 Oct: Ahmad Rashid's "ITQAN-SNB" FYI (19 Oct 12:17 KSA) carried the first two-page ITQAN cohort PDF, which read "Completed 9, 10 scored" (an unfinished sitting was averaged in) and repeated a driver label in the programs table. Aiman ruled **cohort figures count completed delegates only**; in-progress rows keep partial numbers in the admin table. `fix/arc-cohort-completed-only` e3d34d28, merged to master on "merge" 22 Oct. ITQAN's figures move slightly after deploy; the 12-page dashboard supersedes the PDF Ahmad has.
 - [ ] Open: confirm with Ahmad that the ITQAN ZIP now completes (timing not measurable from the session); Arabic cohort dashboard if a client asks; wording of the L1 to L5 level readings if Aiman wants changes.
 - Open: Arabic cohort PDF (personal ZIP already supports `language=ar`); whether the cohort PDF should go to the client directly or via Ahmad.
 

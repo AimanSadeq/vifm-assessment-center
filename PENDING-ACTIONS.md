@@ -60,6 +60,10 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 
 ## ⭐ SDC HiPo assessment (Soudah Development Company)
 
+### Day 2 (22 Oct): Ali's status questions before the progress report to Suzanne
+- Ali asked (22 Oct 11:16 KSA) what "Signed in" vs "In progress" means and whether two days "In progress" is expected. Answered by email from Aiman's mailbox (22 Oct): Signed in = email entered, no consent; In progress = from consent until every section is submitted, survives logouts; two days idle = the follow-up threshold, so the person shows in the follow-up list with the reminder text.
+- Live picture 22 Oct (testers excluded): 50 on roster, 5 completed, 1 in progress (first scenario answered 20 Oct 14:48 KSA, nothing since), 2 signed in only, 42 not started. Ali released the link 19 Oct 14:48 KSA; `complete_by` set (1 Nov, end of day UTC).
+
 ### Launch day check (19 Oct, from Ali's forward of Suzanne's thread)
 - Suzanne (19 Oct 12:27 KSA): SDC will put the shared link `https://caliber.viftraining.com/bundle/redeem?code=BND-U3HN-NCXK` in their own announcement; no links from VIFM. Launch 20 Oct about 3 pm KSA; closing 1 Nov 11:59 pm KSA agreed. Ali asked Aiman "Can we do this?" Answer: yes, that is what the roster-gated link is for.
 - Verified in the database 19 Oct: roster = Suzanne's 50 exactly (no one missing, no extras) + 5 VIFM testers; `held = true`, `released_at = null` (Ali releases tomorrow at 3 pm as he wrote); link `expires_at = 2026-11-01 23:59:59 UTC`, which is 2:59 am KSA on 2 Nov, three hours later than the agreed 11:59 pm KSA (lenient direction; the closing-date control saves end of day UTC). `complete_by` (the date candidates see on the welcome screen) is still null: Ali to set it in "Deadline and reminders".

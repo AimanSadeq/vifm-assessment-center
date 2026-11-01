@@ -340,7 +340,7 @@ Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to do
 ## K. ARC regions: North Africa (Aiman, 2026-11-01)
 Aiman: "For the AI readiness, you need to add another region titled North Africa." Scoping answer: add the region now, regulatory frameworks later (the compliance section shows the existing "no applicable frameworks" note until frameworks are seeded).
 - [x] Branch `feat/arc-region-north-africa` (6a25ac37), pushed; typecheck, lint, 211 tests and production build clean. Awaiting "Merge".
-- [ ] **Apply migration 00239 to live Supabase** (enum value `north_africa` + three CHECK constraints; additive). Needs Aiman's go-ahead before deploy, or every North Africa selection fails at the database.
+- [x] Migration 00239 applied to live Supabase 1 Nov (enum value + three CHECK constraints verified). Merged to master on "merge" 1 Nov; Aiman deploys.
 - Design: `src/lib/constants/ara-regions.ts` is the single list (ids, EN/AR labels, parsing). Question region "both" means every region (serving code already did this; editor label now "All regions"). Country text mapping: Egypt, Libya, Tunisia, Algeria, Morocco, Sudan, Mauritania -> north_africa. Reflect and role profiles keep their own two-region lists (out of scope). Licensed preview sample data stays UAE/Saudi.
 - Open: seed North Africa regulatory frameworks (content-reviewed), peer benchmarks fill as sittings arrive, personal-start region pill is hidden in the UI (unchanged).
 

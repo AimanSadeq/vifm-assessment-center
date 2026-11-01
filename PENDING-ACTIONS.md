@@ -60,6 +60,11 @@ SDAIA's own NDGF/Ethics/AAF/GenAI; excludes banking-only SAMA CSF).
 
 ## ⭐ SDC HiPo assessment (Soudah Development Company)
 
+### Day 5 (25 Oct): slow uptake, Ali asked whether the experience is the cause
+- Ali's progress update (25 Oct 20:48 KSA): 50 participants, 6 completed, 2 in progress, 1 signed in, 41 not started. Suzanne had promised a second reminder on 22 Oct.
+- Answered by email from Aiman's mailbox (25 Oct): reach, not experience. Only 9 of 50 ever opened the link (sign-ins 4, 3, 1, 0, 0, 1 by day); completers took 36 to 115 minutes, mostly about 75 (30 scenarios are the bulk, reasoning test 10 to 16 minutes); the two in progress stalled inside the scenarios. SDC's welcome text ("less than 2 hours", "complete in full or lose answers") overstates the constraint: scenarios autosave and resume, only the 40-minute reasoning test runs on a clock once started. Advised Ali to reword it (Welcome message setting), chase by name from the follow-up list, and route reminders through the unit heads (two units hold 15 of the 41). Ali's dashboard workbook = Caliber's export filtered to Soudah staff; his "Last Activity" column is Caliber's "Started" column.
+- Confidentiality (Aiman 25 Oct): no participant names in these notes or anywhere outside Caliber; scratch copies of roster and email bodies deleted from the session scratchpad.
+
 ### Day 2 (22 Oct): Ali's status questions before the progress report to Suzanne
 - Ali asked (22 Oct 11:16 KSA) what "Signed in" vs "In progress" means and whether two days "In progress" is expected. Answered by email from Aiman's mailbox (22 Oct): Signed in = email entered, no consent; In progress = from consent until every section is submitted, survives logouts; two days idle = the follow-up threshold, so the person shows in the follow-up list with the reminder text.
 - Live picture 22 Oct (testers excluded): 50 on roster, 5 completed, 1 in progress (first scenario answered 20 Oct 14:48 KSA, nothing since), 2 signed in only, 42 not started. Ali released the link 19 Oct 14:48 KSA; `complete_by` set (1 Nov, end of day UTC).
@@ -331,6 +336,13 @@ Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to do
 - [x] 22 Oct: Ahmad Rashid's "ITQAN-SNB" FYI (19 Oct 12:17 KSA) carried the first two-page ITQAN cohort PDF, which read "Completed 9, 10 scored" (an unfinished sitting was averaged in) and repeated a driver label in the programs table. Aiman ruled **cohort figures count completed delegates only**; in-progress rows keep partial numbers in the admin table. `fix/arc-cohort-completed-only` e3d34d28, merged to master on "merge" 22 Oct. ITQAN's figures move slightly after deploy; the 12-page dashboard supersedes the PDF Ahmad has.
 - [ ] Open: confirm with Ahmad that the ITQAN ZIP now completes (timing not measurable from the session); Arabic cohort dashboard if a client asks; wording of the L1 to L5 level readings if Aiman wants changes.
 - Open: Arabic cohort PDF (personal ZIP already supports `language=ar`); whether the cohort PDF should go to the client directly or via Ahmad.
+
+## K. ARC regions: North Africa (Aiman, 2026-11-01)
+Aiman: "For the AI readiness, you need to add another region titled North Africa." Scoping answer: add the region now, regulatory frameworks later (the compliance section shows the existing "no applicable frameworks" note until frameworks are seeded).
+- [x] Branch `feat/arc-region-north-africa` (6a25ac37), pushed; typecheck, lint, 211 tests and production build clean. Awaiting "Merge".
+- [x] Migration 00239 applied to live Supabase 1 Nov (enum value + three CHECK constraints verified). Merged to master on "merge" 1 Nov; Aiman deploys.
+- Design: `src/lib/constants/ara-regions.ts` is the single list (ids, EN/AR labels, parsing). Question region "both" means every region (serving code already did this; editor label now "All regions"). Country text mapping: Egypt, Libya, Tunisia, Algeria, Morocco, Sudan, Mauritania -> north_africa. Reflect and role profiles keep their own two-region lists (out of scope). Licensed preview sample data stays UAE/Saudi.
+- Open: seed North Africa regulatory frameworks (content-reviewed), peer benchmarks fill as sittings arrive, personal-start region pill is hidden in the UI (unchanged).
 
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)
 

@@ -8,7 +8,7 @@ const startSchema = z.object({
   full_name: z.string().min(2).max(200),
   email: z.string().email().max(200),
   language: z.enum(["en", "ar"]).default("en"),
-  region: z.enum(["uae", "saudi"]).default("uae"),
+  region: z.enum(["uae", "saudi", "north_africa"]).default("uae"),
 });
 
 const PERSONAL_ORG_NAME_EN = "Personal AI Readiness";

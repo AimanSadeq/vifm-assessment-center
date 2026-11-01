@@ -141,6 +141,7 @@ export default async function EditAraOrganizationPage({
                 >
                   <option value="uae">{t("araAdmin.regionUaeFull")}</option>
                   <option value="saudi">{t("araAdmin.regionSaudi")}</option>
+                  <option value="north_africa">{t("araAdmin.regionNorthAfrica")}</option>
                 </select>
               </div>
 

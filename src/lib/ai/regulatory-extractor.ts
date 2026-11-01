@@ -1,5 +1,7 @@
 import { getAIClient, AI_MODEL } from "./client";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { araRegionLabel } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 
 /**
  * Extract structured regulatory requirements from a PDF document via
@@ -26,7 +28,7 @@ export type ExtractedRequirement = {
 export async function extractRegulatoryRequirementsFromPdf(
   pdfBase64: string,
   frameworkCode: string,
-  region: "uae" | "saudi"
+  region: AraRegion
 ): Promise<ExtractedRequirement[] | null> {
   const ai = getAIClient();
   if (!ai) return null;
@@ -38,7 +40,7 @@ export async function extractRegulatoryRequirementsFromPdf(
       model: AI_MODEL,
       max_tokens: 8000,
       system:
-        `You extract regulatory requirements from ${region === "uae" ? "UAE" : "Saudi Arabia"} ` +
+        `You extract regulatory requirements from ${araRegionLabel(region, "en")} ` +
         `policy documents that govern AI deployment. For each distinct requirement (typically ` +
         `one per article, clause, or numbered section), output a JSON object. ` +
         `Skip preambles, definitions, and recitals. ` +

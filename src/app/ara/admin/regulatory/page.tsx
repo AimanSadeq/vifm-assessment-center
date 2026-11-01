@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, FileText, Upload, Trash2, CheckCircle2, XCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Breadcrumbs } from "@/components/shared/breadcrumbs";
 import { createServiceClient } from "@/lib/supabase/server";
+import type { AraRegion } from "@/types/ara";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,7 @@ export const dynamic = "force-dynamic";
 
 type FrameworkRow = {
   id: string;
-  region: "uae" | "saudi";
+  region: AraRegion;
   framework_code: string;
   framework_name_en: string;
   framework_name_ar: string;

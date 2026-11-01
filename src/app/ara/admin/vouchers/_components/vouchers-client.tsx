@@ -5,6 +5,8 @@ import Link from "next/link";
 import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3, SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
+import { ARA_REGIONS, araRegionLabel, toAraRegion } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
 import { copyToClipboard } from "@/lib/utils/clipboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -63,7 +65,7 @@ export function VouchersClient({
   orgs: OrgOption[];
   /** Per-pillar Layer-1 question availability on the active bank, by region
    *  (region isolation applied; voucher runs are sector='general'). */
-  pillarAvailability?: Record<"uae" | "saudi", Record<string, number>>;
+  pillarAvailability?: Record<AraRegion, Record<string, number>>;
   companies: CompanyRollup[];
   /** Division / enterprise assessments a cohort code may be created under (00224). */
   rollups?: RollupOption[];
@@ -393,8 +395,7 @@ export function VouchersClient({
                     />
                     <div className="grid grid-cols-2 gap-2">
                       <select className={selectClass} value={newClientRegion} onChange={(e) => setNewClientRegion(e.target.value)}>
-                        <option value="uae">UAE</option>
-                        <option value="saudi">Saudi</option>
+                        {ARA_REGIONS.map((r) => <option key={r.id} value={r.id}>{r.short_en}</option>)}
                       </select>
                       <select className={selectClass} value={newClientSector} onChange={(e) => setNewClientSector(e.target.value)}>
                         <option value="general">General</option>
@@ -454,8 +455,7 @@ export function VouchersClient({
                   <div className="w-40 space-y-1.5">
                     <Label className="text-xs">Region {selectedOrg && <span className="text-[10px] font-normal text-muted-foreground">(from client)</span>}</Label>
                     <select className={selectClass} value={batchRegion} onChange={(e) => setBatchRegion(e.target.value)} disabled={!!selectedOrg}>
-                      <option value="uae">UAE</option>
-                      <option value="saudi">Saudi</option>
+                      {ARA_REGIONS.map((r) => <option key={r.id} value={r.id}>{r.short_en}</option>)}
                     </select>
                   </div>
                   <div className="w-40 space-y-1.5">
@@ -471,14 +471,10 @@ export function VouchersClient({
                   // from the ACTIVE bank with region isolation applied - the
                   // same filter a redeemed respondent's form uses - so the
                   // designed total always matches what is actually served.
-                  const effRegion: "uae" | "saudi" =
-                    (selectedOrg
-                      ? orgList.find((o) => o.id === selectedOrg)?.region === "saudi"
-                        ? "saudi"
-                        : "uae"
-                      : batchRegion === "saudi"
-                        ? "saudi"
-                        : "uae");
+                  const effRegion: AraRegion = toAraRegion(
+                    selectedOrg ? orgList.find((o) => o.id === selectedOrg)?.region : batchRegion,
+                    "uae",
+                  );
                   const avail = pillarAvailability?.[effRegion] ?? {};
                   const qppNum = orgQpp ? Math.max(1, Number(orgQpp) || 0) : null;
                   const servedFor = (id: string) => {
@@ -489,7 +485,7 @@ export function VouchersClient({
                   const selected = ARA_PILLARS.filter((pl) => orgPillars.has(pl.id));
                   const totalServed = selected.reduce((sum, pl) => sum + (servedFor(pl.id) ?? 0), 0);
                   const short = qppNum == null ? [] : selected.filter((pl) => (avail[pl.id] ?? Infinity) < qppNum);
-                  const regionLabel = effRegion === "saudi" ? "Saudi" : "UAE";
+                  const regionLabel = araRegionLabel(effRegion, "en", "short");
                   return (
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center justify-between gap-2">

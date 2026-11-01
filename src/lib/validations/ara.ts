@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const araRegionSchema = z.enum(["uae", "saudi"]);
+export const araRegionSchema = z.enum(["uae", "saudi", "north_africa"]);
 export const araSectorSchema = z.enum(["government", "banking", "general"]);
 export const araLanguageSchema = z.enum(["en", "ar"]);
 export const araPillarSchema = z.enum([
@@ -136,7 +136,7 @@ export const createAraQuestionSchema = z.object({
   score_map: z.record(z.string(), z.number()).optional().nullable(),
   help_text_en: z.string().max(2000).optional().or(z.literal("")),
   help_text_ar: z.string().max(2000).optional().or(z.literal("")),
-  region: z.enum(["uae", "saudi", "both"]).default("both"),
+  region: z.enum(["uae", "saudi", "north_africa", "both"]).default("both"),
   sector: z.enum(["government", "banking", "general", "all"]).default("all"),
   layer: z.union([z.literal(1), z.literal(2)]).default(1),
   display_order: z.coerce.number().int().nonnegative().default(0),

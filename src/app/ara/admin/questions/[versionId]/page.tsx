@@ -511,6 +511,7 @@ export default async function AraVersionDetailPage({
                     <option value="both">{t("araAdminData.vd_region_both")}</option>
                     <option value="uae">{t("araAdminData.vd_region_uae")}</option>
                     <option value="saudi">{t("araAdminData.vd_region_saudi")}</option>
+                    <option value="north_africa">{t("araAdminData.vd_region_north_africa")}</option>
                   </select>
                 </div>
 

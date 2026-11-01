@@ -7,16 +7,20 @@
 
 import { createServiceClient } from "@/lib/supabase/server";
 
-export type AraRegion = "uae" | "saudi";
+export type { AraRegion } from "@/types/ara";
+import type { AraRegion } from "@/types/ara";
 export type AraSector = "government" | "banking" | "general";
 
 const norm = (s: string) => s.trim().toLowerCase();
 
-/** Region is required by ara_organizations (only uae/saudi exist). Best-effort
- *  from the free-text country; the consultant can refine it in the ARA editor. */
+/** Region is required by ara_organizations (uae, saudi or north_africa).
+ *  Best-effort from the free-text country; the consultant can refine it in
+ *  the ARA editor. North Africa covers Egypt, Libya, Tunisia, Algeria,
+ *  Morocco, Sudan and Mauritania. */
 export function deriveRegion(country?: string | null): AraRegion {
   const c = (country ?? "").toLowerCase();
   if (/saud|ksa|\briyadh\b|jeddah|jedda|dammam|mecca|medina|\bsa\b/.test(c)) return "saudi";
+  if (/egypt|cairo|\bmisr\b|libya|tripoli|tunis|alger|morocc|maroc|rabat|casablanca|sudan|khartoum|mauritan|north africa/.test(c)) return "north_africa";
   return "uae";
 }
 

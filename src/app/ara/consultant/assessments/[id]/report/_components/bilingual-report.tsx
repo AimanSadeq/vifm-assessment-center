@@ -5,6 +5,7 @@ import { ARA_PILLARS, ARA_MATURITY_LEVELS, ARA_OVERALL_BANDS } from "@/lib/const
 import { DELTA_COLORS, USE_CASE_RISK_COLORS, USE_CASE_STAGE_COLORS } from "./report-encodings";
 import { ReportLegend } from "./report-legend";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
+import { araRegionLabel } from "@/lib/constants/ara-regions";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { ARA_AGENTIC_DIMENSIONS } from "@/lib/constants/ara-agentic-dimensions";
 import type { FrameworkComplianceSummary } from "@/lib/ara/compliance";
@@ -12,7 +13,7 @@ import type { PeerBenchmarkResult } from "@/lib/ara/peer-benchmarks";
 import type { YoYComparison } from "@/lib/ara/year-on-year";
 import type { WorkforceReadinessRollup } from "@/lib/ara/workforce-readiness";
 import type { AgenticReadinessRollup } from "@/lib/ara/agentic-readiness";
-import type { AraEngagementStage, AraPillarId, AraUseCase } from "@/types/ara";
+import type { AraEngagementStage, AraPillarId, AraRegion, AraUseCase } from "@/types/ara";
 import { MaturityGauge } from "./maturity-gauge";
 import { RadarChart } from "./radar-chart";
 import { GapHeatmap } from "./gap-heatmap";
@@ -46,7 +47,7 @@ type ConsultantNote = {
 export type BilingualReportProps = {
   organizationName: string;
   organizationNameAr: string | null;
-  region: "uae" | "saudi";
+  region: AraRegion;
   sector: string;
   isSandbox: boolean;
   reportDate: string;
@@ -130,8 +131,8 @@ export type BilingualReportProps = {
  * Visuals span both columns on their own pages with bilingual captions.
  */
 export function BilingualReport(p: BilingualReportProps) {
-  const regionEn = p.region === "uae" ? "United Arab Emirates" : "Saudi Arabia";
-  const regionAr = p.region === "uae" ? "الإمارات العربية المتحدة" : "المملكة العربية السعودية";
+  const regionEn = araRegionLabel(p.region, "en");
+  const regionAr = araRegionLabel(p.region, "ar");
   const sectorCap = p.sector.charAt(0).toUpperCase() + p.sector.slice(1);
   // Stage drives pillar filtering + which strategic-output sections render.
   const stageDef = ARA_STAGE_MAP[p.engagementStage ?? "enterprise"] ?? ARA_STAGE_MAP.enterprise;

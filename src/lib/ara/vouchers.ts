@@ -1,4 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
+import { isAraRegion, toAraRegion } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 import { normalizeVoucherExpiry } from "@/lib/vouchers/expiry";
 import { formatPersonName } from "@/lib/privacy/person-name";
 import { normalizeCode as sharedNormalizeCode } from "@/lib/vouchers/codegen";
@@ -40,7 +42,7 @@ export type CreateBatchInput = {
   organizationId?: string | null;
   clientName?: string | null;
   tier?: VoucherTier;
-  region?: "uae" | "saudi";
+  region?: AraRegion;
   language?: "en" | "ar";
   maxUses?: number; // seat-pool size per code
   isPractice?: boolean;
@@ -250,7 +252,7 @@ export async function redeemVoucher(
   // government and banking client a general-sector assessment: right country,
   // wrong frameworks. Untagged (practice) vouchers keep the voucher's region
   // and a general sector, as before.
-  let region: "uae" | "saudi" = voucher.region === "saudi" ? "saudi" : "uae";
+  let region: AraRegion = toAraRegion(voucher.region, "uae");
   let sector = "general";
   if (voucher.organization_id) {
     try {
@@ -259,7 +261,7 @@ export async function redeemVoucher(
         .select("region, sector")
         .eq("id", voucher.organization_id)
         .maybeSingle<{ region: string | null; sector: string | null }>();
-      if (org?.region === "saudi" || org?.region === "uae") region = org.region;
+      if (isAraRegion(org?.region)) region = org.region;
       if (org?.sector) sector = org.sector;
     } catch {
       /* fall back to the voucher's region and a general sector */

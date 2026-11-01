@@ -5,6 +5,7 @@ import { VifmLogo } from "@/components/shared/vifm-logo";
 import { BackLink } from "@/components/shared/back-link";
 import { ARA_PILLARS, ARA_MATURITY_LEVELS } from "@/lib/constants/ara-pillars";
 import { ARA_STAGE_MAP } from "@/lib/constants/ara-stages";
+import { araRegionLabel } from "@/lib/constants/ara-regions";
 import { ARA_INDIVIDUAL_FACTORS } from "@/lib/constants/ara-individual-factors";
 import { computeUnitRollup, UNEVEN_THRESHOLD, levelForScore, type RollupUnit } from "@/lib/ara/unit-rollup";
 import { computeWorkforceReadiness } from "@/lib/ara/workforce-readiness";
@@ -99,7 +100,7 @@ export default async function AraRollupReportPage({
   };
   const levelText = (s: number | null | undefined) => (s == null ? T("Not scored", "لم تُحتسب") : `L${levelForScore(s)} ${levelLabel(levelForScore(s))}`);
   const pctOfTarget = (s: number) => Math.round((s / TARGET) * 100);
-  const region = assessment.region === "saudi" ? T("Saudi Arabia", "المملكة العربية السعودية") : T("United Arab Emirates", "الإمارات العربية المتحدة");
+  const region = T(araRegionLabel(assessment.region, "en"), araRegionLabel(assessment.region, "ar"));
 
   // Arabic needs a shaping-capable webfont in Chromium; the English report
   // uses the stylesheet's Open Sans stack. Same approach as the personal report.

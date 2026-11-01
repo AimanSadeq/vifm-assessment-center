@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { ARA_REGIONS, toAraRegion } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Building2 } from "lucide-react";
@@ -24,7 +26,7 @@ export function CreateClientDialog() {
   const [country, setCountry] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
-  const [region, setRegion] = useState<"uae" | "saudi">("uae");
+  const [region, setRegion] = useState<AraRegion>("uae");
   const [sector, setSector] = useState<"government" | "banking" | "general">("general");
 
   const reset = () => {
@@ -81,9 +83,8 @@ export function CreateClientDialog() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="cl-region">Region</Label>
-              <select id="cl-region" className={selectCls} value={region} onChange={(e) => setRegion(e.target.value as "uae" | "saudi")}>
-                <option value="uae">UAE</option>
-                <option value="saudi">Saudi Arabia</option>
+              <select id="cl-region" className={selectCls} value={region} onChange={(e) => setRegion(toAraRegion(e.target.value, "uae"))}>
+                {ARA_REGIONS.map((r) => <option key={r.id} value={r.id}>{r.name_en}</option>)}
               </select>
             </div>
             <div className="space-y-1.5">

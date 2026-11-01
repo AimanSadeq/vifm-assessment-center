@@ -393,7 +393,7 @@ export default async function NewAraAssessmentPage({
                   <option value="" disabled>{t("araConsultant.new_select_organization")}</option>
                   {(orgs ?? []).map((o) => (
                     <option key={o.id} value={o.id}>
-                      {o.name} - {o.region === "uae" ? t("araConsultant.list_region_uae") : t("araConsultant.list_region_saudi")} / {o.sector}
+                      {o.name} - {o.region === "uae" ? t("araConsultant.list_region_uae") : o.region === "north_africa" ? t("araConsultant.list_region_north_africa") : t("araConsultant.list_region_saudi")} / {o.sector}
                     </option>
                   ))}
                 </select>
@@ -475,6 +475,7 @@ export default async function NewAraAssessmentPage({
                     <option value="" disabled>{t("araConsultant.new_select_placeholder")}</option>
                     <option value="uae">{t("araConsultant.new_region_uae")}</option>
                     <option value="saudi">{t("araConsultant.new_region_saudi")}</option>
+                    <option value="north_africa">{t("araConsultant.new_region_north_africa")}</option>
                   </select>
                 </div>
 

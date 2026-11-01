@@ -18,6 +18,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages } from "@/lib/ara/paginate";
 import { sendAraEmail, type AraEmailLanguage } from "@/lib/ara/email";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
+import { toAraRegion } from "@/lib/constants/ara-regions";
 import { createVoucherBatch as createArcVoucherBatch, type VoucherTier } from "@/lib/ara/vouchers";
 import type { AraEngagementStage, AraLanguage, AraPillarId, AraRegion, AraSector } from "@/types/ara";
 import { siteOrigin } from "@/lib/site-url";
@@ -60,7 +61,7 @@ function resolveStage(v: unknown): AraEngagementStage {
 }
 
 function resolveRegion(v: unknown): AraRegion {
-  return asString(v) === "saudi" ? "saudi" : "uae";
+  return toAraRegion(asString(v), "uae");
 }
 
 function resolveSector(v: unknown): AraSector {

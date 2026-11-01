@@ -594,6 +594,7 @@ function AraOrgInline({ araOrgs, araVersionId }: { araOrgs: AraOrg[]; araVersion
             <option value="" disabled>{t("start.select")}</option>
             <option value="uae">{t("start.ara.regionUae")}</option>
             <option value="saudi">{t("start.ara.regionSaudi")}</option>
+            <option value="north_africa">{t("start.ara.regionNorthAfrica")}</option>
           </select>
         </div>
         <div className="space-y-2">

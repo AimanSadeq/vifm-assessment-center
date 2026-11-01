@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import type { AraRegion } from "@/types/ara";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,7 +30,7 @@ export function DeepDiveForm({ action, lens }: Props) {
   const { t } = useTranslation();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
-  const [region, setRegion] = useState<"uae" | "saudi">("uae");
+  const [region, setRegion] = useState<AraRegion>("uae");
   const [issued, setIssued] = useState<{
     respondentUrl: string;
     name: string;
@@ -151,6 +152,7 @@ export function DeepDiveForm({ action, lens }: Props) {
           <div className="flex gap-2">
             <Button type="button" variant={region === "uae" ? "default" : "outline"} size="sm" onClick={() => setRegion("uae")} className="flex-1">{t("araAssessmentDetail.region_uae")}</Button>
             <Button type="button" variant={region === "saudi" ? "default" : "outline"} size="sm" onClick={() => setRegion("saudi")} className="flex-1">{t("araAssessmentDetail.region_saudi")}</Button>
+            <Button type="button" variant={region === "north_africa" ? "default" : "outline"} size="sm" onClick={() => setRegion("north_africa")} className="flex-1">{t("araAssessmentDetail.region_north_africa")}</Button>
           </div>
         </div>
       </div>

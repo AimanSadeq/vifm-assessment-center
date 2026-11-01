@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { AraRegion } from "@/types/ara";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ const COPY = {
     regionLabel: "Region",
     uae: "UAE",
     saudi: "Saudi Arabia",
+    north_africa: "North Africa",
     submit: "Start the snapshot",
     submitting: "Starting…",
     footnote:
@@ -59,6 +61,7 @@ const COPY = {
     regionLabel: "المنطقة",
     uae: "الإمارات",
     saudi: "السعودية",
+    north_africa: "شمال أفريقيا",
     submit: "ابدأ اللقطة",
     submitting: "جارٍ البدء…",
     footnote:
@@ -81,7 +84,7 @@ export function StartForm({ action, lens }: Props) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [language, setLanguage] = useState<"en" | "ar">("en");
-  const [region, setRegion] = useState<"uae" | "saudi">("uae");
+  const [region, setRegion] = useState<AraRegion>("uae");
   const isAr = language === "ar";
   const t = COPY[language];
 

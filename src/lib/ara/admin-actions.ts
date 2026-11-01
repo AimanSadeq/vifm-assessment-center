@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/server";
+import type { AraRegion } from "@/types/ara";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { runRetentionPurge, deleteAssessmentCollateral } from "@/lib/ara/retention";
 
@@ -37,7 +38,7 @@ export async function uploadAraRegulatoryDocument(formData: FormData) {
     .from("ara_regulatory_frameworks")
     .select("id, region, framework_code")
     .eq("id", frameworkId)
-    .maybeSingle<{ id: string; region: "uae" | "saudi"; framework_code: string }>();
+    .maybeSingle<{ id: string; region: AraRegion; framework_code: string }>();
   if (!framework) return { ok: false, error: "Framework not found" };
 
   // Insert the document row first so it appears in the list while we

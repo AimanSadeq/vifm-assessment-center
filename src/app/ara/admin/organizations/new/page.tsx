@@ -53,6 +53,7 @@ export default async function NewAraOrganizationPage() {
                   <option value="" disabled>{t("araAdmin.orgRegionPlaceholder")}</option>
                   <option value="uae">{t("araAdmin.regionUaeFull")}</option>
                   <option value="saudi">{t("araAdmin.regionSaudi")}</option>
+                  <option value="north_africa">{t("araAdmin.regionNorthAfrica")}</option>
                 </select>
                 <p className="text-xs text-muted-foreground">
                   {t("araAdmin.orgRegionHint")}

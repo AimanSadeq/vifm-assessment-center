@@ -7,6 +7,9 @@ import { createVoucherBatch } from "@/lib/ara/vouchers";
 import { createServiceClient } from "@/lib/supabase/server";
 import { sendViaResend } from "@/lib/integrations/resend";
 import { siteOrigin } from "@/lib/site-url";
+import { araRegionSchema } from "@/lib/validations/ara";
+import { toAraRegion } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 
 const SITE_URL = siteOrigin();
 
@@ -79,7 +82,7 @@ const batchSchema = z.object({
   organizationId: z.string().uuid().optional(),
   clientName: z.string().max(300).optional(),
   maxUses: z.coerce.number().int().min(1).max(10000).default(1),
-  region: z.enum(["uae", "saudi"]).default("uae"),
+  region: araRegionSchema.default("uae"),
   language: z.enum(["en", "ar"]).default("en"),
   itemsPerFactor: itemsPerFactorSchema,
   engagementStage: engagementStageSchema,
@@ -184,7 +187,7 @@ export async function createVoucherBatchAction(formData: FormData) {
         .insert({
           organization_id: parsed.data.organizationId,
           consultant_id: caller?.uid ?? null,
-          region: org.region === "saudi" ? "saudi" : "uae",
+          region: toAraRegion(org.region, "uae"),
           sector: org.sector,
           default_language: parsed.data.language,
           is_sandbox: false,
@@ -216,7 +219,7 @@ export async function createVoucherBatchAction(formData: FormData) {
       .eq("id", parsed.data.organizationId)
       .maybeSingle<{ name: string; region: string }>();
     if (org) {
-      region = org.region === "saudi" ? "saudi" : "uae";
+      region = toAraRegion(org.region, "uae");
       clientName = clientName ?? org.name;
     }
   }
@@ -303,7 +306,7 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
   if (emails.length > 200) return { ok: false as const, error: "Max 200 delegates per send." };
 
   // Inherit region + client name from the tagged org.
-  let region: "uae" | "saudi" = "uae";
+  let region: AraRegion = "uae";
   let clientName = parsed.data.clientName ?? null;
   if (parsed.data.organizationId) {
     const sb = createServiceClient();
@@ -313,7 +316,7 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
       .eq("id", parsed.data.organizationId)
       .maybeSingle<{ name: string; region: string }>();
     if (org) {
-      region = org.region === "saudi" ? "saudi" : "uae";
+      region = toAraRegion(org.region, "uae");
       clientName = clientName ?? org.name;
     }
   }
@@ -394,7 +397,7 @@ export async function setRedemptionExcludedAction(redemptionId: string, excluded
 const clientSchema = z.object({
   name: z.string().min(2).max(300),
   nameAr: z.string().max(300).optional(),
-  region: z.enum(["uae", "saudi"]).default("uae"),
+  region: araRegionSchema.default("uae"),
   sector: z.enum(["government", "banking", "general"]).default("general"),
 });
 

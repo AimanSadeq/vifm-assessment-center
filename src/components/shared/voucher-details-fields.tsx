@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
+import { ARA_REGIONS, toAraRegion } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -60,7 +62,7 @@ export function VoucherDetailsFields({
   useEffect(() => setClientList(clients), [clients]);
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
-  const [newRegion, setNewRegion] = useState<"uae" | "saudi">("uae");
+  const [newRegion, setNewRegion] = useState<AraRegion>("uae");
   const [newSector, setNewSector] = useState<"government" | "banking" | "general">("general");
   const [saving, setSaving] = useState(false);
   const [addErr, setAddErr] = useState<string | null>(null);
@@ -110,9 +112,8 @@ export function VoucherDetailsFields({
             <div className="mt-2 space-y-2 rounded-md border border-border bg-card p-3">
               <Input placeholder="New client / organization name" value={newName} onChange={(e) => setNewName(e.target.value)} />
               <div className="grid grid-cols-2 gap-2">
-                <select className={selectClass} value={newRegion} onChange={(e) => setNewRegion(e.target.value as "uae" | "saudi")}>
-                  <option value="uae">UAE</option>
-                  <option value="saudi">Saudi</option>
+                <select className={selectClass} value={newRegion} onChange={(e) => setNewRegion(toAraRegion(e.target.value, "uae"))}>
+                  {ARA_REGIONS.map((r) => <option key={r.id} value={r.id}>{r.short_en}</option>)}
                 </select>
                 <select className={selectClass} value={newSector} onChange={(e) => setNewSector(e.target.value as "government" | "banking" | "general")}>
                   <option value="general">General</option>

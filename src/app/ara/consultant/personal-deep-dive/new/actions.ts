@@ -21,7 +21,7 @@ const inputSchema = z.object({
   full_name: z.string().min(2).max(200),
   email: z.string().email().max(200),
   language: z.enum(["en", "ar"]).default("en"),
-  region: z.enum(["uae", "saudi"]).default("uae"),
+  region: z.enum(["uae", "saudi", "north_africa"]).default("uae"),
   organization_id: z.string().uuid().optional(),
   organization_name: z.string().min(2).max(300).optional(),
   // Demo runs (from the Talent-Acquisition selection landing's "Demo mode")

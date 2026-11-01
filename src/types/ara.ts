@@ -2,7 +2,7 @@
 // These will eventually be replaced by auto-generated types via:
 //   npx supabase gen types typescript --project-id <id> > src/types/database.ts
 
-export type AraRegion = "uae" | "saudi";
+export type AraRegion = "uae" | "saudi" | "north_africa";
 export type AraSector = "government" | "banking" | "general";
 export type AraLanguage = "en" | "ar";
 export type AraReportLanguage = "en" | "ar" | "bilingual";
@@ -160,7 +160,8 @@ export type AraQuestion = {
   score_map: Record<string, number> | null;
   help_text_en: string | null;
   help_text_ar: string | null;
-  region: "uae" | "saudi" | "both";
+  /** A specific region, or "both", which serves every region. */
+  region: AraRegion | "both";
   sector: "government" | "banking" | "general" | "all";
   layer: 1 | 2;
   display_order: number;

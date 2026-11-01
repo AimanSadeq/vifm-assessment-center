@@ -19,6 +19,7 @@ import { isAIConfigured } from "@/lib/ai/client";
 import { createClientOrganization, type AraRegion, type AraSector } from "@/lib/clients/registry";
 import { validateTalentLens } from "@/lib/constants/ara-individual-factors";
 import { getPillarsForAssessment } from "@/lib/constants/ara-stages";
+import { isAraRegion } from "@/lib/constants/ara-regions";
 import { siteOrigin } from "@/lib/site-url";
 
 // Uniform auth-error unwrapper - server actions return a shape the UI
@@ -49,7 +50,7 @@ export async function registerAraClient(formData: FormData) {
   const region = String(formData.get("region") ?? "");
   const sector = String(formData.get("sector") ?? "");
   if (!name) return { ok: false as const, error: "A client name is required." };
-  if (region !== "uae" && region !== "saudi") return { ok: false as const, error: "Select a region." };
+  if (!isAraRegion(region)) return { ok: false as const, error: "Select a region." };
   if (!["government", "banking", "general"].includes(sector)) return { ok: false as const, error: "Select a sector." };
 
   const res = await createClientOrganization({

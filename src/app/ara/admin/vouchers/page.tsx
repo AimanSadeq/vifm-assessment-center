@@ -2,6 +2,8 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { BackLink } from "@/components/shared/back-link";
 import { VoucherNav } from "@/components/shared/voucher-nav";
 import { VouchersClient } from "./_components/vouchers-client";
+import { ARA_REGION_IDS } from "@/lib/constants/ara-regions";
+import type { AraRegion } from "@/types/ara";
 
 export const dynamic = "force-dynamic";
 
@@ -71,7 +73,7 @@ export default async function VouchersAdminPage() {
   // Per-pillar question availability on the ACTIVE bank, split by region - the
   // org-design panel aligns its pillar counts + totals with what a redemption
   // will actually serve (region isolation; voucher runs are sector='general').
-  const pillarAvailability: Record<"uae" | "saudi", Record<string, number>> = { uae: {}, saudi: {} };
+  const pillarAvailability: Record<AraRegion, Record<string, number>> = { uae: {}, saudi: {}, north_africa: {} };
   try {
     const { data: activeBank } = await sb
       .from("ara_question_bank_versions")
@@ -91,7 +93,7 @@ export default async function VouchersAdminPage() {
       for (const q of (bankQs ?? []) as { pillar_id: string | null; region: string; sector: string }[]) {
         if (!q.pillar_id) continue;
         if (!(q.sector === "all" || q.sector === "general")) continue;
-        for (const r of ["uae", "saudi"] as const) {
+        for (const r of ARA_REGION_IDS) {
           if (q.region === "both" || q.region === r) {
             pillarAvailability[r][q.pillar_id] = (pillarAvailability[r][q.pillar_id] ?? 0) + 1;
           }

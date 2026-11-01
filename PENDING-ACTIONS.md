@@ -337,6 +337,13 @@ Ahmad gave ITQAN 11 vouchers; all 11 delegates completed. He asked (a) how to do
 - [ ] Open: confirm with Ahmad that the ITQAN ZIP now completes (timing not measurable from the session); Arabic cohort dashboard if a client asks; wording of the L1 to L5 level readings if Aiman wants changes.
 - Open: Arabic cohort PDF (personal ZIP already supports `language=ar`); whether the cohort PDF should go to the client directly or via Ahmad.
 
+## K. ARC regions: North Africa (Aiman, 2026-11-01)
+Aiman: "For the AI readiness, you need to add another region titled North Africa." Scoping answer: add the region now, regulatory frameworks later (the compliance section shows the existing "no applicable frameworks" note until frameworks are seeded).
+- [x] Branch `feat/arc-region-north-africa` (6a25ac37), pushed; typecheck, lint, 211 tests and production build clean. Awaiting "Merge".
+- [ ] **Apply migration 00239 to live Supabase** (enum value `north_africa` + three CHECK constraints; additive). Needs Aiman's go-ahead before deploy, or every North Africa selection fails at the database.
+- Design: `src/lib/constants/ara-regions.ts` is the single list (ids, EN/AR labels, parsing). Question region "both" means every region (serving code already did this; editor label now "All regions"). Country text mapping: Egypt, Libya, Tunisia, Algeria, Morocco, Sudan, Mauritania -> north_africa. Reflect and role profiles keep their own two-region lists (out of scope). Licensed preview sample data stays UAE/Saudi.
+- Open: seed North Africa regulatory frameworks (content-reviewed), peer benchmarks fill as sittings arrive, personal-start region pill is hidden in the UI (unchanged).
+
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)
 
 **Outcome: DNS/auth is fully healthy - nothing to fix.** Original worry was that

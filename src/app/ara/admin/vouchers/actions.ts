@@ -241,6 +241,7 @@ export async function createVoucherBatchAction(formData: FormData) {
     poolRespondents,
     includeIndividualLayer,
     parentAssessmentId,
+    sendReportToDelegate: formData.get("sendReportToDelegate") === "1",
     expiresAt: toEndOfDayIso(parsed.data.expiresAt),
     createdBy: caller?.uid ?? null,
     contactName: parsed.data.contactName?.trim() || null,
@@ -332,6 +333,7 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
       organizationId: parsed.data.organizationId ?? null,
       clientName,
       tier: "deep_dive", // always the full Personal ARC tier (a real run)
+      sendReportToDelegate: formData.get("sendReportToDelegate") === "1",
       region,
       maxUses: 1,
       isPractice: false,
@@ -362,6 +364,60 @@ export async function emailVouchersToDelegatesAction(formData: FormData) {
   revalidatePath("/ara/admin/vouchers");
   const sentCount = results.filter((r) => r.ok).length;
   return { ok: true as const, sent: sentCount, total: results.length, results };
+}
+
+/**
+ * Edit a voucher after issue: a client that asks for more delegates or a
+ * later closing date gets it on the same code, so the links already shared
+ * keep working. The seat pool can never drop below the seats already used,
+ * and the expiry is stored as the end of the chosen day. Admin-only.
+ */
+const voucherEditSchema = z.object({
+  maxUses: z.coerce.number().int().min(1).max(10000),
+  expiresAt: z.string().max(40).optional(),
+});
+
+export async function updateVoucherAction(id: string, input: { maxUses: number; expiresAt?: string | null }) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const vid = z.string().uuid().safeParse(id);
+  if (!vid.success) return { ok: false as const, error: "Invalid voucher" };
+  const parsed = voucherEditSchema.safeParse({ maxUses: input.maxUses, expiresAt: input.expiresAt ?? undefined });
+  if (!parsed.success) return { ok: false as const, error: parsed.error.issues[0]?.message ?? "Invalid input" };
+
+  const sb = createServiceClient();
+  const { data: current } = await sb
+    .from("ara_vouchers")
+    .select("used_count")
+    .eq("id", vid.data)
+    .maybeSingle<{ used_count: number }>();
+  if (!current) return { ok: false as const, error: "Voucher not found" };
+  if (parsed.data.maxUses < current.used_count) {
+    return { ok: false as const, error: `${current.used_count} seat${current.used_count === 1 ? " is" : "s are"} already used; the pool cannot be smaller than that.` };
+  }
+  const expires = parsed.data.expiresAt?.trim() ? toEndOfDayIso(parsed.data.expiresAt) : null;
+  if (parsed.data.expiresAt?.trim() && !expires) return { ok: false as const, error: "Enter the expiry as a date." };
+
+  const { error } = await sb
+    .from("ara_vouchers")
+    .update({ max_uses: parsed.data.maxUses, expires_at: expires })
+    .eq("id", vid.data);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/ara/admin/vouchers");
+  return { ok: true as const };
+}
+
+/** Switch whether delegates on this code are emailed their own report on completion. Admin-only. */
+export async function setVoucherReportDeliveryAction(id: string, sendToDelegate: boolean) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+  const vid = z.string().uuid().safeParse(id);
+  if (!vid.success) return { ok: false as const, error: "Invalid voucher" };
+  const sb = createServiceClient();
+  const { error } = await sb.from("ara_vouchers").update({ send_report_to_delegate: sendToDelegate }).eq("id", vid.data);
+  if (error) return { ok: false as const, error: error.message };
+  revalidatePath("/ara/admin/vouchers");
+  return { ok: true as const };
 }
 
 export async function setVoucherStatusAction(id: string, status: "active" | "disabled") {

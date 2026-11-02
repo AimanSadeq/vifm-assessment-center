@@ -32,7 +32,8 @@ export type AraEmailType =
   | "ara_respondent_invitation"
   | "ara_consultant_completion"
   | "ara_personal_results_link"
-  | "ara_personal_results_to_client";
+  | "ara_personal_results_to_client"
+  | "ara_personal_report_to_delegate";
 export type AraEmailLanguage = "en" | "ar" | "bilingual";
 
 type RenderedEmail = {
@@ -262,6 +263,52 @@ ${d.pdfAttached === "no"
 <div dir="rtl" style="font-family:'Open Sans',Arial,sans-serif;">
 <p>مرحبًا ${d.clientName}،</p>
 <p>أكمل ${d.respondentName} لقطة الجاهزية للذكاء الاصطناعي لـ <strong>${d.assessmentName}</strong>. ${d.pdfAttached === "no" ? "تعذّر إرفاق تقرير النتائج - سيتابع معك مستشار VIFM لإرسال ملف PDF." : "تقرير النتائج مرفق بصيغة PDF."}</p>
+</div>
+</div>`,
+    }),
+  },
+  // The delegate's own report, sent only when the voucher batch has
+  // send_report_to_delegate switched on (migration 00240). The default path
+  // sends nothing: VIFM delivers reports through the organization.
+  ara_personal_report_to_delegate: {
+    en: (d) => ({
+      contentType: "Text",
+      subject: "Your VIFM AI Readiness Report",
+      body: `Hello ${d.respondentName},
+
+Thank you for completing the VIFM AI Readiness Compass${d.assessmentName ? ` for ${d.assessmentName}` : ""}.
+
+Your Personal AI Readiness Report is attached as a PDF. It covers the four AI-readiness factors, how you compare with the target, and the VIFM programs most likely to help you progress.
+
+The report is yours; your organization receives the cohort view. If you have questions about reading it, please contact your organization's program contact or VIFM.
+
+Best regards,
+Virginia Institute of Finance and Management`,
+    }),
+    ar: (d) => ({
+      contentType: "Text",
+      subject: "تقرير جاهزيتك للذكاء الاصطناعي من VIFM",
+      body: `مرحبًا ${d.respondentName}،
+
+شكرًا لإكمالك بوصلة VIFM للجاهزية للذكاء الاصطناعي${d.assessmentName ? ` لـ ${d.assessmentName}` : ""}.
+
+تقريرك الشخصي للجاهزية للذكاء الاصطناعي مرفق بصيغة PDF. يغطي العوامل الأربعة للجاهزية، وموقعك من المستوى المستهدف، وبرامج VIFM الأكثر ملاءمة لتقدّمك.
+
+التقرير خاص بك؛ وتتلقى مؤسستك العرض الإجمالي للمجموعة. إذا كانت لديك أسئلة حول قراءته، يرجى التواصل مع جهة الاتصال المعنية بالبرنامج في مؤسستك أو مع VIFM.
+
+مع أطيب التحيات،
+معهد فرجينيا للتمويل والإدارة`,
+    }),
+    bilingual: (d) => ({
+      contentType: "HTML",
+      subject: "Your VIFM AI Readiness Report / تقرير جاهزيتك للذكاء الاصطناعي",
+      body: `<div style="font-family:'Open Sans',Arial,sans-serif;line-height:1.55;color:#121232;">
+<p>Hello ${d.respondentName},</p>
+<p>Thank you for completing the VIFM AI Readiness Compass${d.assessmentName ? ` for <strong>${d.assessmentName}</strong>` : ""}. Your Personal AI Readiness Report is attached as a PDF.</p>
+<hr style="border:0;border-top:1px solid #e5e7eb;margin:18px 0;"/>
+<div dir="rtl" style="font-family:'Open Sans',Arial,sans-serif;">
+<p>مرحبًا ${d.respondentName}،</p>
+<p>شكرًا لإكمالك بوصلة VIFM للجاهزية للذكاء الاصطناعي. تقريرك الشخصي مرفق بصيغة PDF.</p>
 </div>
 </div>`,
     }),

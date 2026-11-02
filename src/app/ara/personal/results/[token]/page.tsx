@@ -86,8 +86,8 @@ export default async function PersonalResultsPage({ params, searchParams }: Prop
             </CardTitle>
             <CardDescription>
               {isAr
-                ? "شكرًا لإكمالك التقييم. ستتم مشاركة نتائجك مع مؤسستك، التي ستتواصل معك بشأن الخطوات التالية."
-                : "Thank you for completing the assessment. Your results are shared with your organization, who will follow up with you on next steps."}
+                ? "شكرًا لإكمالك التقييم. سيرسل معهد VIFM تقريرك عبر مؤسستك، التي ستتواصل معك بشأن الخطوات التالية."
+                : "Thank you for completing the assessment. VIFM will send your report through your organization, who will follow up with you on next steps."}
             </CardDescription>
           </CardHeader>
         </Card>

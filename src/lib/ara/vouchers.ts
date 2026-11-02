@@ -48,6 +48,9 @@ export type CreateBatchInput = {
   isPractice?: boolean;
   expiresAt?: string | null; // ISO
   createdBy?: string | null;
+  /** Email each delegate their report PDF on completion (migration 00240).
+   *  Default false: the delegate gets a thank-you and VIFM sends reports. */
+  sendReportToDelegate?: boolean;
   /** Per-client ARC length: max individual-layer questions per factor a redeemed
    *  code serves. NULL/undefined = the full deep-dive (no cap). Migration 00143. */
   itemsPerFactor?: number | null;
@@ -127,6 +130,7 @@ export async function createVoucherBatch(
           // still inserts on a DB where 00223 hasn't been applied.
           ...(input.poolRespondents ? { pool_respondents: true } : {}),
           ...(input.includeIndividualLayer ? { include_individual_layer: true } : {}),
+          ...(input.sendReportToDelegate ? { send_report_to_delegate: true } : {}),
           ...(input.poolRespondents && input.parentAssessmentId ? { parent_assessment_id: input.parentAssessmentId } : {}),
         }
       : {}),

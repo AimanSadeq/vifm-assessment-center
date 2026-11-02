@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
-import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3, SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users } from "lucide-react";
+import { Ticket, Copy, Download, Check, Ban, RotateCcw, Plus, X, Link2, Upload, BarChart3, SlidersHorizontal, ChevronLeft, ChevronRight, Building2, Users, Pencil, Send, Lock } from "lucide-react";
 import { fmtDate } from "@/lib/utils/format-date";
 import { ARA_PILLARS } from "@/lib/constants/ara-pillars";
 import { ARA_REGIONS, araRegionLabel, toAraRegion } from "@/lib/constants/ara-regions";
@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { VoucherClientEmailCard } from "@/components/shared/voucher-client-email-card";
-import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction, emailVouchersToDelegatesAction } from "../actions";
+import { createVoucherBatchAction, setVoucherStatusAction, createClientOrgAction, emailVouchersToDelegatesAction, updateVoucherAction, setVoucherReportDeliveryAction } from "../actions";
 import { siteOrigin } from "@/lib/site-url";
 
 type VoucherRow = {
@@ -30,6 +30,7 @@ type VoucherRow = {
   status: string;
   expires_at: string | null;
   created_at: string;
+  send_report_to_delegate?: boolean | null;
 };
 type OrgOption = { id: string; name: string; region: string };
 export type RollupOption = {
@@ -124,6 +125,11 @@ export function VouchersClient({
   const [contactTitle, setContactTitle] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [expiresAt, setExpiresAt] = useState("");
+  // Off by default: delegates see a thank-you and VIFM sends the reports (00240).
+  const [sendReportToDelegate, setSendReportToDelegate] = useState(false);
+  // Inline edit of an issued code (seat pool, expiry).
+  const [editing, setEditing] = useState<{ id: string; maxUses: number; expiresAt: string } | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
 
   // Live origin for shareable redeem links (window is client-only).
   const [origin, setOrigin] = useState("");
@@ -176,6 +182,7 @@ export function VouchersClient({
     }
     if (selectedOrg) fd.set("organizationId", selectedOrg);
     if (expiresAt) fd.set("expiresAt", expiresAt);
+    if (sendReportToDelegate) fd.set("sendReportToDelegate", "1");
     fd.set("contactName", contactName);
     fd.set("contactTitle", contactTitle);
     fd.set("contactEmail", contactEmail);
@@ -284,6 +291,7 @@ export function VouchersClient({
       }
     }
     if (expiresAt) fd.set("expiresAt", expiresAt);
+    if (sendReportToDelegate) fd.set("sendReportToDelegate", "1");
     fd.set("contactName", contactName);
     fd.set("contactTitle", contactTitle);
     fd.set("contactEmail", contactEmail);
@@ -300,6 +308,32 @@ export function VouchersClient({
   function toggle(v: VoucherRow) {
     startTransition(async () => {
       await setVoucherStatusAction(v.id, v.status === "active" ? "disabled" : "active");
+    });
+  }
+
+  function toggleReport(v: VoucherRow) {
+    startTransition(async () => {
+      const res = await setVoucherReportDeliveryAction(v.id, !v.send_report_to_delegate);
+      if (!res.ok) setEditError(res.error ?? "Could not update the code.");
+    });
+  }
+
+  function startEdit(v: VoucherRow) {
+    setEditError(null);
+    setEditing({ id: v.id, maxUses: v.max_uses, expiresAt: v.expires_at ? v.expires_at.slice(0, 10) : "" });
+  }
+
+  function saveEdit() {
+    if (!editing) return;
+    setEditError(null);
+    const draft = editing;
+    startTransition(async () => {
+      const res = await updateVoucherAction(draft.id, { maxUses: draft.maxUses, expiresAt: draft.expiresAt || null });
+      if (!res.ok) {
+        setEditError(res.error ?? "Could not update the code.");
+        return;
+      }
+      setEditing(null);
     });
   }
 
@@ -371,6 +405,13 @@ export function VouchersClient({
                   <Input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} />
                 </div>
               </div>
+              <label className="flex items-start gap-2 text-sm">
+                <input type="checkbox" className="mt-1 h-4 w-4" checked={sendReportToDelegate} onChange={(e) => setSendReportToDelegate(e.target.checked)} />
+                <span>
+                  <span className="font-medium">Email each delegate their report on completion</span>
+                  <span className="block text-xs text-muted-foreground">Off by default: delegates see a thank-you screen and VIFM sends the reports from the cohort page. Can be changed per code after issue.</span>
+                </span>
+              </label>
               <div className="flex flex-wrap items-end gap-3">
                 <div className="flex-1 min-w-[12rem] space-y-1.5">
                   <Label className="text-xs">Client contact name</Label>
@@ -769,6 +810,7 @@ export function VouchersClient({
           <CardTitle className="text-lg">All vouchers ({vouchers.length})</CardTitle>
         </CardHeader>
         <CardContent>
+          {editError && <p className="mb-2 text-sm text-destructive">{editError}</p>}
           {vouchers.length === 0 ? (
             <p className="text-sm text-muted-foreground">No vouchers yet.</p>
           ) : (
@@ -780,6 +822,7 @@ export function VouchersClient({
                   <TableHead>Used</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Expires</TableHead>
+                  <TableHead>Report to delegate</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -792,21 +835,59 @@ export function VouchersClient({
                       </button>
                     </TableCell>
                     <TableCell className="text-muted-foreground">{v.label ?? v.client_name ?? "-"}</TableCell>
-                    <TableCell className="tabular-nums">{v.used_count}/{v.max_uses}</TableCell>
+                    <TableCell className="tabular-nums">
+                      {editing?.id === v.id ? (
+                        <span className="inline-flex items-center gap-1">
+                          {v.used_count}/
+                          <Input type="number" min={v.used_count || 1} className="h-7 w-20" value={editing.maxUses} onChange={(e) => setEditing({ ...editing, maxUses: Math.max(1, Number(e.target.value) || 1) })} />
+                        </span>
+                      ) : (
+                        <>{v.used_count}/{v.max_uses}</>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={v.status === "active" ? "secondary" : "outline"}>{v.status}</Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {v.expires_at ? fmtDate(v.expires_at) : "-"}
+                      {editing?.id === v.id ? (
+                        <Input type="date" className="h-7 w-36" value={editing.expiresAt} onChange={(e) => setEditing({ ...editing, expiresAt: e.target.value })} />
+                      ) : v.expires_at ? (
+                        fmtDate(v.expires_at)
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-xs hover:underline disabled:opacity-50"
+                        disabled={pending}
+                        onClick={() => toggleReport(v)}
+                        title={v.send_report_to_delegate ? "Delegates are emailed their report on completion. Click to hold reports for VIFM." : "Reports are held; VIFM sends them. Click to email delegates on completion."}
+                      >
+                        {v.send_report_to_delegate ? <><Send className="h-3.5 w-3.5 text-emerald-600" /> Emailed on completion</> : <><Lock className="h-3.5 w-3.5 text-muted-foreground" /> Held, VIFM sends</>}
+                      </button>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <Button size="sm" variant="ghost" className="gap-1" onClick={() => copy(redeemLink(v.code), `link-${v.id}`)} title={redeemLink(v.code)}>
-                          {copied === `link-${v.id}` ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="h-3.5 w-3.5" />} Link
-                        </Button>
-                        <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
-                          {v.status === "active" ? <><Ban className="h-3.5 w-3.5" /> Disable</> : <><RotateCcw className="h-3.5 w-3.5" /> Enable</>}
-                        </Button>
+                        {editing?.id === v.id ? (
+                          <>
+                            <Button size="sm" variant="default" className="gap-1" disabled={pending} onClick={saveEdit}><Check className="h-3.5 w-3.5" /> Save</Button>
+                            <Button size="sm" variant="ghost" disabled={pending} onClick={() => { setEditing(null); setEditError(null); }}>Cancel</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button size="sm" variant="ghost" className="gap-1" onClick={() => copy(redeemLink(v.code), `link-${v.id}`)} title={redeemLink(v.code)}>
+                              {copied === `link-${v.id}` ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Link2 className="h-3.5 w-3.5" />} Link
+                            </Button>
+                            <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => startEdit(v)} title="Change the number of delegates or the expiry date">
+                              <Pencil className="h-3.5 w-3.5" /> Edit
+                            </Button>
+                            <Button size="sm" variant="ghost" className="gap-1" disabled={pending} onClick={() => toggle(v)}>
+                              {v.status === "active" ? <><Ban className="h-3.5 w-3.5" /> Disable</> : <><RotateCcw className="h-3.5 w-3.5" /> Enable</>}
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>

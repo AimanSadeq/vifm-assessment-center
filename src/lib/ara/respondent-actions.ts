@@ -482,6 +482,44 @@ export async function markAraRespondentComplete(token: string): Promise<void> {
         // The completion credential above still issues.
       }
 
+      // Voucher batches can opt in to emailing the delegate their own report
+      // (migration 00240, send_report_to_delegate). Off by default: VIFM sends
+      // reports through the organization. Best-effort, logged like every send.
+      tasks.push(
+        (async () => {
+          try {
+            const { data: red } = await sb
+              .from("ara_voucher_redemptions")
+              .select("voucher:ara_vouchers(send_report_to_delegate, label, client_name)")
+              .eq("ara_respondent_id", respondent.id)
+              .limit(1)
+              .maybeSingle<{ voucher: { send_report_to_delegate: boolean | null; label: string | null; client_name: string | null } | { send_report_to_delegate: boolean | null; label: string | null; client_name: string | null }[] | null }>();
+            const voucher = Array.isArray(red?.voucher) ? red?.voucher[0] : red?.voucher;
+            if (!voucher?.send_report_to_delegate) return;
+            const lang = respondent.language_preference === "ar" ? "ar" : "en";
+            const { buildPersonalReportPdf } = await import("@/lib/reports/personal-report-build");
+            const built = await buildPersonalReportPdf({ token, lang });
+            if (!built.ok) {
+              console.error("[markAraRespondentComplete] delegate report could not be built:", built.error);
+              return;
+            }
+            const { sendAraEmail } = await import("@/lib/ara/email");
+            await sendAraEmail({
+              to: respondent.email,
+              emailType: "ara_personal_report_to_delegate",
+              language: lang,
+              data: { respondentName: respondent.name, assessmentName: voucher.client_name ?? voucher.label ?? "" },
+              isSandbox: !!a?.is_sandbox,
+              respondentId: respondent.id,
+              assessmentId: respondent.assessment_id,
+              attachments: [{ filename: built.filename, content: built.pdf.toString("base64") }],
+            });
+          } catch (err) {
+            console.error("[markAraRespondentComplete] delegate report email failed:", err);
+          }
+        })(),
+      );
+
       // Send-to-client: email the delegate's results PDF to the client contact.
       // The PDF route is gated when the delegate can't view, so the fetch carries
       // a server-only header (CRON_SECRET) to bypass that gate.

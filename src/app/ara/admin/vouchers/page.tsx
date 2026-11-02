@@ -44,7 +44,7 @@ export default async function VouchersAdminPage() {
   const [{ data: vouchers }, { data: orgs }, { data: redemptions }] = await Promise.all([
     sb
       .from("ara_vouchers")
-      .select("id, code, label, client_name, tier, max_uses, used_count, status, expires_at, created_at")
+      .select("id, code, label, client_name, tier, max_uses, used_count, status, expires_at, created_at, send_report_to_delegate")
       .order("created_at", { ascending: false })
       .limit(1000),
     sb.from("ara_organizations").select("id, name, region").order("name").limit(500),

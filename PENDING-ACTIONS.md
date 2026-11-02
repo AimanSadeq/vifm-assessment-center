@@ -344,6 +344,13 @@ Aiman: "For the AI readiness, you need to add another region titled North Africa
 - Design: `src/lib/constants/ara-regions.ts` is the single list (ids, EN/AR labels, parsing). Question region "both" means every region (serving code already did this; editor label now "All regions"). Country text mapping: Egypt, Libya, Tunisia, Algeria, Morocco, Sudan, Mauritania -> north_africa. Reflect and role profiles keep their own two-region lists (out of scope). Licensed preview sample data stays UAE/Saudi.
 - Open: seed North Africa regulatory frameworks (content-reviewed), peer benchmarks fill as sittings arrive, personal-start region pill is hidden in the UI (unchanged).
 
+## L. ARC vouchers: report delivery and post-issue edits (Aiman, 2026-11-02)
+Aiman asked (1) that delegates do not see their report on completion, VIFM sends it; (2) to be able to raise the number of delegates or move the expiry on an issued voucher.
+- Finding: (1) was already the behaviour (XP-13): the results page shows a thank-you to anyone without a staff session, the personal PDF route is staff-only, and no results email goes to the delegate (ITQAN email log: none). What staff see when testing with their own session is the report. Aiman chose "per batch, held by default", so the choice is now explicit.
+- [x] Branch `feat/arc-voucher-report-hold-and-edit`, pushed; typecheck, lint, 211 tests, production build clean. Awaiting "Merge".
+- [x] Migration 00240 applied to live Supabase 2 Nov (column verified, default false). Merged to master on "merge" 2 Nov; Aiman deploys.
+- Built: Edit per voucher row (seats, expiry; pool cannot go below used seats; expiry = end of chosen day); `send_report_to_delegate` per code (checkbox on issue, toggle on the row, "Held, VIFM sends" by default; on, the delegate is emailed their report PDF on completion via `ara_personal_report_to_delegate`). Thank-you copy: "VIFM will send your report through your organization".
+
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)
 
 **Outcome: DNS/auth is fully healthy - nothing to fix.** Original worry was that

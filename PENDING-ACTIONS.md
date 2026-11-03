@@ -351,6 +351,13 @@ Aiman asked (1) that delegates do not see their report on completion, VIFM sends
 - [x] Migration 00240 applied to live Supabase 2 Nov (column verified, default false). Merged to master on "merge" 2 Nov; Aiman deploys.
 - Built: Edit per voucher row (seats, expiry; pool cannot go below used seats; expiry = end of chosen day); `send_report_to_delegate` per code (checkbox on issue, toggle on the row, "Held, VIFM sends" by default; on, the delegate is emailed their report PDF on completion via `ara_personal_report_to_delegate`). Thank-you copy: "VIFM will send your report through your organization".
 
+## M. Admin client page: one place per client (Ahmad, 2026-11-03)
+Ahmad (voice note, relayed by Aiman): when he selects a client he wants to see every service that client subscribes to and the activity in each, instead of opening every portal to pull the client's results. Scoping answer: "Everything a client can hold" (the seven portal services plus bespoke bundles).
+- [x] Branch `feat/admin-client-360` (ba87806), pushed; typecheck, lint, 211 tests and production build clean. No migration. Awaiting "Merge".
+- Built: the client name on `/admin/clients` opens `/admin/clients/<key>` (key = the registry's lower-cased name, URL-encoded). Sections: subscribed services (allocations, seats used, expiry); Fluent / Logica / Persona / Techno (issued, redeemed, completed, people with a PDF each, download-all ZIP per service via new admin-only `/api/admin/clients/reports-zip`, which calls the same report routes the rows link to with the admin's cookie); AI Readiness Compass (sittings with organizational PDF, voucher cohorts linking to insights, delegates with a personal report, download-all ZIP for the whole client via `/api/ara/admin/vouchers/zip?org=`); Reflect 360 (engagements with cohort PDF, participants with a report); Pre-Hire / Assessment Center (engagements, completed candidates with reports); bespoke bundles (invited, in progress, completed, scored, filed-reports ZIP). Read-only; every section links to the page where the service is run. Clients list now uses the shared region labels (North Africa reads correctly).
+- Verification: typecheck, lint, tests and `next build` in the session; live column names checked against Supabase. The page itself could not be opened from the session (live site unreachable), so Aiman or Ahmad should open one client after deploy.
+- Open: this is the admin view. If Ahmad also wants the client manager to see the same page in the client portal, that is a separate scope (the portal already shows per-service activity for the signed-in client).
+
 ## I. Email deliverability - voucher/results mail (raised + RESOLVED 2026-07-21)
 
 **Outcome: DNS/auth is fully healthy - nothing to fix.** Original worry was that

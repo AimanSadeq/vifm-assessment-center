@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentCaller } from "@/lib/ara/auth-guards";
-import { buildCohortReportsZip } from "@/lib/ara/cohort-reports";
+import { buildCohortReportsZip, buildOrgReportsZip } from "@/lib/ara/cohort-reports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,9 +10,11 @@ export const maxDuration = 120;
 
 /**
  * GET /api/ara/admin/vouchers/zip?company=<label>&language=en|ar
+ * GET /api/ara/admin/vouchers/zip?org=<ara_organizations.id>&language=en|ar
  *
  * Every completed delegate's Personal AI Readiness Report for one voucher
- * company cohort, in one ZIP. Admin only, like the insights page it sits on.
+ * company cohort, or for every sitting under a client organization, in one
+ * ZIP. Admin only, like the pages it sits on.
  */
 export async function GET(request: Request) {
   const caller = await getCurrentCaller();
@@ -22,10 +24,13 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const company = (url.searchParams.get("company") ?? "").trim();
-  if (!company) return NextResponse.json({ error: "Choose a company." }, { status: 400 });
+  const org = (url.searchParams.get("org") ?? "").trim();
+  if (!company && !org) return NextResponse.json({ error: "Choose a company." }, { status: 400 });
+  if (org && !/^[0-9a-f-]{36}$/i.test(org)) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   try {
-    const result = await buildCohortReportsZip({ company, lang: url.searchParams.get("language") });
+    const lang = url.searchParams.get("language");
+    const result = org ? await buildOrgReportsZip({ organizationId: org, lang }) : await buildCohortReportsZip({ company, lang });
     if (!result.ok) return NextResponse.json({ error: result.error }, { status: result.status });
     return new NextResponse(new Uint8Array(result.zip), {
       headers: {

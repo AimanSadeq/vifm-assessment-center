@@ -8,12 +8,12 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { loadPlatformClients } from "@/lib/clients/registry";
+import { araRegionLabel } from "@/lib/constants/ara-regions";
 import { CreateClientDialog } from "./_components/create-client-dialog";
 import { EditClientDialog } from "./_components/edit-client-dialog";
 import { BackLink } from "@/components/shared/back-link";
 
 const SECTOR_LABEL: Record<string, string> = { government: "Government", banking: "Banking", general: "General" };
-const REGION_LABEL: Record<string, string> = { uae: "UAE", saudi: "Saudi Arabia" };
 
 export default async function ClientsPage() {
   const t = await getServerT();
@@ -62,10 +62,12 @@ export default async function ClientsPage() {
               {clients.map((c) => (
                 <TableRow key={c.key}>
                   <TableCell className="font-medium">
-                    {c.name}
+                    <Link href={`/admin/clients/${encodeURIComponent(c.key)}`} className="hover:underline" title="Everything this client holds on Caliber">
+                      {c.name}
+                    </Link>
                     {c.region && (
                       <span className="ml-2 text-xs text-muted-foreground">
-                        {REGION_LABEL[c.region]}{c.sector ? ` · ${SECTOR_LABEL[c.sector]}` : ""}
+                        {araRegionLabel(c.region)}{c.sector ? ` · ${SECTOR_LABEL[c.sector]}` : ""}
                       </span>
                     )}
                   </TableCell>

@@ -1,21 +1,23 @@
 import JSZip from "jszip";
 import type { Browser } from "puppeteer-core";
 import { createServiceClient } from "@/lib/supabase/server";
+import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import {
   buildPersonalReportPdf,
   launchPersonalReportBrowser,
   type PersonalReportBatch,
 } from "@/lib/reports/personal-report-build";
 import { computeCompanyCohortInsight } from "@/lib/ara/company-cohort";
-import { cohortZipFilename } from "@/lib/ara/cohort-filenames";
+import { cohortZipFilename, safeFileSegment } from "@/lib/ara/cohort-filenames";
 
 export { safeFileSegment, cohortZipFilename } from "@/lib/ara/cohort-filenames";
 
 /**
- * One ZIP with every completed delegate's Personal AI Readiness Report for a
- * voucher company cohort (the grouping the /ara/admin/vouchers/insights page
- * uses). Ahmad's ask of 19 Oct 2026: a client with 11 vouchers, 11 reports,
- * one download instead of eleven.
+ * One ZIP with every completed delegate's Personal AI Readiness Report, either
+ * for a voucher company cohort (the grouping the /ara/admin/vouchers/insights
+ * page uses) or for every sitting under a client organization (the admin
+ * client page). Ahmad's ask of 19 Oct 2026: a client with 11 vouchers, 11
+ * reports, one download instead of eleven.
  *
  * Each PDF is produced by the same builder as the delegate's own download, so
  * the client receives exactly what the delegate saw. One headless browser is
@@ -36,6 +38,8 @@ const CONCURRENCY = 3;
 export type CohortZipResult =
   | { ok: true; zip: Buffer; filename: string; included: number; skipped: string[] }
   | { ok: false; status: number; error: string };
+
+type ReportTarget = { name: string; token: string | null };
 
 export async function buildCohortReportsZip(opts: {
   company: string;
@@ -60,13 +64,62 @@ export async function buildCohortReportsZip(opts: {
   const rows = (tokenRows ?? []) as { id: string; access_token: string | null }[];
   const tokenById = new Map<string, string | null>(rows.map((r) => [r.id, r.access_token]));
 
+  const targets: ReportTarget[] = completed.map((r) => ({ name: r.name, token: tokenById.get(r.respondent_id) ?? null }));
+  return renderReportsZip(targets, lang, insight.company_label, cohortZipFilename(insight.company_label, lang));
+}
+
+/**
+ * Every completed personal-eligible sitting under a client organization
+ * (consultant-led, voucher-provisioned or portal shell alike), in one ZIP.
+ */
+export async function buildOrgReportsZip(opts: { organizationId: string; lang?: string | null }): Promise<CohortZipResult> {
+  const lang: "en" | "ar" = opts.lang === "ar" ? "ar" : "en";
+  const sb = createServiceClient();
+  const { data: org } = await sb
+    .from("ara_organizations")
+    .select("id, name")
+    .eq("id", opts.organizationId)
+    .maybeSingle<{ id: string; name: string }>();
+  if (!org) return { ok: false, status: 404, error: "Client not found." };
+
+  const assessments = await fetchAllPages<{ id: string; engagement_stage: string; include_individual_layer: boolean | null }>((from, to) =>
+    sb
+      .from("ara_assessments")
+      .select("id, engagement_stage, include_individual_layer")
+      .eq("organization_id", org.id)
+      .order("id")
+      .range(from, to),
+  );
+  const eligible = assessments.filter((a) => a.engagement_stage === "individual" || !!a.include_individual_layer).map((a) => a.id);
+  if (eligible.length === 0) return { ok: false, status: 404, error: "This client has no sittings with a personal report yet." };
+
+  const targets: ReportTarget[] = [];
+  for (const ids of chunkIds(eligible)) {
+    const rows = await fetchAllPages<{ id: string; name: string; access_token: string | null; completed_at: string | null }>((from, to) =>
+      sb
+        .from("ara_respondents")
+        .select("id, name, access_token, completed_at")
+        .in("assessment_id", ids)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .order("id")
+        .range(from, to),
+    );
+    for (const r of rows) targets.push({ name: r.name, token: r.access_token });
+  }
+  if (targets.length === 0) return { ok: false, status: 404, error: "No delegate of this client has completed a personal sitting yet." };
+
+  return renderReportsZip(targets, lang, org.name, `VIFM_AI_Readiness_Reports_${safeFileSegment(org.name)}_${lang}.zip`);
+}
+
+async function renderReportsZip(targets: ReportTarget[], lang: "en" | "ar", label: string, filename: string): Promise<CohortZipResult> {
   const zip = new JSZip();
   const taken = new Set<string>();
   const skipped: string[] = [];
   let included = 0;
 
-  const picked = completed.slice(0, COHORT_ZIP_MAX_REPORTS);
-  for (const r of completed.slice(COHORT_ZIP_MAX_REPORTS)) {
+  const picked = targets.slice(0, COHORT_ZIP_MAX_REPORTS);
+  for (const r of targets.slice(COHORT_ZIP_MAX_REPORTS)) {
     skipped.push(`${r.name}: over the limit of ${COHORT_ZIP_MAX_REPORTS} reports per download`);
   }
 
@@ -87,13 +140,12 @@ export async function buildCohortReportsZip(opts: {
       while (next < picked.length) {
         const i = next++;
         const r = picked[i];
-        const token = tokenById.get(r.respondent_id);
-        if (!token) {
+        if (!r.token) {
           skipped.push(`${r.name}: no access token on record`);
           continue;
         }
         try {
-          const result = await buildPersonalReportPdf({ token, lang, batch });
+          const result = await buildPersonalReportPdf({ token: r.token, lang, batch });
           if (!result.ok) {
             skipped.push(`${r.name}: ${result.error}`);
             continue;
@@ -131,7 +183,7 @@ export async function buildCohortReportsZip(opts: {
     zip.file(
       "README.txt",
       [
-        `${insight.company_label}: ${included} report${included === 1 ? "" : "s"} included.`,
+        `${label}: ${included} report${included === 1 ? "" : "s"} included.`,
         "",
         "Not included:",
         ...skipped.map((s) => `- ${s}`),
@@ -141,5 +193,5 @@ export async function buildCohortReportsZip(opts: {
   }
 
   const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE", compressionOptions: { level: 6 } });
-  return { ok: true, zip: buffer, filename: cohortZipFilename(insight.company_label, lang), included, skipped };
+  return { ok: true, zip: buffer, filename, included, skipped };
 }

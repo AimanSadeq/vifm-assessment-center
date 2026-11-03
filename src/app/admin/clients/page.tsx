@@ -1,7 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { Layers } from "lucide-react";
+import { Layers, UserSearch } from "lucide-react";
 import { getServerT } from "@/lib/i18n/server";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,6 +28,12 @@ export default async function ClientsPage() {
           <p className="mt-1 text-muted-foreground">{t("adminClients.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
+          <Link
+            href="/admin/people"
+            className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+          >
+            <UserSearch className="h-4 w-4" /> Find a person
+          </Link>
           <Link
             href="/admin/clients/allocations"
             className="inline-flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"

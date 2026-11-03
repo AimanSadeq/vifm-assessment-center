@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { requireRole, isAuthorizationError } from "@/lib/ara/auth-guards";
 import { loadClient360, type ReportRow } from "@/lib/clients/client-360";
+import type { PendingRow } from "@/lib/clients/monitor";
 import { portalService } from "@/lib/clients/portal-services";
 import { araRegionLabel } from "@/lib/constants/ara-regions";
 import { BackLink } from "@/components/shared/back-link";
@@ -67,13 +68,13 @@ function Stat({ label, value }: { label: string; value: number | string }) {
   );
 }
 
-function DownloadAll({ href, count }: { href: string | null; count: number }) {
+function DownloadAll({ href, count, note }: { href: string | null; count: number; note?: string }) {
   if (!href || count === 0) return null;
   return (
     <a
       href={href}
       className="inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-      title="Every completed report in one ZIP"
+      title={note ?? "Every completed report in one ZIP"}
     >
       <Archive className="h-4 w-4" /> Download all ({count})
     </a>
@@ -122,6 +123,31 @@ function Section({
   );
 }
 
+function PendingList({ rows }: { rows: PendingRow[] }) {
+  if (rows.length === 0) return null;
+  return (
+    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+      <h4 className="text-sm font-semibold text-amber-900">
+        Started, not submitted ({rows.length})
+      </h4>
+      <p className="mt-0.5 text-xs text-amber-800/80">
+        Redeemed or opened but never finished, so no result or report exists. An expired sitting cannot be resumed; the person redeems the code again for a fresh one.
+      </p>
+      <ul className="mt-2 divide-y divide-amber-200/70 text-sm">
+        {rows.map((p) => (
+          <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
+            <span className="font-medium">{p.name}</span>
+            <span className="text-xs text-muted-foreground">
+              {p.startedAt ? `started ${fmtDate(p.startedAt)}` : "not started"}
+              {p.expiresAt ? (p.expired ? ` · time ran out ${fmtDate(p.expiresAt)}` : ` · open until ${fmtDate(p.expiresAt)}`) : ""}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function PeopleTable({ rows, emptyText, limit = 100 }: { rows: ReportRow[]; emptyText: string; limit?: number }) {
   if (rows.length === 0) return <p className="text-sm text-muted-foreground">{emptyText}</p>;
   const shown = rows.slice(0, limit);
@@ -133,7 +159,7 @@ function PeopleTable({ rows, emptyText, limit = 100 }: { rows: ReportRow[]; empt
             <TableHead>Name</TableHead>
             <TableHead>Completed</TableHead>
             <TableHead>Result</TableHead>
-            <TableHead className="w-28 text-right">Report</TableHead>
+            <TableHead className="text-right">Report</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -143,7 +169,15 @@ function PeopleTable({ rows, emptyText, limit = 100 }: { rows: ReportRow[]; empt
               <TableCell className="whitespace-nowrap text-muted-foreground">{fmtDate(r.date)}</TableCell>
               <TableCell className="text-muted-foreground">{r.summary || "-"}</TableCell>
               <TableCell className="text-right">
-                {r.reportPath ? (
+                {r.reports && r.reports.length > 0 ? (
+                  <span className="inline-flex flex-wrap justify-end gap-x-3 gap-y-1">
+                    {r.reports.map((link) => (
+                      <a key={link.path} href={link.path} className="inline-flex items-center gap-1 text-sm text-primary hover:underline" title={`Download the ${link.label} report`}>
+                        <Download className="h-3.5 w-3.5" /> {link.label}
+                      </a>
+                    ))}
+                  </span>
+                ) : r.reportPath ? (
                   <a href={r.reportPath} className="inline-flex items-center gap-1 text-sm text-primary hover:underline" title="Download PDF">
                     <Download className="h-3.5 w-3.5" /> PDF
                   </a>
@@ -273,12 +307,13 @@ export default async function ClientPage({ params }: { params: { key: string } }
           }
           actions={
             <>
-              <DownloadAll href={s.zipPath} count={s.rows.length} />
+              <DownloadAll href={s.zipPath} count={s.rows.length} note={s.service === "persona" ? "All four Persona reports for each person" : undefined} />
               <ManageLink href={s.managePath} label="Manage in portal" />
             </>
           }
         >
           <PeopleTable rows={s.rows} emptyText="No one has completed this assessment yet." />
+          <PendingList rows={s.pending} />
         </Section>
       ))}
 

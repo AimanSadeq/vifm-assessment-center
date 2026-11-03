@@ -9,10 +9,43 @@ import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import type { CaliberService } from "./portal-services";
 import { usableIdentity } from "@/lib/privacy/purged";
 
-export type ActivityRow = { id: string; name: string; date: string; summary: string; reportPath: string };
-export type ServiceActivity = { issued: number; redeemed: number; completed: number; rows: ActivityRow[] };
+export type ReportLink = { label: string; path: string };
+export type ActivityRow = {
+  id: string;
+  name: string;
+  date: string;
+  summary: string;
+  reportPath: string;
+  /** Services with more than one report per sitting (Persona: Profile, Leadership, DARE, EQ). */
+  reports?: ReportLink[];
+};
+/** A sitting that was redeemed or started but never submitted (Ahmad, 3 Nov 2026:
+ *  a delegate who abandoned Techno was invisible because the lists show
+ *  submitted sittings only). */
+export type PendingRow = { id: string; name: string; startedAt: string | null; expiresAt: string | null; expired: boolean };
+export type ServiceActivity = { issued: number; redeemed: number; completed: number; rows: ActivityRow[]; pending?: PendingRow[] };
 
 const EMPTY: ServiceActivity = { issued: 0, redeemed: 0, completed: 0, rows: [] };
+
+/** The four Persona deliverables for one session, in the order the Persona results page lists them. */
+export function personaReportLinks(sessionId: string): ReportLink[] {
+  return [
+    { label: "Profile", path: `/api/ac/persona/${sessionId}/report` },
+    { label: "Leadership", path: `/api/ac/persona/${sessionId}/leadership-report` },
+    { label: "DARE", path: `/api/ac/persona/${sessionId}/dare-report` },
+    { label: "EQ", path: `/api/ac/persona/${sessionId}/eq-report` },
+  ];
+}
+
+function pendingRow(id: string, name: string | null | undefined, startedAt: string | null, expiresAt: string | null): PendingRow {
+  return {
+    id,
+    name: usableIdentity(name)?.trim() || "Candidate",
+    startedAt,
+    expiresAt,
+    expired: !!expiresAt && new Date(expiresAt).getTime() < Date.now(),
+  };
+}
 
 async function countOrg(table: string, orgId: string, col = "id"): Promise<number> {
   try {
@@ -271,7 +304,7 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
     }
 
     if (service === "persona") {
-      const [issued, redeemed, completedRes, listRes] = await Promise.all([
+      const [issued, redeemed, completedRes, listRes, pendingRes] = await Promise.all([
         countOrg("persona_vouchers", orgId),
         countOrg("persona_voucher_redemptions", orgId),
         // True completed count (head query) - independent of the 100-row display cap.
@@ -287,6 +320,13 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
           .eq("status", "submitted")
           .order("created_at", { ascending: false })
           .limit(100),
+        sb
+          .from("behavioral_assessment_sessions")
+          .select("id, created_at, started_at, taker_name")
+          .eq("organization_id", orgId)
+          .neq("status", "submitted")
+          .order("created_at", { ascending: false })
+          .limit(100),
       ]);
       const list = (listRes.data ?? []) as { id: string; created_at: string; submitted_at: string | null; taker_name: string | null }[];
       const rows = list.map((r) => ({
@@ -295,8 +335,11 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         date: r.submitted_at || r.created_at,
         summary: "Completed",
         reportPath: `/api/ac/persona/${r.id}/report`,
+        reports: personaReportLinks(r.id),
       }));
-      return { issued, redeemed, completed: completedRes.count ?? rows.length, rows };
+      const pendingList = (pendingRes.data ?? []) as { id: string; created_at: string; started_at: string | null; taker_name: string | null }[];
+      const pending = pendingList.map((r) => pendingRow(r.id, r.taker_name, r.started_at ?? r.created_at, null));
+      return { issued, redeemed, completed: completedRes.count ?? rows.length, rows, pending };
     }
 
     if (service === "techno") {
@@ -370,7 +413,26 @@ export async function getServiceActivity(service: CaliberService, orgId: string)
         const cName = await cBase().is("organization_id", null).eq("organization_name", orgName);
         completed = (cById.count ?? 0) + (cName.count ?? 0);
       }
-      return { issued, redeemed, completed, rows };
+      // Redeemed or started but never submitted: the same ownership rule as the
+      // list above (org_id primary, legacy NULL-org_id name match), newest first.
+      const pCols = "id, candidate_name, started_at, expires_at, created_at";
+      type PendRow = { id: string; candidate_name: string | null; started_at: string | null; expires_at: string | null; created_at: string };
+      const pBase = () => sb.from("technical_sandbox_sessions").select(pCols).is("submitted_at", null).order("created_at", { ascending: false }).limit(100);
+      const pById = await pBase().eq("organization_id", orgId);
+      let pendList: PendRow[];
+      if (pById.error) {
+        const legacy = await pBase().eq("organization_name", orgName);
+        pendList = (legacy.data ?? []) as PendRow[];
+      } else {
+        const pName = await pBase().is("organization_id", null).eq("organization_name", orgName);
+        const seenP = new Set<string>();
+        pendList = [...((pById.data ?? []) as PendRow[]), ...((pName.data ?? []) as PendRow[])]
+          .filter((r) => (seenP.has(r.id) ? false : (seenP.add(r.id), true)))
+          .sort((a, b) => b.created_at.localeCompare(a.created_at))
+          .slice(0, 100);
+      }
+      const pending = pendList.map((r) => pendingRow(r.id, r.candidate_name, r.started_at, r.expires_at));
+      return { issued, redeemed, completed, rows, pending };
     }
   } catch {
     // tolerant: a missing org column / unmigrated table just yields the empty funnel

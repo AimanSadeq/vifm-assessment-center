@@ -38,6 +38,7 @@ const MANAGE: Svc[] = [
 
 const PLATFORM: Svc[] = [
   { name: "Clients", desc: "Unified client registry across services.", href: "/admin/clients", icon: Building2, tone: "text-slate-600" },
+  { name: "Find a person", desc: "Every sitting by name or email, across services.", href: "/admin/people", icon: UserSearch, tone: "text-slate-600" },
   { name: "Role profiles", desc: "Reusable target-role competency packs.", href: "/admin/role-profiles", icon: Briefcase, tone: "text-cyan-700" },
   { name: "Vouchers", desc: "Issue + track redeemable access codes.", href: "/admin/vouchers", icon: Ticket, tone: "text-[#5391D5]" },
   { name: "Competency framework", desc: "The behavioral competencies + indicators.", href: "/admin/framework", icon: Network, tone: "text-fuchsia-700" },

@@ -203,9 +203,19 @@ export default async function PortalServicePage({
                         <td className="py-1.5 pr-3">{r.summary}</td>
                         <td className="py-1.5 pr-3">{new Date(r.date).toLocaleDateString(locale === "ar" ? "ar" : "en-GB")}</td>
                         <td className="py-1.5 pr-3">
-                          <a href={r.reportPath} target="_blank" rel="noopener noreferrer" className="text-[#5391D5] underline">
-                            PDF
-                          </a>
+                          {r.reports && r.reports.length > 0 ? (
+                            <span className="inline-flex flex-wrap gap-x-3 gap-y-1">
+                              {r.reports.map((link) => (
+                                <a key={link.path} href={link.path} target="_blank" rel="noopener noreferrer" className="text-[#5391D5] underline">
+                                  {link.label}
+                                </a>
+                              ))}
+                            </span>
+                          ) : (
+                            <a href={r.reportPath} target="_blank" rel="noopener noreferrer" className="text-[#5391D5] underline">
+                              PDF
+                            </a>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -213,6 +223,25 @@ export default async function PortalServicePage({
                 </table>
               </div>
             )}
+            {activity.pending && activity.pending.length > 0 ? (
+              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3">
+                <h3 className="text-sm font-semibold text-amber-900">Started, not submitted ({activity.pending.length})</h3>
+                <p className="mt-0.5 text-xs text-amber-800/80">
+                  Redeemed or opened but never finished, so there is no result yet. An expired sitting cannot be resumed; the person redeems the code again for a fresh one.
+                </p>
+                <ul className="mt-2 divide-y divide-amber-200/70 text-xs">
+                  {activity.pending.map((p) => (
+                    <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-1.5">
+                      <span className="font-medium">{p.name}</span>
+                      <span className="text-muted-foreground">
+                        {p.startedAt ? `started ${new Date(p.startedAt).toLocaleDateString(locale === "ar" ? "ar" : "en-GB")}` : "not started"}
+                        {p.expiresAt ? (p.expired ? " · time ran out" : " · still open") : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </div>
         </section>
       )}

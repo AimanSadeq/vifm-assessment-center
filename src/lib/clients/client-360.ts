@@ -2,7 +2,7 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { fetchAllPages, chunkIds } from "@/lib/ara/paginate";
 import { loadPlatformClients, type PlatformClient } from "@/lib/clients/registry";
 import { getAllocationsForOrg, type Allocation } from "@/lib/clients/allocations";
-import { getServiceActivity } from "@/lib/clients/monitor";
+import { getServiceActivity, type PendingRow, type ReportLink } from "@/lib/clients/monitor";
 import { PORTAL_SERVICES, type CaliberService } from "@/lib/clients/portal-services";
 import { loadFiledReports } from "@/lib/bespoke/report-filing";
 
@@ -27,6 +27,8 @@ export type ReportRow = {
   summary: string;
   /** Admin-gated report route, or null when no report exists for this row. */
   reportPath: string | null;
+  /** When a sitting yields several reports (Persona), each one; the page lists them all. */
+  reports?: ReportLink[];
 };
 
 export type VoucherServiceSection = {
@@ -37,6 +39,8 @@ export type VoucherServiceSection = {
   redeemed: number;
   completed: number;
   rows: ReportRow[];
+  /** Redeemed or started but never submitted. */
+  pending: PendingRow[];
   zipPath: string | null;
   managePath: string;
 };
@@ -135,7 +139,8 @@ async function loadVoucherServices(acId: string): Promise<VoucherServiceSection[
   for (const service of VOUCHER_SERVICES) {
     try {
       const act = await getServiceActivity(service, acId);
-      if (act.issued + act.redeemed + act.completed === 0) continue;
+      const pending = act.pending ?? [];
+      if (act.issued + act.redeemed + act.completed + pending.length === 0) continue;
       const meta = PORTAL_SERVICES.find((s) => s.id === service)!;
       const rows: ReportRow[] = act.rows.map((r) => ({
         id: r.id,
@@ -144,6 +149,7 @@ async function loadVoucherServices(acId: string): Promise<VoucherServiceSection[
         summary: r.summary,
         // Techno's portal row links to the results page; the PDF lives on the report route.
         reportPath: service === "techno" ? `/api/tech-sandbox/${r.id}/report` : r.reportPath,
+        reports: r.reports,
       }));
       out.push({
         service,
@@ -153,6 +159,7 @@ async function loadVoucherServices(acId: string): Promise<VoucherServiceSection[
         redeemed: act.redeemed,
         completed: act.completed,
         rows,
+        pending,
         zipPath: rows.length > 0 ? `/api/admin/clients/reports-zip?service=${service}&org=${acId}` : null,
         managePath: `/portal/services/${service}?org=${acId}`,
       });
